@@ -5,6 +5,9 @@ using System.Collections.Generic;
 
 namespace SplatTagUnitTests
 {
+  /// <summary>
+  /// Core SplatTag unit tests
+  /// </summary>
   [TestClass]
   public class SplatTagUnitTest
   {
@@ -111,67 +114,6 @@ namespace SplatTagUnitTests
       Assert.IsNotNull(dictionary);
       Assert.IsTrue(dictionary.TryGetValue(t.Id, out Team target));
       Assert.IsTrue(target == t);
-    }
-
-    /// <summary>
-    /// Test match a team by (no match).
-    /// </summary>
-    [TestMethod]
-    public void MatchTeamNoMatchTest()
-    {
-      UnitTestDatabase database = new UnitTestDatabase();
-      SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
-
-      Team[] matched = controller.MatchTeam("WO");
-      Assert.IsNotNull(matched);
-      Assert.IsTrue(matched.Length == 0);
-    }
-
-    /// <summary>
-    /// Test match a team by its name.
-    /// </summary>
-    [TestMethod]
-    public void MatchTeamByNameTest()
-    {
-      UnitTestDatabase database = new UnitTestDatabase();
-      SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
-
-      Team t = controller.CreateTeam();
-      t.Name = "Team 17"; // Purposefully mixed case
-      t.Id = 17;
-      t.ClanTags = new string[] { "WO" };
-      t.ClanTagOption = TagOption.Front;
-      database.expectedTeams = new List<Team> { t };
-
-      controller.LoadDatabase();
-      Team[] matched = controller.MatchTeam("team"); // Purposefully mixed case
-      Assert.IsNotNull(matched);
-      Assert.IsTrue(matched.Length == 1);
-    }
-
-    /// <summary>
-    /// Test match a team by its tag.
-    /// </summary>
-    [TestMethod]
-    public void MatchTeamByTagTest()
-    {
-      UnitTestDatabase database = new UnitTestDatabase();
-      SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
-
-      Team t = controller.CreateTeam();
-      t.Name = "Team 17";
-      t.Id = 17;
-      t.ClanTags = new string[] { "WO" }; // Purposefully upper-case
-      t.ClanTagOption = TagOption.Front;
-      database.expectedTeams = new List<Team> { t };
-
-      controller.LoadDatabase();
-      Team[] matched = controller.MatchTeam("wo"); // Purposefully lower-case
-      Assert.IsNotNull(matched);
-      Assert.IsTrue(matched.Length == 1);
     }
   }
 }
