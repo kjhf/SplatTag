@@ -7,9 +7,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SplatTagConsole", "SplatTag
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SplatTagCore", "SplatTagCore\SplatTagCore.csproj", "{668DBFDB-B63E-433D-B049-E7E20D2446FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SplatTagDatabase", "SplatTagDatabase\SplatTagDatabase.csproj", "{05701833-5352-416C-9C80-D48D0263A706}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SplatTagDatabase", "SplatTagDatabase\SplatTagDatabase.csproj", "{05701833-5352-416C-9C80-D48D0263A706}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SplatTagUnitTests", "SplatTagUnitTests\SplatTagUnitTests.csproj", "{7AB53283-1CE1-404B-815A-DD5FDE8F0088}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SplatTagUnitTests", "SplatTagUnitTests\SplatTagUnitTests.csproj", "{7AB53283-1CE1-404B-815A-DD5FDE8F0088}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4272934C-1E1A-405E-BA06-E94EA7B06831}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
