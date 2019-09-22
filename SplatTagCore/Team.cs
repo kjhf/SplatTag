@@ -28,7 +28,7 @@
     /// <returns></returns>
     public override string ToString()
     {
-      return Id + ": " + Name;
+      return $"{Id}: {(ClanTags.Length > 0 ? ClanTags[0] : "")} {Name}";
     }
   }
 }

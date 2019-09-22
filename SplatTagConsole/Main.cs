@@ -126,8 +126,7 @@ namespace SplatTagConsole
         {
           Console.WriteLine("Player name?");
           string input = Console.ReadLine();
-          var players = splatTagController.MatchPlayer(input);
-          foreach (var p in players)
+          foreach (var p in splatTagController.MatchPlayer(input))
           {
             Console.WriteLine(p);
           }
@@ -139,8 +138,7 @@ namespace SplatTagConsole
           Console.WriteLine();
           Console.WriteLine("Team name?");
           string input = Console.ReadLine();
-          var teams = splatTagController.MatchTeam(input);
-          foreach (var t in teams)
+          foreach (var t in splatTagController.MatchTeam(input))
           {
             Console.WriteLine(t);
           }
@@ -151,12 +149,17 @@ namespace SplatTagConsole
 
     private static void BeginFetch()
     {
-      Console.WriteLine("Not currently implemented.");
-
-      // TODO -- ask for local file or website.
-      // A local file should be a readable format, in priority order: json, html, database (misp), xls, xml
-      // A site should simply download the file or an html contents rep, and load the contents as if it were a local file.
-      // We should be mindful about loading files that come from the internet though: always validate first.
+      Console.WriteLine("File or site to import?");
+      string input = Console.ReadLine();
+      string errorMessage = splatTagController.TryImport(input);
+      if (!string.IsNullOrWhiteSpace(errorMessage))
+      {
+        Console.WriteLine("ERROR: " + errorMessage);
+      }
+      else
+      {
+        Console.WriteLine("Successfully imported. Note that the database has not been saved yet.");
+      }
     }
   }
 }

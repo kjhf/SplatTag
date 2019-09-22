@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SplatTagUnitTests")]
 
 namespace SplatTagCore
 {
@@ -162,6 +164,78 @@ namespace SplatTagCore
       // Filter unique
       retVal = retVal.Distinct().ToList();
       return retVal.ToArray();
+    }
+
+    public string TryImport(string input)
+    {
+      // TODO --
+      // A local file should be a readable format, in priority order: json, html, database (misp), xls, xml
+      // A site should simply download the file or an html contents rep, and load the contents as if it were a local file.
+      // We should be mindful about loading files that come from the internet though: always validate first.
+      if (!File.Exists(input))
+      {
+        return "Input does not exist on disk. Remote is not currently supported.";
+      }
+
+      if (Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase))
+      {
+        // Try the LUTI importer.
+        Importers.LUTIJsonReader jsonReader = new Importers.LUTIJsonReader(input);
+
+        try
+        {
+          string errorMessage = TryImport(jsonReader);
+          if (string.IsNullOrWhiteSpace(errorMessage))
+          {
+            return "";
+          }
+          else
+          {
+            // TODO -- We can try other importers here.
+            return errorMessage;
+          }
+        }
+        catch (Exception ex)
+        {
+          return ex.Message;
+        }
+      }
+      else
+      {
+        return "File extension not recognised or supported.";
+      }
+    }
+
+    public string TryImport(ISplatTagDatabase importer)
+    {
+      try
+      {
+        var retVal = importer.Load();
+        foreach (Team importTeam in retVal.Item2)
+        {
+          if (!teams.Values.Any(t => t.Name.Equals(importTeam.Name)))
+          {
+            uint key = teams.Keys.LastOrDefault() + 1;
+            importTeam.Id = key;
+            teams.Add(key, importTeam);
+          }
+        }
+
+        foreach (Player importPlayer in retVal.Item1)
+        {
+          if (!players.Values.Any(p => p.Name.Equals(importPlayer.Name)))
+          {
+            uint key = players.Keys.LastOrDefault() + 1;
+            importPlayer.Id = key;
+            players.Add(key, importPlayer);
+          }
+        }
+        return "";
+      }
+      catch (Exception ex)
+      {
+        return ex.Message;
+      }
     }
 
     public Player CreatePlayer()

@@ -68,7 +68,7 @@ namespace SplatTagCore
     /// <returns></returns>
     public override string ToString()
     {
-      return Id + ": " + Name;
+      return Id + ": " + Name + (CurrentTeam == null ? null : $" (Plays for {CurrentTeam})");
     }
   }
 }

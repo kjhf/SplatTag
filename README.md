@@ -8,6 +8,10 @@ The solution is split into 3 parts:
 - The Database, which at present is a json serializer. The database can be substituted for an actual database in the future.
 - The Core, which is the business logic for matching.
 
+## Current supported importers
+Importers can be found under SplatTagCore.Importers.
+- LUTIJsonReader: Reads the LUTI [signups sheet](https://docs.google.com/spreadsheets/d/1C7-iJlJjN3cYWEQE5hq2Y_AG4Meg4DrA5Q_527wfl_o/edit#gid=0). Convert from Google Sheets to [.csv then to .json](https://www.csvjson.com/csv2json).
+
 ## TODOs
 - Fetching of data from a local file.
 - Fetching of data from a remote site, e.g. SplatNet
