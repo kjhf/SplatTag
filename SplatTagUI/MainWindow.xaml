@@ -1,0 +1,82 @@
+﻿<Window x:Class="SplatTagUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SplatTagUI"
+        mc:Ignorable="d"
+        Title="Splat Tag" Height="480" Width="1080"
+        Background="Black"
+        Foreground="White"
+        >
+  <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="boolToVis"/>
+    <Style x:Key="textBlockStyle" TargetType="TextBlock">
+      <Setter Property="Background" Value="Honeydew"/>
+      <Setter Property="Foreground" Value="LightSteelBlue"/>
+    </Style>
+    <Style x:Key="checkBoxStyle" TargetType="CheckBox">
+      <Setter Property="Background" Value="Black"/>
+      <Setter Property="Foreground" Value="LightSteelBlue"/>
+    </Style>
+    <Style x:Key="listBoxStyle" TargetType="ListBox">
+      <Setter Property="Background" Value="Black"/>
+      <Setter Property="Foreground" Value="LightSteelBlue"/>
+    </Style>
+    <Style x:Key="stackPanelStyle" TargetType="StackPanel">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+  </Window.Resources>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="50"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <Grid Grid.Row="0" Background="White">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Grid x:Name="searchGrid"  Grid.Column="0" ToolTip="Search for a team or player by typing here given the options on the right.">
+        <TextBox x:Name="searchInput" MinWidth="50" Background="Transparent" TextChanged="SearchInput_TextChanged" />
+        <!-- Hint Text -->
+        <TextBlock Style="{StaticResource textBlockStyle}" Margin="5,2" MinWidth="50" Text="Search a team or player" IsHitTestVisible="False"
+                     Visibility="{Binding ElementName=searchInput, Path=Text.IsEmpty, Converter={StaticResource boolToVis}}" />
+      </Grid>
+      <Grid x:Name="searchFunctionsGrid"  Grid.Column="1">
+        <StackPanel Style="{StaticResource stackPanelStyle}">
+          <CheckBox x:Name="ignoreCaseCheckbox" Content="Ignore Case?" ToolTip="Search by ignoring case?" IsChecked="True"></CheckBox>
+          <CheckBox x:Name="nearMatchCheckbox" Content="Near Matching?" ToolTip="Match symbols and letters that are visually close (e.g. κ matches k)" IsChecked="True"></CheckBox>
+          <CheckBox x:Name="regexCheckbox" Content="Regex?" ToolTip="Match using a Regex query? (Advanced!)" IsChecked="False"></CheckBox>
+        </StackPanel>
+      </Grid>
+    </Grid>
+    <Grid Grid.Row="1" Background="Transparent">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="2*"/>
+        <ColumnDefinition Width="2*"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Grid Background="Transparent" Grid.Column="0">
+        <StackPanel Style="{StaticResource stackPanelStyle}">
+          <TextBlock Margin="5,2" Text="Players List" IsHitTestVisible="False" Foreground="LightSteelBlue" />
+          <ListBox x:Name="playersListBox" Style="{StaticResource listBoxStyle}"/>
+        </StackPanel>
+      </Grid>
+      <Grid Background="Transparent" Grid.Column="1">
+        <StackPanel Style="{StaticResource stackPanelStyle}">
+          <TextBlock Margin="5,2" Text="Teams List" IsHitTestVisible="False" Foreground="LightSteelBlue" />
+          <ListBox x:Name="teamsListBox" Style="{StaticResource listBoxStyle}"/>
+        </StackPanel>
+      </Grid>
+      <Grid Background="Transparent" Grid.Column="2" x:Name="otherFunctionsGrid">
+        <StackPanel Style="{StaticResource stackPanelStyle}">
+          <TextBlock Margin="5,2" Text="Other Functions" IsHitTestVisible="False" Foreground="LightSteelBlue" />
+          <Button x:Name="fetchButton" Content=" Import into database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Asks for a file or site to load teams and players into the database."  Click="FetchButton_Click"/>
+          <Button x:Name="saveButton" Content=" Save local database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Saves any imported changes." Click="SaveButton_Click"/>
+          <Button x:Name="loadButton" Content=" Reload local database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="This loads the local copy of the database into the program. You won't need this unless you're making manual changes." Click="LoadButton_Click"/>
+        </StackPanel>
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>

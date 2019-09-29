@@ -219,6 +219,13 @@ namespace SplatTagCore
             importTeam.Id = key;
             teams.Add(key, importTeam);
           }
+          else
+          {
+            // Update the values
+            Team foundTeam = teams.Values.FirstOrDefault(t => t.Name.Equals(importTeam.Name));
+            importTeam.Id = foundTeam.Id;
+            foundTeam = importTeam;
+          }
         }
 
         foreach (Player importPlayer in retVal.Item1)
@@ -228,6 +235,12 @@ namespace SplatTagCore
             uint key = players.Keys.LastOrDefault() + 1;
             importPlayer.Id = key;
             players.Add(key, importPlayer);
+          }
+          else
+          {
+            Player foundPlayer = players.Values.FirstOrDefault(p => p.Name.Equals(importPlayer.Name));
+            importPlayer.Id = foundPlayer.Id;
+            foundPlayer = importPlayer;
           }
         }
         return "";

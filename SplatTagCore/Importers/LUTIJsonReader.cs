@@ -103,6 +103,7 @@ namespace SplatTagCore.Importers
         {
           ClanTags = new string[] { row.Tag },
           ClanTagOption = TagOption.Front,
+          Div = new Division(row.Division),
           Name = row.TeamName,
         };
 

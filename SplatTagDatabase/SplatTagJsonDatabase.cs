@@ -45,6 +45,7 @@ namespace SplatTagDatabase
           Id = t.id,
           ClanTags = t.clanTags,
           ClanTagOption = (TagOption)t.clanTagOption,
+          Div = new Division(t.div),
           Name = t.name,
         });
       }
@@ -105,7 +106,8 @@ namespace SplatTagDatabase
             id = t.Id,
             clanTagOption = (int)t.ClanTagOption,
             clanTags = t.ClanTags,
-            name = t.Name
+            name = t.Name,
+            div = t.Div
           };
         }).ToArray()
       };

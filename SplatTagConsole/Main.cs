@@ -77,6 +77,10 @@ namespace SplatTagConsole
             }
             Enum.TryParse(Console.ReadLine(), out TagOption temp);
             t.ClanTagOption = temp;
+
+            Console.WriteLine("Div?");
+            t.Div = new Division(Console.ReadLine());
+
             splatTagController.SaveDatabase();
           }
           else if (tp == 'p')
