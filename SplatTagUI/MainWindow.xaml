@@ -8,6 +8,7 @@
         Title="Splat Tag" Height="480" Width="1080"
         Background="Black"
         Foreground="White"
+        x:Name="_this"
         >
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="boolToVis"/>
@@ -44,10 +45,17 @@
                      Visibility="{Binding ElementName=searchInput, Path=Text.IsEmpty, Converter={StaticResource boolToVis}}" />
       </Grid>
       <Grid x:Name="searchFunctionsGrid"  Grid.Column="1">
-        <StackPanel Style="{StaticResource stackPanelStyle}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition />
+          <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <StackPanel Style="{StaticResource stackPanelStyle}" Grid.Column="0">
           <CheckBox x:Name="ignoreCaseCheckbox" Content="Ignore Case?" ToolTip="Search by ignoring case?" IsChecked="True"></CheckBox>
           <CheckBox x:Name="nearMatchCheckbox" Content="Near Matching?" ToolTip="Match symbols and letters that are visually close (e.g. κ matches k)" IsChecked="True"></CheckBox>
           <CheckBox x:Name="regexCheckbox" Content="Regex?" ToolTip="Match using a Regex query? (Advanced!)" IsChecked="False"></CheckBox>
+        </StackPanel>
+        <StackPanel Style="{StaticResource stackPanelStyle}" Grid.Column="1">
+          <CheckBox x:Name="allowEmptySearchCheckbox" Content="Allow empty search?" ToolTip="Allow a search of an empty query? (Will return everything and might lag a little!)" IsChecked="False"></CheckBox>
         </StackPanel>
       </Grid>
     </Grid>
@@ -58,16 +66,20 @@
         <ColumnDefinition Width="*"/>
       </Grid.ColumnDefinitions>
       <Grid Background="Transparent" Grid.Column="0">
-        <StackPanel Style="{StaticResource stackPanelStyle}">
-          <TextBlock Margin="5,2" Text="Players List" IsHitTestVisible="False" Foreground="LightSteelBlue" />
-          <ListBox x:Name="playersListBox" Style="{StaticResource listBoxStyle}"/>
-        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Style="{StaticResource stackPanelStyle}">
+            <TextBlock Margin="5,2" Text="Players List" IsHitTestVisible="False" Foreground="LightSteelBlue" />
+            <ListBox x:Name="playersListBox" Style="{StaticResource listBoxStyle}"/>
+          </StackPanel>
+        </ScrollViewer>
       </Grid>
       <Grid Background="Transparent" Grid.Column="1">
-        <StackPanel Style="{StaticResource stackPanelStyle}">
-          <TextBlock Margin="5,2" Text="Teams List" IsHitTestVisible="False" Foreground="LightSteelBlue" />
-          <ListBox x:Name="teamsListBox" Style="{StaticResource listBoxStyle}"/>
-        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Style="{StaticResource stackPanelStyle}">
+            <TextBlock Margin="5,2" Text="Teams List" IsHitTestVisible="False" Foreground="LightSteelBlue" />
+            <ListBox x:Name="teamsListBox" Style="{StaticResource listBoxStyle}"/>
+          </StackPanel>
+        </ScrollViewer>
       </Grid>
       <Grid Background="Transparent" Grid.Column="2" x:Name="otherFunctionsGrid">
         <StackPanel Style="{StaticResource stackPanelStyle}">
@@ -75,6 +87,8 @@
           <Button x:Name="fetchButton" Content=" Import into database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Asks for a file or site to load teams and players into the database."  Click="FetchButton_Click"/>
           <Button x:Name="saveButton" Content=" Save local database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Saves any imported changes." Click="SaveButton_Click"/>
           <Button x:Name="loadButton" Content=" Reload local database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="This loads the local copy of the database into the program. You won't need this unless you're making manual changes." Click="LoadButton_Click"/>
+
+          <TextBlock Margin="5,2" Text="{Binding Version, ElementName=_this, FallbackValue=Version 0.0.0, Mode=OneTime}" FontStyle="Italic" Foreground="LightSteelBlue" Background="Transparent" ToolTip="{Binding VersionToolTip, ElementName=_this}" />
         </StackPanel>
       </Grid>
     </Grid>

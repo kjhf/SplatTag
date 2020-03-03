@@ -15,6 +15,16 @@ namespace SplatTagUI
     private readonly SplatTagJsonDatabase splatTagDatabase;
     private static readonly string jsonFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
 
+    /// <summary>
+    /// Version string to display.
+    /// </summary>
+    public string Version => "Version 0.0.2";
+
+    /// <summary>
+    /// Version tooltip string to display.
+    /// </summary>
+    public string VersionToolTip => "Added empty search option, added version, added automatic scroll bars to outputs.";
+
     public MainWindow()
     {
       splatTagDatabase = new SplatTagJsonDatabase(jsonFile);
@@ -29,6 +39,9 @@ namespace SplatTagUI
       nearMatchCheckbox.Unchecked += CheckedChanged;
       regexCheckbox.Checked += CheckedChanged;
       regexCheckbox.Unchecked += CheckedChanged;
+
+      // Focus the input text box so we can start typing as soon as the program starts.
+      searchInput.Focus();
     }
 
     private void FetchButton_Click(object sender, RoutedEventArgs e)
@@ -75,6 +88,11 @@ namespace SplatTagUI
 
     private void Search()
     {
+      if (allowEmptySearchCheckbox.IsChecked == false && searchInput.Text.Length < 1)
+      {
+        return;
+      }
+
       playersListBox.ItemsSource =
        splatTagController.MatchPlayer(searchInput.Text,
          new MatchOptions
