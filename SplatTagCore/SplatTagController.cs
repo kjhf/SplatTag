@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
+
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SplatTagUnitTests")]
 
 namespace SplatTagCore
@@ -41,6 +41,22 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Get all players associated with a team.
+    /// </summary>
+    public Player[] GetAllPlayersForTeam(Team t)
+    {
+      return players.Values.Where(p => p.Teams.Contains(t)).ToArray();
+    }
+
+    /// <summary>
+    /// Get current players on a given team.
+    /// </summary>
+    public Player[] GetCurrentPlayersForTeam(Team t)
+    {
+      return players.Values.Where(p => p.CurrentTeam.Equals(t)).ToArray();
+    }
+
+    /// <summary>
     /// Match a query to players with default options.
     /// </summary>
     public Player[] MatchPlayer(string query)
@@ -74,7 +90,6 @@ namespace SplatTagCore
             string[] names = matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(p.Names) : p.Names;
             return names.Any(n => regex.IsMatch(n));
           };
-
         }
         catch (ArgumentException)
         {
@@ -92,7 +107,7 @@ namespace SplatTagCore
           return names.Contains(query, comparion);
         };
       }
-      
+
       retVal.AddRange(players.Values.Where(p => func(p)));
       return retVal.ToArray();
     }
@@ -168,6 +183,9 @@ namespace SplatTagCore
 
     public string TryImport(string input)
     {
+      // Remove preceding and seceding quotes from path.
+      input = input.TrimStart('"').TrimEnd('"');
+
       // TODO --
       // A local file should be a readable format, in priority order: json, html, database (misp), xls, xml
       // A site should simply download the file or an html contents rep, and load the contents as if it were a local file.

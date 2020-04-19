@@ -66,8 +66,8 @@ namespace SplatTagUnitTests
       Assert.IsNotNull(playersDict);
       var dictionary1 = (IDictionary<uint, Player>)playersDict;
       Assert.IsNotNull(dictionary1);
-      Assert.IsTrue(dictionary1.TryGetValue(PLAYER_ID, out Player target1));
-      Assert.IsTrue(target1.Id == PLAYER_ID);
+      Assert.IsTrue(dictionary1.TryGetValue(PLAYER_ID, out Player player1));
+      Assert.IsTrue(player1.Id == PLAYER_ID);
       
       object teamsDict = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teamsDict);
@@ -76,6 +76,12 @@ namespace SplatTagUnitTests
       Assert.IsTrue(dictionary2.TryGetValue(TEAM_ID, out Team target2));
       Assert.IsTrue(target2.Id == TEAM_ID);
       Assert.IsTrue(target2.Div == 1);
+
+      // Verify getting the players for that team returns our player
+      Player[] playersForExampleTeam = controller.GetAllPlayersForTeam(exampleTeam);
+      Assert.IsNotNull(playersForExampleTeam);
+      Assert.IsTrue(playersForExampleTeam.Length == 1);
+      Assert.IsTrue(playersForExampleTeam[0].Equals(player1));
     }
 
     /// <summary>

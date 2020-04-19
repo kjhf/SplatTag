@@ -37,6 +37,9 @@ namespace SplatTagUI
     public InputWindow()
     {
       InitializeComponent();
+
+      // Focus the text box for easy copy-paste
+      input.Focus();
     }
 
     private void OKButton_Click(object sender, RoutedEventArgs e)

@@ -1,8 +1,11 @@
 ﻿using SplatTagCore;
 using SplatTagDatabase;
 using System;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows;
+using System.Windows.Data;
 
 namespace SplatTagUI
 {
@@ -11,25 +14,29 @@ namespace SplatTagUI
   /// </summary>
   public partial class MainWindow : Window
   {
-    private readonly SplatTagController splatTagController;
-    private readonly SplatTagJsonDatabase splatTagDatabase;
+    internal static readonly SplatTagController splatTagController;
+    private static readonly SplatTagJsonDatabase splatTagDatabase;
     private static readonly string jsonFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
 
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.2";
+    public string Version => "Version 0.0.3";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "Added empty search option, added version, added automatic scroll bars to outputs.";
-
-    public MainWindow()
+    public string VersionToolTip => "Added support for season X. Added expander for teams.";
+    
+    static MainWindow()
     {
       splatTagDatabase = new SplatTagJsonDatabase(jsonFile);
       splatTagController = new SplatTagController(splatTagDatabase);
       splatTagController.Initialise(new string[0]);
+    }
+
+    public MainWindow()
+    {
       InitializeComponent();
 
       // Now we've initialised, hook up the check changed.
@@ -117,6 +124,23 @@ namespace SplatTagUI
     private void CheckedChanged(object sender, RoutedEventArgs e)
     {
       Search();
+    }
+  }
+
+  public class GetTeamPlayersConverter : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      if (value is Team t)
+      {
+        return MainWindow.splatTagController.GetCurrentPlayersForTeam(t).Select(p => p.Name).ToArray();
+      }
+      return new string[] { "(Unknown Players)" };
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      throw new NotImplementedException();
     }
   }
 }

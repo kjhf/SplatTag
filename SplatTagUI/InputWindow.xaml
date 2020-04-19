@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Height="130" Width="300"
+        Background="Black"
         x:Name="_this">
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="boolToVis"/>
@@ -16,8 +17,8 @@
     </Grid.RowDefinitions>
     <Grid Grid.Row="0">
       <!-- Hint Text -->
-      <TextBlock Margin="5,2" MinWidth="50" IsHitTestVisible="False" Visibility="{Binding ElementName=input, Path=Text.IsEmpty, Converter={StaticResource boolToVis}}" Text="{Binding HintText, ElementName=_this, FallbackValue=Hint Text}" />
-      <TextBox x:Name="input" MinWidth="50" Background="Transparent" Text="{Binding Input, ElementName=_this}" />
+      <TextBlock Margin="5,2" MinWidth="50" Background="Transparent" IsHitTestVisible="False" Visibility="{Binding ElementName=input, Path=Text.IsEmpty, Converter={StaticResource boolToVis}}" Text="{Binding HintText, ElementName=_this, FallbackValue=Hint Text}" Foreground="LightSkyBlue" />
+      <TextBox x:Name="input" MinWidth="50" Background="Transparent" Text="{Binding Input, ElementName=_this}" Foreground="Honeydew" />
     </Grid>
     <Grid Grid.Row="1">
       <Grid.ColumnDefinitions>

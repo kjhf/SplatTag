@@ -1,14 +1,18 @@
 ﻿namespace SplatTagCore
 {
   /// <summary>
-  /// A division. X is div 0. Unknown is -1.
+  /// A division. X is div 0. X+ is div -1. Unknown is int.MaxValue.
   /// </summary>
   public class Division
   {
-    public static Division Unknown = new Division();
-    public int div = -1;
+    public const int X_PLUS = -1;
+    public const int X = 0;
+    public const int UNKNOWN = int.MaxValue;
 
-    public Division(int div = -1)
+    public static Division Unknown = new Division();
+    public int div = UNKNOWN;
+
+    public Division(int div = UNKNOWN)
     {
       this.div = div;
     }
@@ -18,11 +22,15 @@
       if (string.IsNullOrWhiteSpace(div))
       {
         // Unknown
-        this.div = -1;
+        this.div = int.MaxValue;
+      }
+      else if (div.Equals("X+", System.StringComparison.OrdinalIgnoreCase))
+      {
+        this.div = X_PLUS;
       }
       else if (div.Equals("X", System.StringComparison.OrdinalIgnoreCase))
       {
-        this.div = 0;
+        this.div = X;
       }
       else if (int.TryParse(div, out int divParse))
       {
@@ -36,7 +44,7 @@
       }
       else
       {
-        this.div = -1;
+        this.div = UNKNOWN;
       }
     }
 
@@ -49,8 +57,9 @@
     {
       switch (div)
       {
-        case -1: return "Unknown";
-        case 0: return "X";
+        case UNKNOWN: return "Unknown";
+        case X_PLUS: return "X+";
+        case X: return "X";
         default: return div.ToString();
       }
     }

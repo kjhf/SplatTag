@@ -19,7 +19,7 @@ namespace SplatTagCore.Importers
       [JsonProperty("Tag")]
       public string Tag { get; set; }
 
-      [JsonProperty("Team Captain")]
+      [JsonProperty("Team Captain")] // TODO May have to change this to Player 1 in future? Can we handle both?
       public string TeamCaptain { get; set; }
 
       [JsonProperty("Player 2")]
@@ -59,6 +59,11 @@ namespace SplatTagCore.Importers
 
     public (Player[], Team[]) Load()
     {
+      if (jsonFile == null)
+      {
+        throw new InvalidOperationException("jsonFile is not set.");
+      }
+
       void CheckAndAddPlayer(string tryPlayerName, string _tag, Team _newTeam, List<Player> _players)
       {
         if (!string.IsNullOrWhiteSpace(tryPlayerName))
@@ -99,6 +104,11 @@ namespace SplatTagCore.Importers
       List<Player> players = new List<Player>();
       foreach (LUTIJsonRow row in rows)
       {
+        if (row.TeamCaptain == null)
+        {
+          throw new ArgumentException("JSON does not contain a Team Captain. Check format of spreadsheet.");
+        }
+
         Team newTeam = new Team
         {
           ClanTags = new string[] { row.Tag },

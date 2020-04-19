@@ -2,6 +2,7 @@
 using SplatTagDatabase;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace SplatTagConsole
@@ -145,6 +146,9 @@ namespace SplatTagConsole
           foreach (var t in splatTagController.MatchTeam(input))
           {
             Console.WriteLine(t);
+            Console.WriteLine("Current players: " + string.Join(", ", splatTagController.GetCurrentPlayersForTeam(t).Select(p => p.Name)));
+            // Console.WriteLine("All players: " + string.Join(", ", splatTagController.GetAllPlayersForTeam(t).Select(p => p.Name)));
+            Console.WriteLine("-----");
           }
           break;
         }

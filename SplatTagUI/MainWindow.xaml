@@ -12,8 +12,14 @@
         >
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="boolToVis"/>
-    <Style x:Key="textBlockStyle" TargetType="TextBlock">
+    <local:GetTeamPlayersConverter x:Key="getTeamPlayers"/>
+    
+    <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
       <Setter Property="Background" Value="Honeydew"/>
+      <Setter Property="Foreground" Value="LightSteelBlue"/>
+    </Style>
+    <Style x:Key="detailsTextBlockStyle" TargetType="TextBlock">
+      <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Foreground" Value="LightSteelBlue"/>
     </Style>
     <Style x:Key="checkBoxStyle" TargetType="CheckBox">
@@ -41,7 +47,7 @@
       <Grid x:Name="searchGrid"  Grid.Column="0" ToolTip="Search for a team or player by typing here given the options on the right.">
         <TextBox x:Name="searchInput" MinWidth="50" Background="Transparent" TextChanged="SearchInput_TextChanged" />
         <!-- Hint Text -->
-        <TextBlock Style="{StaticResource textBlockStyle}" Margin="5,2" MinWidth="50" Text="Search a team or player" IsHitTestVisible="False"
+        <TextBlock Style="{StaticResource hintTextBlockStyle}" Margin="5,2" MinWidth="50" Text="Search a team or player" IsHitTestVisible="False"
                      Visibility="{Binding ElementName=searchInput, Path=Text.IsEmpty, Converter={StaticResource boolToVis}}" />
       </Grid>
       <Grid x:Name="searchFunctionsGrid"  Grid.Column="1">
@@ -68,7 +74,7 @@
       <Grid Background="Transparent" Grid.Column="0">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <StackPanel Style="{StaticResource stackPanelStyle}">
-            <TextBlock Margin="5,2" Text="Players List" IsHitTestVisible="False" Foreground="LightSteelBlue" />
+            <TextBlock Margin="5,2" Text="Players List" IsHitTestVisible="False" Style="{StaticResource detailsTextBlockStyle}" />
             <ListBox x:Name="playersListBox" Style="{StaticResource listBoxStyle}"/>
           </StackPanel>
         </ScrollViewer>
@@ -76,8 +82,44 @@
       <Grid Background="Transparent" Grid.Column="1">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <StackPanel Style="{StaticResource stackPanelStyle}">
-            <TextBlock Margin="5,2" Text="Teams List" IsHitTestVisible="False" Foreground="LightSteelBlue" />
-            <ListBox x:Name="teamsListBox" Style="{StaticResource listBoxStyle}"/>
+            <TextBlock Margin="5,2" Text="Teams List" IsHitTestVisible="False" Style="{StaticResource detailsTextBlockStyle}" />
+            
+            <!-- Teams ListBox can be expanded to show all players of the team. -->
+            <ListBox x:Name="teamsListBox" Style="{StaticResource listBoxStyle}">
+              <ItemsControl.ItemTemplate >
+                <DataTemplate>
+                  <Expander IsExpanded="{Binding IsSelected, Mode=TwoWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListBoxItem}}}" Background="Transparent">
+                    <Expander.Header>
+                      <TextBlock Style="{StaticResource detailsTextBlockStyle}">
+                        <TextBlock.Text>
+                          <MultiBinding StringFormat="{}{0} (Div {1})">
+                            <Binding Path="Name" />
+                            <Binding Path="Div" />
+                          </MultiBinding>
+                        </TextBlock.Text>
+                      </TextBlock>
+                    </Expander.Header>
+                    <Expander.Content>
+                      <StackPanel>
+                        <StackPanel.Style>
+                          <Style BasedOn="{StaticResource stackPanelStyle}" TargetType="StackPanel">
+                            <Style.Triggers>
+                              <DataTrigger Binding="{Binding IsExpanded, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Expander}}}" Value="true">
+                                <Setter Property="Visibility" Value="Visible"/>
+                              </DataTrigger>
+                              <DataTrigger Binding="{Binding IsExpanded, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Expander}}}" Value="false">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                              </DataTrigger>
+                            </Style.Triggers>
+                          </Style>
+                        </StackPanel.Style>
+                        <ItemsControl ItemsSource="{Binding ., Converter={StaticResource getTeamPlayers}}" Background="Transparent" Foreground="LightSteelBlue"/>
+                      </StackPanel>
+                    </Expander.Content>
+                  </Expander>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ListBox>
           </StackPanel>
         </ScrollViewer>
       </Grid>
