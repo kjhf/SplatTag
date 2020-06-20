@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagCore;
-using SplatTagCore.Importers;
+using SplatTagDatabase.Importers;
 using System.IO;
 
 namespace SplatTagUnitTests

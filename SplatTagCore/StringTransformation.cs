@@ -1,16 +1,15 @@
-﻿// This is a heavily modified work from the gist 
+﻿// This is a heavily modified work from the gist
 // https://gist.github.com/andyraddatz/e6a396fb91856174d4e3f1bf2e10951c
 // which was created thanks to this comment from Alexander on StackOverflow:
 // https://stackoverflow.com/questions/249087/how-do-i-remove-diacritics-accents-from-a-string-in-net#comment86833005_34272324
 
-// This is a derivative work.  The logic of this function comes from a switch statement found inside the 
-// Lucene.Net library.  The documentation of the conversion of characters is quite impressive 
+// This is a derivative work.  The logic of this function comes from a switch statement found inside the
+// Lucene.Net library.  The documentation of the conversion of characters is quite impressive
 // (thank you @NightOwl888 and @synhershko !!!):
 // https://github.com/apache/lucenenet/blob/master/src/Lucene.Net.Analysis.Common/Analysis/Miscellaneous/ASCIIFoldingFilter.cs
 //
 // Please see relevant copyright notices at sites above and published GitHub page.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,7 +23,7 @@ namespace SplatTagCore
   /// <para/>
   /// Characters from the following Unicode blocks are converted; however, only
   /// those characters with reasonable ASCII alternatives are converted:
-  /// 
+  ///
   /// <ul>
   ///   <item><description>C1 Controls and Latin-1 Supplement: <a href="http://www.unicode.org/charts/PDF/U0080.pdf">http://www.unicode.org/charts/PDF/U0080.pdf</a></description></item>
   ///   <item><description>Latin Extended-A: <a href="http://www.unicode.org/charts/PDF/U0100.pdf">http://www.unicode.org/charts/PDF/U0100.pdf</a></description></item>
@@ -52,7 +51,7 @@ namespace SplatTagCore
   {
     /// <summary>
     /// Converts characters above ASCII to their ASCII equivalents. For example,
-    /// accents are removed from accented characters. 
+    /// accents are removed from accented characters.
     /// </summary>
     /// <param name="input">     The string of characters to fold </param>
     /// <param name="length">    The length of the folded return string </param>
@@ -112,6 +111,7 @@ namespace SplatTagCore
             case '\uFF21': // Ａ  [FULLWIDTH LATIN CAPITAL LETTER A]
               s.Append('A');
               break;
+
             case '\u00E0': // à  [LATIN SMALL LETTER A WITH GRAVE]
             case '\u00E1': // á  [LATIN SMALL LETTER A WITH ACUTE]
             case '\u00E2': // â  [LATIN SMALL LETTER A WITH CIRCUMFLEX]
@@ -155,10 +155,12 @@ namespace SplatTagCore
             case '\uFF41': // ａ  [FULLWIDTH LATIN SMALL LETTER A]
               s.Append('a');
               break;
+
             case '\uA732': // Ꜳ  [LATIN CAPITAL LETTER AA]
               s.Append('A');
               s.Append('A');
               break;
+
             case '\u00C6': // Æ  [LATIN CAPITAL LETTER AE]
             case '\u01E2': // Ǣ  [LATIN CAPITAL LETTER AE WITH MACRON]
             case '\u01FC': // Ǽ  [LATIN CAPITAL LETTER AE WITH ACUTE]
@@ -166,32 +168,39 @@ namespace SplatTagCore
               s.Append('A');
               s.Append('E');
               break;
+
             case '\uA734': // Ꜵ  [LATIN CAPITAL LETTER AO]
               s.Append('A');
               s.Append('O');
               break;
+
             case '\uA736': // Ꜷ  [LATIN CAPITAL LETTER AU]
               s.Append('A');
               s.Append('U');
               break;
+
             case '\uA738': // Ꜹ  [LATIN CAPITAL LETTER AV]
             case '\uA73A': // Ꜻ  [LATIN CAPITAL LETTER AV WITH HORIZONTAL BAR]
               s.Append('A');
               s.Append('V');
               break;
+
             case '\uA73C': // Ꜽ  [LATIN CAPITAL LETTER AY]
               s.Append('A');
               s.Append('Y');
               break;
+
             case '\u249C': // ⒜  [PARENTHESIZED LATIN SMALL LETTER A]
               s.Append('(');
               s.Append('a');
               s.Append(')');
               break;
+
             case '\uA733': // ꜳ  [LATIN SMALL LETTER AA]
               s.Append('a');
               s.Append('a');
               break;
+
             case '\u00E6': // æ  [LATIN SMALL LETTER AE]
             case '\u01E3': // ǣ  [LATIN SMALL LETTER AE WITH MACRON]
             case '\u01FD': // ǽ  [LATIN SMALL LETTER AE WITH ACUTE]
@@ -199,23 +208,28 @@ namespace SplatTagCore
               s.Append('a');
               s.Append('e');
               break;
+
             case '\uA735': // ꜵ  [LATIN SMALL LETTER AO]
               s.Append('a');
               s.Append('o');
               break;
+
             case '\uA737': // ꜷ  [LATIN SMALL LETTER AU]
               s.Append('a');
               s.Append('u');
               break;
+
             case '\uA739': // ꜹ  [LATIN SMALL LETTER AV]
             case '\uA73B': // ꜻ  [LATIN SMALL LETTER AV WITH HORIZONTAL BAR]
               s.Append('a');
               s.Append('v');
               break;
+
             case '\uA73D': // ꜽ  [LATIN SMALL LETTER AY]
               s.Append('a');
               s.Append('y');
               break;
+
             case '\u0181': // Ɓ  [LATIN CAPITAL LETTER B WITH HOOK]
             case '\u0182': // Ƃ  [LATIN CAPITAL LETTER B WITH TOPBAR]
             case '\u0243': // Ƀ  [LATIN CAPITAL LETTER B WITH STROKE]
@@ -228,6 +242,7 @@ namespace SplatTagCore
             case '\uFF22': // Ｂ  [FULLWIDTH LATIN CAPITAL LETTER B]
               s.Append('B');
               break;
+
             case '\u0180': // ƀ  [LATIN SMALL LETTER B WITH STROKE]
             case '\u0183': // ƃ  [LATIN SMALL LETTER B WITH TOPBAR]
             case '\u0253': // ɓ  [LATIN SMALL LETTER B WITH HOOK]
@@ -240,11 +255,13 @@ namespace SplatTagCore
             case '\uFF42': // ｂ  [FULLWIDTH LATIN SMALL LETTER B]
               s.Append('b');
               break;
+
             case '\u249D': // ⒝  [PARENTHESIZED LATIN SMALL LETTER B]
               s.Append('(');
               s.Append('b');
               s.Append(')');
               break;
+
             case '\u00C7': // Ç  [LATIN CAPITAL LETTER C WITH CEDILLA]
             case '\u0106': // Ć  [LATIN CAPITAL LETTER C WITH ACUTE]
             case '\u0108': // Ĉ  [LATIN CAPITAL LETTER C WITH CIRCUMFLEX]
@@ -259,6 +276,7 @@ namespace SplatTagCore
             case '\uFF23': // Ｃ  [FULLWIDTH LATIN CAPITAL LETTER C]
               s.Append('C');
               break;
+
             case '\u00E7': // ç  [LATIN SMALL LETTER C WITH CEDILLA]
             case '\u0107': // ć  [LATIN SMALL LETTER C WITH ACUTE]
             case '\u0109': // ĉ  [LATIN SMALL LETTER C WITH CIRCUMFLEX]
@@ -275,11 +293,13 @@ namespace SplatTagCore
             case '\uFF43': // ｃ  [FULLWIDTH LATIN SMALL LETTER C]
               s.Append('c');
               break;
+
             case '\u249E': // ⒞  [PARENTHESIZED LATIN SMALL LETTER C]
               s.Append('(');
               s.Append('c');
               s.Append(')');
               break;
+
             case '\u00D0': // Ð  [LATIN CAPITAL LETTER ETH]
             case '\u010E': // Ď  [LATIN CAPITAL LETTER D WITH CARON]
             case '\u0110': // Đ  [LATIN CAPITAL LETTER D WITH STROKE]
@@ -298,6 +318,7 @@ namespace SplatTagCore
             case '\uFF24': // Ｄ  [FULLWIDTH LATIN CAPITAL LETTER D]
               s.Append('D');
               break;
+
             case '\u00F0': // ð  [LATIN SMALL LETTER ETH]
             case '\u010F': // ď  [LATIN SMALL LETTER D WITH CARON]
             case '\u0111': // đ  [LATIN SMALL LETTER D WITH STROKE]
@@ -318,25 +339,30 @@ namespace SplatTagCore
             case '\uFF44': // ｄ  [FULLWIDTH LATIN SMALL LETTER D]
               s.Append('d');
               break;
+
             case '\u01C4': // Ǆ  [LATIN CAPITAL LETTER DZ WITH CARON]
             case '\u01F1': // Ǳ  [LATIN CAPITAL LETTER DZ]
               s.Append('D');
               s.Append('Z');
               break;
+
             case '\u01C5': // ǅ  [LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON]
             case '\u01F2': // ǲ  [LATIN CAPITAL LETTER D WITH SMALL LETTER Z]
               s.Append('D');
               s.Append('z');
               break;
+
             case '\u249F': // ⒟  [PARENTHESIZED LATIN SMALL LETTER D]
               s.Append('(');
               s.Append('d');
               s.Append(')');
               break;
+
             case '\u0238': // ȸ  [LATIN SMALL LETTER DB DIGRAPH]
               s.Append('d');
               s.Append('b');
               break;
+
             case '\u01C6': // ǆ  [LATIN SMALL LETTER DZ WITH CARON]
             case '\u01F3': // ǳ  [LATIN SMALL LETTER DZ]
             case '\u02A3': // ʣ  [LATIN SMALL LETTER DZ DIGRAPH]
@@ -344,6 +370,7 @@ namespace SplatTagCore
               s.Append('d');
               s.Append('z');
               break;
+
             case '\u00C8': // È  [LATIN CAPITAL LETTER E WITH GRAVE]
             case '\u00C9': // É  [LATIN CAPITAL LETTER E WITH ACUTE]
             case '\u00CA': // Ê  [LATIN CAPITAL LETTER E WITH CIRCUMFLEX]
@@ -378,6 +405,7 @@ namespace SplatTagCore
             case '\uFF25': // Ｅ  [FULLWIDTH LATIN CAPITAL LETTER E]
               s.Append('E');
               break;
+
             case '\u00E8': // è  [LATIN SMALL LETTER E WITH GRAVE]
             case '\u00E9': // é  [LATIN SMALL LETTER E WITH ACUTE]
             case '\u00EA': // ê  [LATIN SMALL LETTER E WITH CIRCUMFLEX]
@@ -421,11 +449,13 @@ namespace SplatTagCore
             case '\uFF45': // ｅ  [FULLWIDTH LATIN SMALL LETTER E]
               s.Append('e');
               break;
+
             case '\u24A0': // ⒠  [PARENTHESIZED LATIN SMALL LETTER E]
               s.Append('(');
               s.Append('e');
               s.Append(')');
               break;
+
             case '\u0191': // Ƒ  [LATIN CAPITAL LETTER F WITH HOOK]
             case '\u1E1E': // Ḟ  [LATIN CAPITAL LETTER F WITH DOT ABOVE]
             case '\u24BB': // Ⓕ  [CIRCLED LATIN CAPITAL LETTER F]
@@ -435,6 +465,7 @@ namespace SplatTagCore
             case '\uFF26': // Ｆ  [FULLWIDTH LATIN CAPITAL LETTER F]
               s.Append('F');
               break;
+
             case '\u0192': // ƒ  [LATIN SMALL LETTER F WITH HOOK]
             case '\u1D6E': // ᵮ  [LATIN SMALL LETTER F WITH MIDDLE TILDE]
             case '\u1D82': // ᶂ  [LATIN SMALL LETTER F WITH PALATAL HOOK]
@@ -445,33 +476,40 @@ namespace SplatTagCore
             case '\uFF46': // ｆ  [FULLWIDTH LATIN SMALL LETTER F]
               s.Append('f');
               break;
+
             case '\u24A1': // ⒡  [PARENTHESIZED LATIN SMALL LETTER F]
               s.Append('(');
               s.Append('f');
               s.Append(')');
               break;
+
             case '\uFB00': // ﬀ  [LATIN SMALL LIGATURE FF]
               s.Append('f');
               s.Append('f');
               break;
+
             case '\uFB03': // ﬃ  [LATIN SMALL LIGATURE FFI]
               s.Append('f');
               s.Append('f');
               s.Append('i');
               break;
+
             case '\uFB04': // ﬄ  [LATIN SMALL LIGATURE FFL]
               s.Append('f');
               s.Append('f');
               s.Append('l');
               break;
+
             case '\uFB01': // ﬁ  [LATIN SMALL LIGATURE FI]
               s.Append('f');
               s.Append('i');
               break;
+
             case '\uFB02': // ﬂ  [LATIN SMALL LIGATURE FL]
               s.Append('f');
               s.Append('l');
               break;
+
             case '\u011C': // Ĝ  [LATIN CAPITAL LETTER G WITH CIRCUMFLEX]
             case '\u011E': // Ğ  [LATIN CAPITAL LETTER G WITH BREVE]
             case '\u0120': // Ġ  [LATIN CAPITAL LETTER G WITH DOT ABOVE]
@@ -491,6 +529,7 @@ namespace SplatTagCore
             case '\uFF27': // Ｇ  [FULLWIDTH LATIN CAPITAL LETTER G]
               s.Append('G');
               break;
+
             case '\u011D': // ĝ  [LATIN SMALL LETTER G WITH CIRCUMFLEX]
             case '\u011F': // ğ  [LATIN SMALL LETTER G WITH BREVE]
             case '\u0121': // ġ  [LATIN SMALL LETTER G WITH DOT ABOVE]
@@ -507,11 +546,13 @@ namespace SplatTagCore
             case '\uFF47': // ｇ  [FULLWIDTH LATIN SMALL LETTER G]
               s.Append('g');
               break;
+
             case '\u24A2': // ⒢  [PARENTHESIZED LATIN SMALL LETTER G]
               s.Append('(');
               s.Append('g');
               s.Append(')');
               break;
+
             case '\u0124': // Ĥ  [LATIN CAPITAL LETTER H WITH CIRCUMFLEX]
             case '\u0126': // Ħ  [LATIN CAPITAL LETTER H WITH STROKE]
             case '\u021E': // Ȟ  [LATIN CAPITAL LETTER H WITH CARON]
@@ -527,6 +568,7 @@ namespace SplatTagCore
             case '\uFF28': // Ｈ  [FULLWIDTH LATIN CAPITAL LETTER H]
               s.Append('H');
               break;
+
             case '\u0125': // ĥ  [LATIN SMALL LETTER H WITH CIRCUMFLEX]
             case '\u0127': // ħ  [LATIN SMALL LETTER H WITH STROKE]
             case '\u021F': // ȟ  [LATIN SMALL LETTER H WITH CARON]
@@ -546,19 +588,23 @@ namespace SplatTagCore
             case '\uFF48': // ｈ  [FULLWIDTH LATIN SMALL LETTER H]
               s.Append('h');
               break;
+
             case '\u01F6': // Ƕ  http://en.wikipedia.org/wiki/Hwair  [LATIN CAPITAL LETTER HWAIR]
               s.Append('H');
               s.Append('V');
               break;
+
             case '\u24A3': // ⒣  [PARENTHESIZED LATIN SMALL LETTER H]
               s.Append('(');
               s.Append('h');
               s.Append(')');
               break;
+
             case '\u0195': // ƕ  [LATIN SMALL LETTER HV]
               s.Append('h');
               s.Append('v');
               break;
+
             case '\u00CC': // Ì  [LATIN CAPITAL LETTER I WITH GRAVE]
             case '\u00CD': // Í  [LATIN CAPITAL LETTER I WITH ACUTE]
             case '\u00CE': // Î  [LATIN CAPITAL LETTER I WITH CIRCUMFLEX]
@@ -584,6 +630,7 @@ namespace SplatTagCore
             case '\uFF29': // Ｉ  [FULLWIDTH LATIN CAPITAL LETTER I]
               s.Append('I');
               break;
+
             case '\u00EC': // ì  [LATIN SMALL LETTER I WITH GRAVE]
             case '\u00ED': // í  [LATIN SMALL LETTER I WITH ACUTE]
             case '\u00EE': // î  [LATIN SMALL LETTER I WITH CIRCUMFLEX]
@@ -610,19 +657,23 @@ namespace SplatTagCore
             case '\uFF49': // ｉ  [FULLWIDTH LATIN SMALL LETTER I]
               s.Append('i');
               break;
+
             case '\u0132': // Ĳ  [LATIN CAPITAL LIGATURE IJ]
               s.Append('I');
               s.Append('J');
               break;
+
             case '\u24A4': // ⒤  [PARENTHESIZED LATIN SMALL LETTER I]
               s.Append('(');
               s.Append('i');
               s.Append(')');
               break;
+
             case '\u0133': // ĳ  [LATIN SMALL LIGATURE IJ]
               s.Append('i');
               s.Append('j');
               break;
+
             case '\u0134': // Ĵ  [LATIN CAPITAL LETTER J WITH CIRCUMFLEX]
             case '\u0248': // Ɉ  [LATIN CAPITAL LETTER J WITH STROKE]
             case '\u1D0A': // ᴊ  [LATIN LETTER SMALL CAPITAL J]
@@ -630,6 +681,7 @@ namespace SplatTagCore
             case '\uFF2A': // Ｊ  [FULLWIDTH LATIN CAPITAL LETTER J]
               s.Append('J');
               break;
+
             case '\u0135': // ĵ  [LATIN SMALL LETTER J WITH CIRCUMFLEX]
             case '\u01F0': // ǰ  [LATIN SMALL LETTER J WITH CARON]
             case '\u0237': // ȷ  [LATIN SMALL LETTER DOTLESS J]
@@ -642,11 +694,13 @@ namespace SplatTagCore
             case '\uFF4A': // ｊ  [FULLWIDTH LATIN SMALL LETTER J]
               s.Append('j');
               break;
+
             case '\u24A5': // ⒥  [PARENTHESIZED LATIN SMALL LETTER J]
               s.Append('(');
               s.Append('j');
               s.Append(')');
               break;
+
             case '\u0136': // Ķ  [LATIN CAPITAL LETTER K WITH CEDILLA]
             case '\u0198': // Ƙ  [LATIN CAPITAL LETTER K WITH HOOK]
             case '\u01E8': // Ǩ  [LATIN CAPITAL LETTER K WITH CARON]
@@ -662,6 +716,7 @@ namespace SplatTagCore
             case '\uFF2B': // Ｋ  [FULLWIDTH LATIN CAPITAL LETTER K]
               s.Append('K');
               break;
+
             case '\u0137': // ķ  [LATIN SMALL LETTER K WITH CEDILLA]
             case '\u0199': // ƙ  [LATIN SMALL LETTER K WITH HOOK]
             case '\u01E9': // ǩ  [LATIN SMALL LETTER K WITH CARON]
@@ -678,11 +733,13 @@ namespace SplatTagCore
             case '\uFF4B': // ｋ  [FULLWIDTH LATIN SMALL LETTER K]
               s.Append('k');
               break;
+
             case '\u24A6': // ⒦  [PARENTHESIZED LATIN SMALL LETTER K]
               s.Append('(');
               s.Append('k');
               s.Append(')');
               break;
+
             case '\u0139': // Ĺ  [LATIN CAPITAL LETTER L WITH ACUTE]
             case '\u013B': // Ļ  [LATIN CAPITAL LETTER L WITH CEDILLA]
             case '\u013D': // Ľ  [LATIN CAPITAL LETTER L WITH CARON]
@@ -704,6 +761,7 @@ namespace SplatTagCore
             case '\uFF2C': // Ｌ  [FULLWIDTH LATIN CAPITAL LETTER L]
               s.Append('L');
               break;
+
             case '\u013A': // ĺ  [LATIN SMALL LETTER L WITH ACUTE]
             case '\u013C': // ļ  [LATIN SMALL LETTER L WITH CEDILLA]
             case '\u013E': // ľ  [LATIN SMALL LETTER L WITH CARON]
@@ -727,39 +785,48 @@ namespace SplatTagCore
             case '\uFF4C': // ｌ  [FULLWIDTH LATIN SMALL LETTER L]
               s.Append('l');
               break;
+
             case '\u01C7': // Ǉ  [LATIN CAPITAL LETTER LJ]
               s.Append('L');
               s.Append('J');
               break;
+
             case '\u1EFA': // Ỻ  [LATIN CAPITAL LETTER MIDDLE-WELSH LL]
               s.Append('L');
               s.Append('L');
               break;
+
             case '\u01C8': // ǈ  [LATIN CAPITAL LETTER L WITH SMALL LETTER J]
               s.Append('L');
               s.Append('j');
               break;
+
             case '\u24A7': // ⒧  [PARENTHESIZED LATIN SMALL LETTER L]
               s.Append('(');
               s.Append('l');
               s.Append(')');
               break;
+
             case '\u01C9': // ǉ  [LATIN SMALL LETTER LJ]
               s.Append('l');
               s.Append('j');
               break;
+
             case '\u1EFB': // ỻ  [LATIN SMALL LETTER MIDDLE-WELSH LL]
               s.Append('l');
               s.Append('l');
               break;
+
             case '\u02AA': // ʪ  [LATIN SMALL LETTER LS DIGRAPH]
               s.Append('l');
               s.Append('s');
               break;
+
             case '\u02AB': // ʫ  [LATIN SMALL LETTER LZ DIGRAPH]
               s.Append('l');
               s.Append('z');
               break;
+
             case '\u019C': // Ɯ  [LATIN CAPITAL LETTER TURNED M]
             case '\u1D0D': // ᴍ  [LATIN LETTER SMALL CAPITAL M]
             case '\u1E3E': // Ḿ  [LATIN CAPITAL LETTER M WITH ACUTE]
@@ -772,6 +839,7 @@ namespace SplatTagCore
             case '\uFF2D': // Ｍ  [FULLWIDTH LATIN CAPITAL LETTER M]
               s.Append('M');
               break;
+
             case '\u026F': // ɯ  [LATIN SMALL LETTER TURNED M]
             case '\u0270': // ɰ  [LATIN SMALL LETTER TURNED M WITH LONG LEG]
             case '\u0271': // ɱ  [LATIN SMALL LETTER M WITH HOOK]
@@ -784,11 +852,13 @@ namespace SplatTagCore
             case '\uFF4D': // ｍ  [FULLWIDTH LATIN SMALL LETTER M]
               s.Append('m');
               break;
+
             case '\u24A8': // ⒨  [PARENTHESIZED LATIN SMALL LETTER M]
               s.Append('(');
               s.Append('m');
               s.Append(')');
               break;
+
             case '\u00D1': // Ñ  [LATIN CAPITAL LETTER N WITH TILDE]
             case '\u0143': // Ń  [LATIN CAPITAL LETTER N WITH ACUTE]
             case '\u0145': // Ņ  [LATIN CAPITAL LETTER N WITH CEDILLA]
@@ -807,6 +877,7 @@ namespace SplatTagCore
             case '\uFF2E': // Ｎ  [FULLWIDTH LATIN CAPITAL LETTER N]
               s.Append('N');
               break;
+
             case '\u00F1': // ñ  [LATIN SMALL LETTER N WITH TILDE]
             case '\u0144': // ń  [LATIN SMALL LETTER N WITH ACUTE]
             case '\u0146': // ņ  [LATIN SMALL LETTER N WITH CEDILLA]
@@ -829,23 +900,28 @@ namespace SplatTagCore
             case '\uFF4E': // ｎ  [FULLWIDTH LATIN SMALL LETTER N]
               s.Append('n');
               break;
+
             case '\u01CA': // Ǌ  [LATIN CAPITAL LETTER NJ]
               s.Append('N');
               s.Append('J');
               break;
+
             case '\u01CB': // ǋ  [LATIN CAPITAL LETTER N WITH SMALL LETTER J]
               s.Append('N');
               s.Append('j');
               break;
+
             case '\u24A9': // ⒩  [PARENTHESIZED LATIN SMALL LETTER N]
               s.Append('(');
               s.Append('n');
               s.Append(')');
               break;
+
             case '\u01CC': // ǌ  [LATIN SMALL LETTER NJ]
               s.Append('n');
               s.Append('j');
               break;
+
             case '\u00D2': // Ò  [LATIN CAPITAL LETTER O WITH GRAVE]
             case '\u00D3': // Ó  [LATIN CAPITAL LETTER O WITH ACUTE]
             case '\u00D4': // Ô  [LATIN CAPITAL LETTER O WITH CIRCUMFLEX]
@@ -892,6 +968,7 @@ namespace SplatTagCore
             case '\uFF2F': // Ｏ  [FULLWIDTH LATIN CAPITAL LETTER O]
               s.Append('O');
               break;
+
             case '\u00F2': // ò  [LATIN SMALL LETTER O WITH GRAVE]
             case '\u00F3': // ó  [LATIN SMALL LETTER O WITH ACUTE]
             case '\u00F4': // ô  [LATIN SMALL LETTER O WITH CIRCUMFLEX]
@@ -941,38 +1018,46 @@ namespace SplatTagCore
             case '\uFF4F': // ｏ  [FULLWIDTH LATIN SMALL LETTER O]
               s.Append('o');
               break;
+
             case '\u0152': // Œ  [LATIN CAPITAL LIGATURE OE]
             case '\u0276': // ɶ  [LATIN LETTER SMALL CAPITAL OE]
               s.Append('O');
               s.Append('E');
               break;
+
             case '\uA74E': // Ꝏ  [LATIN CAPITAL LETTER OO]
               s.Append('O');
               s.Append('O');
               break;
+
             case '\u0222': // Ȣ  http://en.wikipedia.org/wiki/OU  [LATIN CAPITAL LETTER OU]
             case '\u1D15': // ᴕ  [LATIN LETTER SMALL CAPITAL OU]
               s.Append('O');
               s.Append('U');
               break;
+
             case '\u24AA': // ⒪  [PARENTHESIZED LATIN SMALL LETTER O]
               s.Append('(');
               s.Append('o');
               s.Append(')');
               break;
+
             case '\u0153': // œ  [LATIN SMALL LIGATURE OE]
             case '\u1D14': // ᴔ  [LATIN SMALL LETTER TURNED OE]
               s.Append('o');
               s.Append('e');
               break;
+
             case '\uA74F': // ꝏ  [LATIN SMALL LETTER OO]
               s.Append('o');
               s.Append('o');
               break;
+
             case '\u0223': // ȣ  http://en.wikipedia.org/wiki/OU  [LATIN SMALL LETTER OU]
               s.Append('o');
               s.Append('u');
               break;
+
             case '\u01A4': // Ƥ  [LATIN CAPITAL LETTER P WITH HOOK]
             case '\u1D18': // ᴘ  [LATIN LETTER SMALL CAPITAL P]
             case '\u1E54': // Ṕ  [LATIN CAPITAL LETTER P WITH ACUTE]
@@ -985,6 +1070,7 @@ namespace SplatTagCore
             case '\uFF30': // Ｐ  [FULLWIDTH LATIN CAPITAL LETTER P]
               s.Append('P');
               break;
+
             case '\u01A5': // ƥ  [LATIN SMALL LETTER P WITH HOOK]
             case '\u1D71': // ᵱ  [LATIN SMALL LETTER P WITH MIDDLE TILDE]
             case '\u1D7D': // ᵽ  [LATIN SMALL LETTER P WITH STROKE]
@@ -999,11 +1085,13 @@ namespace SplatTagCore
             case '\uFF50': // ｐ  [FULLWIDTH LATIN SMALL LETTER P]
               s.Append('p');
               break;
+
             case '\u24AB': // ⒫  [PARENTHESIZED LATIN SMALL LETTER P]
               s.Append('(');
               s.Append('p');
               s.Append(')');
               break;
+
             case '\u024A': // Ɋ  [LATIN CAPITAL LETTER SMALL Q WITH HOOK TAIL]
             case '\u24C6': // Ⓠ  [CIRCLED LATIN CAPITAL LETTER Q]
             case '\uA756': // Ꝗ  [LATIN CAPITAL LETTER Q WITH STROKE THROUGH DESCENDER]
@@ -1011,6 +1099,7 @@ namespace SplatTagCore
             case '\uFF31': // Ｑ  [FULLWIDTH LATIN CAPITAL LETTER Q]
               s.Append('Q');
               break;
+
             case '\u0138': // ĸ  http://en.wikipedia.org/wiki/Kra_(letter)  [LATIN SMALL LETTER KRA]
             case '\u024B': // ɋ  [LATIN SMALL LETTER Q WITH HOOK TAIL]
             case '\u02A0': // ʠ  [LATIN SMALL LETTER Q WITH HOOK]
@@ -1020,15 +1109,18 @@ namespace SplatTagCore
             case '\uFF51': // ｑ  [FULLWIDTH LATIN SMALL LETTER Q]
               s.Append('q');
               break;
+
             case '\u24AC': // ⒬  [PARENTHESIZED LATIN SMALL LETTER Q]
               s.Append('(');
               s.Append('q');
               s.Append(')');
               break;
+
             case '\u0239': // ȹ  [LATIN SMALL LETTER QP DIGRAPH]
               s.Append('q');
               s.Append('p');
               break;
+
             case '\u0154': // Ŕ  [LATIN CAPITAL LETTER R WITH ACUTE]
             case '\u0156': // Ŗ  [LATIN CAPITAL LETTER R WITH CEDILLA]
             case '\u0158': // Ř  [LATIN CAPITAL LETTER R WITH CARON]
@@ -1050,6 +1142,7 @@ namespace SplatTagCore
             case '\uFF32': // Ｒ  [FULLWIDTH LATIN CAPITAL LETTER R]
               s.Append('R');
               break;
+
             case '\u0155': // ŕ  [LATIN SMALL LETTER R WITH ACUTE]
             case '\u0157': // ŗ  [LATIN SMALL LETTER R WITH CEDILLA]
             case '\u0159': // ř  [LATIN SMALL LETTER R WITH CARON]
@@ -1074,11 +1167,13 @@ namespace SplatTagCore
             case '\uFF52': // ｒ  [FULLWIDTH LATIN SMALL LETTER R]
               s.Append('r');
               break;
+
             case '\u24AD': // ⒭  [PARENTHESIZED LATIN SMALL LETTER R]
               s.Append('(');
               s.Append('r');
               s.Append(')');
               break;
+
             case '\u015A': // Ś  [LATIN CAPITAL LETTER S WITH ACUTE]
             case '\u015C': // Ŝ  [LATIN CAPITAL LETTER S WITH CIRCUMFLEX]
             case '\u015E': // Ş  [LATIN CAPITAL LETTER S WITH CEDILLA]
@@ -1095,6 +1190,7 @@ namespace SplatTagCore
             case '\uFF33': // Ｓ  [FULLWIDTH LATIN CAPITAL LETTER S]
               s.Append('S');
               break;
+
             case '\u015B': // ś  [LATIN SMALL LETTER S WITH ACUTE]
             case '\u015D': // ŝ  [LATIN SMALL LETTER S WITH CIRCUMFLEX]
             case '\u015F': // ş  [LATIN SMALL LETTER S WITH CEDILLA]
@@ -1117,23 +1213,28 @@ namespace SplatTagCore
             case '\uFF53': // ｓ  [FULLWIDTH LATIN SMALL LETTER S]
               s.Append('s');
               break;
+
             case '\u1E9E': // ẞ  [LATIN CAPITAL LETTER SHARP S]
               s.Append('S');
               s.Append('S');
               break;
+
             case '\u24AE': // ⒮  [PARENTHESIZED LATIN SMALL LETTER S]
               s.Append('(');
               s.Append('s');
               s.Append(')');
               break;
+
             case '\u00DF': // ß  [LATIN SMALL LETTER SHARP S]
               s.Append('s');
               s.Append('s');
               break;
+
             case '\uFB06': // ﬆ  [LATIN SMALL LIGATURE ST]
               s.Append('s');
               s.Append('t');
               break;
+
             case '\u0162': // Ţ  [LATIN CAPITAL LETTER T WITH CEDILLA]
             case '\u0164': // Ť  [LATIN CAPITAL LETTER T WITH CARON]
             case '\u0166': // Ŧ  [LATIN CAPITAL LETTER T WITH STROKE]
@@ -1151,6 +1252,7 @@ namespace SplatTagCore
             case '\uFF34': // Ｔ  [FULLWIDTH LATIN CAPITAL LETTER T]
               s.Append('T');
               break;
+
             case '\u0163': // ţ  [LATIN SMALL LETTER T WITH CEDILLA]
             case '\u0165': // ť  [LATIN SMALL LETTER T WITH CARON]
             case '\u0167': // ŧ  [LATIN SMALL LETTER T WITH STROKE]
@@ -1171,38 +1273,46 @@ namespace SplatTagCore
             case '\uFF54': // ｔ  [FULLWIDTH LATIN SMALL LETTER T]
               s.Append('t');
               break;
+
             case '\u00DE': // Þ  [LATIN CAPITAL LETTER THORN]
             case '\uA766': // Ꝧ  [LATIN CAPITAL LETTER THORN WITH STROKE THROUGH DESCENDER]
               s.Append('T');
               s.Append('H');
               break;
+
             case '\uA728': // Ꜩ  [LATIN CAPITAL LETTER TZ]
               s.Append('T');
               s.Append('Z');
               break;
+
             case '\u24AF': // ⒯  [PARENTHESIZED LATIN SMALL LETTER T]
               s.Append('(');
               s.Append('t');
               s.Append(')');
               break;
+
             case '\u02A8': // ʨ  [LATIN SMALL LETTER TC DIGRAPH WITH CURL]
               s.Append('t');
               s.Append('c');
               break;
+
             case '\u00FE': // þ  [LATIN SMALL LETTER THORN]
             case '\u1D7A': // ᵺ  [LATIN SMALL LETTER TH WITH STRIKETHROUGH]
             case '\uA767': // ꝧ  [LATIN SMALL LETTER THORN WITH STROKE THROUGH DESCENDER]
               s.Append('t');
               s.Append('h');
               break;
+
             case '\u02A6': // ʦ  [LATIN SMALL LETTER TS DIGRAPH]
               s.Append('t');
               s.Append('s');
               break;
+
             case '\uA729': // ꜩ  [LATIN SMALL LETTER TZ]
               s.Append('t');
               s.Append('z');
               break;
+
             case '\u00D9': // Ù  [LATIN CAPITAL LETTER U WITH GRAVE]
             case '\u00DA': // Ú  [LATIN CAPITAL LETTER U WITH ACUTE]
             case '\u00DB': // Û  [LATIN CAPITAL LETTER U WITH CIRCUMFLEX]
@@ -1240,6 +1350,7 @@ namespace SplatTagCore
             case '\uFF35': // Ｕ  [FULLWIDTH LATIN CAPITAL LETTER U]
               s.Append('U');
               break;
+
             case '\u00F9': // ù  [LATIN SMALL LETTER U WITH GRAVE]
             case '\u00FA': // ú  [LATIN SMALL LETTER U WITH ACUTE]
             case '\u00FB': // û  [LATIN SMALL LETTER U WITH CIRCUMFLEX]
@@ -1277,15 +1388,18 @@ namespace SplatTagCore
             case '\uFF55': // ｕ  [FULLWIDTH LATIN SMALL LETTER U]
               s.Append('u');
               break;
+
             case '\u24B0': // ⒰  [PARENTHESIZED LATIN SMALL LETTER U]
               s.Append('(');
               s.Append('u');
               s.Append(')');
               break;
+
             case '\u1D6B': // ᵫ  [LATIN SMALL LETTER UE]
               s.Append('u');
               s.Append('e');
               break;
+
             case '\u01B2': // Ʋ  [LATIN CAPITAL LETTER V WITH HOOK]
             case '\u0245': // Ʌ  [LATIN CAPITAL LETTER TURNED V]
             case '\u1D20': // ᴠ  [LATIN LETTER SMALL CAPITAL V]
@@ -1298,6 +1412,7 @@ namespace SplatTagCore
             case '\uFF36': // Ｖ  [FULLWIDTH LATIN CAPITAL LETTER V]
               s.Append('V');
               break;
+
             case '\u028B': // ʋ  [LATIN SMALL LETTER V WITH HOOK]
             case '\u028C': // ʌ  [LATIN SMALL LETTER TURNED V]
             case '\u1D65': // ᵥ  [LATIN SUBSCRIPT SMALL LETTER V]
@@ -1311,19 +1426,23 @@ namespace SplatTagCore
             case '\uFF56': // ｖ  [FULLWIDTH LATIN SMALL LETTER V]
               s.Append('v');
               break;
+
             case '\uA760': // Ꝡ  [LATIN CAPITAL LETTER VY]
               s.Append('V');
               s.Append('Y');
               break;
+
             case '\u24B1': // ⒱  [PARENTHESIZED LATIN SMALL LETTER V]
               s.Append('(');
               s.Append('v');
               s.Append(')');
               break;
+
             case '\uA761': // ꝡ  [LATIN SMALL LETTER VY]
               s.Append('v');
               s.Append('y');
               break;
+
             case '\u0174': // Ŵ  [LATIN CAPITAL LETTER W WITH CIRCUMFLEX]
             case '\u01F7': // Ƿ  http://en.wikipedia.org/wiki/Wynn  [LATIN CAPITAL LETTER WYNN]
             case '\u1D21': // ᴡ  [LATIN LETTER SMALL CAPITAL W]
@@ -1337,6 +1456,7 @@ namespace SplatTagCore
             case '\uFF37': // Ｗ  [FULLWIDTH LATIN CAPITAL LETTER W]
               s.Append('W');
               break;
+
             case '\u0175': // ŵ  [LATIN SMALL LETTER W WITH CIRCUMFLEX]
             case '\u01BF': // ƿ  http://en.wikipedia.org/wiki/Wynn  [LATIN LETTER WYNN]
             case '\u028D': // ʍ  [LATIN SMALL LETTER TURNED W]
@@ -1351,17 +1471,20 @@ namespace SplatTagCore
             case '\uFF57': // ｗ  [FULLWIDTH LATIN SMALL LETTER W]
               s.Append('w');
               break;
+
             case '\u24B2': // ⒲  [PARENTHESIZED LATIN SMALL LETTER W]
               s.Append('(');
               s.Append('w');
               s.Append(')');
               break;
+
             case '\u1E8A': // Ẋ  [LATIN CAPITAL LETTER X WITH DOT ABOVE]
             case '\u1E8C': // Ẍ  [LATIN CAPITAL LETTER X WITH DIAERESIS]
             case '\u24CD': // Ⓧ  [CIRCLED LATIN CAPITAL LETTER X]
             case '\uFF38': // Ｘ  [FULLWIDTH LATIN CAPITAL LETTER X]
               s.Append('X');
               break;
+
             case '\u1D8D': // ᶍ  [LATIN SMALL LETTER X WITH PALATAL HOOK]
             case '\u1E8B': // ẋ  [LATIN SMALL LETTER X WITH DOT ABOVE]
             case '\u1E8D': // ẍ  [LATIN SMALL LETTER X WITH DIAERESIS]
@@ -1370,11 +1493,13 @@ namespace SplatTagCore
             case '\uFF58': // ｘ  [FULLWIDTH LATIN SMALL LETTER X]
               s.Append('x');
               break;
+
             case '\u24B3': // ⒳  [PARENTHESIZED LATIN SMALL LETTER X]
               s.Append('(');
               s.Append('x');
               s.Append(')');
               break;
+
             case '\u00DD': // Ý  [LATIN CAPITAL LETTER Y WITH ACUTE]
             case '\u0176': // Ŷ  [LATIN CAPITAL LETTER Y WITH CIRCUMFLEX]
             case '\u0178': // Ÿ  [LATIN CAPITAL LETTER Y WITH DIAERESIS]
@@ -1392,6 +1517,7 @@ namespace SplatTagCore
             case '\uFF39': // Ｙ  [FULLWIDTH LATIN CAPITAL LETTER Y]
               s.Append('Y');
               break;
+
             case '\u00FD': // ý  [LATIN SMALL LETTER Y WITH ACUTE]
             case '\u00FF': // ÿ  [LATIN SMALL LETTER Y WITH DIAERESIS]
             case '\u0177': // ŷ  [LATIN SMALL LETTER Y WITH CIRCUMFLEX]
@@ -1410,11 +1536,13 @@ namespace SplatTagCore
             case '\uFF59': // ｙ  [FULLWIDTH LATIN SMALL LETTER Y]
               s.Append('y');
               break;
+
             case '\u24B4': // ⒴  [PARENTHESIZED LATIN SMALL LETTER Y]
               s.Append('(');
               s.Append('y');
               s.Append(')');
               break;
+
             case '\u0179': // Ź  [LATIN CAPITAL LETTER Z WITH ACUTE]
             case '\u017B': // Ż  [LATIN CAPITAL LETTER Z WITH DOT ABOVE]
             case '\u017D': // Ž  [LATIN CAPITAL LETTER Z WITH CARON]
@@ -1431,6 +1559,7 @@ namespace SplatTagCore
             case '\uFF3A': // Ｚ  [FULLWIDTH LATIN CAPITAL LETTER Z]
               s.Append('Z');
               break;
+
             case '\u017A': // ź  [LATIN SMALL LETTER Z WITH ACUTE]
             case '\u017C': // ż  [LATIN SMALL LETTER Z WITH DOT ABOVE]
             case '\u017E': // ž  [LATIN SMALL LETTER Z WITH CARON]
@@ -1451,11 +1580,13 @@ namespace SplatTagCore
             case '\uFF5A': // ｚ  [FULLWIDTH LATIN SMALL LETTER Z]
               s.Append('z');
               break;
+
             case '\u24B5': // ⒵  [PARENTHESIZED LATIN SMALL LETTER Z]
               s.Append('(');
               s.Append('z');
               s.Append(')');
               break;
+
             case '\u2070': // ⁰  [SUPERSCRIPT ZERO]
             case '\u2080': // ₀  [SUBSCRIPT ZERO]
             case '\u24EA': // ⓪  [CIRCLED DIGIT ZERO]
@@ -1463,6 +1594,7 @@ namespace SplatTagCore
             case '\uFF10': // ０  [FULLWIDTH DIGIT ZERO]
               s.Append('0');
               break;
+
             case '\u00B9': // ¹  [SUPERSCRIPT ONE]
             case '\u2081': // ₁  [SUBSCRIPT ONE]
             case '\u2460': // ①  [CIRCLED DIGIT ONE]
@@ -1473,15 +1605,18 @@ namespace SplatTagCore
             case '\uFF11': // １  [FULLWIDTH DIGIT ONE]
               s.Append('1');
               break;
+
             case '\u2488': // ⒈  [DIGIT ONE FULL STOP]
               s.Append('1');
               s.Append('.');
               break;
+
             case '\u2474': // ⑴  [PARENTHESIZED DIGIT ONE]
               s.Append('(');
               s.Append('1');
               s.Append(')');
               break;
+
             case '\u00B2': // ²  [SUPERSCRIPT TWO]
             case '\u2082': // ₂  [SUBSCRIPT TWO]
             case '\u2461': // ②  [CIRCLED DIGIT TWO]
@@ -1492,15 +1627,18 @@ namespace SplatTagCore
             case '\uFF12': // ２  [FULLWIDTH DIGIT TWO]
               s.Append('2');
               break;
+
             case '\u2489': // ⒉  [DIGIT TWO FULL STOP]
               s.Append('2');
               s.Append('.');
               break;
+
             case '\u2475': // ⑵  [PARENTHESIZED DIGIT TWO]
               s.Append('(');
               s.Append('2');
               s.Append(')');
               break;
+
             case '\u00B3': // ³  [SUPERSCRIPT THREE]
             case '\u2083': // ₃  [SUBSCRIPT THREE]
             case '\u2462': // ③  [CIRCLED DIGIT THREE]
@@ -1511,15 +1649,18 @@ namespace SplatTagCore
             case '\uFF13': // ３  [FULLWIDTH DIGIT THREE]
               s.Append('3');
               break;
+
             case '\u248A': // ⒊  [DIGIT THREE FULL STOP]
               s.Append('3');
               s.Append('.');
               break;
+
             case '\u2476': // ⑶  [PARENTHESIZED DIGIT THREE]
               s.Append('(');
               s.Append('3');
               s.Append(')');
               break;
+
             case '\u2074': // ⁴  [SUPERSCRIPT FOUR]
             case '\u2084': // ₄  [SUBSCRIPT FOUR]
             case '\u2463': // ④  [CIRCLED DIGIT FOUR]
@@ -1530,15 +1671,18 @@ namespace SplatTagCore
             case '\uFF14': // ４  [FULLWIDTH DIGIT FOUR]
               s.Append('4');
               break;
+
             case '\u248B': // ⒋  [DIGIT FOUR FULL STOP]
               s.Append('4');
               s.Append('.');
               break;
+
             case '\u2477': // ⑷  [PARENTHESIZED DIGIT FOUR]
               s.Append('(');
               s.Append('4');
               s.Append(')');
               break;
+
             case '\u2075': // ⁵  [SUPERSCRIPT FIVE]
             case '\u2085': // ₅  [SUBSCRIPT FIVE]
             case '\u2464': // ⑤  [CIRCLED DIGIT FIVE]
@@ -1549,15 +1693,18 @@ namespace SplatTagCore
             case '\uFF15': // ５  [FULLWIDTH DIGIT FIVE]
               s.Append('5');
               break;
+
             case '\u248C': // ⒌  [DIGIT FIVE FULL STOP]
               s.Append('5');
               s.Append('.');
               break;
+
             case '\u2478': // ⑸  [PARENTHESIZED DIGIT FIVE]
               s.Append('(');
               s.Append('5');
               s.Append(')');
               break;
+
             case '\u2076': // ⁶  [SUPERSCRIPT SIX]
             case '\u2086': // ₆  [SUBSCRIPT SIX]
             case '\u2465': // ⑥  [CIRCLED DIGIT SIX]
@@ -1568,15 +1715,18 @@ namespace SplatTagCore
             case '\uFF16': // ６  [FULLWIDTH DIGIT SIX]
               s.Append('6');
               break;
+
             case '\u248D': // ⒍  [DIGIT SIX FULL STOP]
               s.Append('6');
               s.Append('.');
               break;
+
             case '\u2479': // ⑹  [PARENTHESIZED DIGIT SIX]
               s.Append('(');
               s.Append('6');
               s.Append(')');
               break;
+
             case '\u2077': // ⁷  [SUPERSCRIPT SEVEN]
             case '\u2087': // ₇  [SUBSCRIPT SEVEN]
             case '\u2466': // ⑦  [CIRCLED DIGIT SEVEN]
@@ -1587,15 +1737,18 @@ namespace SplatTagCore
             case '\uFF17': // ７  [FULLWIDTH DIGIT SEVEN]
               s.Append('7');
               break;
+
             case '\u248E': // ⒎  [DIGIT SEVEN FULL STOP]
               s.Append('7');
               s.Append('.');
               break;
+
             case '\u247A': // ⑺  [PARENTHESIZED DIGIT SEVEN]
               s.Append('(');
               s.Append('7');
               s.Append(')');
               break;
+
             case '\u2078': // ⁸  [SUPERSCRIPT EIGHT]
             case '\u2088': // ₈  [SUBSCRIPT EIGHT]
             case '\u2467': // ⑧  [CIRCLED DIGIT EIGHT]
@@ -1606,15 +1759,18 @@ namespace SplatTagCore
             case '\uFF18': // ８  [FULLWIDTH DIGIT EIGHT]
               s.Append('8');
               break;
+
             case '\u248F': // ⒏  [DIGIT EIGHT FULL STOP]
               s.Append('8');
               s.Append('.');
               break;
+
             case '\u247B': // ⑻  [PARENTHESIZED DIGIT EIGHT]
               s.Append('(');
               s.Append('8');
               s.Append(')');
               break;
+
             case '\u2079': // ⁹  [SUPERSCRIPT NINE]
             case '\u2089': // ₉  [SUBSCRIPT NINE]
             case '\u2468': // ⑨  [CIRCLED DIGIT NINE]
@@ -1625,15 +1781,18 @@ namespace SplatTagCore
             case '\uFF19': // ９  [FULLWIDTH DIGIT NINE]
               s.Append('9');
               break;
+
             case '\u2490': // ⒐  [DIGIT NINE FULL STOP]
               s.Append('9');
               s.Append('.');
               break;
+
             case '\u247C': // ⑼  [PARENTHESIZED DIGIT NINE]
               s.Append('(');
               s.Append('9');
               s.Append(')');
               break;
+
             case '\u2469': // ⑩  [CIRCLED NUMBER TEN]
             case '\u24FE': // ⓾  [DOUBLE CIRCLED NUMBER TEN]
             case '\u277F': // ❿  [DINGBAT NEGATIVE CIRCLED NUMBER TEN]
@@ -1642,177 +1801,210 @@ namespace SplatTagCore
               s.Append('1');
               s.Append('0');
               break;
+
             case '\u2491': // ⒑  [NUMBER TEN FULL STOP]
               s.Append('1');
               s.Append('0');
               s.Append('.');
               break;
+
             case '\u247D': // ⑽  [PARENTHESIZED NUMBER TEN]
               s.Append('(');
               s.Append('1');
               s.Append('0');
               s.Append(')');
               break;
+
             case '\u246A': // ⑪  [CIRCLED NUMBER ELEVEN]
             case '\u24EB': // ⓫  [NEGATIVE CIRCLED NUMBER ELEVEN]
               s.Append('1');
               s.Append('1');
               break;
+
             case '\u2492': // ⒒  [NUMBER ELEVEN FULL STOP]
               s.Append('1');
               s.Append('1');
               s.Append('.');
               break;
+
             case '\u247E': // ⑾  [PARENTHESIZED NUMBER ELEVEN]
               s.Append('(');
               s.Append('1');
               s.Append('1');
               s.Append(')');
               break;
+
             case '\u246B': // ⑫  [CIRCLED NUMBER TWELVE]
             case '\u24EC': // ⓬  [NEGATIVE CIRCLED NUMBER TWELVE]
               s.Append('1');
               s.Append('2');
               break;
+
             case '\u2493': // ⒓  [NUMBER TWELVE FULL STOP]
               s.Append('1');
               s.Append('2');
               s.Append('.');
               break;
+
             case '\u247F': // ⑿  [PARENTHESIZED NUMBER TWELVE]
               s.Append('(');
               s.Append('1');
               s.Append('2');
               s.Append(')');
               break;
+
             case '\u246C': // ⑬  [CIRCLED NUMBER THIRTEEN]
             case '\u24ED': // ⓭  [NEGATIVE CIRCLED NUMBER THIRTEEN]
               s.Append('1');
               s.Append('3');
               break;
+
             case '\u2494': // ⒔  [NUMBER THIRTEEN FULL STOP]
               s.Append('1');
               s.Append('3');
               s.Append('.');
               break;
+
             case '\u2480': // ⒀  [PARENTHESIZED NUMBER THIRTEEN]
               s.Append('(');
               s.Append('1');
               s.Append('3');
               s.Append(')');
               break;
+
             case '\u246D': // ⑭  [CIRCLED NUMBER FOURTEEN]
             case '\u24EE': // ⓮  [NEGATIVE CIRCLED NUMBER FOURTEEN]
               s.Append('1');
               s.Append('4');
               break;
+
             case '\u2495': // ⒕  [NUMBER FOURTEEN FULL STOP]
               s.Append('1');
               s.Append('4');
               s.Append('.');
               break;
+
             case '\u2481': // ⒁  [PARENTHESIZED NUMBER FOURTEEN]
               s.Append('(');
               s.Append('1');
               s.Append('4');
               s.Append(')');
               break;
+
             case '\u246E': // ⑮  [CIRCLED NUMBER FIFTEEN]
             case '\u24EF': // ⓯  [NEGATIVE CIRCLED NUMBER FIFTEEN]
               s.Append('1');
               s.Append('5');
               break;
+
             case '\u2496': // ⒖  [NUMBER FIFTEEN FULL STOP]
               s.Append('1');
               s.Append('5');
               s.Append('.');
               break;
+
             case '\u2482': // ⒂  [PARENTHESIZED NUMBER FIFTEEN]
               s.Append('(');
               s.Append('1');
               s.Append('5');
               s.Append(')');
               break;
+
             case '\u246F': // ⑯  [CIRCLED NUMBER SIXTEEN]
             case '\u24F0': // ⓰  [NEGATIVE CIRCLED NUMBER SIXTEEN]
               s.Append('1');
               s.Append('6');
               break;
+
             case '\u2497': // ⒗  [NUMBER SIXTEEN FULL STOP]
               s.Append('1');
               s.Append('6');
               s.Append('.');
               break;
+
             case '\u2483': // ⒃  [PARENTHESIZED NUMBER SIXTEEN]
               s.Append('(');
               s.Append('1');
               s.Append('6');
               s.Append(')');
               break;
+
             case '\u2470': // ⑰  [CIRCLED NUMBER SEVENTEEN]
             case '\u24F1': // ⓱  [NEGATIVE CIRCLED NUMBER SEVENTEEN]
               s.Append('1');
               s.Append('7');
               break;
+
             case '\u2498': // ⒘  [NUMBER SEVENTEEN FULL STOP]
               s.Append('1');
               s.Append('7');
               s.Append('.');
               break;
+
             case '\u2484': // ⒄  [PARENTHESIZED NUMBER SEVENTEEN]
               s.Append('(');
               s.Append('1');
               s.Append('7');
               s.Append(')');
               break;
+
             case '\u2471': // ⑱  [CIRCLED NUMBER EIGHTEEN]
             case '\u24F2': // ⓲  [NEGATIVE CIRCLED NUMBER EIGHTEEN]
               s.Append('1');
               s.Append('8');
               break;
+
             case '\u2499': // ⒙  [NUMBER EIGHTEEN FULL STOP]
               s.Append('1');
               s.Append('8');
               s.Append('.');
               break;
+
             case '\u2485': // ⒅  [PARENTHESIZED NUMBER EIGHTEEN]
               s.Append('(');
               s.Append('1');
               s.Append('8');
               s.Append(')');
               break;
+
             case '\u2472': // ⑲  [CIRCLED NUMBER NINETEEN]
             case '\u24F3': // ⓳  [NEGATIVE CIRCLED NUMBER NINETEEN]
               s.Append('1');
               s.Append('9');
               break;
+
             case '\u249A': // ⒚  [NUMBER NINETEEN FULL STOP]
               s.Append('1');
               s.Append('9');
               s.Append('.');
               break;
+
             case '\u2486': // ⒆  [PARENTHESIZED NUMBER NINETEEN]
               s.Append('(');
               s.Append('1');
               s.Append('9');
               s.Append(')');
               break;
+
             case '\u2473': // ⑳  [CIRCLED NUMBER TWENTY]
             case '\u24F4': // ⓴  [NEGATIVE CIRCLED NUMBER TWENTY]
               s.Append('2');
               s.Append('0');
               break;
+
             case '\u249B': // ⒛  [NUMBER TWENTY FULL STOP]
               s.Append('2');
               s.Append('0');
               s.Append('.');
               break;
+
             case '\u2487': // ⒇  [PARENTHESIZED NUMBER TWENTY]
               s.Append('(');
               s.Append('2');
               s.Append('0');
               s.Append(')');
               break;
+
             case '\u00AB': // «  [LEFT-POINTING DOUBLE ANGLE QUOTATION MARK]
             case '\u00BB': // »  [RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK]
             case '\u201C': // "  [LEFT DOUBLE QUOTATION MARK]
@@ -1827,6 +2019,7 @@ namespace SplatTagCore
             case '\uFF02': // ＂  [FULLWIDTH QUOTATION MARK]
               s.Append('"');
               break;
+
             case '\u2018': // ‘  [LEFT SINGLE QUOTATION MARK]
             case '\u2019': // ’  [RIGHT SINGLE QUOTATION MARK]
             case '\u201A': // ‚  [SINGLE LOW-9 QUOTATION MARK]
@@ -1840,6 +2033,7 @@ namespace SplatTagCore
             case '\uFF07': // ＇  [FULLWIDTH APOSTROPHE]
               s.Append('\'');
               break;
+
             case '\u2010': // ‐  [HYPHEN]
             case '\u2011': // ‑  [NON-BREAKING HYPHEN]
             case '\u2012': // ‒  [FIGURE DASH]
@@ -1850,16 +2044,19 @@ namespace SplatTagCore
             case '\uFF0D': // －  [FULLWIDTH HYPHEN-MINUS]
               s.Append('-');
               break;
+
             case '\u2045': // ⁅  [LEFT SQUARE BRACKET WITH QUILL]
             case '\u2772': // ❲  [LIGHT LEFT TORTOISE SHELL BRACKET ORNAMENT]
             case '\uFF3B': // ［  [FULLWIDTH LEFT SQUARE BRACKET]
               s.Append('[');
               break;
+
             case '\u2046': // ⁆  [RIGHT SQUARE BRACKET WITH QUILL]
             case '\u2773': // ❳  [LIGHT RIGHT TORTOISE SHELL BRACKET ORNAMENT]
             case '\uFF3D': // ］  [FULLWIDTH RIGHT SQUARE BRACKET]
               s.Append(']');
               break;
+
             case '\u207D': // ⁽  [SUPERSCRIPT LEFT PARENTHESIS]
             case '\u208D': // ₍  [SUBSCRIPT LEFT PARENTHESIS]
             case '\u2768': // ❨  [MEDIUM LEFT PARENTHESIS ORNAMENT]
@@ -1867,10 +2064,12 @@ namespace SplatTagCore
             case '\uFF08': // （  [FULLWIDTH LEFT PARENTHESIS]
               s.Append('(');
               break;
+
             case '\u2E28': // ⸨  [LEFT DOUBLE PARENTHESIS]
               s.Append('(');
               s.Append('(');
               break;
+
             case '\u207E': // ⁾  [SUPERSCRIPT RIGHT PARENTHESIS]
             case '\u208E': // ₎  [SUBSCRIPT RIGHT PARENTHESIS]
             case '\u2769': // ❩  [MEDIUM RIGHT PARENTHESIS ORNAMENT]
@@ -1878,107 +2077,135 @@ namespace SplatTagCore
             case '\uFF09': // ）  [FULLWIDTH RIGHT PARENTHESIS]
               s.Append(')');
               break;
+
             case '\u2E29': // ⸩  [RIGHT DOUBLE PARENTHESIS]
               s.Append(')');
               s.Append(')');
               break;
+
             case '\u276C': // ❬  [MEDIUM LEFT-POINTING ANGLE BRACKET ORNAMENT]
             case '\u2770': // ❰  [HEAVY LEFT-POINTING ANGLE BRACKET ORNAMENT]
             case '\uFF1C': // ＜  [FULLWIDTH LESS-THAN SIGN]
               s.Append('<');
               break;
+
             case '\u276D': // ❭  [MEDIUM RIGHT-POINTING ANGLE BRACKET ORNAMENT]
             case '\u2771': // ❱  [HEAVY RIGHT-POINTING ANGLE BRACKET ORNAMENT]
             case '\uFF1E': // ＞  [FULLWIDTH GREATER-THAN SIGN]
               s.Append('>');
               break;
+
             case '\u2774': // ❴  [MEDIUM LEFT CURLY BRACKET ORNAMENT]
             case '\uFF5B': // ｛  [FULLWIDTH LEFT CURLY BRACKET]
               s.Append('{');
               break;
+
             case '\u2775': // ❵  [MEDIUM RIGHT CURLY BRACKET ORNAMENT]
             case '\uFF5D': // ｝  [FULLWIDTH RIGHT CURLY BRACKET]
               s.Append('}');
               break;
+
             case '\u207A': // ⁺  [SUPERSCRIPT PLUS SIGN]
             case '\u208A': // ₊  [SUBSCRIPT PLUS SIGN]
             case '\uFF0B': // ＋  [FULLWIDTH PLUS SIGN]
               s.Append('+');
               break;
+
             case '\u207C': // ⁼  [SUPERSCRIPT EQUALS SIGN]
             case '\u208C': // ₌  [SUBSCRIPT EQUALS SIGN]
             case '\uFF1D': // ＝  [FULLWIDTH EQUALS SIGN]
               s.Append('=');
               break;
+
             case '\uFF01': // ！  [FULLWIDTH EXCLAMATION MARK]
               s.Append('!');
               break;
+
             case '\u203C': // ‼  [DOUBLE EXCLAMATION MARK]
               s.Append('!');
               s.Append('!');
               break;
+
             case '\u2049': // ⁉  [EXCLAMATION QUESTION MARK]
               s.Append('!');
               s.Append('?');
               break;
+
             case '\uFF03': // ＃  [FULLWIDTH NUMBER SIGN]
               s.Append('#');
               break;
+
             case '\uFF04': // ＄  [FULLWIDTH DOLLAR SIGN]
               s.Append('$');
               break;
+
             case '\u2052': // ⁒  [COMMERCIAL MINUS SIGN]
             case '\uFF05': // ％  [FULLWIDTH PERCENT SIGN]
               s.Append('%');
               break;
+
             case '\uFF06': // ＆  [FULLWIDTH AMPERSAND]
               s.Append('&');
               break;
+
             case '\u204E': // ⁎  [LOW ASTERISK]
             case '\uFF0A': // ＊  [FULLWIDTH ASTERISK]
               s.Append('*');
               break;
+
             case '\uFF0C': // ，  [FULLWIDTH COMMA]
               s.Append(',');
               break;
+
             case '\uFF0E': // ．  [FULLWIDTH FULL STOP]
               s.Append('.');
               break;
+
             case '\u2044': // ⁄  [FRACTION SLASH]
             case '\uFF0F': // ／  [FULLWIDTH SOLIDUS]
               s.Append('/');
               break;
+
             case '\uFF1A': // ：  [FULLWIDTH COLON]
               s.Append(':');
               break;
+
             case '\u204F': // ⁏  [REVERSED SEMICOLON]
             case '\uFF1B': // ；  [FULLWIDTH SEMICOLON]
               s.Append(';');
               break;
+
             case '\uFF1F': // ？  [FULLWIDTH QUESTION MARK]
               s.Append('?');
               break;
+
             case '\u2047': // ⁇  [DOUBLE QUESTION MARK]
               s.Append('?');
               s.Append('?');
               break;
+
             case '\u2048': // ⁈  [QUESTION EXCLAMATION MARK]
               s.Append('?');
               s.Append('!');
               break;
+
             case '\uFF20': // ＠  [FULLWIDTH COMMERCIAL AT]
               s.Append('@');
               break;
+
             case '\uFF3C': // ＼  [FULLWIDTH REVERSE SOLIDUS]
               s.Append('\\');
               break;
+
             case '\u2038': // ‸  [CARET]
             case '\uFF3E': // ＾  [FULLWIDTH CIRCUMFLEX ACCENT]
               s.Append('^');
               break;
+
             case '\uFF3F': // ＿  [FULLWIDTH LOW LINE]
               s.Append('_');
               break;
+
             case '\u2053': // ⁓  [SWUNG DASH]
             case '\uFF5E': // ～  [FULLWIDTH TILDE]
               s.Append('~');

@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagCore;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace SplatTagUnitTests

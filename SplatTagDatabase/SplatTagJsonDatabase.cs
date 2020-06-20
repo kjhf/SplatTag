@@ -15,7 +15,7 @@ namespace SplatTagDatabase
 
     public SplatTagJsonDatabase(string saveDirectory)
     {
-      this.saveDirectory = saveDirectory ?? throw new System.ArgumentNullException(nameof(saveDirectory));
+      this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
       Directory.CreateDirectory(saveDirectory);
     }
 

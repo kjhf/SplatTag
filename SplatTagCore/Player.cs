@@ -63,12 +63,45 @@ namespace SplatTagCore
     public uint Id { get; set; }
 
     /// <summary>
+    /// Merge this player with another (newer) player instance
+    /// </summary>
+    /// <param name="otherPlayer"></param>
+    public void Merge(Player otherPlayer)
+    {
+      // Merge the teams.
+      // Iterates the other stack in reverse order so older teams are pushed first
+      // so the most recent end up first in the stack.
+      foreach (Team t in otherPlayer.teams.Reverse())
+      {
+        Team foundTeam = this.teams.FirstOrDefault(playerTeams => playerTeams.Name.Equals(t.Name, StringComparison.OrdinalIgnoreCase));
+
+        if (foundTeam == null)
+        {
+          teams.Push(t);
+        }
+      }
+
+      // Merge the player's name(s).
+      // Iterates the other stack in reverse order so older names are pushed first
+      // so the most recent end up first in the stack.
+      foreach (string n in otherPlayer.names.Reverse())
+      {
+        string foundName = this.names.FirstOrDefault(playerNames => playerNames.Equals(n, StringComparison.OrdinalIgnoreCase));
+
+        if (foundName == null)
+        {
+          names.Push(n);
+        }
+      }
+    }
+
+    /// <summary>
     /// Overridden ToString.
     /// </summary>
     /// <returns></returns>
     public override string ToString()
     {
-      return Id + ": " + Name + (CurrentTeam == null ? null : $" (Plays for {CurrentTeam})");
+      return Name + (CurrentTeam == null ? null : $" (Plays for {CurrentTeam})");
     }
   }
 }

@@ -17,10 +17,13 @@ Importers can be found under SplatTagCore.Importers.
 - LUTIJsonReader: Reads the LUTI [signups sheet](https://docs.google.com/spreadsheets/d/1C7-iJlJjN3cYWEQE5hq2Y_AG4Meg4DrA5Q_527wfl_o/edit#gid=0). Convert from Google Sheets to [.csv then to .json](https://www.csvjson.com/csv2json).
 
 ## TODOs
-- Fetching of data from a local file.
-- Fetching of data from a remote site, e.g. SplatNet
-- Add modification of teams and players without recreating database (can currently match, mutate the object, then save.)
+- UI for mobile devices
+- Import from csv
+- Fetching of data from a remote site, e.g. SplatNet, sendou.ink
 - Command line arguments to pipe a matched result elsewhere and automated fetching of data.
+- Parsing of NNIDs if available to link player names
+- Twitter and Discord handles
+- A nice installer
 
 ## Licensing
 This code is supplied with GNU General Public License v3.0.

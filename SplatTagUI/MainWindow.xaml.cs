@@ -1,9 +1,11 @@
 ﻿using SplatTagCore;
 using SplatTagDatabase;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Data;
 
@@ -15,22 +17,26 @@ namespace SplatTagUI
   public partial class MainWindow : Window
   {
     internal static readonly SplatTagController splatTagController;
-    private static readonly SplatTagJsonDatabase splatTagDatabase;
-    private static readonly string jsonFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
+    private static readonly SplatTagJsonDatabase jsonDatabase;
+    private static readonly MultiDatabase splatTagDatabase;
+    private static readonly GenericFilesImporter multiSourceImporter;
+    private static readonly string saveFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
 
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.3";
+    public string Version => "Version 0.0.5";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "Added support for season X. Added expander for teams.";
-    
+    public string VersionToolTip => "v0.0.05: Added multiple database GUI and merging of players and teams.";
+
     static MainWindow()
     {
-      splatTagDatabase = new SplatTagJsonDatabase(jsonFile);
+      jsonDatabase = new SplatTagJsonDatabase(saveFolder);
+      multiSourceImporter = new GenericFilesImporter(saveFolder);
+      splatTagDatabase = new MultiDatabase(saveFolder, jsonDatabase, multiSourceImporter);
       splatTagController = new SplatTagController(splatTagDatabase);
       splatTagController.Initialise(new string[0]);
     }
@@ -49,43 +55,6 @@ namespace SplatTagUI
 
       // Focus the input text box so we can start typing as soon as the program starts.
       searchInput.Focus();
-    }
-
-    private void FetchButton_Click(object sender, RoutedEventArgs e)
-    {
-      InputWindow inputWindow = new InputWindow
-      {
-        HintText = "File or site to import?"
-      };
-      bool? dialog = inputWindow.ShowDialog();
-      if (dialog == true)
-      {
-        string errorMessage = splatTagController.TryImport(inputWindow.Input);
-        if (!string.IsNullOrWhiteSpace(errorMessage))
-        {
-          MessageBox.Show("ERROR: " + errorMessage);
-        }
-        else
-        {
-          MessageBox.Show("Successfully imported. Note that the database has not been saved yet.");
-        }
-      }
-    }
-
-    private void LoadButton_Click(object sender, RoutedEventArgs e)
-    {
-      var result = MessageBox.Show("Are you sure? This will overwrite any imported database changes.", "", MessageBoxButton.YesNo, MessageBoxImage.Question);
-      if (result == MessageBoxResult.Yes)
-      {
-        splatTagController.LoadDatabase();
-        MessageBox.Show("Loaded successfully.");
-      }
-    }
-
-    private void SaveButton_Click(object sender, RoutedEventArgs e)
-    {
-      splatTagController.SaveDatabase();
-      MessageBox.Show("Saved successfully.");
     }
 
     private void SearchInput_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -125,6 +94,20 @@ namespace SplatTagUI
     {
       Search();
     }
+
+    private void DataBaseButton_Click(object sender, RoutedEventArgs e)
+    {
+      DatabaseEditor databaseEditor = new DatabaseEditor(splatTagController, multiSourceImporter.Sources);
+      bool? result = databaseEditor.ShowDialog();
+      if (result == true)
+      {
+        // Editor accepted, save the sources list.
+        multiSourceImporter.SaveSources(databaseEditor.DatabaseSources);
+
+        // And load the new database.
+        splatTagController.LoadDatabase();
+      }
+    }
   }
 
   public class GetTeamPlayersConverter : IValueConverter
@@ -133,9 +116,45 @@ namespace SplatTagUI
     {
       if (value is Team t)
       {
-        return MainWindow.splatTagController.GetCurrentPlayersForTeam(t).Select(p => p.Name).ToArray();
+        return MainWindow.splatTagController.GetPlayersForTeam(t).Select(tuple => tuple.Item1.Name + " " + (tuple.Item2 ? "(Current)" : "(Ex)")).ToArray();
       }
       return new string[] { "(Unknown Players)" };
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      throw new NotImplementedException();
+    }
+  }
+
+  public class PlayerOldTeamsToStringConverter : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      IEnumerable<Team> teams;
+      if (value is Player p)
+      {
+        teams = p.Teams;
+      }
+      else if (value is IEnumerable<Team> t)
+      {
+        teams = t;
+      }
+      else
+      {
+        throw new InvalidDataException("Unknown type to convert: " + value.GetType());
+      }
+
+      StringBuilder sb = new StringBuilder();
+      teams = teams.Skip(1);
+      if (teams.Any())
+      {
+        sb.Append("(Old teams: ");
+        sb.Append(string.Join(", ", teams.Select(t => t.Tag + " " + t.Name)));
+        sb.Append(")");
+      }
+
+      return sb.ToString();
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

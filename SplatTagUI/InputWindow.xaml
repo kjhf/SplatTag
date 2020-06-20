@@ -8,12 +8,12 @@
         Background="Black"
         x:Name="_this">
   <Window.Resources>
-    <BooleanToVisibilityConverter x:Key="boolToVis"/>
+    <BooleanToVisibilityConverter x:Key="boolToVis" />
   </Window.Resources>
   <Grid x:Name="mainGrid">
     <Grid.RowDefinitions>
-      <RowDefinition Height="50"/>
-      <RowDefinition Height="50"/>
+      <RowDefinition Height="50" />
+      <RowDefinition Height="50" />
     </Grid.RowDefinitions>
     <Grid Grid.Row="0">
       <!-- Hint Text -->
@@ -22,12 +22,12 @@
     </Grid>
     <Grid Grid.Row="1">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="50"/>
-        <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="50"/>
+        <ColumnDefinition Width="50" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="50" />
       </Grid.ColumnDefinitions>
-      <Button x:Name="OKButton" Grid.Column="0" Height="30" Content="OK" Click="OKButton_Click"  />
-      <Button x:Name="CancelButton" Grid.Column="2" Height="30" Content="Cancel" Click="CancelButton_Click"/>
+      <Button x:Name="OKButton" Grid.Column="0" Height="30" Content="OK" Click="OKButton_Click" />
+      <Button x:Name="CancelButton" Grid.Column="2" Height="30" Content="Cancel" Click="CancelButton_Click" />
     </Grid>
   </Grid>
 </Window>

@@ -10,13 +10,15 @@ namespace SplatTagConsole
   internal static class ProgramMain
   {
     private static readonly SplatTagController splatTagController;
-    private static readonly SplatTagJsonDatabase splatTagDatabase;
-    private static readonly string jsonFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
+    private static readonly GenericFilesImporter importer;
+    private static readonly ISplatTagDatabase database;
+    private static readonly string splatTagFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
 
     static ProgramMain()
     {
-      splatTagDatabase = new SplatTagJsonDatabase(jsonFile);
-      splatTagController = new SplatTagController(splatTagDatabase);
+      importer = new GenericFilesImporter(splatTagFolder);
+      database = new MultiDatabase(splatTagFolder, importer);
+      splatTagController = new SplatTagController(database);
     }
 
     private static void Main(string[] args)
@@ -146,8 +148,7 @@ namespace SplatTagConsole
           foreach (var t in splatTagController.MatchTeam(input))
           {
             Console.WriteLine(t);
-            Console.WriteLine("Current players: " + string.Join(", ", splatTagController.GetCurrentPlayersForTeam(t).Select(p => p.Name)));
-            // Console.WriteLine("All players: " + string.Join(", ", splatTagController.GetAllPlayersForTeam(t).Select(p => p.Name)));
+            Console.WriteLine("Players: " + string.Join(", ", splatTagController.GetPlayersForTeam(t).Select(tuple => tuple.Item1.Name + " " + (tuple.Item2 ? "(Most recent)" : "(Ex)"))));
             Console.WriteLine("-----");
           }
           break;
@@ -159,15 +160,8 @@ namespace SplatTagConsole
     {
       Console.WriteLine("File or site to import?");
       string input = Console.ReadLine();
-      string errorMessage = splatTagController.TryImport(input);
-      if (!string.IsNullOrWhiteSpace(errorMessage))
-      {
-        Console.WriteLine("ERROR: " + errorMessage);
-      }
-      else
-      {
-        Console.WriteLine("Successfully imported. Note that the database has not been saved yet.");
-      }
+      importer.SetSingleSource(input);
+      splatTagController.LoadDatabase();
     }
   }
 }

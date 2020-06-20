@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagCore;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace SplatTagUnitTests
@@ -59,7 +58,6 @@ namespace SplatTagUnitTests
       // Assert that the returned order is t2 then t1.
       Assert.IsTrue(matched[0] == t2);
       Assert.IsTrue(matched[1] == t1);
-
     }
 
     /// <summary>

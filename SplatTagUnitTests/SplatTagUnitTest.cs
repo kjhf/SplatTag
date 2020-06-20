@@ -1,6 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagCore;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace SplatTagUnitTests
@@ -68,7 +67,7 @@ namespace SplatTagUnitTests
       Assert.IsNotNull(dictionary1);
       Assert.IsTrue(dictionary1.TryGetValue(PLAYER_ID, out Player player1));
       Assert.IsTrue(player1.Id == PLAYER_ID);
-      
+
       object teamsDict = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teamsDict);
       var dictionary2 = (IDictionary<uint, Team>)teamsDict;
@@ -78,10 +77,10 @@ namespace SplatTagUnitTests
       Assert.IsTrue(target2.Div == 1);
 
       // Verify getting the players for that team returns our player
-      Player[] playersForExampleTeam = controller.GetAllPlayersForTeam(exampleTeam);
+      (Player, bool)[] playersForExampleTeam = controller.GetPlayersForTeam(exampleTeam);
       Assert.IsNotNull(playersForExampleTeam);
       Assert.IsTrue(playersForExampleTeam.Length == 1);
-      Assert.IsTrue(playersForExampleTeam[0].Equals(player1));
+      Assert.IsTrue(playersForExampleTeam[0].Item1.Equals(player1));
     }
 
     /// <summary>

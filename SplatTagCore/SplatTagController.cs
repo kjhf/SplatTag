@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -30,9 +29,17 @@ namespace SplatTagCore
 
     public void LoadDatabase()
     {
-      var result = database.Load();
-      players = new SortedDictionary<uint, Player>(result.Item1.ToDictionary(x => x.Id, x => x));
-      teams = new SortedDictionary<uint, Team>(result.Item2.ToDictionary(x => x.Id, x => x));
+      var (loadedPlayers, loadedTeams) = database.Load();
+      if (loadedPlayers == null || loadedTeams == null)
+      {
+        Console.WriteLine("ERROR: Failed to load.");
+      }
+      else
+      {
+        players = new SortedDictionary<uint, Player>(loadedPlayers.ToDictionary(x => x.Id, x => x));
+        teams = new SortedDictionary<uint, Team>(loadedTeams.ToDictionary(x => x.Id, x => x));
+        Console.WriteLine("Database loaded successfully.");
+      }
     }
 
     public void SaveDatabase()
@@ -42,18 +49,13 @@ namespace SplatTagCore
 
     /// <summary>
     /// Get all players associated with a team.
+    /// The tuple represents the Player and if they are a current player of the team (true) or not (false).
     /// </summary>
-    public Player[] GetAllPlayersForTeam(Team t)
+    public (Player, bool)[] GetPlayersForTeam(Team t)
     {
-      return players.Values.Where(p => p.Teams.Contains(t)).ToArray();
-    }
-
-    /// <summary>
-    /// Get current players on a given team.
-    /// </summary>
-    public Player[] GetCurrentPlayersForTeam(Team t)
-    {
-      return players.Values.Where(p => p.CurrentTeam.Equals(t)).ToArray();
+      return players.Values
+        .Where(p => p.Teams.Contains(t))
+        .Select(p => (p, p.CurrentTeam.Equals(t))).ToArray();
     }
 
     /// <summary>
@@ -179,94 +181,6 @@ namespace SplatTagCore
       // Filter unique
       retVal = retVal.Distinct().ToList();
       return retVal.ToArray();
-    }
-
-    public string TryImport(string input)
-    {
-      // Remove preceding and seceding quotes from path.
-      input = input.TrimStart('"').TrimEnd('"');
-
-      // TODO --
-      // A local file should be a readable format, in priority order: json, html, database (misp), xls, xml
-      // A site should simply download the file or an html contents rep, and load the contents as if it were a local file.
-      // We should be mindful about loading files that come from the internet though: always validate first.
-      if (!File.Exists(input))
-      {
-        return "Input does not exist on disk. Remote is not currently supported.";
-      }
-
-      if (Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase))
-      {
-        // Try the LUTI importer.
-        Importers.LUTIJsonReader jsonReader = new Importers.LUTIJsonReader(input);
-
-        try
-        {
-          string errorMessage = TryImport(jsonReader);
-          if (string.IsNullOrWhiteSpace(errorMessage))
-          {
-            return "";
-          }
-          else
-          {
-            // TODO -- We can try other importers here.
-            return errorMessage;
-          }
-        }
-        catch (Exception ex)
-        {
-          return ex.Message;
-        }
-      }
-      else
-      {
-        return "File extension not recognised or supported.";
-      }
-    }
-
-    public string TryImport(ISplatTagDatabase importer)
-    {
-      try
-      {
-        var retVal = importer.Load();
-        foreach (Team importTeam in retVal.Item2)
-        {
-          if (!teams.Values.Any(t => t.Name.Equals(importTeam.Name)))
-          {
-            uint key = teams.Keys.LastOrDefault() + 1;
-            importTeam.Id = key;
-            teams.Add(key, importTeam);
-          }
-          else
-          {
-            // Update the values
-            Team foundTeam = teams.Values.FirstOrDefault(t => t.Name.Equals(importTeam.Name));
-            importTeam.Id = foundTeam.Id;
-            foundTeam = importTeam;
-          }
-        }
-
-        foreach (Player importPlayer in retVal.Item1)
-        {
-          if (!players.Values.Any(p => p.Name.Equals(importPlayer.Name)))
-          {
-            uint key = players.Keys.LastOrDefault() + 1;
-            importPlayer.Id = key;
-            players.Add(key, importPlayer);
-          }
-          else
-          {
-            Player foundPlayer = players.Values.FirstOrDefault(p => p.Name.Equals(importPlayer.Name));
-            importPlayer.Id = foundPlayer.Id;
-            foundPlayer = importPlayer;
-          }
-        }
-        return "";
-      }
-      catch (Exception ex)
-      {
-        return ex.Message;
-      }
     }
 
     public Player CreatePlayer()

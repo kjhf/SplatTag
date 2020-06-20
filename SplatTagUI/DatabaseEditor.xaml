@@ -1,0 +1,88 @@
+﻿<Window x:Class="SplatTagUI.DatabaseEditor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SplatTagUI"
+        mc:Ignorable="d"
+        Title="Splat Tag" Height="480" Width="1080"
+        Background="Black"
+        Foreground="White"
+        x:Name="_this">
+  <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="boolToVis" />
+    <local:GetTeamPlayersConverter x:Key="getTeamPlayers" />
+    <local:ObjectNullConverter x:Key="hasValueConverter" />
+
+    <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
+      <Setter Property="Background" Value="Honeydew" />
+      <Setter Property="Foreground" Value="LightSteelBlue" />
+    </Style>
+    <Style x:Key="detailsTextBlockStyle" TargetType="TextBlock">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="LightSteelBlue" />
+    </Style>
+    <Style x:Key="checkBoxStyle" TargetType="CheckBox">
+      <Setter Property="Background" Value="Black" />
+      <Setter Property="Foreground" Value="LightSteelBlue" />
+    </Style>
+    <Style x:Key="listBoxStyle" TargetType="ListBox">
+      <Setter Property="Background" Value="Black" />
+      <Setter Property="Foreground" Value="LightSteelBlue" />
+    </Style>
+    <Style x:Key="stackPanelStyle" TargetType="StackPanel">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style x:Key="listButton" TargetType="Button">
+      <Setter Property="Background" Value="LightGray" />
+      <Setter Property="Width" Value="150" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="FontFamily" Value="Segoe UI Symbol" />
+      <Setter Property="Margin" Value="5" />
+    </Style>
+    <Style x:Key="buttonEnabledWhenListSelectedStyle" TargetType="Button" BasedOn="{StaticResource listButton}">
+      <Setter Property="IsEnabled" Value="{Binding SelectedItem, Converter={StaticResource hasValueConverter}, ElementName=databaseOrderListBox}" />
+    </Style>
+  </Window.Resources>
+  <Grid Grid.Row="1" Background="Transparent">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="2*" />
+      <ColumnDefinition Width="1*" />
+      <ColumnDefinition Width="1*" />
+      <ColumnDefinition Width="1*" />
+    </Grid.ColumnDefinitions>
+    <Grid Background="Transparent" Grid.Column="0">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Style="{StaticResource stackPanelStyle}">
+          <TextBlock Margin="5,2" Text="Files in Chronological Order - Oldest at the Top" IsHitTestVisible="False" Style="{StaticResource detailsTextBlockStyle}" />
+          <ListBox x:Name="databaseOrderListBox" Style="{StaticResource listBoxStyle}" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+    <Grid Background="Transparent" Grid.Column="1">
+      <TextBlock Margin="5,2" Text="Database Operations" IsHitTestVisible="False" Style="{StaticResource detailsTextBlockStyle}" />
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Style="{StaticResource stackPanelStyle}" VerticalAlignment="Center">
+          <Button x:Name="orderUpButton" Content="↑" Style="{StaticResource buttonEnabledWhenListSelectedStyle}" FontSize="20" FontWeight="ExtraBold" ToolTip="Move the database file up the order (older)" Click="OrderUpButton_Click" />
+
+          <Button x:Name="loadButton" Content=" Load file" Style="{StaticResource listButton}" ToolTip="Asks for a file or site to load teams and players into the database." Click="LoadButton_Click" />
+          <Button x:Name="removeButton" Content=" Remove file" Style="{StaticResource buttonEnabledWhenListSelectedStyle}" ToolTip="Asks for a file or site to load teams and players into the database." Click="RemoveButton_Click" />
+
+          <Button x:Name="orderDownButton" Content="↓" Style="{StaticResource buttonEnabledWhenListSelectedStyle}" FontSize="20" FontWeight="ExtraBold" ToolTip="Move the database file down the order (newer)" Click="OrderDownButton_Click" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+    <Grid Background="Transparent" Grid.Column="3" x:Name="otherFunctionsGrid">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="4*" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+
+      <StackPanel Style="{StaticResource stackPanelStyle}" Grid.Row="0">
+        <TextBlock Margin="5,2" Text="Advanced Functions" IsHitTestVisible="False" Foreground="LightSteelBlue" />
+        <Button x:Name="reloadButton" Content=" Reload local database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="This loads the local copy of the database into the program. You won't need this unless you're making manual changes." Click="ReloadButton_Click" />
+      </StackPanel>
+      <Button x:Name="acceptButton" Grid.Row="1" Content=" OK" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Accept these changes and return to the main window." Click="acceptButton_Click" />
+    </Grid>
+  </Grid>
+</Window>

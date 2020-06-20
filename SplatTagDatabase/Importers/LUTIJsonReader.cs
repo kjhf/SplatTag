@@ -1,11 +1,12 @@
 ﻿using Newtonsoft.Json;
+using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace SplatTagCore.Importers
+namespace SplatTagDatabase.Importers
 {
-  internal class LUTIJsonReader : ISplatTagDatabase
+  internal class LUTIJsonReader : IImporter
   {
     [Serializable]
     internal class LUTIJsonRow
@@ -13,14 +14,20 @@ namespace SplatTagCore.Importers
       [JsonProperty("Team Name")]
       public string TeamName { get; set; }
 
-      [JsonProperty("Division")]
-      public string Division { get; set; }
+      [JsonProperty("Div", Required = Required.Default)]
+      public string Div { get => Division; set => Division = value; }
+
+      [JsonProperty("Division", Required = Required.Default)]
+      public string Division { get; set; } = "Unknown";
 
       [JsonProperty("Tag")]
       public string Tag { get; set; }
 
-      [JsonProperty("Team Captain")] // TODO May have to change this to Player 1 in future? Can we handle both?
-      public string TeamCaptain { get; set; }
+      [JsonProperty("Team Captain", Required = Required.Default)]
+      public string TeamCaptain { get; set; } = "";
+
+      [JsonProperty("Player 1", Required = Required.Default)]
+      public string Player1 { get => TeamCaptain; set => TeamCaptain = value; }
 
       [JsonProperty("Player 2")]
       public string Player2 { get; set; }
@@ -161,9 +168,9 @@ namespace SplatTagCore.Importers
       return (players.ToArray(), teams.ToArray());
     }
 
-    public void Save(IEnumerable<Player> players, IEnumerable<Team> teams)
+    public bool AcceptsInput(string input)
     {
-      throw new InvalidOperationException("This is a JSON Reader only");
+      return Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
   }
 }

@@ -8,41 +8,41 @@
         Title="Splat Tag" Height="480" Width="1080"
         Background="Black"
         Foreground="White"
-        x:Name="_this"
-        >
+        x:Name="_this">
   <Window.Resources>
-    <BooleanToVisibilityConverter x:Key="boolToVis"/>
-    <local:GetTeamPlayersConverter x:Key="getTeamPlayers"/>
-    
+    <BooleanToVisibilityConverter x:Key="boolToVis" />
+    <local:GetTeamPlayersConverter x:Key="getTeamPlayers" />
+    <local:PlayerOldTeamsToStringConverter x:Key="playerOldTeamsToStringConverter" />
+
     <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
-      <Setter Property="Background" Value="Honeydew"/>
-      <Setter Property="Foreground" Value="LightSteelBlue"/>
+      <Setter Property="Background" Value="Honeydew" />
+      <Setter Property="Foreground" Value="LightSteelBlue" />
     </Style>
     <Style x:Key="detailsTextBlockStyle" TargetType="TextBlock">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="LightSteelBlue"/>
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="LightSteelBlue" />
     </Style>
     <Style x:Key="checkBoxStyle" TargetType="CheckBox">
-      <Setter Property="Background" Value="Black"/>
-      <Setter Property="Foreground" Value="LightSteelBlue"/>
+      <Setter Property="Background" Value="Black" />
+      <Setter Property="Foreground" Value="LightSteelBlue" />
     </Style>
     <Style x:Key="listBoxStyle" TargetType="ListBox">
-      <Setter Property="Background" Value="Black"/>
-      <Setter Property="Foreground" Value="LightSteelBlue"/>
+      <Setter Property="Background" Value="Black" />
+      <Setter Property="Foreground" Value="LightSteelBlue" />
     </Style>
     <Style x:Key="stackPanelStyle" TargetType="StackPanel">
-      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Background" Value="Transparent" />
     </Style>
   </Window.Resources>
   <Grid>
     <Grid.RowDefinitions>
-      <RowDefinition Height="50"/>
-      <RowDefinition Height="*"/>
+      <RowDefinition Height="50" />
+      <RowDefinition Height="*" />
     </Grid.RowDefinitions>
     <Grid Grid.Row="0" Background="White">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
       </Grid.ColumnDefinitions>
       <Grid x:Name="searchGrid"  Grid.Column="0" ToolTip="Search for a team or player by typing here given the options on the right.">
         <TextBox x:Name="searchInput" MinWidth="50" Background="Transparent" TextChanged="SearchInput_TextChanged" />
@@ -67,15 +67,30 @@
     </Grid>
     <Grid Grid.Row="1" Background="Transparent">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="2*"/>
-        <ColumnDefinition Width="2*"/>
-        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="2*" />
+        <ColumnDefinition Width="2*" />
+        <ColumnDefinition Width="*" />
       </Grid.ColumnDefinitions>
       <Grid Background="Transparent" Grid.Column="0">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <StackPanel Style="{StaticResource stackPanelStyle}">
             <TextBlock Margin="5,2" Text="Players List" IsHitTestVisible="False" Style="{StaticResource detailsTextBlockStyle}" />
-            <ListBox x:Name="playersListBox" Style="{StaticResource listBoxStyle}"/>
+            <ListBox x:Name="playersListBox" Style="{StaticResource listBoxStyle}">
+
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Style="{StaticResource detailsTextBlockStyle}">
+                    <TextBlock.Text>
+                      <MultiBinding StringFormat="{}{0} (Plays for {1}) {2}">
+                        <Binding Path="Name" />
+                        <Binding Path="CurrentTeam" TargetNullValue="?" />
+                        <Binding Path="." Converter="{StaticResource playerOldTeamsToStringConverter}" />
+                      </MultiBinding>
+                    </TextBlock.Text>
+                  </TextBlock>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ListBox>
           </StackPanel>
         </ScrollViewer>
       </Grid>
@@ -83,16 +98,17 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <StackPanel Style="{StaticResource stackPanelStyle}">
             <TextBlock Margin="5,2" Text="Teams List" IsHitTestVisible="False" Style="{StaticResource detailsTextBlockStyle}" />
-            
+
             <!-- Teams ListBox can be expanded to show all players of the team. -->
             <ListBox x:Name="teamsListBox" Style="{StaticResource listBoxStyle}">
-              <ItemsControl.ItemTemplate >
+              <ItemsControl.ItemTemplate>
                 <DataTemplate>
                   <Expander IsExpanded="{Binding IsSelected, Mode=TwoWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListBoxItem}}}" Background="Transparent">
                     <Expander.Header>
                       <TextBlock Style="{StaticResource detailsTextBlockStyle}">
                         <TextBlock.Text>
-                          <MultiBinding StringFormat="{}{0} (Div {1})">
+                          <MultiBinding StringFormat="{}{0} {1} (Div {2})">
+                            <Binding Path="Tag" />
                             <Binding Path="Name" />
                             <Binding Path="Div" />
                           </MultiBinding>
@@ -105,15 +121,15 @@
                           <Style BasedOn="{StaticResource stackPanelStyle}" TargetType="StackPanel">
                             <Style.Triggers>
                               <DataTrigger Binding="{Binding IsExpanded, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Expander}}}" Value="true">
-                                <Setter Property="Visibility" Value="Visible"/>
+                                <Setter Property="Visibility" Value="Visible" />
                               </DataTrigger>
                               <DataTrigger Binding="{Binding IsExpanded, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Expander}}}" Value="false">
-                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Setter Property="Visibility" Value="Collapsed" />
                               </DataTrigger>
                             </Style.Triggers>
                           </Style>
                         </StackPanel.Style>
-                        <ItemsControl ItemsSource="{Binding ., Converter={StaticResource getTeamPlayers}}" Background="Transparent" Foreground="LightSteelBlue"/>
+                        <ItemsControl ItemsSource="{Binding ., Converter={StaticResource getTeamPlayers}}" Background="Transparent" Foreground="LightSteelBlue" />
                       </StackPanel>
                     </Expander.Content>
                   </Expander>
@@ -125,10 +141,8 @@
       </Grid>
       <Grid Background="Transparent" Grid.Column="2" x:Name="otherFunctionsGrid">
         <StackPanel Style="{StaticResource stackPanelStyle}">
-          <TextBlock Margin="5,2" Text="Other Functions" IsHitTestVisible="False" Foreground="LightSteelBlue" />
-          <Button x:Name="fetchButton" Content=" Import into database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Asks for a file or site to load teams and players into the database."  Click="FetchButton_Click"/>
-          <Button x:Name="saveButton" Content=" Save local database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Saves any imported changes." Click="SaveButton_Click"/>
-          <Button x:Name="loadButton" Content=" Reload local database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="This loads the local copy of the database into the program. You won't need this unless you're making manual changes." Click="LoadButton_Click"/>
+          <TextBlock Margin="5,2" Text="Setup" IsHitTestVisible="False" Foreground="LightSteelBlue" />
+          <Button x:Name="dataBaseButton" Content=" Edit Database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Edit the program's team and player records."  Click="DataBaseButton_Click" />
 
           <TextBlock Margin="5,2" Text="{Binding Version, ElementName=_this, FallbackValue=Version 0.0.0, Mode=OneTime}" FontStyle="Italic" Foreground="LightSteelBlue" Background="Transparent" ToolTip="{Binding VersionToolTip, ElementName=_this}" />
         </StackPanel>
