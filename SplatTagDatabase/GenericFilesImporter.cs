@@ -10,22 +10,25 @@ namespace SplatTagDatabase
   public class GenericFilesImporter : IImporter
   {
     private readonly List<string> sources = new List<string>();
-    private readonly string saveDirectory;
-
     private readonly SortedDictionary<uint, Player> players = new SortedDictionary<uint, Player>();
     private readonly SortedDictionary<uint, Team> teams = new SortedDictionary<uint, Team>();
-    private string SourcesFile => Path.Combine(saveDirectory, "sources.yaml");
+    private readonly string sourcesFile;
 
     public string[] Sources => sources.ToArray();
 
     public GenericFilesImporter(string saveDirectory)
     {
-      this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
+      this.sourcesFile = Path.Combine(saveDirectory, "sources.yaml");
       Directory.CreateDirectory(saveDirectory);
-      if (File.Exists(SourcesFile))
+      if (File.Exists(sourcesFile))
       {
-        sources = new List<string>(File.ReadAllLines(SourcesFile));
+        sources = new List<string>(File.ReadAllLines(sourcesFile));
       }
+    }
+
+    public GenericFilesImporter(string[] loadedSources)
+    {
+      sources = new List<string>(loadedSources);
     }
 
     public (Player[], Team[]) Load()
@@ -56,7 +59,11 @@ namespace SplatTagDatabase
     {
       sources.Clear();
       sources.AddRange(contents);
-      File.WriteAllLines(SourcesFile, contents);
+
+      if (this.sourcesFile != null)
+      {
+        File.WriteAllLines(sourcesFile, contents);
+      }
     }
 
     private string TryImportFromPath(string input)
