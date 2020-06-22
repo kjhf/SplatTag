@@ -144,7 +144,7 @@
           <TextBlock Margin="5,2" Text="Setup" IsHitTestVisible="False" Foreground="LightSteelBlue" />
           <Button x:Name="dataBaseButton" Content=" Edit Database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Edit the program's team and player records."  Click="DataBaseButton_Click" />
 
-          <TextBlock Margin="5,2" Text="{Binding Version, ElementName=_this, FallbackValue=Version 0.0.0, Mode=OneTime}" FontStyle="Italic" Foreground="LightSteelBlue" Background="Transparent" ToolTip="{Binding VersionToolTip, ElementName=_this}" />
+          <TextBlock Margin="5,2" Text="{Binding Version, ElementName=_this, FallbackValue=Version 0.0.0, Mode=OneTime}" TextDecorations="Underline" FontStyle="Italic" Foreground="LightSteelBlue" Background="Transparent" ToolTip="{Binding VersionToolTip, ElementName=_this}" />
         </StackPanel>
       </Grid>
     </Grid>
