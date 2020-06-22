@@ -71,6 +71,11 @@ namespace SplatTagCore
     /// </summary>
     public Player[] MatchPlayer(string query, MatchOptions matchOptions)
     {
+      if (string.IsNullOrEmpty(query))
+      {
+        return players.Values.ToArray();
+      }
+
       List<Player> retVal = new List<Player>();
       Func<Player, bool> func;
       if (matchOptions.QueryIsRegex)
@@ -127,6 +132,11 @@ namespace SplatTagCore
     /// </summary>
     public Team[] MatchTeam(string query, MatchOptions matchOptions)
     {
+      if (string.IsNullOrEmpty(query))
+      {
+        return teams.Values.ToArray();
+      }
+
       List<Team> retVal = new List<Team>();
 
       // First, derive the function for clan tags.

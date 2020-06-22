@@ -25,12 +25,12 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.5";
+    public string Version => "Version 0.0.5.2";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "v0.0.05: Added multiple database GUI and merging of players and teams.";
+    public string VersionToolTip => "v0.0.05: Added multiple database GUI and merging of players and teams. v0.0.05.1: Small improvement to handling of blank search. v0.0.05.2: Added icon.";
 
     static MainWindow()
     {
