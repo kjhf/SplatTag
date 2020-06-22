@@ -2457,7 +2457,7 @@ namespace SplatTagAndroid
 			public const int progress_horizontal = 2131230815;
 			
 			// aapt resource value: 0x7F080060
-			public const int queryLabel = 2131230816;
+			public const int queryColumns = 2131230816;
 			
 			// aapt resource value: 0x7F080061
 			public const int radio = 2131230817;

@@ -94,14 +94,15 @@ namespace SplatTagAndroid
       }
 
       // Hook up events
-      goButton.Click += (sender, e) =>
-      {
-        Search(enteredQuery.Text);
-      };
+      enteredQuery.AfterTextChanged += (sender, e) => Search(enteredQuery.Text);
+
+      goButton.Click += (sender, e) => Search(enteredQuery.Text);
     }
 
     private void Search(string query, bool toast = false)
     {
+      int playersFound = 0;
+      int teamsFound = 0;
       {
         IEnumerable<string> playerStrings = splatTagController.MatchPlayer(query,
            new MatchOptions
@@ -114,19 +115,10 @@ namespace SplatTagAndroid
            // Use URLEncoder to unmangle any special characters
            URLDecoder.Decode(URLEncoder.Encode($"{p.Name} (Plays for {p.CurrentTeam}) {GetOldTeamsAsString(p)}", "UTF-8"), "UTF-8"));
 
-        int count = playerStrings.Count();
-        if (count != 0)
+        playersFound = playerStrings.Count();
+        if (playersFound != 0)
         {
-          playersResults.Text = string.Join("\n", playerStrings);
-        }
-        else
-        {
-          playersResults.Text = "No results!";
-        }
-
-        if (toast)
-        {
-          Toast.MakeText(this, $"{count} players found.", ToastLength.Long).Show();
+          playersResults.Text = string.Join("\n\n", playerStrings);
         }
       }
 
@@ -142,20 +134,56 @@ namespace SplatTagAndroid
           // Use URLEncoder to unmangle any special characters
           URLDecoder.Decode(URLEncoder.Encode(t.ToString(), "UTF-8"), "UTF-8"));
 
-        int count = teamStrings.Count();
-        if (count != 0)
+        teamsFound = teamStrings.Count();
+        if (teamsFound != 0)
         {
-          teamsResults.Text = string.Join("\n", teamStrings);
+          teamsResults.Text = string.Join("\n\n", teamStrings);
+        }
+      }
+
+      if (teamsFound == 0)
+      {
+        teamsResults.LayoutParameters = new LinearLayout.LayoutParams(0, Android.Views.ViewGroup.LayoutParams.MatchParent, 0.0f);
+      }
+      else
+      {
+        if (playersFound == 0)
+        {
+          teamsResults.LayoutParameters = new LinearLayout.LayoutParams(0, Android.Views.ViewGroup.LayoutParams.MatchParent, 2.0f);
         }
         else
         {
-          teamsResults.Text = "No results!";
+          teamsResults.LayoutParameters = new LinearLayout.LayoutParams(0, Android.Views.ViewGroup.LayoutParams.MatchParent, 1.0f);
         }
+      }
 
-        if (toast)
+      if (playersFound == 0)
+      {
+        if (teamsFound == 0)
         {
-          Toast.MakeText(this, $"{count} teams found.", ToastLength.Long).Show();
+          playersResults.Text = "No results!";
+          playersResults.LayoutParameters = new LinearLayout.LayoutParams(0, Android.Views.ViewGroup.LayoutParams.MatchParent, 2.0f);
         }
+        else
+        {
+          playersResults.LayoutParameters = new LinearLayout.LayoutParams(0, Android.Views.ViewGroup.LayoutParams.MatchParent, 0.0f);
+        }
+      }
+      else
+      {
+        if (teamsFound == 0)
+        {
+          playersResults.LayoutParameters = new LinearLayout.LayoutParams(0, Android.Views.ViewGroup.LayoutParams.MatchParent, 2.0f);
+        }
+        else
+        {
+          playersResults.LayoutParameters = new LinearLayout.LayoutParams(0, Android.Views.ViewGroup.LayoutParams.MatchParent, 1.0f);
+        }
+      }
+
+      if (toast)
+      {
+        Toast.MakeText(this, $"{playersFound} players found\n{teamsFound} teams found", ToastLength.Long).Show();
       }
     }
 
