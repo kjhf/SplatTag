@@ -103,41 +103,44 @@ namespace SplatTagAndroid
     {
       int playersFound = 0;
       int teamsFound = 0;
+      if (query.Length > 0)
       {
-        IEnumerable<string> playerStrings = splatTagController.MatchPlayer(query,
-           new MatchOptions
-           {
-             IgnoreCase = /* ignoreCaseCheckbox.IsChecked == true, */ true,
-             NearCharacterRecognition = /* nearMatchCheckbox.IsChecked == true, */ true,
-             QueryIsRegex = /* regexCheckbox.IsChecked == true */ false
-           }
-         ).Select(p =>
-           // Use URLEncoder to unmangle any special characters
-           URLDecoder.Decode(URLEncoder.Encode($"{p.Name} (Plays for {p.CurrentTeam}) {GetOldTeamsAsString(p)}", "UTF-8"), "UTF-8"));
-
-        playersFound = playerStrings.Count();
-        if (playersFound != 0)
         {
-          playersResults.Text = string.Join("\n\n", playerStrings);
-        }
-      }
+          IEnumerable<string> playerStrings = splatTagController.MatchPlayer(query,
+             new MatchOptions
+             {
+               IgnoreCase = /* ignoreCaseCheckbox.IsChecked == true, */ true,
+               NearCharacterRecognition = /* nearMatchCheckbox.IsChecked == true, */ true,
+               QueryIsRegex = /* regexCheckbox.IsChecked == true */ false
+             }
+           ).Select(p =>
+             // Use URLEncoder to unmangle any special characters
+             URLDecoder.Decode(URLEncoder.Encode($"{p.Name} (Plays for {p.CurrentTeam}) {GetOldTeamsAsString(p)}", "UTF-8"), "UTF-8"));
 
-      {
-        IEnumerable<string> teamStrings = splatTagController.MatchTeam(query,
-          new MatchOptions
+          playersFound = playerStrings.Count();
+          if (playersFound != 0)
           {
-            IgnoreCase = /* ignoreCaseCheckbox.IsChecked == true, */ true,
-            NearCharacterRecognition = /* nearMatchCheckbox.IsChecked == true, */ true,
-            QueryIsRegex = /* regexCheckbox.IsChecked == true */ false
+            playersResults.Text = string.Join("\n\n", playerStrings);
           }
-        ).Select(t =>
-          // Use URLEncoder to unmangle any special characters
-          URLDecoder.Decode(URLEncoder.Encode(t.ToString(), "UTF-8"), "UTF-8"));
+        }
 
-        teamsFound = teamStrings.Count();
-        if (teamsFound != 0)
         {
-          teamsResults.Text = string.Join("\n\n", teamStrings);
+          IEnumerable<string> teamStrings = splatTagController.MatchTeam(query,
+            new MatchOptions
+            {
+              IgnoreCase = /* ignoreCaseCheckbox.IsChecked == true, */ true,
+              NearCharacterRecognition = /* nearMatchCheckbox.IsChecked == true, */ true,
+              QueryIsRegex = /* regexCheckbox.IsChecked == true */ false
+            }
+          ).Select(t =>
+            // Use URLEncoder to unmangle any special characters
+            URLDecoder.Decode(URLEncoder.Encode(t.ToString(), "UTF-8"), "UTF-8"));
+
+          teamsFound = teamStrings.Count();
+          if (teamsFound != 0)
+          {
+            teamsResults.Text = string.Join("\n\n", teamStrings);
+          }
         }
       }
 
@@ -161,7 +164,7 @@ namespace SplatTagAndroid
       {
         if (teamsFound == 0)
         {
-          playersResults.Text = "No results!";
+          playersResults.Text = query.Length > 0 ? "No results!" : "Nothing to search!";
           playersResults.LayoutParameters = new LinearLayout.LayoutParams(0, Android.Views.ViewGroup.LayoutParams.MatchParent, 2.0f);
         }
         else
