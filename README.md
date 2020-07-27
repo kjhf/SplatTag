@@ -18,12 +18,16 @@ Importers can be found under SplatTagCore.Importers.
 - LUTIJsonReader: Reads the LUTI [signups sheet](https://docs.google.com/spreadsheets/d/1C7-iJlJjN3cYWEQE5hq2Y_AG4Meg4DrA5Q_527wfl_o/edit#gid=0). Convert from Google Sheets to [.csv then to .json](https://www.csvjson.com/csv2json).
 
 ## TODOs
+- Import from LowInk and InkTV (Battlefy JSON Importer)
+- Fix bug where a player is no longer part of a team but shows as current if they have not joined a different team
 - Import from csv
 - Fetching of data from a remote site, e.g. SplatNet, sendou.ink
 - Command line arguments to pipe a matched result elsewhere and automated fetching of data.
-- Parsing of NNIDs if available to link player names
-- Twitter and Discord handles
-- A nice installer
+- Parsing of NNIDs if available to link player names -- doable with Battlefy!
+- Twitter handles -- test 404 with _spl?
+- Discord handles -- doable with Battlefy!
+- Improve distribution process
+- A nice installer and updater
 
 ## Licensing
 This code is supplied with GNU General Public License v3.0.

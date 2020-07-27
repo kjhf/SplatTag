@@ -38,12 +38,12 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.6";
+    public string Version => "Version 0.0.7";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "v0.0.06: Reduced lag for small searches. \nv0.0.05: Added multiple database GUI and merging of players and teams. \n  v0.0.05.1: Small improvement to handling of blank search. \n  v0.0.05.2: Added icon.";
+    public string VersionToolTip => "v0.0.07: Added sources data on hover. \nv0.0.06: Reduced lag for small searches. \nv0.0.05: Added multiple database GUI and merging of players and teams. \n  v0.0.05.1: Small improvement to handling of blank search. \n  v0.0.05.2: Added icon.";
 
     static MainWindow()
     {
@@ -171,7 +171,37 @@ namespace SplatTagUI
       throw new NotImplementedException();
     }
   }
+  
+  public class SourcesToStringConverter : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      IEnumerable<string> sources;
+      if (value is IEnumerable<string> s)
+      {
+        sources = s;
+      }
+      else if (value is Player p)
+      {
+        sources = p.Sources;
+      }
+      else if (value is Team t)
+      {
+        sources = t.Sources;
+      }
+      else
+      {
+        throw new InvalidDataException("Unknown type to convert: " + value.GetType());
+      }
 
+      return string.Join(", ", sources);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      throw new NotImplementedException();
+    }
+  }
   public class PlayerOldTeamsToStringConverter : IValueConverter
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

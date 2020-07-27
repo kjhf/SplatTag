@@ -93,7 +93,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise(new string[] { "P.exe" });
 
-      Player p = controller.CreatePlayer();
+      Player p = controller.CreatePlayer("Manual");
       Assert.IsNotNull(p);
       object playersDict = Util.GetPrivateMember(controller, "players");
       Assert.IsNotNull(playersDict);
@@ -113,7 +113,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise(new string[] { "P.exe" });
 
-      Team t = controller.CreateTeam();
+      Team t = controller.CreateTeam("Manual");
       Assert.IsNotNull(t);
       object teamsDict = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teamsDict);

@@ -45,6 +45,12 @@ namespace SplatTagCore
     /// </summary>
     public string Tag => ClanTags.Length > 0 ? ClanTags[0] : "";
 
+
+    /// <summary>
+    /// Get or Set the current sources that make up this Team instance.
+    /// </summary>
+    public List<string> Sources { get; set; }
+
     /// <summary>
     /// Merge this team with another (newer) team instance
     /// </summary>
@@ -71,6 +77,17 @@ namespace SplatTagCore
       if (otherTeam.Div != Division.UNKNOWN)
       {
         this.Div = otherTeam.Div;
+      }
+
+      // Merge the sources.
+      foreach (string source in otherTeam.Sources)
+      {
+        string foundSource = this.Sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
+
+        if (foundSource == null)
+        {
+          Sources.Add(source);
+        }
       }
     }
 

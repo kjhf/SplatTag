@@ -65,7 +65,7 @@ namespace SplatTagConsole
           if (tp == 't')
           {
             // Manual entry for Team
-            Team t = splatTagController.CreateTeam();
+            Team t = splatTagController.CreateTeam("Manual");
 
             Console.WriteLine("Name of team?");
             t.Name = Console.ReadLine();
@@ -89,7 +89,7 @@ namespace SplatTagConsole
           else if (tp == 'p')
           {
             // Manual entry for Player
-            Player p = splatTagController.CreatePlayer();
+            Player p = splatTagController.CreatePlayer("Manual");
 
             Console.WriteLine("Name of player?");
             p.Names = new string[1] { Console.ReadLine() };

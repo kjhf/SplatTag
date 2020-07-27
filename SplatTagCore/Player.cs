@@ -58,6 +58,11 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Get or Set the current sources that make up this Player instance.
+    /// </summary>
+    public List<string> Sources { get; set; }
+
+    /// <summary>
     /// The database Id of the player.
     /// </summary>
     public uint Id { get; set; }
@@ -68,7 +73,7 @@ namespace SplatTagCore
     /// <param name="otherPlayer"></param>
     public void Merge(Player otherPlayer)
     {
-      // Merge the teams.
+      // Merge the players.
       // Iterates the other stack in reverse order so older teams are pushed first
       // so the most recent end up first in the stack.
       foreach (Team t in otherPlayer.teams.Reverse())
@@ -91,6 +96,17 @@ namespace SplatTagCore
         if (foundName == null)
         {
           names.Push(n);
+        }
+      }
+
+      // Merge the sources.
+      foreach (string source in otherPlayer.Sources)
+      {
+        string foundSource = this.Sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
+
+        if (foundSource == null)
+        {
+          Sources.Add(source);
         }
       }
     }

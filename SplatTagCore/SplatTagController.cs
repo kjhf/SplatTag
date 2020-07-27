@@ -193,21 +193,23 @@ namespace SplatTagCore
       return retVal.ToArray();
     }
 
-    public Player CreatePlayer()
+    public Player CreatePlayer(string source)
     {
       Player p = new Player
       {
-        Id = players.Keys.LastOrDefault() + 1
+        Id = players.Keys.LastOrDefault() + 1,
+        Sources = new List<string> { source }
       };
       players.Add(p.Id, p);
       return p;
     }
 
-    public Team CreateTeam()
+    public Team CreateTeam(string source)
     {
       Team t = new Team
       {
-        Id = teams.Keys.LastOrDefault() + 1
+        Id = teams.Keys.LastOrDefault() + 1,
+        Sources = new List<string> { source }
       };
       teams.Add(t.Id, t);
       return t;

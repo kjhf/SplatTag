@@ -100,6 +100,7 @@ namespace SplatTagDatabase.Importers
           {
             CurrentTeam = _newTeam,
             Name = tryPlayerName,
+            Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
           });
         }
       }
@@ -122,6 +123,7 @@ namespace SplatTagDatabase.Importers
           ClanTagOption = TagOption.Front,
           Div = new Division(row.Division),
           Name = row.TeamName,
+          Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
         };
 
         // Handle tag placements from the captain's name

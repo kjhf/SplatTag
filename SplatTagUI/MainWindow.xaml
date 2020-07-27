@@ -13,6 +13,7 @@
     <BooleanToVisibilityConverter x:Key="boolToVis" />
     <local:GetTeamPlayersConverter x:Key="getTeamPlayers" />
     <local:PlayerOldTeamsToStringConverter x:Key="playerOldTeamsToStringConverter" />
+    <local:SourcesToStringConverter x:Key="sourcesToStringConverter" />
 
     <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
       <Setter Property="Background" Value="Honeydew" />
@@ -87,6 +88,9 @@
                         <Binding Path="." Converter="{StaticResource playerOldTeamsToStringConverter}" />
                       </MultiBinding>
                     </TextBlock.Text>
+                    <TextBlock.ToolTip>
+                      <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}"/>
+                    </TextBlock.ToolTip>
                   </TextBlock>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -113,6 +117,9 @@
                             <Binding Path="Div" />
                           </MultiBinding>
                         </TextBlock.Text>
+                        <TextBlock.ToolTip>
+                          <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}"/>
+                        </TextBlock.ToolTip>
                       </TextBlock>
                     </Expander.Header>
                     <Expander.Content>
