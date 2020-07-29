@@ -28,7 +28,17 @@ namespace SplatTagCore
     public IEnumerable<string> Names
     {
       get => names.ToArray();
-      set => names = new LinkedList<string>(value);
+      set
+      {
+        names = new LinkedList<string>();
+        foreach (string s in value)
+        {
+          if (!string.IsNullOrWhiteSpace(s))
+          {
+            names.AddLast(s);
+          }
+        }
+      }
     }
 
     /// <summary>
@@ -37,7 +47,7 @@ namespace SplatTagCore
     public string Name
     {
       get => names.Count > 0 ? names.First.Value : UNKNOWN_PLAYER;
-      set => names.AddFirst(value);
+      set => names.AddFirst(value ?? UNKNOWN_PLAYER);
     }
 
     /// <summary>
@@ -47,7 +57,7 @@ namespace SplatTagCore
     public IEnumerable<long> Teams
     {
       get => teams.ToArray();
-      set => teams = new LinkedList<long>(value);
+      set => teams = new LinkedList<long>(value ?? new long[0]);
     }
 
     /// <summary>
@@ -58,6 +68,10 @@ namespace SplatTagCore
       get => teams.Count > 0 ? teams.First.Value : 0;
       set
       {
+        if (teams.Contains(value))
+        {
+          teams.Remove(value);
+        }
         teams.AddFirst(value);
       }
     }
@@ -65,7 +79,7 @@ namespace SplatTagCore
     /// <summary>
     /// Get or Set the current sources that make up this Player instance.
     /// </summary>
-    public List<string> Sources { get; set; }
+    public List<string> Sources { get; set; } = new List<string>();
 
     /// <summary>
     /// The database Id of the player.

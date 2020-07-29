@@ -140,7 +140,7 @@ namespace SplatTagDatabase.Importers
         foreach (BattlefyJsonPlayer p in row.Players)
         {
           // Add the player
-          if (p.Name.StartsWith(tag))
+          if (p.Name.StartsWith(tag) && p.Name != tag)
           {
             p.Name = p.Name.Substring(tag.Length).Trim();
           }
@@ -148,7 +148,6 @@ namespace SplatTagDatabase.Importers
           players.Add(new Player
           {
             CurrentTeam = newTeam.Id,
-            Name = p.Name,
             Names = new string[] { p.Name, p.BattlefyName },
             Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) },
             FriendCode = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null,

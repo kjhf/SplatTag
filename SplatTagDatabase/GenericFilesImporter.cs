@@ -9,6 +9,7 @@ namespace SplatTagDatabase
 {
   public class GenericFilesImporter : IImporter
   {
+    public const string SourcesFileName = "sources.yaml";
     private readonly List<string> sources = new List<string>();
     private readonly SortedDictionary<uint, Player> players = new SortedDictionary<uint, Player>();
     private readonly SortedDictionary<long, Team> teams = new SortedDictionary<long, Team>();
@@ -18,7 +19,7 @@ namespace SplatTagDatabase
 
     public GenericFilesImporter(string saveDirectory)
     {
-      this.sourcesFile = Path.Combine(saveDirectory, "sources.yaml");
+      this.sourcesFile = Path.Combine(saveDirectory, SourcesFileName);
       Directory.CreateDirectory(saveDirectory);
       if (File.Exists(sourcesFile))
       {

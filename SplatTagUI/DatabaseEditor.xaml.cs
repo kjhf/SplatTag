@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Data;
@@ -56,13 +57,37 @@ namespace SplatTagUI
     {
       InputWindow inputWindow = new InputWindow
       {
-        HintText = "File or site to import?"
+        HintText = "File, directory, or site to import?"
       };
       bool? dialog = inputWindow.ShowDialog();
       if (dialog == true)
       {
-        filesSource.Add(inputWindow.Input);
+        string choice = inputWindow.Input;
+        if (IsDirectory(choice) == true)
+        {
+          foreach (var file in Directory.EnumerateFiles(choice))
+          {
+            if (!filesSource.Contains(file) && !file.Contains(SplatTagDatabase.GenericFilesImporter.SourcesFileName))
+            {
+              filesSource.Add(file);
+            }
+          }
+        }
+        else
+        {
+          filesSource.Add(inputWindow.Input);
+        }
       }
+    }
+
+    /// <summary>
+    /// Get if the path is a directory (true), file (false), or doesn't exist (null).
+    /// </summary>
+    private bool? IsDirectory(string path)
+    {
+      if (File.Exists(path)) return false;
+      if (Directory.Exists(path)) return true;
+      return null;
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)

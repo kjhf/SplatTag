@@ -13,8 +13,10 @@
     <BooleanToVisibilityConverter x:Key="boolToVis" />
     <local:GetTeamPlayersConverter x:Key="getTeamPlayers" />
     <local:PlayerOldTeamsToStringConverter x:Key="playerOldTeamsToStringConverter" />
+    <local:GetTeamBestPlayerDivConverter x:Key="getTeamBestPlayerDivConverter" />
     <local:SourcesToStringConverter x:Key="sourcesToStringConverter" />
-    <local:TeamIdToString x:Key="teamIdToString" />    
+    <local:TeamIdToString x:Key="teamIdToString" />
+    
 
     <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
       <Setter Property="Background" Value="Honeydew" />
@@ -49,7 +51,7 @@
       <Grid x:Name="searchGrid"  Grid.Column="0" ToolTip="Search for a team or player by typing here given the options on the right.">
         <TextBox x:Name="searchInput" MinWidth="50" Background="Transparent" TextChanged="SearchInput_TextChanged" />
         <!-- Hint Text -->
-        <TextBlock Style="{StaticResource hintTextBlockStyle}" Margin="5,2" MinWidth="50" Text="Search a team or player" IsHitTestVisible="False"
+        <TextBlock Style="{StaticResource hintTextBlockStyle}" Margin="5,2" MinWidth="50" Text="Search a team, player, tag, friend code, or Discord tag" IsHitTestVisible="False"
                      Visibility="{Binding ElementName=searchInput, Path=Text.IsEmpty, Converter={StaticResource boolToVis}}" />
       </Grid>
       <Grid x:Name="searchFunctionsGrid"  Grid.Column="1">
@@ -89,6 +91,32 @@
                         <Binding Path="." Converter="{StaticResource playerOldTeamsToStringConverter}" />
                       </MultiBinding>
                     </TextBlock.Text>
+                    <TextBlock.ContextMenu>
+                      <ContextMenu>
+                        <MenuItem>
+                          <MenuItem.Header>
+                            <TextBlock Style="{StaticResource detailsTextBlockStyle}">
+                              <TextBlock.Text>
+                                <MultiBinding StringFormat="{}Discord Name: {0}">
+                                  <Binding Path="DiscordName" TargetNullValue="(not set)" />
+                                </MultiBinding>
+                              </TextBlock.Text>
+                            </TextBlock>
+                          </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem>
+                          <MenuItem.Header>
+                            <TextBlock Style="{StaticResource detailsTextBlockStyle}">
+                              <TextBlock.Text>
+                                <MultiBinding StringFormat="{}Friend Code: {0}">
+                                  <Binding Path="FriendCode" TargetNullValue="(not set)" />
+                                </MultiBinding>
+                              </TextBlock.Text>
+                            </TextBlock>
+                          </MenuItem.Header>
+                        </MenuItem>
+                      </ContextMenu>
+                    </TextBlock.ContextMenu>
                     <TextBlock.ToolTip>
                       <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}"/>
                     </TextBlock.ToolTip>
@@ -112,12 +140,22 @@
                     <Expander.Header>
                       <TextBlock Style="{StaticResource detailsTextBlockStyle}">
                         <TextBlock.Text>
-                          <MultiBinding StringFormat="{}{0} {1} (Div {2})">
+                          <MultiBinding StringFormat="{}{0} {1} (Div {2}). Highest Div'd player is Div {3}">
                             <Binding Path="Tag" />
                             <Binding Path="Name" />
                             <Binding Path="Div" />
+                            <Binding Path="." Converter="{StaticResource getTeamBestPlayerDivConverter}" />
                           </MultiBinding>
                         </TextBlock.Text>
+                        <TextBlock.ContextMenu>
+                          <ContextMenu>
+                            <MenuItem>
+                              <MenuItem.Header>
+                                <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}"/>
+                              </MenuItem.Header>
+                            </MenuItem>
+                          </ContextMenu>
+                        </TextBlock.ContextMenu>
                         <TextBlock.ToolTip>
                           <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}"/>
                         </TextBlock.ToolTip>

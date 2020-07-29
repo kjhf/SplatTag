@@ -38,12 +38,12 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.8";
+    public string Version => "Version 0.0.9";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "v0.0.08: Support of Battlefy. Improved sameness detection. \nv0.0.07: Added sources data on hover.";
+    public string VersionToolTip => "v0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements. \nv0.0.08: Support of Battlefy. Improved sameness detection. \nv0.0.07: Added sources data on hover.";
 
     static MainWindow()
     {
@@ -231,6 +231,46 @@ namespace SplatTagUI
       }
 
       return sb.ToString();
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      throw new NotImplementedException();
+    }
+  }
+
+  public class GetTeamBestPlayerDivConverter : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      if (value is Team t)
+      {
+      }
+      else if (value is long teamId)
+      {
+        t = MainWindow.splatTagController.GetTeamById(teamId);
+      }
+      else
+      {
+        throw new InvalidDataException("Unknown type to convert: " + value.GetType());
+      }
+
+      (Player, bool)[] playersForTeam = MainWindow.splatTagController.GetPlayersForTeam(t);
+      Division highestDiv = t.Div;
+      foreach ((Player, bool) pair in playersForTeam)
+      {
+        if (pair.Item2 && pair.Item1.Teams.Count() > 1)
+        {
+          foreach (Team playerTeam in pair.Item1.Teams.Select(id => MainWindow.splatTagController.GetTeamById(id)))
+          {
+            if (playerTeam.Div < highestDiv)
+            {
+              highestDiv = playerTeam.Div;
+            }
+          }
+        }
+      }
+      return highestDiv;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

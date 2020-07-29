@@ -79,6 +79,7 @@ namespace SplatTagCore
       Func<Player, bool> func;
       if (matchOptions.QueryIsRegex)
       {
+        // Regex match
         try
         {
           Regex regex;
@@ -93,7 +94,23 @@ namespace SplatTagCore
 
           func = (p) =>
           {
-            IEnumerable<string> names = matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(p.Names) : p.Names;
+            List<string> names = new List<string>();
+            names.AddRange(p.Names);
+            if (p.DiscordName != null)
+            {
+              names.Add(p.DiscordName);
+            }
+            if (p.FriendCode != null)
+            {
+              names.Add(p.FriendCode);
+            }
+            if (matchOptions.NearCharacterRecognition)
+            {
+              for (int i = 0; i < names.Count; i++)
+              {
+                names[i] = names[i].TransformString();
+              }
+            }
             return names.Any(n => regex.IsMatch(n));
           };
         }
@@ -109,7 +126,23 @@ namespace SplatTagCore
         StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         func = (p) =>
         {
-          IEnumerable<string> names = matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(p.Names) : p.Names;
+          List<string> names = new List<string>();
+          names.AddRange(p.Names);
+          if (p.DiscordName != null)
+          {
+            names.Add(p.DiscordName);
+          }
+          if (p.FriendCode != null)
+          {
+            names.Add(p.FriendCode);
+          }
+          if (matchOptions.NearCharacterRecognition)
+          {
+            for (int i = 0; i < names.Count; i++)
+            {
+              names[i] = names[i].TransformString();
+            }
+          }
           return names.Contains(query, comparion);
         };
       }

@@ -2,6 +2,11 @@
 
 ## In-Dev Releases
 
+### v0.0.09
+* Stability improvements and NRE fixes
+* Now searches Discord tags and FCs
+* Now able to add an entire folder to the database
+
 ### v0.0.08
 * Reimplemented internal ids system.
 * Improved sameness detection of Player and Team names.

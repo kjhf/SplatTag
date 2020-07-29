@@ -65,7 +65,7 @@
         <StackPanel Style="{StaticResource stackPanelStyle}" VerticalAlignment="Center">
           <Button x:Name="orderUpButton" Content="↑" Style="{StaticResource buttonEnabledWhenListSelectedStyle}" FontSize="20" FontWeight="ExtraBold" ToolTip="Move the database file up the order (older)" Click="OrderUpButton_Click" />
 
-          <Button x:Name="loadButton" Content=" Load file" Style="{StaticResource listButton}" ToolTip="Asks for a file or site to load teams and players into the database." Click="LoadButton_Click" />
+          <Button x:Name="loadButton" Content=" Load file" Style="{StaticResource listButton}" ToolTip="Asks for a file or directory or site to load teams and players into the database." Click="LoadButton_Click" />
           <Button x:Name="removeButton" Content=" Remove file" Style="{StaticResource buttonEnabledWhenListSelectedStyle}" ToolTip="Asks for a file or site to load teams and players into the database." Click="RemoveButton_Click" />
 
           <Button x:Name="orderDownButton" Content="↓" Style="{StaticResource buttonEnabledWhenListSelectedStyle}" FontSize="20" FontWeight="ExtraBold" ToolTip="Move the database file down the order (newer)" Click="OrderDownButton_Click" />

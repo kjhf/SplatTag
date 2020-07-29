@@ -2,6 +2,7 @@
 {
   /// <summary>
   /// A division. X is div 0. X+ is div -1. Unknown is int.MaxValue.
+  /// Higher divs are LOWER in number.
   /// </summary>
   public class Division
   {
