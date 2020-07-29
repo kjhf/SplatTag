@@ -14,20 +14,21 @@ namespace SplatTagCore
     /// <summary>
     /// Back-store for the names of this player. The first element is the current name.
     /// </summary>
-    private Stack<string> names = new Stack<string>();
+    private LinkedList<string> names = new LinkedList<string>();
 
     /// <summary>
-    /// Back-store for the teams for this player. The first element is the current team.
+    /// Back-store for the team ids for this player. The first element is the current team.
+    /// A 0 represents no team.
     /// </summary>
-    private Stack<Team> teams = new Stack<Team>();
+    private LinkedList<long> teams = new LinkedList<long>();
 
     /// <summary>
     /// The names this player is known by.
     /// </summary>
-    public string[] Names
+    public IEnumerable<string> Names
     {
       get => names.ToArray();
-      set => names = new Stack<string>(value);
+      set => names = new LinkedList<string>(value);
     }
 
     /// <summary>
@@ -35,26 +36,30 @@ namespace SplatTagCore
     /// </summary>
     public string Name
     {
-      get => names.Count > 0 ? names.Peek() : UNKNOWN_PLAYER;
-      set => names.Push(value);
+      get => names.Count > 0 ? names.First.Value : UNKNOWN_PLAYER;
+      set => names.AddFirst(value);
     }
 
     /// <summary>
     /// The teams this player is played for.
+    /// A 0 represents no team.
     /// </summary>
-    public Team[] Teams
+    public IEnumerable<long> Teams
     {
       get => teams.ToArray();
-      set => teams = new Stack<Team>(value);
+      set => teams = new LinkedList<long>(value);
     }
 
     /// <summary>
-    /// The current team this player plays for, or null if not set.
+    /// The current team id this player plays for, or 0 if not set.
     /// </summary>
-    public Team CurrentTeam
+    public long CurrentTeam
     {
-      get => teams.Count > 0 ? teams.Peek() : null;
-      set => teams.Push(value);
+      get => teams.Count > 0 ? teams.First.Value : 0;
+      set
+      {
+        teams.AddFirst(value);
+      }
     }
 
     /// <summary>
@@ -68,6 +73,18 @@ namespace SplatTagCore
     public uint Id { get; set; }
 
     /// <summary>
+    /// Get or Set the Discord Name.
+    /// Null by default.
+    /// </summary>
+    public string DiscordName { get; set; } = null;
+
+    /// <summary>
+    /// Get or Set the Friend Code.
+    /// Null by default.
+    /// </summary>
+    public string FriendCode { get; set; } = null;
+
+    /// <summary>
     /// Merge this player with another (newer) player instance
     /// </summary>
     /// <param name="otherPlayer"></param>
@@ -76,13 +93,19 @@ namespace SplatTagCore
       // Merge the players.
       // Iterates the other stack in reverse order so older teams are pushed first
       // so the most recent end up first in the stack.
-      foreach (Team t in otherPlayer.teams.Reverse())
+      foreach (uint t in otherPlayer.teams.Reverse())
       {
-        Team foundTeam = this.teams.FirstOrDefault(playerTeams => playerTeams.Name.Equals(t.Name, StringComparison.OrdinalIgnoreCase));
-
-        if (foundTeam == null)
+        if (this.teams.Contains(t))
         {
-          teams.Push(t);
+          if (teams.First.Value != t)
+          {
+            teams.Remove(t);
+            teams.AddFirst(t);
+          }
+        }
+        else
+        {
+          teams.AddFirst(t);
         }
       }
 
@@ -95,7 +118,12 @@ namespace SplatTagCore
 
         if (foundName == null)
         {
-          names.Push(n);
+          names.AddFirst(n);
+        }
+        else
+        {
+          names.Remove(foundName);
+          names.AddFirst(n);
         }
       }
 
@@ -109,6 +137,17 @@ namespace SplatTagCore
           Sources.Add(source);
         }
       }
+
+      // Merge the misc data
+      if (otherPlayer.FriendCode != null)
+      {
+        this.FriendCode = otherPlayer.FriendCode;
+      }
+
+      if (otherPlayer.DiscordName != null)
+      {
+        this.DiscordName = otherPlayer.DiscordName;
+      }
     }
 
     /// <summary>
@@ -117,7 +156,7 @@ namespace SplatTagCore
     /// <returns></returns>
     public override string ToString()
     {
-      return Name + (CurrentTeam == null ? null : $" (Plays for {CurrentTeam})");
+      return Name;
     }
   }
 }

@@ -1,6 +1,7 @@
 ﻿using SplatTagCore;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace SplatTagDatabase
@@ -19,12 +20,13 @@ namespace SplatTagDatabase
     public (Player[], Team[]) Load()
     {
       Dictionary<uint, Player> players = new Dictionary<uint, Player>();
-      Dictionary<uint, Team> teams = new Dictionary<uint, Team>();
+      Dictionary<long, Team> teams = new Dictionary<long, Team>();
       foreach (var db in importers)
       {
         var (loadedPlayers, loadedTeams) = db.Load();
+        var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
         Merger.MergeTeams(teams, loadedTeams);
-        Merger.MergePlayers(players, loadedPlayers);
+        Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
       }
       return (players.Values.ToArray(), teams.Values.ToArray());
     }

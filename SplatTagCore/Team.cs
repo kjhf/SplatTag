@@ -6,6 +6,16 @@ namespace SplatTagCore
 {
   public class Team
   {
+    public static readonly Team NoTeam = new Team()
+    {
+      ClanTagOption = TagOption.Unknown,
+      ClanTags = new string[] { "FA" },
+      Div = new Division(),
+      Id = 0,
+      Name = "(Free Agent)",
+      Sources = new List<string>()
+    };
+
     /// <summary>
     /// The tag(s) of the team, first is the current tag.
     /// </summary>
@@ -38,13 +48,12 @@ namespace SplatTagCore
     /// <summary>
     /// The database Id of the team.
     /// </summary>
-    public uint Id { get; set; }
+    public long Id { get; set; }
 
     /// <summary>
     /// The most recent tag of the team
     /// </summary>
     public string Tag => ClanTags.Length > 0 ? ClanTags[0] : "";
-
 
     /// <summary>
     /// Get or Set the current sources that make up this Team instance.

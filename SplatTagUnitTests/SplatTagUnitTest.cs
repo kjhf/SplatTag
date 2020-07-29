@@ -53,7 +53,7 @@ namespace SplatTagUnitTests
         {
           Id = PLAYER_ID,
           Names = new string[] { "Example Name" },
-          Teams = new Team[] { exampleTeam }
+          Teams = new long[] { exampleTeam.Id }
         }
       };
 
@@ -117,7 +117,7 @@ namespace SplatTagUnitTests
       Assert.IsNotNull(t);
       object teamsDict = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teamsDict);
-      var dictionary = (IDictionary<uint, Team>)teamsDict;
+      var dictionary = (IDictionary<long, Team>)teamsDict;
       Assert.IsNotNull(dictionary);
       Assert.IsTrue(dictionary.TryGetValue(t.Id, out Team target));
       Assert.IsTrue(target == t);

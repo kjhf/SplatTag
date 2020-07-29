@@ -98,7 +98,7 @@ namespace SplatTagDatabase.Importers
 
           _players.Add(new Player
           {
-            CurrentTeam = _newTeam,
+            CurrentTeam = _newTeam.Id,
             Name = tryPlayerName,
             Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
           });
@@ -119,6 +119,7 @@ namespace SplatTagDatabase.Importers
 
         Team newTeam = new Team
         {
+          Id = (uint)teams.Count,  // This will be updated when the merge happens.
           ClanTags = new string[] { row.Tag },
           ClanTagOption = TagOption.Front,
           Div = new Division(row.Division),
@@ -172,7 +173,7 @@ namespace SplatTagDatabase.Importers
 
     public bool AcceptsInput(string input)
     {
-      return Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
+      return Path.GetFileName(input).StartsWith("LUTI-", StringComparison.InvariantCultureIgnoreCase) && Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
   }
 }

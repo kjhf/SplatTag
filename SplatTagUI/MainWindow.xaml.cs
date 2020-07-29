@@ -38,12 +38,12 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.7";
+    public string Version => "Version 0.0.8";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "v0.0.07: Added sources data on hover. \nv0.0.06: Reduced lag for small searches. \nv0.0.05: Added multiple database GUI and merging of players and teams. \n  v0.0.05.1: Small improvement to handling of blank search. \n  v0.0.05.2: Added icon.";
+    public string VersionToolTip => "v0.0.08: Support of Battlefy. Improved sameness detection. \nv0.0.07: Added sources data on hover.";
 
     static MainWindow()
     {
@@ -171,7 +171,7 @@ namespace SplatTagUI
       throw new NotImplementedException();
     }
   }
-  
+
   public class SourcesToStringConverter : IValueConverter
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -202,6 +202,7 @@ namespace SplatTagUI
       throw new NotImplementedException();
     }
   }
+
   public class PlayerOldTeamsToStringConverter : IValueConverter
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -209,7 +210,7 @@ namespace SplatTagUI
       IEnumerable<Team> teams;
       if (value is Player p)
       {
-        teams = p.Teams;
+        teams = p.Teams.Select(id => MainWindow.splatTagController.GetTeamById(id));
       }
       else if (value is IEnumerable<Team> t)
       {
@@ -230,6 +231,30 @@ namespace SplatTagUI
       }
 
       return sb.ToString();
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      throw new NotImplementedException();
+    }
+  }
+
+  public class TeamIdToString : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      if (value is Team t)
+      {
+        return t;
+      }
+      else if (value is long teamId)
+      {
+        return MainWindow.splatTagController.GetTeamById(teamId);
+      }
+      else
+      {
+        throw new InvalidDataException("Unknown type to convert: " + value.GetType());
+      }
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

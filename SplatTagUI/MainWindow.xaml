@@ -14,6 +14,7 @@
     <local:GetTeamPlayersConverter x:Key="getTeamPlayers" />
     <local:PlayerOldTeamsToStringConverter x:Key="playerOldTeamsToStringConverter" />
     <local:SourcesToStringConverter x:Key="sourcesToStringConverter" />
+    <local:TeamIdToString x:Key="teamIdToString" />    
 
     <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
       <Setter Property="Background" Value="Honeydew" />
@@ -84,7 +85,7 @@
                     <TextBlock.Text>
                       <MultiBinding StringFormat="{}{0} (Plays for {1}) {2}">
                         <Binding Path="Name" />
-                        <Binding Path="CurrentTeam" TargetNullValue="?" />
+                        <Binding Path="CurrentTeam" Converter="{StaticResource teamIdToString}" />
                         <Binding Path="." Converter="{StaticResource playerOldTeamsToStringConverter}" />
                       </MultiBinding>
                     </TextBlock.Text>

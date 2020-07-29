@@ -11,13 +11,13 @@ namespace SplatTagCore
   {
     private readonly ISplatTagDatabase database;
     private SortedDictionary<uint, Player> players;
-    private SortedDictionary<uint, Team> teams;
+    private SortedDictionary<long, Team> teams;
 
     public SplatTagController(ISplatTagDatabase database)
     {
       this.database = database;
       this.players = new SortedDictionary<uint, Player>();
-      this.teams = new SortedDictionary<uint, Team>();
+      this.teams = new SortedDictionary<long, Team>();
     }
 
     public void Initialise(string[] commandArgs)
@@ -37,7 +37,7 @@ namespace SplatTagCore
       else
       {
         players = new SortedDictionary<uint, Player>(loadedPlayers.ToDictionary(x => x.Id, x => x));
-        teams = new SortedDictionary<uint, Team>(loadedTeams.ToDictionary(x => x.Id, x => x));
+        teams = new SortedDictionary<long, Team>(loadedTeams.ToDictionary(x => x.Id, x => x));
         Console.WriteLine("Database loaded successfully.");
       }
     }
@@ -53,9 +53,8 @@ namespace SplatTagCore
     /// </summary>
     public (Player, bool)[] GetPlayersForTeam(Team t)
     {
-      return players.Values
-        .Where(p => p.Teams.Contains(t))
-        .Select(p => (p, p.CurrentTeam.Equals(t))).ToArray();
+      var teamPlayers = players.Values.Where(p => p.Teams.Contains(t.Id));
+      return teamPlayers.Select(p => (p, p.CurrentTeam == t.Id)).ToArray();
     }
 
     /// <summary>
@@ -94,7 +93,7 @@ namespace SplatTagCore
 
           func = (p) =>
           {
-            string[] names = matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(p.Names) : p.Names;
+            IEnumerable<string> names = matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(p.Names) : p.Names;
             return names.Any(n => regex.IsMatch(n));
           };
         }
@@ -110,7 +109,7 @@ namespace SplatTagCore
         StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         func = (p) =>
         {
-          string[] names = matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(p.Names) : p.Names;
+          IEnumerable<string> names = matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(p.Names) : p.Names;
           return names.Contains(query, comparion);
         };
       }
@@ -213,6 +212,28 @@ namespace SplatTagCore
       };
       teams.Add(t.Id, t);
       return t;
+    }
+
+    /// <summary>
+    /// Match a Player by its id.
+    /// </summary>
+    public Player GetPlayerById(uint id)
+    {
+      bool matched = players.TryGetValue(id, out Player found);
+      return matched ? found : null;
+    }
+
+    /// <summary>
+    /// Match a Team by its id.
+    /// </summary>
+    public Team GetTeamById(long id)
+    {
+      if (id == 0)
+      {
+        return Team.NoTeam;
+      }
+      bool matched = teams.TryGetValue(id, out Team found);
+      return matched ? found : null;
     }
   }
 }

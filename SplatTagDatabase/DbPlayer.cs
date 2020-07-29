@@ -7,6 +7,6 @@ namespace SplatTagDatabase
   {
     public uint id;
     public string[] names;
-    public uint[] teams;
+    public long[] teams;
   }
 }

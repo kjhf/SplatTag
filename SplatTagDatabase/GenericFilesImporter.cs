@@ -11,7 +11,7 @@ namespace SplatTagDatabase
   {
     private readonly List<string> sources = new List<string>();
     private readonly SortedDictionary<uint, Player> players = new SortedDictionary<uint, Player>();
-    private readonly SortedDictionary<uint, Team> teams = new SortedDictionary<uint, Team>();
+    private readonly SortedDictionary<long, Team> teams = new SortedDictionary<long, Team>();
     private readonly string sourcesFile;
 
     public string[] Sources => sources.ToArray();
@@ -82,14 +82,15 @@ namespace SplatTagDatabase
         return "Input does not exist on disk. Remote is not currently supported.";
       }
 
-      LUTIJsonReader reader = new LUTIJsonReader(input);
-      if (reader.AcceptsInput(input))
+      LUTIJsonReader lutiReader = new LUTIJsonReader(input);
+      if (lutiReader.AcceptsInput(input))
       {
         try
         {
-          var (loadedPlayers, loadedTeams) = reader.Load();
+          var (loadedPlayers, loadedTeams) = lutiReader.Load();
+          var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
           Merger.MergeTeams(teams, loadedTeams);
-          Merger.MergePlayers(players, loadedPlayers);
+          Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
           return "";
         }
         catch (Exception ex)
@@ -99,7 +100,26 @@ namespace SplatTagDatabase
       }
       else
       {
-        return "File extension not recognised or supported.";
+        BattlefyJsonReader battlefyReader = new BattlefyJsonReader(input);
+        if (battlefyReader.AcceptsInput(input))
+        {
+          try
+          {
+            var (loadedPlayers, loadedTeams) = battlefyReader.Load();
+            var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
+            Merger.MergeTeams(teams, loadedTeams);
+            Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
+            return "";
+          }
+          catch (Exception ex)
+          {
+            return ex.Message;
+          }
+        }
+        else
+        {
+          return "File extension not recognised or supported.";
+        }
       }
     }
   }

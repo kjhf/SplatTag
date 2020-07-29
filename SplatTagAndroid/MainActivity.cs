@@ -115,7 +115,7 @@ namespace SplatTagAndroid
              }
            ).Select(p =>
              // Use URLEncoder to unmangle any special characters
-             URLDecoder.Decode(URLEncoder.Encode($"{p.Name} (Plays for {p.CurrentTeam}) {GetOldTeamsAsString(p)}", "UTF-8"), "UTF-8"));
+             URLDecoder.Decode(URLEncoder.Encode($"{p.Name} (Plays for {splatTagController.GetTeamById(p.CurrentTeam).Name}) {GetOldTeamsAsString(p)}", "UTF-8"), "UTF-8"));
 
           playersFound = playerStrings.Count();
           if (playersFound != 0)
@@ -193,11 +193,15 @@ namespace SplatTagAndroid
     public string GetOldTeamsAsString(Player p)
     {
       StringBuilder sb = new StringBuilder();
-      IEnumerable<Team> teams = p.Teams.Skip(1);
-      if (teams.Any())
+      IEnumerable<long> teamIds = p.Teams.Skip(1);
+      if (teamIds.Any())
       {
         sb.Append("(Old teams: ");
-        sb.Append(string.Join(", ", teams.Select(t => t.Tag + " " + t.Name)));
+        sb.Append(string.Join(", ", teamIds.Select(id =>
+        {
+          Team t = splatTagController.GetTeamById(id);
+          return t.Tag + " " + t.Name;
+        })));
         sb.Append(")");
       }
 

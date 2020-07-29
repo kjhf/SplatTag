@@ -81,9 +81,15 @@ namespace SplatTagUI
 
     private void OrderUpButton_Click(object sender, RoutedEventArgs e)
     {
-      if (databaseOrderListBox.SelectedIndex >= 0)
+      if (databaseOrderListBox.SelectedIndex >= 1)
       {
         int newIndex = (databaseOrderListBox.SelectedIndex - 1) % filesSource.Count;
+        filesSource.Move(databaseOrderListBox.SelectedIndex, newIndex);
+        databaseOrderListBox.SelectedIndex = newIndex;
+      }
+      else if (databaseOrderListBox.SelectedIndex == 0)
+      {
+        int newIndex = filesSource.Count - 1;
         filesSource.Move(databaseOrderListBox.SelectedIndex, newIndex);
         databaseOrderListBox.SelectedIndex = newIndex;
       }

@@ -76,7 +76,7 @@ namespace SplatTagConsole
             Console.WriteLine("Where does the clan tag go?");
             foreach (TagOption option in Enum.GetValues(typeof(TagOption)))
             {
-              Console.WriteLine($"{(int)option}. {option.ToString()}");
+              Console.WriteLine($"{(int)option}. {option}");
             }
             Enum.TryParse(Console.ReadLine(), out TagOption temp);
             t.ClanTagOption = temp;
@@ -109,7 +109,7 @@ namespace SplatTagConsole
 
                 case 1:
                 {
-                  p.Teams = new Team[1] { matchedTeams[0] };
+                  p.Teams = new long[1] { matchedTeams[0].Id };
                   Console.WriteLine("Successfully matched.");
                   break;
                 }
@@ -117,7 +117,7 @@ namespace SplatTagConsole
                 default:
                 {
                   Console.WriteLine($"More than one team matched. Assuming the first one ({matchedTeams[0].Name}).");
-                  p.Teams = new Team[1] { matchedTeams[0] };
+                  p.Teams = new long[1] { matchedTeams[0].Id };
                   break;
                 }
               }

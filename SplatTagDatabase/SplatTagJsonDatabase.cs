@@ -58,7 +58,7 @@ namespace SplatTagDatabase
         {
           Id = p.id,
           Names = p.names,
-          Teams = p.teams.Select(i => teams.Find(t => t.Id == i)).ToArray()
+          Teams = p.teams.ToArray()
         });
       }
 
@@ -86,8 +86,8 @@ namespace SplatTagDatabase
           return new DbPlayer
           {
             id = p.Id,
-            names = p.Names,
-            teams = p.Teams.Select(t => t.Id).ToArray()
+            names = p.Names.ToArray(),
+            teams = p.Teams.ToArray()
           };
         }).ToArray()
       };
@@ -101,9 +101,14 @@ namespace SplatTagDatabase
       {
         teams = saveTeams.Select(t =>
         {
+          if (t.Id < 0)
+          {
+            throw new ArgumentException("Team id cannot be negative - check teams have been merged.");
+          }
+
           return new DbTeam
           {
-            id = t.Id,
+            id = (uint)t.Id,
             clanTagOption = (int)t.ClanTagOption,
             clanTags = t.ClanTags,
             name = t.Name,
