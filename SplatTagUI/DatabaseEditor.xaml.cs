@@ -57,25 +57,27 @@ namespace SplatTagUI
     {
       InputWindow inputWindow = new InputWindow
       {
-        HintText = "File, directory, or site to import?"
+        HintText = "File, directory, or website to import? (You can paste into here!)"
       };
       bool? dialog = inputWindow.ShowDialog();
       if (dialog == true)
       {
-        string choice = inputWindow.Input;
-        if (IsDirectory(choice) == true)
+        foreach (string path in inputWindow.Input.Split('>').Where(s => !string.IsNullOrWhiteSpace(s)))
         {
-          foreach (var file in Directory.EnumerateFiles(choice))
+          if (IsDirectory(path) == true)
           {
-            if (!filesSource.Contains(file) && !file.Contains(SplatTagDatabase.GenericFilesImporter.SourcesFileName))
+            foreach (var file in Directory.EnumerateFiles(path))
             {
-              filesSource.Add(file);
+              if (!filesSource.Contains(file) && !file.Contains(SplatTagDatabase.GenericFilesImporter.SourcesFileName))
+              {
+                filesSource.Add(file);
+              }
             }
           }
-        }
-        else
-        {
-          filesSource.Add(inputWindow.Input);
+          else
+          {
+            filesSource.Add(path);
+          }
         }
       }
     }

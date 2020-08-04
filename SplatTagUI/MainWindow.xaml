@@ -16,7 +16,7 @@
     <local:GetTeamBestPlayerDivConverter x:Key="getTeamBestPlayerDivConverter" />
     <local:SourcesToStringConverter x:Key="sourcesToStringConverter" />
     <local:TeamIdToString x:Key="teamIdToString" />
-    
+    <local:JoinStringsConverter x:Key="joinStringsConverter" />
 
     <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
       <Setter Property="Background" Value="Honeydew" />
@@ -93,6 +93,17 @@
                     </TextBlock.Text>
                     <TextBlock.ContextMenu>
                       <ContextMenu>
+                        <MenuItem>
+                          <MenuItem.Header>
+                            <TextBlock Style="{StaticResource detailsTextBlockStyle}">
+                              <TextBlock.Text>
+                                <MultiBinding StringFormat="{}Names: {0}">
+                                  <Binding Path="Names" TargetNullValue="(not set)" Converter="{StaticResource joinStringsConverter}" />
+                                </MultiBinding>
+                              </TextBlock.Text>
+                            </TextBlock>
+                          </MenuItem.Header>
+                        </MenuItem>
                         <MenuItem>
                           <MenuItem.Header>
                             <TextBlock Style="{StaticResource detailsTextBlockStyle}">

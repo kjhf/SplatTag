@@ -3,6 +3,8 @@ using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SplatTagDatabase.Importers
 {
@@ -57,9 +59,49 @@ namespace SplatTagDatabase.Importers
       [JsonProperty("customFields")]
       public Dictionary<string, string>[] CustomFields { get; set; }
 
-      public string CaptainDiscordName => CustomFields[0]["value"].Contains("#") ? CustomFields[0]["value"] : CustomFields[1]["value"];
+      public string CaptainDiscordName
+      {
+        get
+        {
+          if (CustomFields.Length > 0)
+          {
+            if (Player.DISCORD_NAME_REGEX.IsMatch(CustomFields[0]["value"]))
+            {
+              return CustomFields[0]["value"];
+            }
+            else if (CustomFields.Length > 1)
+            {
+              if (Player.DISCORD_NAME_REGEX.IsMatch(CustomFields[1]["value"]))
+              {
+                return CustomFields[1]["value"];
+              }
+            }
+          }
+          return null;
+        }
+      }
 
-      public string CaptainFriendCode => CustomFields[0]["value"].Contains("#") ? CustomFields[1]["value"] : CustomFields[0]["value"];
+      public string CaptainFriendCode
+      {
+        get
+        {
+          if (CustomFields.Length > 0)
+          {
+            if (Player.FRIEND_CODE_REGEX.IsMatch(CustomFields[0]["value"]))
+            {
+              return CustomFields[0]["value"];
+            }
+            else if (CustomFields.Length > 1)
+            {
+              if (Player.FRIEND_CODE_REGEX.IsMatch(CustomFields[1]["value"]))
+              {
+                return CustomFields[1]["value"];
+              }
+            }
+          }
+          return null;
+        }
+      }
 
       // [JsonProperty("ownerID", Required = Required.Default)]
       // public string BattlefyOwnerId { get; set; }
@@ -109,17 +151,26 @@ namespace SplatTagDatabase.Importers
       {
         if (row.Captain == null)
         {
-          throw new ArgumentException("JSON does not contain a Team Captain. Check format of the incoming JSON.");
+          Console.WriteLine("JSON does not contain a Team Captain for this team. Check format of the incoming JSON: " + row.TeamName + " in file " + jsonFile);
+          continue;
+        }
+
+        if (row.Players.Length < 3)
+        {
+          Console.WriteLine("JSON does not contain 3+ players for this team. Check format of the incoming JSON: " + row.TeamName + " in file " + jsonFile);
+          continue;
+        }
+
+        if (row.CustomFields.Length < 2)
+        {
+          Console.WriteLine("JSON does not contain Custom Field containing the Discord/Switch FC for this team. Continuing anyway. " + row.TeamName + " in file " + jsonFile);
         }
 
         // Attempt to resolve the team tag
         int i;
         string tag = "";
-        int minLength = row.Players[0].Name.Length;
-        minLength = minLength < row.Players[1].Name.Length ? minLength : row.Players[1].Name.Length;
-        minLength = minLength < row.Players[2].Name.Length ? minLength : row.Players[2].Name.Length;
-        minLength = minLength < row.Players[3].Name.Length ? minLength : row.Players[3].Name.Length;
-        for (i = 0; row.Players[0].Name[i] == row.Players[1].Name[i] && row.Players[2].Name[i] == row.Players[3].Name[i] && i < minLength; i++) { }
+        int minLength = row.Players.Min(p => p.Name.Length);
+        for (i = 0; row.Players[0].Name[i] == row.Players[1].Name[i] && row.Players[2].Name[i] == row.Players[0].Name[i] && i < minLength; i++) { }
         if (i >= 2)
         {
           tag = row.Players[0].Name.Substring(0, i);
@@ -145,12 +196,19 @@ namespace SplatTagDatabase.Importers
             p.Name = p.Name.Substring(tag.Length).Trim();
           }
 
+          // Filter the friend code from the name, if found
+          Match fcMatch = Player.FRIEND_CODE_REGEX.Match(p.Name);
+          if (fcMatch.Success)
+          {
+            p.Name = Player.FRIEND_CODE_REGEX.Replace(p.Name, "").Trim();
+          }
+
           players.Add(new Player
           {
             CurrentTeam = newTeam.Id,
             Names = new string[] { p.Name, p.BattlefyName },
             Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) },
-            FriendCode = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null,
+            FriendCode = fcMatch.Success ? fcMatch.Value.Trim(new char[] { '(', ')'}) : ((p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null),
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
           });
         }
@@ -161,7 +219,8 @@ namespace SplatTagDatabase.Importers
 
     public bool AcceptsInput(string input)
     {
-      return Path.GetFileName(input).StartsWith("LI-", StringComparison.InvariantCultureIgnoreCase) && Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
+      // NOT a LUTI file but is a JSON file
+      return !Path.GetFileName(input).StartsWith("LUTI-", StringComparison.InvariantCultureIgnoreCase) && Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
   }
 }

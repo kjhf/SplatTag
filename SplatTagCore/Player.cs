@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SplatTagCore
 {
@@ -10,6 +11,8 @@ namespace SplatTagCore
     /// Displayed string for an unknown player.
     /// </summary>
     public const string UNKNOWN_PLAYER = "(unknown)";
+    public static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?\d{4}(-| )\d{4}(-| )\d{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+    public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     /// <summary>
     /// Back-store for the names of this player. The first element is the current name.

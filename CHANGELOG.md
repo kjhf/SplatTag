@@ -2,6 +2,12 @@
 
 ## In-Dev Releases
 
+### v0.0.10
+* Supports InkTV. Corrected bugs around incomplete tournament data. Now loads all the known sources.
+* Pulls friend codes from usernames. 
+* Added a browse button to the sources loader.
+* Added file browser to the sources
+
 ### v0.0.09
 * Stability improvements and NRE fixes
 * Now searches Discord tags and FCs

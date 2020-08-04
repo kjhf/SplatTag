@@ -20,32 +20,41 @@
 
     public Division(string div)
     {
-      if (string.IsNullOrWhiteSpace(div))
+      if (div == null)
       {
-        // Unknown
-        this.div = int.MaxValue;
-      }
-      else if (div.Equals("X+", System.StringComparison.OrdinalIgnoreCase))
-      {
-        this.div = X_PLUS;
-      }
-      else if (div.Equals("X", System.StringComparison.OrdinalIgnoreCase))
-      {
-        this.div = X;
-      }
-      else if (int.TryParse(div, out int divParse))
-      {
-        this.div = divParse;
-      }
-      else if (int.TryParse(div[0].ToString(), out int divParse2))
-      {
-        // 8U and 8M, hopefully will protect against mixed divisions in future.
-        // May cause a problem for strings such as 10M (if we get to 10+ divisions).
-        this.div = divParse2;
+        this.div = UNKNOWN;
       }
       else
       {
-        this.div = UNKNOWN;
+        div = div.Trim(new char[] { '(', 'D', 'd', 'i', 'v', ')', ' ', });
+
+        if (string.IsNullOrWhiteSpace(div))
+        {
+          // Unknown
+          this.div = int.MaxValue;
+        }
+        else if (div.Equals("X+", System.StringComparison.OrdinalIgnoreCase))
+        {
+          this.div = X_PLUS;
+        }
+        else if (div.Equals("X", System.StringComparison.OrdinalIgnoreCase))
+        {
+          this.div = X;
+        }
+        else if (int.TryParse(div, out int divParse))
+        {
+          this.div = divParse;
+        }
+        else if (int.TryParse(div[0].ToString(), out int divParse2))
+        {
+          // 8U and 8M, hopefully will protect against mixed divisions in future.
+          // May cause a problem for strings such as 10M (if we get to 10+ divisions).
+          this.div = divParse2;
+        }
+        else
+        {
+          this.div = UNKNOWN;
+        }
       }
     }
 

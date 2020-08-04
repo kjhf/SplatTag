@@ -20,7 +20,7 @@ namespace SplatTagUI
     /// <summary>
     /// Timer delay in milliseconds for smooth searching for small searches
     /// </summary>
-    private const int TIMER_DELAY_MILLIS = 300;
+    private const int TIMER_DELAY_MILLIS = 333;
 
     /// <summary>
     /// Number of characters minimum before skipping the smooth searching timer delay
@@ -38,12 +38,12 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.9";
+    public string Version => "Version 0.0.10";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "v0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements. \nv0.0.08: Support of Battlefy. Improved sameness detection. \nv0.0.07: Added sources data on hover.";
+    public string VersionToolTip => "v0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader. \nv0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements. \nv0.0.08: Support of Battlefy. Improved sameness detection. \nv0.0.07: Added sources data on hover.";
 
     static MainWindow()
     {
@@ -302,4 +302,34 @@ namespace SplatTagUI
       throw new NotImplementedException();
     }
   }
+
+  public class JoinStringsConverter : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      if (value is string[] values1)
+      {
+        return string.Join(", ", values1);
+      }
+      else if (value is IEnumerable<string> values2)
+      {
+        return string.Join(", ", values2);
+      }
+      else if (value is string values3)
+      {
+        return values3;
+      }
+      else
+      {
+        throw new InvalidDataException("Unknown type to convert: " + value.GetType());
+      }
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      throw new NotImplementedException();
+    }
+  }
+
+  
 }
