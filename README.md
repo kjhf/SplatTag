@@ -20,12 +20,13 @@ Importers can be found under SplatTagCore.Importers.
 
 ## TODOs
 ### Features
-- Import from csv
+- French League data
 - Fetching of data from a remote site, e.g. SplatNet, sendou.ink
 - Estimation of div based on tourney results
 - Command line arguments to pipe a matched result elsewhere and automated fetching of data.
-- Twitter handles -- test 404 with _spl?
+  - Auto population of Twitter handles
 - Improve distribution process; a nice installer and updater
+- Import from csv
 
 ### Bugs
 - Fix bug where a player is no longer part of a team but shows as current if they have not joined a different team

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -267,6 +268,26 @@ namespace SplatTagCore
       }
       bool matched = teams.TryGetValue(id, out Team found);
       return matched ? found : null;
+    }
+
+    public void TryLaunchTwitter(Team t)
+    {
+      if (t.Twitter != null)
+      {
+        try
+        {
+          var ps = new ProcessStartInfo(t.Twitter)
+          {
+            UseShellExecute = true,
+            Verb = "open"
+          };
+          Process.Start(ps);
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine($"Can't start the Twitter address at {t.Twitter}: {ex.Message}");
+        }
+      }
     }
   }
 }

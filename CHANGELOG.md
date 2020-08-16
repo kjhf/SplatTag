@@ -2,6 +2,9 @@
 
 ## In-Dev Releases
 
+### v0.0.11
+* Added Twitter link capability. "Twitter.json" can be loaded in dictionary form with team-name as key and twitter link as value.
+
 ### v0.0.10
 * Supports InkTV. Corrected bugs around incomplete tournament data. Now loads all the known sources.
 * Pulls friend codes from usernames. 

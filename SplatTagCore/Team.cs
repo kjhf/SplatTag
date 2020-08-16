@@ -58,12 +58,17 @@ namespace SplatTagCore
     /// <summary>
     /// Get or Set the current sources that make up this Team instance.
     /// </summary>
-    public List<string> Sources { get; set; }
+    public List<string> Sources { get; set; } = new List<string>();
+
+    /// <summary>
+    /// Get or Set the team's twitter link.
+    /// </summary>
+    public string Twitter { get; set; }
 
     /// <summary>
     /// Merge this team with another (newer) team instance
     /// </summary>
-    /// <param name="otherPlayer"></param>
+    /// <param name="otherTeam"></param>
     public void Merge(Team otherTeam)
     {
       // Merge the tags.
@@ -80,6 +85,12 @@ namespace SplatTagCore
           // The tag has changed, update the tag option.
           this.ClanTagOption = otherTeam.ClanTagOption;
         }
+      }
+
+      // Merge Twitter
+      if (!string.IsNullOrWhiteSpace(otherTeam.Twitter))
+      {
+        this.Twitter = otherTeam.Twitter;
       }
 
       // Update the div if the other div is known.

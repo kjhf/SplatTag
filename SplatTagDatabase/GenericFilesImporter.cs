@@ -83,15 +83,13 @@ namespace SplatTagDatabase
         return "Input does not exist on disk. Remote is not currently supported.";
       }
 
-      LUTIJsonReader lutiReader = new LUTIJsonReader(input);
-      if (lutiReader.AcceptsInput(input))
+      TwitterReader twitterReader = new TwitterReader(input);
+      if (twitterReader.AcceptsInput(input))
       {
         try
         {
-          var (loadedPlayers, loadedTeams) = lutiReader.Load();
-          var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
+          var (_, loadedTeams) = twitterReader.Load();
           Merger.MergeTeams(teams, loadedTeams);
-          Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
           return "";
         }
         catch (Exception ex)
@@ -101,12 +99,12 @@ namespace SplatTagDatabase
       }
       else
       {
-        BattlefyJsonReader battlefyReader = new BattlefyJsonReader(input);
-        if (battlefyReader.AcceptsInput(input))
+        LUTIJsonReader lutiReader = new LUTIJsonReader(input);
+        if (lutiReader.AcceptsInput(input))
         {
           try
           {
-            var (loadedPlayers, loadedTeams) = battlefyReader.Load();
+            var (loadedPlayers, loadedTeams) = lutiReader.Load();
             var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
             Merger.MergeTeams(teams, loadedTeams);
             Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
@@ -119,7 +117,26 @@ namespace SplatTagDatabase
         }
         else
         {
-          return "File extension not recognised or supported.";
+          BattlefyJsonReader battlefyReader = new BattlefyJsonReader(input);
+          if (battlefyReader.AcceptsInput(input))
+          {
+            try
+            {
+              var (loadedPlayers, loadedTeams) = battlefyReader.Load();
+              var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
+              Merger.MergeTeams(teams, loadedTeams);
+              Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
+              return "";
+            }
+            catch (Exception ex)
+            {
+              return ex.Message;
+            }
+          }
+          else
+          {
+            return "File extension not recognised or supported.";
+          }
         }
       }
     }

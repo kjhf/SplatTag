@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 
 namespace SplatTagUI
@@ -38,12 +39,12 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.10";
+    public string Version => "Version 0.0.11";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "v0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader. \nv0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements. \nv0.0.08: Support of Battlefy. Improved sameness detection. \nv0.0.07: Added sources data on hover.";
+    public string VersionToolTip => "v0.0.11: Added Twitter handle capability. \nv0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader. \nv0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements. \nv0.0.08: Support of Battlefy. Improved sameness detection. \nv0.0.07: Added sources data on hover.";
 
     static MainWindow()
     {
@@ -152,6 +153,13 @@ namespace SplatTagUI
         // And load the new database.
         splatTagController.LoadDatabase();
       }
+    }
+
+    private void TwitterButton_Click(object sender, RoutedEventArgs e)
+    {
+      FrameworkElement b = (FrameworkElement)sender;
+      Team t = (Team)b.DataContext;
+      splatTagController.TryLaunchTwitter(t);
     }
   }
 
@@ -331,5 +339,29 @@ namespace SplatTagUI
     }
   }
 
+  public class ValidStringToVisibleConverter : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      bool isValid;
+      if (value is string str)
+      {
+        isValid = !string.IsNullOrWhiteSpace(str);
+      }
+      else
+      {
+        isValid = false;
+      }
+
+      return new BooleanToVisibilityConverter().Convert(isValid, targetType, parameter, culture);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      throw new NotImplementedException();
+    }
+  }
   
+
+
 }

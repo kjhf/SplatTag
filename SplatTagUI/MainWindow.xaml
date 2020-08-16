@@ -17,6 +17,7 @@
     <local:SourcesToStringConverter x:Key="sourcesToStringConverter" />
     <local:TeamIdToString x:Key="teamIdToString" />
     <local:JoinStringsConverter x:Key="joinStringsConverter" />
+    <local:ValidStringToVisibleConverter x:Key="validStringToVisibleConverter"/>
 
     <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
       <Setter Property="Background" Value="Honeydew" />
@@ -186,6 +187,11 @@
                             </Style.Triggers>
                           </Style>
                         </StackPanel.Style>
+                        <Button Width="20" Height="20" HorizontalAlignment="Left" Click="TwitterButton_Click" DataContext="{Binding .}" Visibility="{Binding Path=Twitter, Converter={StaticResource validStringToVisibleConverter}}">
+                          <Button.Background>
+                            <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitter.png"/>
+                          </Button.Background>
+                        </Button>
                         <ItemsControl ItemsSource="{Binding ., Converter={StaticResource getTeamPlayers}}" Background="Transparent" Foreground="LightSteelBlue" />
                       </StackPanel>
                     </Expander.Content>
