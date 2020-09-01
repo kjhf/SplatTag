@@ -1,6 +1,9 @@
-﻿using SplatTagCore;
+﻿using Newtonsoft.Json;
+using SplatTagCore;
 using SplatTagDatabase;
 using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,19 +24,79 @@ namespace SplatTagConsole
       splatTagController = new SplatTagController(database);
     }
 
-    private static void Main(string[] args)
+    private static int Main(string[] args)
     {
-      splatTagController.Initialise(args);
-
-      for (; ; )
+      splatTagController.Initialise();
+      
+      if (args.Length > 0)
       {
-        Console.WriteLine();
-        Console.WriteLine("Choose a function:");
-        Console.WriteLine(GetCommandsString());
-        char c = Console.ReadKey().KeyChar;
-        Console.WriteLine();
-        DoCommand(c);
+        // Invoked from command line
+        var exactCaseOption = new Option<bool>("--exactCase", () => false, "Exact Case?");
+        var exactCharacterRecognitionOption = new Option<bool>("--exactCharacterRecognition", () => false, "Exact Character Recognition?");
+        var queryIsRegexOption = new Option<bool>("--queryIsRegex", () => false, "Exact Character Recognition?");
+        var queryArgument = new Argument<string>("query", "The team, tag, or player query");
+        var rootCommand = new RootCommand
+        {
+          queryArgument,
+          exactCaseOption,
+          exactCharacterRecognitionOption,
+          queryIsRegexOption
+        };
+
+        rootCommand.Handler = CommandHandler.Create<string, bool, bool, bool>(HandleCommandLineQuery);
+        return rootCommand.InvokeAsync(args).Result;
       }
+      else
+      {
+        for (; ; )
+        {
+          Console.WriteLine();
+          Console.WriteLine("Choose a function:");
+          Console.WriteLine(GetCommandsString());
+          char c = Console.ReadKey().KeyChar;
+          Console.WriteLine();
+          DoCommand(c);
+        }
+      }
+    }
+
+    public static void HandleCommandLineQuery(string query, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex)
+    {
+      CommandLineResult result = new CommandLineResult
+      {
+        Message = "OK"
+      };
+
+      if (string.IsNullOrWhiteSpace(query))
+      {
+        result.Message = "Nothing to search!";
+      }
+      else
+      {
+        result.Players =
+          splatTagController.MatchPlayer(query,
+            new MatchOptions
+            {
+              IgnoreCase = !exactCase,
+              NearCharacterRecognition = !exactCharacterRecognition,
+              QueryIsRegex = queryIsRegex
+            }
+          );
+        
+        result.Teams =
+          splatTagController.MatchTeam(query,
+            new MatchOptions
+            {
+              IgnoreCase = !exactCase,
+              NearCharacterRecognition = !exactCharacterRecognition,
+              QueryIsRegex = queryIsRegex
+            }
+          );
+      }
+
+      StringWriter sw = new StringWriter();
+      new JsonSerializer().Serialize(sw, result);
+      Console.WriteLine(sw.ToString());
     }
 
     private static string GetCommandsString()

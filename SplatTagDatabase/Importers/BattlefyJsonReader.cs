@@ -151,19 +151,19 @@ namespace SplatTagDatabase.Importers
       {
         if (row.Captain == null)
         {
-          Console.WriteLine("JSON does not contain a Team Captain for this team. Check format of the incoming JSON: " + row.TeamName + " in file " + jsonFile);
+          Console.Error.WriteLine("JSON does not contain a Team Captain for this team. Check format of the incoming JSON: " + row.TeamName + " in file " + jsonFile);
           continue;
         }
 
         if (row.Players.Length < 3)
         {
-          Console.WriteLine("JSON does not contain 3+ players for this team. Check format of the incoming JSON: " + row.TeamName + " in file " + jsonFile);
+          Console.Error.WriteLine("JSON does not contain 3+ players for this team. Check format of the incoming JSON: " + row.TeamName + " in file " + jsonFile);
           continue;
         }
 
         if (row.CustomFields.Length < 2)
         {
-          Console.WriteLine("JSON does not contain Custom Field containing the Discord/Switch FC for this team. Continuing anyway. " + row.TeamName + " in file " + jsonFile);
+          Console.Error.WriteLine("JSON does not contain Custom Field containing the Discord/Switch FC for this team. Continuing anyway. " + row.TeamName + " in file " + jsonFile);
         }
 
         // Attempt to resolve the team tag

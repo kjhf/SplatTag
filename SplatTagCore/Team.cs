@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SplatTagCore
 {
+  [Serializable]
   public class Team
   {
     public static readonly Team NoTeam = new Team()
@@ -21,16 +23,19 @@ namespace SplatTagCore
     /// </summary>
     private Stack<string> clanTags = new Stack<string>();
 
+    [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
     /// The name of the team
     /// </summary>
     public string Name { get; set; }
 
+    [JsonProperty("Div", Required = Required.Default)]
     /// <summary>
     /// The division of the team
     /// </summary>
     public Division Div { get; set; } = Division.Unknown;
 
+    [JsonProperty("ClanTags", Required = Required.Always)]
     /// <summary>
     /// The tag(s) of the team
     /// </summary>
@@ -40,11 +45,13 @@ namespace SplatTagCore
       set => clanTags = new Stack<string>(value);
     }
 
+    [JsonProperty("ClanTagOption", Required = Required.Default)]
     /// <summary>
     /// The placement of the tag
     /// </summary>
     public TagOption ClanTagOption { get; set; } = TagOption.Unknown;
 
+    [JsonProperty("Id", Required = Required.Always)]
     /// <summary>
     /// The database Id of the team.
     /// </summary>
@@ -55,11 +62,13 @@ namespace SplatTagCore
     /// </summary>
     public string Tag => ClanTags.Length > 0 ? ClanTags[0] : "";
 
+    [JsonProperty("Sources", Required = Required.Always)]
     /// <summary>
     /// Get or Set the current sources that make up this Team instance.
     /// </summary>
     public List<string> Sources { get; set; } = new List<string>();
 
+    [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
     /// Get or Set the team's twitter link.
     /// </summary>

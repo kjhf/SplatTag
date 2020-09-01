@@ -2,6 +2,10 @@
 
 ## In-Dev Releases
 
+### v0.0.12
+* Added command line arguments. 
+* Added slider (not shown) for debug of smooth delay param
+
 ### v0.0.11
 * Added Twitter link capability. "Twitter.json" can be loaded in dictionary form with team-name as key and twitter link as value.
 

@@ -23,13 +23,14 @@ Importers can be found under SplatTagCore.Importers.
 - French League data
 - Fetching of data from a remote site, e.g. SplatNet, sendou.ink
 - Estimation of div based on tourney results
-- Command line arguments to pipe a matched result elsewhere and automated fetching of data.
-  - Auto population of Twitter handles
+- Automated fetching of data.
+  - Auto population of Twitter handles.
 - Improve distribution process; a nice installer and updater
 - Import from csv
 
 ### Bugs
 - Fix bug where a player is no longer part of a team but shows as current if they have not joined a different team
+- Improve sameness matching by checking FC and Discord tag.
 
 ## Licensing
 This code is supplied with GNU General Public License v3.0.

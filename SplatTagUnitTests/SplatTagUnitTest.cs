@@ -18,7 +18,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
       Assert.IsTrue(database.loadCalled);
     }
 
@@ -30,7 +30,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
       Assert.IsTrue(database.loadCalled);
 
       database.loadCalled = false;
@@ -91,7 +91,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player p = controller.CreatePlayer("Manual");
       Assert.IsNotNull(p);
@@ -111,7 +111,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t = controller.CreateTeam("Manual");
       Assert.IsNotNull(t);

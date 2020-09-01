@@ -21,10 +21,8 @@ namespace SplatTagCore
       this.teams = new SortedDictionary<long, Team>();
     }
 
-    public void Initialise(string[] commandArgs)
+    public void Initialise()
     {
-      // TODO parse command line arguments.
-
       LoadDatabase();
     }
 
@@ -33,7 +31,7 @@ namespace SplatTagCore
       var (loadedPlayers, loadedTeams) = database.Load();
       if (loadedPlayers == null || loadedTeams == null)
       {
-        Console.WriteLine("ERROR: Failed to load.");
+        Console.Error.WriteLine("ERROR: Failed to load.");
       }
       else
       {

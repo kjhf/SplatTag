@@ -19,11 +19,6 @@ namespace SplatTagUI
   public partial class MainWindow : Window
   {
     /// <summary>
-    /// Timer delay in milliseconds for smooth searching for small searches
-    /// </summary>
-    private const int TIMER_DELAY_MILLIS = 333;
-
-    /// <summary>
     /// Number of characters minimum before skipping the smooth searching timer delay
     /// </summary>
     private const int MIN_CHARACTERS_FOR_TIMER_SKIP = 4;
@@ -39,12 +34,12 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.11";
+    public string Version => "Version 0.0.12";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "v0.0.11: Added Twitter handle capability. \nv0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader. \nv0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements. \nv0.0.08: Support of Battlefy. Improved sameness detection. \nv0.0.07: Added sources data on hover.";
+    public string VersionToolTip => "v0.0.12: Added command-line. \nv0.0.11: Added Twitter handle capability. \nv0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader. \nv0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements.";
 
     static MainWindow()
     {
@@ -52,7 +47,7 @@ namespace SplatTagUI
       multiSourceImporter = new GenericFilesImporter(saveFolder);
       splatTagDatabase = new MultiDatabase(saveFolder, jsonDatabase, multiSourceImporter);
       splatTagController = new SplatTagController(splatTagDatabase);
-      splatTagController.Initialise(new string[0]);
+      splatTagController.Initialise();
     }
 
     public MainWindow()
@@ -90,7 +85,7 @@ namespace SplatTagUI
         // Apply a filter if the length of the search is less than n characters
         if (searchInput.Text.Length < MIN_CHARACTERS_FOR_TIMER_SKIP)
         {
-          smoothSearchDelayTimer.Change(TIMER_DELAY_MILLIS, Timeout.Infinite);
+          smoothSearchDelayTimer.Change((int)delaySlider.Value, Timeout.Infinite);
         }
         else
         {
@@ -103,7 +98,7 @@ namespace SplatTagUI
       }
     }
 
-    private void SearchInput_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    private void SearchInput_TextChanged(object sender, TextChangedEventArgs e)
     {
       SearchWithTimerDelay();
     }
@@ -361,7 +356,4 @@ namespace SplatTagUI
       throw new NotImplementedException();
     }
   }
-  
-
-
 }

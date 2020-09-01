@@ -18,7 +18,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team[] matched = controller.MatchTeam("WO");
       Assert.IsNotNull(matched);
@@ -33,7 +33,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t1 = controller.CreateTeam("Manual");
       t1.Name = "Team 17";
@@ -68,7 +68,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Team 17"; // Purposefully mixed case
@@ -91,7 +91,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Team 17";
@@ -114,7 +114,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Inkology";
@@ -137,7 +137,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Inkology";
@@ -160,7 +160,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Inkology";
@@ -183,7 +183,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t1 = controller.CreateTeam("Manual");
       t1.Name = "Inkology";
@@ -220,7 +220,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Team t1 = controller.CreateTeam("Manual");
       t1.Name = "Inkology";

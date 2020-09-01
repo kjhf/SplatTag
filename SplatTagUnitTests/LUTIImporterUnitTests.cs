@@ -19,7 +19,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       string filePath = Path.GetTempFileName() + ".json";
       const string JSON =

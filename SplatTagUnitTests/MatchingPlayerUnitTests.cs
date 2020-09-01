@@ -18,7 +18,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player[] matched = controller.MatchPlayer("example");
       Assert.IsNotNull(matched);
@@ -33,7 +33,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "Player 17"; // Purposefully mixed case
@@ -54,7 +54,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "Player 17";
@@ -80,7 +80,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "BΛÐ SΛVΛGΞ";
@@ -101,7 +101,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "BΛÐ SΛVΛGΞ";
@@ -122,7 +122,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "BΛÐ SΛVΛGΞ";
@@ -143,7 +143,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "¡g Slate";
@@ -170,7 +170,7 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise(new string[] { "P.exe" });
+      controller.Initialise();
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "¡g Slate";

@@ -39,7 +39,7 @@ namespace SplatTagDatabase
         string error = TryImportFromPath(file);
         if (error != string.Empty)
         {
-          Console.WriteLine(error);
+          Console.Error.WriteLine(error);
         }
       }
 

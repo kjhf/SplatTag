@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SplatTagCore
 {
+  [Serializable]
   public class Player
   {
     /// <summary>
@@ -25,6 +27,7 @@ namespace SplatTagCore
     /// </summary>
     private LinkedList<long> teams = new LinkedList<long>();
 
+    [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
     /// The names this player is known by.
     /// </summary>
@@ -53,6 +56,7 @@ namespace SplatTagCore
       set => names.AddFirst(value ?? UNKNOWN_PLAYER);
     }
 
+    [JsonProperty("Teams", Required = Required.Always)]
     /// <summary>
     /// The teams this player is played for.
     /// A 0 represents no team.
@@ -79,22 +83,26 @@ namespace SplatTagCore
       }
     }
 
+    [JsonProperty("Sources", Required = Required.Default)]
     /// <summary>
     /// Get or Set the current sources that make up this Player instance.
     /// </summary>
     public List<string> Sources { get; set; } = new List<string>();
 
+    [JsonProperty("Id", Required = Required.Always)]
     /// <summary>
     /// The database Id of the player.
     /// </summary>
     public uint Id { get; set; }
 
+    [JsonProperty("DiscordName", Required = Required.Default)]
     /// <summary>
     /// Get or Set the Discord Name.
     /// Null by default.
     /// </summary>
     public string DiscordName { get; set; } = null;
 
+    [JsonProperty("FriendCode", Required = Required.Default)]
     /// <summary>
     /// Get or Set the Friend Code.
     /// Null by default.
