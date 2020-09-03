@@ -27,7 +27,7 @@ namespace SplatTagConsole
     private static int Main(string[] args)
     {
       splatTagController.Initialise();
-      
+
       if (args.Length > 0)
       {
         // Invoked from command line
@@ -82,7 +82,7 @@ namespace SplatTagConsole
               QueryIsRegex = queryIsRegex
             }
           );
-        
+
         result.Teams =
           splatTagController.MatchTeam(query,
             new MatchOptions
@@ -145,7 +145,7 @@ namespace SplatTagConsole
             t.ClanTagOption = temp;
 
             Console.WriteLine("Div?");
-            t.Div = new Division(Console.ReadLine());
+            t.Div = new LUTIDivision(Console.ReadLine());
 
             splatTagController.SaveDatabase();
           }

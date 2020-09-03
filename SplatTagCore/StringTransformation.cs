@@ -47,7 +47,7 @@ namespace SplatTagCore
   /// <para/>
   /// For example, '&amp;agrave;' will be replaced by 'a'.
   /// </summary>
-  public static class ASCIIFold
+  public static class StringTransformation
   {
     /// <summary>
     /// Converts characters above ASCII to their ASCII equivalents. For example,

@@ -82,7 +82,7 @@
         <TextBlock Margin="5,2" Text="Advanced Functions" IsHitTestVisible="False" Foreground="LightSteelBlue" />
         <Button x:Name="reloadButton" Content=" Reload local database" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="This loads the local copy of the database into the program. You won't need this unless you're making manual changes." Click="ReloadButton_Click" />
       </StackPanel>
-      <Button x:Name="acceptButton" Grid.Row="1" Content=" OK" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Accept these changes and return to the main window." Click="acceptButton_Click" />
+      <Button x:Name="acceptButton" Grid.Row="1" Content=" OK" FontFamily="Segoe UI Symbol" Height="30" Margin="5" ToolTip="Accept these changes and return to the main window." Click="AcceptButton_Click" />
     </Grid>
   </Grid>
 </Window>

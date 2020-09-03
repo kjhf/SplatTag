@@ -181,7 +181,7 @@ namespace SplatTagDatabase.Importers
           Id = -teams.Count - 1,  // This will be updated when the merge happens.
           ClanTags = new string[1] { tag },
           ClanTagOption = TagOption.Front,
-          Div = new Division(),
+          Div = new LUTIDivision(),
           Name = row.TeamName,
           Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
         };

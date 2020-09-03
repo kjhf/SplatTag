@@ -237,7 +237,7 @@ namespace SplatTagUnitTests
       database.expectedTeams = new List<Team> { t1, t2 };
 
       controller.LoadDatabase();
-      Team[] matched = controller.MatchTeam(@"[", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
+      Team[] matched = controller.MatchTeam("[", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
       Assert.IsNotNull(matched);
       Assert.AreEqual(0, matched.Length);
     }

@@ -33,22 +33,7 @@ namespace SplatTagDatabase
           }
         }
         importPlayer.Teams = correctedTeamIds;
-
-        Player foundPlayer = playersToMutate.Values.FirstOrDefault(p =>
-        {
-          // Replace spaces because people adding tags or starting with space messes up same-name detection.
-          string currentName = p.Name.Replace(" ", "");
-          string incomingName = importPlayer.Name.Replace(" ", "");
-
-          if (currentName.Length < incomingName.Length)
-          {
-            return currentName.StartsWith(incomingName, StringComparison.InvariantCultureIgnoreCase);
-          }
-          else
-          {
-            return incomingName.StartsWith(currentName, StringComparison.InvariantCultureIgnoreCase);
-          }
-        });
+        Player foundPlayer = FindSamePlayer(playersToMutate.Values, importPlayer);
 
         if (foundPlayer == null)
         {
@@ -70,6 +55,50 @@ namespace SplatTagDatabase
     }
 
     /// <summary>
+    /// Find a player that matches another instance.
+    /// </summary>
+    /// <param name="playersToMutate">The players to search</param>
+    /// <param name="testPlayer">The player instance to try and find</param>
+    /// <returns>The matched player, or null if new</returns>
+    private static Player FindSamePlayer(ICollection<Player> playersToMutate, Player testPlayer)
+    {
+      return playersToMutate.FirstOrDefault(p =>
+      {
+        // Test if the Switch FC's match.
+        if (p.FriendCode != null && testPlayer.FriendCode != null && p.FriendCode == testPlayer.FriendCode)
+        {
+          // They do.
+          return true;
+        }
+
+        // Test if the Discord names match.
+        if (p.DiscordName != null && testPlayer.DiscordName != null && p.DiscordName.Equals(testPlayer.DiscordName, StringComparison.OrdinalIgnoreCase))
+        {
+          // They do.
+          return true;
+        }
+
+        // Test if the name matches the names that we know this player by.
+        foreach (string knownName in p.Names)
+        {
+          foreach (string testName in testPlayer.Names)
+          {
+            // Replace spaces because people adding tags or starting with space messes up same-name detection.
+            string name1 = knownName.Replace(" ", "").TransformString();
+            string name2 = testName.Replace(" ", "").TransformString();
+
+            if (name1.Equals(name2, StringComparison.OrdinalIgnoreCase))
+            {
+              return true;
+            }
+          }
+        }
+
+        return false;
+      });
+    }
+
+    /// <summary>
     /// Merge the loaded teams into the current teams list.
     /// </summary>
     public static void MergeTeams(IDictionary<long, Team> teamsToMutate, IEnumerable<Team> incomingTeams)
@@ -83,17 +112,11 @@ namespace SplatTagDatabase
           Team foundTeam = teamsToMutate.Values.FirstOrDefault(t =>
           {
             // Replace spaces because people adding tags or starting with space messes up same-name detection.
-            string currentName = t.Name.Replace(" ", "");
-            string incomingName = importTeam.Name.Replace(" ", "");
+            // Also transform the team name.
+            string currentName = t.Name.Replace(" ", "").TransformString();
+            string incomingName = importTeam.Name.Replace(" ", "").TransformString();
 
-            if (currentName.Length < incomingName.Length)
-            {
-              return incomingName.StartsWith(currentName, StringComparison.InvariantCultureIgnoreCase);
-            }
-            else
-            {
-              return currentName.StartsWith(incomingName, StringComparison.InvariantCultureIgnoreCase);
-            }
+            return currentName.Equals(incomingName, StringComparison.OrdinalIgnoreCase);
           });
 
           if (foundTeam == null)

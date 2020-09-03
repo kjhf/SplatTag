@@ -40,12 +40,14 @@ namespace SplatTagDatabase
       List<Team> teams = new List<Team>();
       foreach (var t in dbteams)
       {
+        IDivision div;
+        switch (t.divType) { case 1: div = new LUTIDivision(t.div); break; case 2: div = new EBTVDivision(t.div); break; default: div = LUTIDivision.Unknown; break; }
         teams.Add(new Team
         {
           Id = t.id,
           ClanTags = t.clanTags,
           ClanTagOption = (TagOption)t.clanTagOption,
-          Div = new Division(t.div),
+          Div = div,
           Name = t.name,
         });
       }
@@ -112,7 +114,8 @@ namespace SplatTagDatabase
             clanTagOption = (int)t.ClanTagOption,
             clanTags = t.ClanTags,
             name = t.Name,
-            div = t.Div
+            div = t.Div.Value,
+            divType = t.Div.GetType() == typeof(EBTVDivision) ? 2 : 1
           };
         }).ToArray()
       };

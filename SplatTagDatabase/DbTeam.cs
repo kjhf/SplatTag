@@ -10,5 +10,6 @@ namespace SplatTagDatabase
     public string[] clanTags;
     public int clanTagOption;
     public int div;
+    public int divType;
   }
 }

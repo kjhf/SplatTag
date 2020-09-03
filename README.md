@@ -17,11 +17,12 @@ There's also unit tests, because TDD is important.
 Importers can be found under SplatTagCore.Importers.
 - LUTIJsonReader: Reads the LUTI [signups sheet](https://docs.google.com/spreadsheets/d/1C7-iJlJjN3cYWEQE5hq2Y_AG4Meg4DrA5Q_527wfl_o/edit#gid=0). Convert from Google Sheets to [.csv then to .json](https://www.csvjson.com/csv2json).
 - BattlefyJsonReader: Reads Battlefy Data. Tested with Low Ink and InkTV, e.g. https://battlefy.com/low-ink//{id}/participants  https://battlefy.com/inktv//{id}/participants
+- TwitterReader: Assigns Twitter links.
 
 ## TODOs
 ### Features
-- French League data
 - Fetching of data from a remote site, e.g. SplatNet, sendou.ink
+- French Leagues
 - Estimation of div based on tourney results
 - Automated fetching of data.
   - Auto population of Twitter handles.
@@ -30,7 +31,6 @@ Importers can be found under SplatTagCore.Importers.
 
 ### Bugs
 - Fix bug where a player is no longer part of a team but shows as current if they have not joined a different team
-- Improve sameness matching by checking FC and Discord tag.
 
 ## Licensing
 This code is supplied with GNU General Public License v3.0.

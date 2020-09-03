@@ -156,7 +156,7 @@ namespace SplatTagUnitTests
       database.expectedPlayers = new List<Player> { p1, p2 };
 
       controller.LoadDatabase();
-      Player[] matched = controller.MatchPlayer(@"slate$", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
+      Player[] matched = controller.MatchPlayer("slate$", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
       Assert.IsNotNull(matched);
       Assert.AreEqual(1, matched.Length);
       Assert.IsTrue(matched[0] == p1);
@@ -183,7 +183,7 @@ namespace SplatTagUnitTests
       database.expectedPlayers = new List<Player> { p1, p2 };
 
       controller.LoadDatabase();
-      Player[] matched = controller.MatchPlayer(@"[", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
+      Player[] matched = controller.MatchPlayer("[", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
       Assert.IsNotNull(matched);
       Assert.AreEqual(0, matched.Length);
     }

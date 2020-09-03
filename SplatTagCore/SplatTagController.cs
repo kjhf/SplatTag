@@ -177,7 +177,7 @@ namespace SplatTagCore
         try
         {
           Regex regex = matchOptions.IgnoreCase ? new Regex(query, RegexOptions.IgnoreCase) : new Regex(query);
-          func = (t) => (matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(t.ClanTags) : t.ClanTags).Any(n => regex.IsMatch(n));
+          func = (t) => (matchOptions.NearCharacterRecognition ? StringTransformation.TransformEnumerable(t.ClanTags) : t.ClanTags).Any(n => regex.IsMatch(n));
         }
         catch (ArgumentException)
         {
@@ -189,7 +189,7 @@ namespace SplatTagCore
       {
         // Standard query
         StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        func = (t) => (matchOptions.NearCharacterRecognition ? ASCIIFold.TransformEnumerable(t.ClanTags) : t.ClanTags).Contains(query, comparion);
+        func = (t) => (matchOptions.NearCharacterRecognition ? StringTransformation.TransformEnumerable(t.ClanTags) : t.ClanTags).Contains(query, comparion);
       }
 
       // Add matching clan tags to the result.

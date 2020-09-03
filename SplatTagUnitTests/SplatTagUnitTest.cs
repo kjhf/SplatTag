@@ -42,7 +42,7 @@ namespace SplatTagUnitTests
           Id = TEAM_ID,
           Name = "Example Team",
           ClanTags = new string[] { "e.g" },
-          Div = new Division(1)
+          Div = new LUTIDivision(1)
         };
 
       database.expectedTeams = new List<Team> { exampleTeam };
@@ -74,7 +74,7 @@ namespace SplatTagUnitTests
       Assert.IsNotNull(dictionary2);
       Assert.IsTrue(dictionary2.TryGetValue(TEAM_ID, out Team target2));
       Assert.IsTrue(target2.Id == TEAM_ID);
-      Assert.IsTrue(target2.Div == 1);
+      Assert.IsTrue(target2.Div.Value == 1);
 
       // Verify getting the players for that team returns our player
       (Player, bool)[] playersForExampleTeam = controller.GetPlayersForTeam(exampleTeam);

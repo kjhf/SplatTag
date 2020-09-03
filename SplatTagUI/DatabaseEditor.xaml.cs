@@ -37,7 +37,7 @@ namespace SplatTagUI
       this.splatTagController = splatTagController ?? throw new ArgumentNullException(nameof(splatTagController));
     }
 
-    private void acceptButton_Click(object sender, RoutedEventArgs e)
+    private void AcceptButton_Click(object sender, RoutedEventArgs e)
     {
       DialogResult = true;
       Close();

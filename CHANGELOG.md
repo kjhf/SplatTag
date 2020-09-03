@@ -2,6 +2,10 @@
 
 ## In-Dev Releases
 
+### v0.0.13
+* Better div support - makes French Leagues integration ready.
+* Better sameness detection by matching names, Switch FCs, and Discord.
+
 ### v0.0.12
 * Added command line arguments. 
 * Added slider (not shown) for debug of smooth delay param

@@ -34,12 +34,12 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.12";
+    public string Version => "Version 0.0.13";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
-    public string VersionToolTip => "v0.0.12: Added command-line. \nv0.0.11: Added Twitter handle capability. \nv0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader. \nv0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements.";
+    public string VersionToolTip => "v0.0.13: Better div support. Better sameness detection.\nv0.0.12: Added command-line. \nv0.0.11: Added Twitter handle capability. \nv0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader. \nv0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements.";
 
     static MainWindow()
     {
@@ -259,21 +259,35 @@ namespace SplatTagUI
       }
 
       (Player, bool)[] playersForTeam = MainWindow.splatTagController.GetPlayersForTeam(t);
-      Division highestDiv = t.Div;
+      IDivision highestDiv = t.Div;
+      Player bestPlayer = null;
       foreach ((Player, bool) pair in playersForTeam)
       {
         if (pair.Item2 && pair.Item1.Teams.Count() > 1)
         {
           foreach (Team playerTeam in pair.Item1.Teams.Select(id => MainWindow.splatTagController.GetTeamById(id)))
           {
-            if (playerTeam.Div < highestDiv)
+            if (playerTeam.Div.Value < highestDiv.Value)
             {
               highestDiv = playerTeam.Div;
+              bestPlayer = pair.Item1;
             }
           }
         }
       }
-      return highestDiv;
+
+      if (highestDiv == LUTIDivision.Unknown)
+      {
+        return "Their div is unknown.";
+      }
+      else if (highestDiv.Value == t.Div.Value)
+      {
+        return "No higher div players.";
+      }
+      else
+      {
+        return $"Highest Div'd player is {bestPlayer.Name} at {highestDiv}.";
+      }
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

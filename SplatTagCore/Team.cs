@@ -12,7 +12,7 @@ namespace SplatTagCore
     {
       ClanTagOption = TagOption.Unknown,
       ClanTags = new string[] { "FA" },
-      Div = new Division(),
+      Div = new LUTIDivision(),
       Id = 0,
       Name = "(Free Agent)",
       Sources = new List<string>()
@@ -33,7 +33,7 @@ namespace SplatTagCore
     /// <summary>
     /// The division of the team
     /// </summary>
-    public Division Div { get; set; } = Division.Unknown;
+    public IDivision Div { get; set; } = LUTIDivision.Unknown;
 
     [JsonProperty("ClanTags", Required = Required.Always)]
     /// <summary>
@@ -103,7 +103,7 @@ namespace SplatTagCore
       }
 
       // Update the div if the other div is known.
-      if (otherTeam.Div != Division.UNKNOWN)
+      if (otherTeam.Div.Value != LUTIDivision.UNKNOWN)
       {
         this.Div = otherTeam.Div;
       }
@@ -126,7 +126,7 @@ namespace SplatTagCore
     /// <returns></returns>
     public override string ToString()
     {
-      return $"{Tag} {Name} (Div {Div})";
+      return $"{Tag} {Name} ({Div})";
     }
   }
 }
