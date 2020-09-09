@@ -28,6 +28,8 @@ namespace SplatTagCore
 
     public void LoadDatabase()
     {
+      Console.WriteLine("Loading Database... ");
+      var start = DateTime.Now;
       var (loadedPlayers, loadedTeams) = database.Load();
       if (loadedPlayers == null || loadedTeams == null)
       {
@@ -37,7 +39,9 @@ namespace SplatTagCore
       {
         players = new SortedDictionary<uint, Player>(loadedPlayers.ToDictionary(x => x.Id, x => x));
         teams = new SortedDictionary<long, Team>(loadedTeams.ToDictionary(x => x.Id, x => x));
+        var diff = DateTime.Now - start;
         Console.WriteLine("Database loaded successfully.");
+        Console.WriteLine($"...Done in {diff.TotalSeconds} seconds.");
       }
     }
 
@@ -74,7 +78,6 @@ namespace SplatTagCore
         return players.Values.ToArray();
       }
 
-      List<Player> retVal = new List<Player>();
       Func<Player, bool> func;
       if (matchOptions.QueryIsRegex)
       {
@@ -146,8 +149,7 @@ namespace SplatTagCore
         };
       }
 
-      retVal.AddRange(players.Values.Where(p => func(p)));
-      return retVal.ToArray();
+      return players.Values.Where(p => func(p)).ToArray();
     }
 
     /// <summary>
@@ -168,16 +170,14 @@ namespace SplatTagCore
         return teams.Values.ToArray();
       }
 
-      List<Team> retVal = new List<Team>();
-
       // First, derive the function for clan tags.
-      Func<Team, bool> func;
+      Func<Team, bool> clanTagFunc;
       if (matchOptions.QueryIsRegex)
       {
         try
         {
           Regex regex = matchOptions.IgnoreCase ? new Regex(query, RegexOptions.IgnoreCase) : new Regex(query);
-          func = (t) => (matchOptions.NearCharacterRecognition ? StringTransformation.TransformEnumerable(t.ClanTags) : t.ClanTags).Any(n => regex.IsMatch(n));
+          clanTagFunc = (t) => (matchOptions.NearCharacterRecognition ? StringTransformation.TransformEnumerable(t.ClanTags) : t.ClanTags).Any(n => regex.IsMatch(n));
         }
         catch (ArgumentException)
         {
@@ -189,19 +189,18 @@ namespace SplatTagCore
       {
         // Standard query
         StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        func = (t) => (matchOptions.NearCharacterRecognition ? StringTransformation.TransformEnumerable(t.ClanTags) : t.ClanTags).Contains(query, comparion);
+        clanTagFunc = (t) => (matchOptions.NearCharacterRecognition ? StringTransformation.TransformEnumerable(t.ClanTags) : t.ClanTags).Contains(query, comparion);
       }
-
-      // Add matching clan tags to the result.
-      retVal.AddRange(teams.Values.Where(t => func(t)));
 
       // Now the names.
+      Func<Team, bool> teamNameFunc;
+
       if (matchOptions.QueryIsRegex)
       {
         try
         {
           Regex regex = matchOptions.IgnoreCase ? new Regex(query, RegexOptions.IgnoreCase) : new Regex(query);
-          func = (t) => regex.IsMatch(matchOptions.NearCharacterRecognition ? t.Name.TransformString() : t.Name);
+          teamNameFunc = (t) => regex.IsMatch(matchOptions.NearCharacterRecognition ? t.Name.TransformString() : t.Name);
         }
         catch (ArgumentException)
         {
@@ -213,15 +212,17 @@ namespace SplatTagCore
       {
         // Standard query
         StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        func = (t) => (matchOptions.NearCharacterRecognition ? t.Name.TransformString() : t.Name).Contains(query, comparion);
+        teamNameFunc = (t) => (matchOptions.NearCharacterRecognition ? t.Name.TransformString() : t.Name).Contains(query, comparion);
       }
 
-      // Add matching names to the result.
-      retVal.AddRange(teams.Values.Where(t => func(t)));
-
-      // Filter unique
-      retVal = retVal.Distinct().ToList();
-      return retVal.ToArray();
+      // Return matches, 
+      // but we want clan tag matches to be first in the ordering.
+      return
+        teams.Values
+          .Where(t => clanTagFunc(t))
+          .Concat(teams.Values.Where(t => teamNameFunc(t)))
+          .Distinct()
+          .ToArray();
     }
 
     public Player CreatePlayer(string source)

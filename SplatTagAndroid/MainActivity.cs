@@ -78,7 +78,7 @@ namespace SplatTagAndroid
       try
       {
         // Construct the database
-        importer = new GenericFilesImporter(sources.Select(file => Path.Combine(splatTagFolder, file)).ToArray());
+        importer = new GenericFilesImporter(sources.Select(file => Path.Combine(splatTagFolder, file)));
         database = new MultiDatabase(splatTagFolder, importer);
 
         // Construct the controller.

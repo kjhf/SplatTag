@@ -15,7 +15,7 @@ namespace SplatTagDatabase
     private readonly SortedDictionary<long, Team> teams = new SortedDictionary<long, Team>();
     private readonly string sourcesFile;
 
-    public string[] Sources => sources.ToArray();
+    public IReadOnlyCollection<string> Sources => sources;
 
     public GenericFilesImporter(string saveDirectory)
     {
@@ -27,7 +27,7 @@ namespace SplatTagDatabase
       }
     }
 
-    public GenericFilesImporter(string[] loadedSources)
+    public GenericFilesImporter(IEnumerable<string> loadedSources)
     {
       sources = new List<string>(loadedSources);
     }

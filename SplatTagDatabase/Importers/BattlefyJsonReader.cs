@@ -149,28 +149,28 @@ namespace SplatTagDatabase.Importers
       List<Player> players = new List<Player>();
       foreach (BattlefyJsonTeam row in rows)
       {
-        if (row.Captain == null)
+        if (row.Players.Length < 3)
         {
-          Console.Error.WriteLine("JSON does not contain a Team Captain for this team. Check format of the incoming JSON: " + row.TeamName + " in file " + jsonFile);
+          Console.Error.WriteLine($"JSON does not contain 3+ players for team \"{row.TeamName}\". File: " + jsonFile);
           continue;
         }
 
-        if (row.Players.Length < 3)
+        if (row.Captain == null)
         {
-          Console.Error.WriteLine("JSON does not contain 3+ players for this team. Check format of the incoming JSON: " + row.TeamName + " in file " + jsonFile);
-          continue;
+          Console.Error.WriteLine($"JSON does not contain a Team Captain for team \"{row.TeamName}\". Assuming player 1 is captain. File: " + jsonFile);
+          row.Captain = row.Players[0];
         }
 
         if (row.CustomFields.Length < 2)
         {
-          Console.Error.WriteLine("JSON does not contain Custom Field containing the Discord/Switch FC for this team. Continuing anyway. " + row.TeamName + " in file " + jsonFile);
+          Console.Error.WriteLine($"JSON contains {row.CustomFields.Length}/2 Custom Fields (Discord/FC) for team \"{row.TeamName}\". Continuing anyway. File: " + jsonFile);
         }
 
         // Attempt to resolve the team tag
         int i;
         string tag = "";
-        int minLength = row.Players.Min(p => p.Name.Length);
-        for (i = 0; row.Players[0].Name[i] == row.Players[1].Name[i] && row.Players[2].Name[i] == row.Players[0].Name[i] && i < minLength; i++) { }
+        int smallestNameLength = row.Players.Min(p => p.Name.Length);
+        for (i = 0; row.Players[0].Name[i] == row.Players[1].Name[i] && row.Players[2].Name[i] == row.Players[0].Name[i] && i < smallestNameLength; i++) { }
         if (i >= 2)
         {
           tag = row.Players[0].Name.Substring(0, i);

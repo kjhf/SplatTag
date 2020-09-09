@@ -2427,7 +2427,7 @@ namespace SplatTagCore
     /// or a professional take on how other languages are translated into English.
     /// Because this process snaps to a visual representation, this is not reversible.
     /// </remarks>
-    public static string[] TransformEnumerable(IEnumerable<string> inputNames)
+    public static ICollection<string> TransformEnumerable(IEnumerable<string> inputNames)
     {
       // If nothing to do
       if (inputNames == null || !inputNames.Any())
@@ -2441,7 +2441,7 @@ namespace SplatTagCore
         result.Add(name.TransformString());
       }
 
-      return result.ToArray();
+      return result;
     }
   }
 }

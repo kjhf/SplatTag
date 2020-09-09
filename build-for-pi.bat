@@ -1,3 +1,5 @@
-cd "C:\Users\Kristian\source\repos\SplatTag"
-dotnet publish -r linux-arm
+cd ./SplatTag
+dotnet publish -r linux-arm -o "../release"
+cd ../
+tar.exe -cvzf _pi.tar "./release"
 pause

@@ -62,17 +62,21 @@ namespace SplatTagDatabase
     /// <returns>The matched player, or null if new</returns>
     private static Player FindSamePlayer(ICollection<Player> playersToMutate, Player testPlayer)
     {
+      bool tryMatchFcs = testPlayer.FriendCode != null;
+      bool tryMatchDiscord = testPlayer.DiscordName != null;
+      HashSet<string> testPlayerTransformedNames = new HashSet<string>(testPlayer.Names.Select(n => n.Replace(" ", "").TransformString().ToLowerInvariant()));
+
       return playersToMutate.FirstOrDefault(p =>
       {
         // Test if the Switch FC's match.
-        if (p.FriendCode != null && testPlayer.FriendCode != null && p.FriendCode == testPlayer.FriendCode)
+        if (tryMatchFcs && p.FriendCode == testPlayer.FriendCode)
         {
           // They do.
           return true;
         }
 
         // Test if the Discord names match.
-        if (p.DiscordName != null && testPlayer.DiscordName != null && p.DiscordName.Equals(testPlayer.DiscordName, StringComparison.OrdinalIgnoreCase))
+        if (tryMatchDiscord && p.DiscordName?.Equals(testPlayer.DiscordName, StringComparison.OrdinalIgnoreCase) == true)
         {
           // They do.
           return true;
@@ -81,16 +85,11 @@ namespace SplatTagDatabase
         // Test if the name matches the names that we know this player by.
         foreach (string knownName in p.Names)
         {
-          foreach (string testName in testPlayer.Names)
+          // Replace spaces because people adding tags or starting with space messes up same-name detection.
+          string transformedKnownName = knownName.Replace(" ", "").TransformString().ToLowerInvariant();
+          if (testPlayerTransformedNames.Contains(transformedKnownName))
           {
-            // Replace spaces because people adding tags or starting with space messes up same-name detection.
-            string name1 = knownName.Replace(" ", "").TransformString();
-            string name2 = testName.Replace(" ", "").TransformString();
-
-            if (name1.Equals(name2, StringComparison.OrdinalIgnoreCase))
-            {
-              return true;
-            }
+            return true;
           }
         }
 
@@ -105,19 +104,18 @@ namespace SplatTagDatabase
     {
       if (teamsToMutate.Count > 0)
       {
+        Dictionary<string, Team> transformedTeamNames =
+          teamsToMutate.Values.ToDictionary(t => t.Name.Replace(" ", "").TransformString().ToLowerInvariant(), t => t);
+
         // Add if the team is new (by name) and assign them with a new id
         // Otherwise, match the found team with its id, based on name.
         foreach (Team importTeam in incomingTeams)
         {
-          Team foundTeam = teamsToMutate.Values.FirstOrDefault(t =>
-          {
-            // Replace spaces because people adding tags or starting with space messes up same-name detection.
-            // Also transform the team name.
-            string currentName = t.Name.Replace(" ", "").TransformString();
-            string incomingName = importTeam.Name.Replace(" ", "").TransformString();
+          // Replace spaces because people adding tags or starting with space messes up same-name detection.
+          // Also transform the team name.
+          string incomingName = importTeam.Name.Replace(" ", "").TransformString();
 
-            return currentName.Equals(incomingName, StringComparison.OrdinalIgnoreCase);
-          });
+          transformedTeamNames.TryGetValue(incomingName.ToLowerInvariant(), out Team foundTeam);
 
           if (foundTeam == null)
           {

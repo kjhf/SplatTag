@@ -164,15 +164,12 @@ namespace SplatTagUI
     {
       if (value is Team t)
       {
-        return MainWindow.splatTagController.GetPlayersForTeam(t).Select(tuple => tuple.Item1.Name + " " + (tuple.Item2 ? "(Current)" : "(Ex)")).ToArray();
+        return t.GetTeamPlayersStrings(MainWindow.splatTagController);
       }
       return new string[] { "(Unknown Players)" };
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-      throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
   }
 
   public class SourcesToStringConverter : IValueConverter
@@ -200,10 +197,7 @@ namespace SplatTagUI
       return string.Join(", ", sources);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-      throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
   }
 
   public class PlayerOldTeamsToStringConverter : IValueConverter
@@ -224,22 +218,10 @@ namespace SplatTagUI
         throw new InvalidDataException("Unknown type to convert: " + value.GetType());
       }
 
-      StringBuilder sb = new StringBuilder();
-      teams = teams.Skip(1);
-      if (teams.Any())
-      {
-        sb.Append("(Old teams: ");
-        sb.Append(string.Join(", ", teams.Select(t => t.Tag + " " + t.Name)));
-        sb.Append(")");
-      }
-
-      return sb.ToString();
+      return teams.GetOldTeamsStrings();
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-      throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
   }
 
   public class GetTeamBestPlayerDivConverter : IValueConverter
@@ -258,42 +240,10 @@ namespace SplatTagUI
         throw new InvalidDataException("Unknown type to convert: " + value.GetType());
       }
 
-      (Player, bool)[] playersForTeam = MainWindow.splatTagController.GetPlayersForTeam(t);
-      IDivision highestDiv = t.Div;
-      Player bestPlayer = null;
-      foreach ((Player, bool) pair in playersForTeam)
-      {
-        if (pair.Item2 && pair.Item1.Teams.Count() > 1)
-        {
-          foreach (Team playerTeam in pair.Item1.Teams.Select(id => MainWindow.splatTagController.GetTeamById(id)))
-          {
-            if (playerTeam.Div.Value < highestDiv.Value)
-            {
-              highestDiv = playerTeam.Div;
-              bestPlayer = pair.Item1;
-            }
-          }
-        }
-      }
-
-      if (highestDiv == LUTIDivision.Unknown)
-      {
-        return "Their div is unknown.";
-      }
-      else if (highestDiv.Value == t.Div.Value)
-      {
-        return "No higher div players.";
-      }
-      else
-      {
-        return $"Highest Div'd player is {bestPlayer.Name} at {highestDiv}.";
-      }
+      return t.GetBestTeamPlayerDivString(MainWindow.splatTagController);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-      throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
   }
 
   public class TeamIdToString : IValueConverter
@@ -314,10 +264,7 @@ namespace SplatTagUI
       }
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-      throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
   }
 
   public class JoinStringsConverter : IValueConverter
@@ -342,10 +289,7 @@ namespace SplatTagUI
       }
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-      throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
   }
 
   public class ValidStringToVisibleConverter : IValueConverter
@@ -365,9 +309,6 @@ namespace SplatTagUI
       return new BooleanToVisibilityConverter().Convert(isValid, targetType, parameter, culture);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-      throw new NotImplementedException();
-    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
   }
 }
