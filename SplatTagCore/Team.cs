@@ -23,11 +23,22 @@ namespace SplatTagCore
     /// </summary>
     private Stack<string> clanTags = new Stack<string>();
 
+    private string searchableName;
+    private string name;
+
     [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
     /// The name of the team
     /// </summary>
-    public string Name { get; set; }
+    public string Name
+    {
+      get => name;
+      set
+      {
+        name = value;
+        searchableName = null; // Invalidate searchable name.
+      }
+    }
 
     [JsonProperty("Div", Required = Required.Default)]
     /// <summary>
@@ -73,6 +84,11 @@ namespace SplatTagCore
     /// Get or Set the team's twitter link.
     /// </summary>
     public string Twitter { get; set; }
+
+    /// <summary>
+    /// Get the searchable name for this team (i.e. the transformed lower-case team name).
+    /// </summary>
+    public string SearchableName => searchableName ?? (searchableName = Name.Replace(" ", "").TransformString().ToLowerInvariant());
 
     /// <summary>
     /// Merge this team with another (newer) team instance

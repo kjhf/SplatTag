@@ -149,28 +149,36 @@ namespace SplatTagDatabase.Importers
       List<Player> players = new List<Player>();
       foreach (BattlefyJsonTeam row in rows)
       {
-        if (row.Players.Length < 3)
+        if (row.Players.Length < 1)
         {
-          Console.Error.WriteLine($"JSON does not contain 3+ players for team \"{row.TeamName}\". File: " + jsonFile);
+          Console.Error.WriteLine($"ERROR: JSON does not contain a player for team \"{row.TeamName}\". Ignoring this team entry. File: " + jsonFile);
           continue;
+        }
+
+        if (row.Players.Length < 4)
+        {
+          Console.WriteLine($"Warning: JSON does not contain 4+ players for team \"{row.TeamName}\". Continuing anyway. File: " + jsonFile);
         }
 
         if (row.Captain == null)
         {
-          Console.Error.WriteLine($"JSON does not contain a Team Captain for team \"{row.TeamName}\". Assuming player 1 is captain. File: " + jsonFile);
+          Console.WriteLine($"Warning: JSON does not contain a Team Captain for team \"{row.TeamName}\". Assuming player 1 is captain. File: " + jsonFile);
           row.Captain = row.Players[0];
         }
 
         if (row.CustomFields.Length < 2)
         {
-          Console.Error.WriteLine($"JSON contains {row.CustomFields.Length}/2 Custom Fields (Discord/FC) for team \"{row.TeamName}\". Continuing anyway. File: " + jsonFile);
+          Console.WriteLine($"Warning: JSON contains {row.CustomFields.Length}/2 Custom Fields (Discord/FC) for team \"{row.TeamName}\". Continuing anyway. File: " + jsonFile);
         }
 
         // Attempt to resolve the team tag
         int i;
         string tag = "";
+        char firstPlayerLetter = row.Players[0].Name[0];
         int smallestNameLength = row.Players.Min(p => p.Name.Length);
-        for (i = 0; row.Players[0].Name[i] == row.Players[1].Name[i] && row.Players[2].Name[i] == row.Players[0].Name[i] && i < smallestNameLength; i++) { }
+        var halfTheTeam = (players.Count / 2) + 1;
+        for (i = 0; (players.Count(p => p.Name[i] == firstPlayerLetter) >= halfTheTeam) && i < smallestNameLength; i++, firstPlayerLetter = row.Players[0].Name[i]) { }
+
         if (i >= 2)
         {
           tag = row.Players[0].Name.Substring(0, i);
@@ -186,7 +194,16 @@ namespace SplatTagDatabase.Importers
           Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
         };
 
-        teams.Add(newTeam);
+        // If we already have a team of this name then merge it.
+        var knownTeam = teams.Find(t => t.SearchableName.Equals(newTeam.SearchableName));
+        if (knownTeam != null)
+        {
+          knownTeam.Merge(newTeam);
+        }
+        else
+        {
+          teams.Add(newTeam);
+        }
 
         foreach (BattlefyJsonPlayer p in row.Players)
         {
@@ -208,7 +225,7 @@ namespace SplatTagDatabase.Importers
             CurrentTeam = newTeam.Id,
             Names = new string[] { p.Name, p.BattlefyName },
             Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) },
-            FriendCode = fcMatch.Success ? fcMatch.Value.Trim(new char[] { '(', ')'}) : ((p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null),
+            FriendCode = fcMatch.Success ? fcMatch.Value.Trim(new char[] { '(', ')' }) : ((p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null),
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
           });
         }

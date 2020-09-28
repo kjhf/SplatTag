@@ -17,23 +17,20 @@ namespace SplatTagDatabase
       // Add if the player is new (by name) and assign them with a new id
       // Otherwise, match the found team with its id, based on name.
       ConcurrentBag<Player> playersToAdd = new ConcurrentBag<Player>();
+      ConcurrentBag<(Player, Player)> playersToMerge = new ConcurrentBag<(Player, Player)>();
+
+      // Replace spaces because people adding tags or starting with space messes up same-name detection.
+      Dictionary<Player, string[]> transformedPlayerNames =
+        playersToMutate.ToDictionary(
+          p => p.Value,
+          p => p.Value.Names.Select(n => n.Replace(" ", "").TransformString().ToLowerInvariant()).ToArray());
+
       Parallel.ForEach(incomingPlayers, (importPlayer) =>
       {
-        List<long> correctedTeamIds = new List<long>();
-        foreach (long idToMerge in importPlayer.Teams)
-        {
-          if (!incomingTeams.ContainsKey(idToMerge))
-          {
-            throw new ArgumentException($"incomingTeams does not contain the merged id, {idToMerge}");
-          }
-          else
-          {
-            var id = incomingTeams[idToMerge].Id;
-            correctedTeamIds.Add(id);
-          }
-        }
-        importPlayer.Teams = correctedTeamIds;
-        Player foundPlayer = FindSamePlayer(playersToMutate.Values, importPlayer);
+        // Correct the ids
+        importPlayer.Teams = importPlayer.Teams.Select(idToMerge => incomingTeams[idToMerge].Id);
+
+        Player foundPlayer = FindSamePlayer(playersToMutate.Values, importPlayer, transformedPlayerNames);
 
         if (foundPlayer == null)
         {
@@ -42,7 +39,7 @@ namespace SplatTagDatabase
         else
         {
           importPlayer.Id = foundPlayer.Id;
-          foundPlayer.Merge(importPlayer);
+          playersToMerge.Add((foundPlayer, importPlayer));
         }
       });
 
@@ -52,6 +49,11 @@ namespace SplatTagDatabase
         importPlayer.Id = key;
         playersToMutate.Add(key, importPlayer);
       }
+
+      foreach (var (foundPlayer, importPlayer) in playersToMerge)
+      {
+        foundPlayer.Merge(importPlayer);
+      }
     }
 
     /// <summary>
@@ -60,16 +62,16 @@ namespace SplatTagDatabase
     /// <param name="playersToMutate">The players to search</param>
     /// <param name="testPlayer">The player instance to try and find</param>
     /// <returns>The matched player, or null if new</returns>
-    private static Player FindSamePlayer(ICollection<Player> playersToMutate, Player testPlayer)
+    private static Player FindSamePlayer(ICollection<Player> playersToMutate, Player testPlayer, Dictionary<Player, string[]> transformedPlayerNames)
     {
       bool tryMatchFcs = testPlayer.FriendCode != null;
       bool tryMatchDiscord = testPlayer.DiscordName != null;
-      HashSet<string> testPlayerTransformedNames = new HashSet<string>(testPlayer.Names.Select(n => n.Replace(" ", "").TransformString().ToLowerInvariant()));
 
-      return playersToMutate.FirstOrDefault(p =>
+      // Quick test all FCs and Discord names.
+      Player foundSame = playersToMutate.FirstOrDefault(p =>
       {
         // Test if the Switch FC's match.
-        if (tryMatchFcs && p.FriendCode == testPlayer.FriendCode)
+        if (tryMatchFcs && p.FriendCode?.Equals(testPlayer.FriendCode) == true)
         {
           // They do.
           return true;
@@ -82,19 +84,26 @@ namespace SplatTagDatabase
           return true;
         }
 
+        return false;
+      });
+      if (foundSame != null) return foundSame;
+
+      // Long test for names with transformation.
+      HashSet<string> testPlayerTransformedNames = new HashSet<string>(testPlayer.Names.Select(n => n.Replace(" ", "").TransformString().ToLowerInvariant()));
+
+      return transformedPlayerNames.FirstOrDefault(tPair =>
+      {
         // Test if the name matches the names that we know this player by.
-        foreach (string knownName in p.Names)
+        foreach (string knownName in tPair.Value)
         {
-          // Replace spaces because people adding tags or starting with space messes up same-name detection.
-          string transformedKnownName = knownName.Replace(" ", "").TransformString().ToLowerInvariant();
-          if (testPlayerTransformedNames.Contains(transformedKnownName))
+          if (testPlayerTransformedNames.Contains(knownName))
           {
             return true;
           }
         }
 
         return false;
-      });
+      }).Key;
     }
 
     /// <summary>
@@ -104,8 +113,7 @@ namespace SplatTagDatabase
     {
       if (teamsToMutate.Count > 0)
       {
-        Dictionary<string, Team> transformedTeamNames =
-          teamsToMutate.Values.ToDictionary(t => t.Name.Replace(" ", "").TransformString().ToLowerInvariant(), t => t);
+        Dictionary<string, Team> transformedTeamNames = teamsToMutate.Values.ToDictionary(t => t.SearchableName, t => t);
 
         // Add if the team is new (by name) and assign them with a new id
         // Otherwise, match the found team with its id, based on name.
@@ -113,9 +121,7 @@ namespace SplatTagDatabase
         {
           // Replace spaces because people adding tags or starting with space messes up same-name detection.
           // Also transform the team name.
-          string incomingName = importTeam.Name.Replace(" ", "").TransformString();
-
-          transformedTeamNames.TryGetValue(incomingName.ToLowerInvariant(), out Team foundTeam);
+          transformedTeamNames.TryGetValue(importTeam.SearchableName, out Team foundTeam);
 
           if (foundTeam == null)
           {

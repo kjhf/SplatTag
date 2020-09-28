@@ -13,19 +13,20 @@ namespace SplatTagCore
     /// Displayed string for an unknown player.
     /// </summary>
     public const string UNKNOWN_PLAYER = "(unknown)";
+
     public static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?\d{4}(-| )\d{4}(-| )\d{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
     public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     /// <summary>
     /// Back-store for the names of this player. The first element is the current name.
     /// </summary>
-    private LinkedList<string> names = new LinkedList<string>();
+    private List<string> names = new List<string>();
 
     /// <summary>
     /// Back-store for the team ids for this player. The first element is the current team.
     /// A 0 represents no team.
     /// </summary>
-    private LinkedList<long> teams = new LinkedList<long>();
+    private List<long> teams = new List<long>();
 
     [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
@@ -36,12 +37,12 @@ namespace SplatTagCore
       get => names.ToArray();
       set
       {
-        names = new LinkedList<string>();
+        names = new List<string>();
         foreach (string s in value)
         {
-          if (!string.IsNullOrWhiteSpace(s))
+          if (!string.IsNullOrWhiteSpace(s) && !names.Contains(s))
           {
-            names.AddLast(s);
+            names.Add(s);
           }
         }
       }
@@ -52,8 +53,14 @@ namespace SplatTagCore
     /// </summary>
     public string Name
     {
-      get => names.Count > 0 ? names.First.Value : UNKNOWN_PLAYER;
-      set => names.AddFirst(value ?? UNKNOWN_PLAYER);
+      get => names.Count > 0 ? names[0] : UNKNOWN_PLAYER;
+      set
+      {
+        if (!string.IsNullOrWhiteSpace(value) && !names.Contains(value))
+        {
+          names.Insert(0, value);
+        }
+      }
     }
 
     [JsonProperty("Teams", Required = Required.Always)]
@@ -64,7 +71,7 @@ namespace SplatTagCore
     public IEnumerable<long> Teams
     {
       get => teams.ToArray();
-      set => teams = new LinkedList<long>(value ?? new long[0]);
+      set => teams = new List<long>(value ?? new long[0]);
     }
 
     /// <summary>
@@ -72,14 +79,14 @@ namespace SplatTagCore
     /// </summary>
     public long CurrentTeam
     {
-      get => teams.Count > 0 ? teams.First.Value : 0;
+      get => teams.Count > 0 ? teams[0] : 0;
       set
       {
         if (teams.Contains(value))
         {
           teams.Remove(value);
         }
-        teams.AddFirst(value);
+        teams.Insert(0, value);
       }
     }
 
@@ -118,44 +125,48 @@ namespace SplatTagCore
       // Merge the players.
       // Iterates the other stack in reverse order so older teams are pushed first
       // so the most recent end up first in the stack.
-      foreach (uint t in otherPlayer.teams.Reverse())
+      var reverseTeams = otherPlayer.teams;
+      reverseTeams.Reverse();
+      foreach (uint t in reverseTeams)
       {
         if (this.teams.Contains(t))
         {
-          if (teams.First.Value != t)
+          if (teams[0] != t)
           {
             teams.Remove(t);
-            teams.AddFirst(t);
+            teams.Insert(0, t);
           }
         }
         else
         {
-          teams.AddFirst(t);
+          teams.Insert(0, t);
         }
       }
 
       // Merge the player's name(s).
       // Iterates the other stack in reverse order so older names are pushed first
       // so the most recent end up first in the stack.
-      foreach (string n in otherPlayer.names.Reverse())
+      var reversePlayers = otherPlayer.names;
+      reversePlayers.Reverse();
+      foreach (string n in reversePlayers)
       {
-        string foundName = this.names.FirstOrDefault(playerNames => playerNames.Equals(n, StringComparison.OrdinalIgnoreCase));
+        string foundName = this.names.Find(playerNames => playerNames.Equals(n, StringComparison.OrdinalIgnoreCase));
 
         if (foundName == null)
         {
-          names.AddFirst(n);
+          names.Insert(0, n);
         }
         else
         {
           names.Remove(foundName);
-          names.AddFirst(n);
+          names.Insert(0, n);
         }
       }
 
       // Merge the sources.
       foreach (string source in otherPlayer.Sources)
       {
-        string foundSource = this.Sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
+        string foundSource = Sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
 
         if (foundSource == null)
         {

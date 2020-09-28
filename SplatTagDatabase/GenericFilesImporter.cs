@@ -94,7 +94,7 @@ namespace SplatTagDatabase
         }
         catch (Exception ex)
         {
-          return ex.Message;
+          return $"Failed to read Twitter input {input}: {ex.Message}";
         }
       }
       else
@@ -112,7 +112,7 @@ namespace SplatTagDatabase
           }
           catch (Exception ex)
           {
-            return ex.Message;
+            return $"Failed to read LUTI JSON input {input}: {ex.Message}";
           }
         }
         else
@@ -130,7 +130,7 @@ namespace SplatTagDatabase
             }
             catch (Exception ex)
             {
-              return ex.Message;
+              return $"Failed to read Battlefy JSON input {input}: {ex.Message}";
             }
           }
           else
