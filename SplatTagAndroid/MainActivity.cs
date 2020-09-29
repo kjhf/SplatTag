@@ -40,33 +40,26 @@ namespace SplatTagAndroid
       Button goButton = FindViewById<Button>(Resource.Id.goButton);
 
       // Get the asset files
-      // TODO - for now just set this to the asset files.
-      string[] sources = new[]
-      {
-        "LUTI-Season-7.json",
-        "LUTI-Season-8.json",
-        "LUTI-Season-9.json",
-        "LUTI-Season-X.json"
-      };
-
+      List<string> sources = new List<string>();
       try
       {
         Directory.CreateDirectory(splatTagFolder);
 
         // Unpack the assets
-        foreach (string file in sources)
+        AssetManager assetManager = this.ApplicationContext.Assets;
+        foreach (var file in from string file in assetManager.List("")
+                             where Path.GetExtension(file) == ".json" && !File.Exists(Path.Combine(splatTagFolder, file))
+                             select file)
         {
-          if (!File.Exists(Path.Combine(splatTagFolder, file)))
+          // Read the contents of our asset
+          string content;
+          using (StreamReader sr = new StreamReader(assetManager.Open(file)))
           {
-            // Read the contents of our asset
-            string content;
-            AssetManager assets = this.Assets;
-            using (StreamReader sr = new StreamReader(assets.Open(file)))
-            {
-              content = sr.ReadToEnd();
-            }
-            File.WriteAllText(Path.Combine(splatTagFolder, file), content);
+            content = sr.ReadToEnd();
           }
+          string fileSource = Path.Combine(splatTagFolder, file);
+          sources.Add(fileSource);
+          File.WriteAllText(fileSource, content);
         }
       }
       catch (Exception ex)
@@ -77,26 +70,27 @@ namespace SplatTagAndroid
 
       try
       {
-        // Construct the database
-        importer = new GenericFilesImporter(sources.Select(file => Path.Combine(splatTagFolder, file)));
-        database = new MultiDatabase(splatTagFolder, importer);
-
         // Construct the controller.
-        splatTagController = new SplatTagController(database);
+        if (splatTagController == null)
+        {
+          // Construct the database
+          importer = new GenericFilesImporter(sources);
+          database = new MultiDatabase(splatTagFolder, importer);
+          splatTagController = new SplatTagController(database);
 
-        // Load the database
-        splatTagController.LoadDatabase();
+          // Load the database
+          splatTagController.LoadDatabase();
+
+          // Hook up events
+          enteredQuery.AfterTextChanged += (sender, e) => Search(enteredQuery.Text);
+          goButton.Click += (sender, e) => Search(enteredQuery.Text);
+        }
       }
       catch (Exception ex)
       {
         playersResults.Text = ex.ToString();
         Toast.MakeText(this, "Exception: " + ex.ToString(), ToastLength.Long).Show();
       }
-
-      // Hook up events
-      enteredQuery.AfterTextChanged += (sender, e) => Search(enteredQuery.Text);
-
-      goButton.Click += (sender, e) => Search(enteredQuery.Text);
     }
 
     private void Search(string query, bool toast = false)
@@ -106,40 +100,75 @@ namespace SplatTagAndroid
       if (query.Length > 0)
       {
         {
-          IEnumerable<string> playerStrings = splatTagController.MatchPlayer(query,
+          IEnumerable<Player> players = splatTagController.MatchPlayer(query,
              new MatchOptions
              {
                IgnoreCase = /* ignoreCaseCheckbox.IsChecked == true, */ true,
                NearCharacterRecognition = /* nearMatchCheckbox.IsChecked == true, */ true,
                QueryIsRegex = /* regexCheckbox.IsChecked == true */ false
              }
-           ).Select(p =>
-             // Use URLEncoder to unmangle any special characters
-             URLDecoder.Decode(URLEncoder.Encode($"{p.Name} (Plays for {splatTagController.GetTeamById(p.CurrentTeam).Name}) {GetOldTeamsAsString(p)}", "UTF-8"), "UTF-8"));
+           );
 
-          playersFound = playerStrings.Count();
+          playersFound = players.Count();
           if (playersFound != 0)
           {
-            playersResults.Text = string.Join("\n\n", playerStrings);
+            StringBuilder playerStrings = new StringBuilder();
+            foreach (var p in players)
+            {
+              // Use URLEncoder to unmangle any special characters
+              string name = URLDecoder.Decode(URLEncoder.Encode(p.Name, "UTF-8"), "UTF-8");
+              string currentTeam = splatTagController.GetTeamById(p.CurrentTeam).ToString();
+              string oldTeams = p.Teams.Select(t => splatTagController.GetTeamById(t)).GetOldTeamsStrings();
+              playerStrings
+                .Append(name)
+                .Append(" (Plays for ")
+                .Append(currentTeam)
+                .Append(") ")
+                .Append(oldTeams)
+                .Append("\n\n");
+            }
+
+            playersResults.Text = playerStrings.ToString();
           }
         }
 
         {
-          IEnumerable<string> teamStrings = splatTagController.MatchTeam(query,
+          IEnumerable<Team> teams = splatTagController.MatchTeam(query,
             new MatchOptions
             {
-              IgnoreCase = /* ignoreCaseCheckbox.IsChecked == true, */ true,
+              IgnoreCase = /* ignoreCaseCheckbox.IsChecked == true, */
+            true,
               NearCharacterRecognition = /* nearMatchCheckbox.IsChecked == true, */ true,
               QueryIsRegex = /* regexCheckbox.IsChecked == true */ false
             }
-          ).Select(t =>
-            // Use URLEncoder to unmangle any special characters
-            URLDecoder.Decode(URLEncoder.Encode(t.ToString(), "UTF-8"), "UTF-8"));
+          );
 
-          teamsFound = teamStrings.Count();
+          teamsFound = teams.Count();
           if (teamsFound != 0)
           {
-            teamsResults.Text = string.Join("\n\n", teamStrings);
+            StringBuilder teamStrings = new StringBuilder();
+            foreach (var t in teams)
+            {
+              // Use URLEncoder to unmangle any special characters
+              string tag = URLDecoder.Decode(URLEncoder.Encode(t.Tag, "UTF-8"), "UTF-8");
+              string name = URLDecoder.Decode(URLEncoder.Encode(t.Name, "UTF-8"), "UTF-8");
+              string div = t.Div.Name;
+              string bestPlayer = t.GetBestTeamPlayerDivString(splatTagController);
+              string[] teamPlayers = t.GetTeamPlayersStrings(splatTagController);
+              teamStrings
+                .Append(tag)
+                .Append(" ")
+                .Append(name)
+                .Append(" (")
+                .Append(div)
+                .Append("). ")
+                .Append(bestPlayer)
+                .Append("\nPlayers:\n")
+                .Append(string.Join(", ", teamPlayers))
+                ;
+            }
+
+            teamsResults.Text = teamStrings.ToString();
           }
         }
       }
@@ -188,24 +217,6 @@ namespace SplatTagAndroid
       {
         Toast.MakeText(this, $"{playersFound} players found\n{teamsFound} teams found", ToastLength.Long).Show();
       }
-    }
-
-    public string GetOldTeamsAsString(Player p)
-    {
-      StringBuilder sb = new StringBuilder();
-      IEnumerable<long> teamIds = p.Teams.Skip(1);
-      if (teamIds.Any())
-      {
-        sb.Append("(Old teams: ");
-        sb.Append(string.Join(", ", teamIds.Select(id =>
-        {
-          Team t = splatTagController.GetTeamById(id);
-          return t.Tag + " " + t.Name;
-        })));
-        sb.Append(")");
-      }
-
-      return sb.ToString();
     }
 
     public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
