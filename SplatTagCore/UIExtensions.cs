@@ -15,28 +15,10 @@ namespace SplatTagCore
       return controller.GetPlayersForTeam(t).Select(tuple => tuple.Item1.Name + " " + (tuple.Item2 ? "(Current)" : "(Ex)")).ToArray();
     }
 
-    /// <summary>
-    /// Get a string detailing the old teams in the enumerable.
-    /// Old teams start at index 1, not first.
-    /// </summary>
-    public static string GetOldTeamsStrings(this IEnumerable<Team> teams)
-    {
-      StringBuilder sb = new StringBuilder();
-      teams = teams.Skip(1);
-      if (teams.Any())
-      {
-        sb.Append("(Old teams: ");
-        sb.Append(string.Join(", ", teams.Select(t => t.Tag + " " + t.Name)));
-        sb.Append(")");
-      }
-
-      return sb.ToString();
-    }
-
     public static string GetBestTeamPlayerDivString(this Team t, SplatTagController splatTagController)
     {
       (Player, bool)[] playersForTeam = splatTagController.GetPlayersForTeam(t);
-      IDivision highestDiv = t.Div;
+      Division highestDiv = t.Div;
       Player bestPlayer = null;
       foreach ((Player, bool) pair in playersForTeam)
       {
@@ -53,7 +35,7 @@ namespace SplatTagCore
         }
       }
 
-      if (highestDiv == LUTIDivision.Unknown)
+      if (highestDiv == Division.Unknown)
       {
         return "Their div is unknown.";
       }

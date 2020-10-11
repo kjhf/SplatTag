@@ -19,8 +19,7 @@ namespace SplatTagAndroid
   {
     private static readonly string splatTagFolder = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "SplatTag");
     private static SplatTagController splatTagController;
-    private static GenericFilesImporter importer;
-    private static MultiDatabase database;
+    private static SplatTagJsonSnapshotDatabase snapshotDatabase;
 
     private TextView playersResults;
     private TextView teamsResults;
@@ -70,21 +69,16 @@ namespace SplatTagAndroid
 
       try
       {
-        // Construct the controller.
-        if (splatTagController == null)
-        {
-          // Construct the database
-          importer = new GenericFilesImporter(sources);
-          database = new MultiDatabase(splatTagFolder, importer);
-          splatTagController = new SplatTagController(database);
+        // Construct the database
+        snapshotDatabase = new SplatTagJsonSnapshotDatabase(splatTagFolder);
+        splatTagController = new SplatTagController(snapshotDatabase);
 
-          // Load the database
-          splatTagController.LoadDatabase();
+        // Load the database
+        splatTagController.Initialise();
 
-          // Hook up events
-          enteredQuery.AfterTextChanged += (sender, e) => Search(enteredQuery.Text);
-          goButton.Click += (sender, e) => Search(enteredQuery.Text);
-        }
+        // Hook up events
+        enteredQuery.AfterTextChanged += (sender, e) => Search(enteredQuery.Text);
+        goButton.Click += (sender, e) => Search(enteredQuery.Text);
       }
       catch (Exception ex)
       {
@@ -118,12 +112,12 @@ namespace SplatTagAndroid
               // Use URLEncoder to unmangle any special characters
               string name = URLDecoder.Decode(URLEncoder.Encode(p.Name, "UTF-8"), "UTF-8");
               string currentTeam = splatTagController.GetTeamById(p.CurrentTeam).ToString();
-              string oldTeams = p.Teams.Select(t => splatTagController.GetTeamById(t)).GetOldTeamsStrings();
+              string oldTeams = string.Join(", ", p.OldTeams.Select(t => splatTagController.GetTeamById(t)));
               playerStrings
                 .Append(name)
                 .Append(" (Plays for ")
                 .Append(currentTeam)
-                .Append(") ")
+                .Append(") Old Teams: ")
                 .Append(oldTeams)
                 .Append("\n\n");
             }

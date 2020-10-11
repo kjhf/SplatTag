@@ -12,7 +12,7 @@ namespace SplatTagCore
     {
       ClanTagOption = TagOption.Unknown,
       ClanTags = new string[] { "FA" },
-      Div = new LUTIDivision(),
+      Div = new Division(),
       Id = 0,
       Name = "(Free Agent)",
       Sources = new List<string>()
@@ -21,30 +21,16 @@ namespace SplatTagCore
     /// <summary>
     /// The tag(s) of the team, first is the current tag.
     /// </summary>
-    private Stack<string> clanTags = new Stack<string>();
+    private Stack<string> clanTags;
 
-    private string searchableName;
     private string name;
+    private string searchableName;
 
-    [JsonProperty("Names", Required = Required.Always)]
+    [JsonProperty("ClanTagOption", Required = Required.Default)]
     /// <summary>
-    /// The name of the team
+    /// The placement of the tag
     /// </summary>
-    public string Name
-    {
-      get => name;
-      set
-      {
-        name = value;
-        searchableName = null; // Invalidate searchable name.
-      }
-    }
-
-    [JsonProperty("Div", Required = Required.Default)]
-    /// <summary>
-    /// The division of the team
-    /// </summary>
-    public IDivision Div { get; set; } = LUTIDivision.Unknown;
+    public TagOption ClanTagOption { get; set; }
 
     [JsonProperty("ClanTags", Required = Required.Always)]
     /// <summary>
@@ -53,14 +39,14 @@ namespace SplatTagCore
     public string[] ClanTags
     {
       get => clanTags.ToArray();
-      set => clanTags = new Stack<string>(value);
+      set => clanTags = new Stack<string>(value.Where(s => !string.IsNullOrEmpty(s)));
     }
 
-    [JsonProperty("ClanTagOption", Required = Required.Default)]
+    [JsonProperty("Div", Required = Required.Always)]
     /// <summary>
-    /// The placement of the tag
+    /// The division of the team
     /// </summary>
-    public TagOption ClanTagOption { get; set; } = TagOption.Unknown;
+    public Division Div { get; set; }
 
     [JsonProperty("Id", Required = Required.Always)]
     /// <summary>
@@ -68,16 +54,38 @@ namespace SplatTagCore
     /// </summary>
     public long Id { get; set; }
 
+    [JsonProperty("Name", Required = Required.Always)]
     /// <summary>
-    /// The most recent tag of the team
+    /// The name of the team
     /// </summary>
-    public string Tag => ClanTags.Length > 0 ? ClanTags[0] : "";
+    public string Name
+    {
+      get => name;
+      set
+      {
+        if (string.IsNullOrWhiteSpace(value)) return;
+
+        name = value;
+        searchableName = null; // Invalidate searchable name.
+      }
+    }
+
+    /// <summary>
+    /// Get the searchable name for this team (i.e. the transformed lower-case team name).
+    /// </summary>
+    public string SearchableName => searchableName ?? (searchableName = Name.Replace(" ", "").TransformString().ToLowerInvariant());
 
     [JsonProperty("Sources", Required = Required.Always)]
     /// <summary>
     /// Get or Set the current sources that make up this Team instance.
     /// </summary>
-    public List<string> Sources { get; set; } = new List<string>();
+    public List<string> Sources { get; set; }
+
+    [JsonIgnore]
+    /// <summary>
+    /// The most recent tag of the team
+    /// </summary>
+    public string Tag => ClanTags.Length > 0 ? ClanTags[0] : "";
 
     [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
@@ -85,10 +93,12 @@ namespace SplatTagCore
     /// </summary>
     public string Twitter { get; set; }
 
-    /// <summary>
-    /// Get the searchable name for this team (i.e. the transformed lower-case team name).
-    /// </summary>
-    public string SearchableName => searchableName ?? (searchableName = Name.Replace(" ", "").TransformString().ToLowerInvariant());
+    public Team()
+    {
+      Div = new Division();
+      clanTags = new Stack<string>();
+      Sources = new List<string>();
+    }
 
     /// <summary>
     /// Merge this team with another (newer) team instance
@@ -101,6 +111,8 @@ namespace SplatTagCore
       // so the most recent end up first in the stack.
       foreach (string tag in otherTeam.clanTags.Reverse())
       {
+        if (string.IsNullOrWhiteSpace(tag)) continue;
+
         string foundTag = this.clanTags.FirstOrDefault(teamTags => teamTags.Equals(tag, StringComparison.OrdinalIgnoreCase));
 
         if (foundTag == null)
@@ -119,7 +131,7 @@ namespace SplatTagCore
       }
 
       // Update the div if the other div is known.
-      if (otherTeam.Div.Value != LUTIDivision.UNKNOWN)
+      if (otherTeam.Div.Value != Division.UNKNOWN)
       {
         this.Div = otherTeam.Div;
       }
@@ -127,6 +139,8 @@ namespace SplatTagCore
       // Merge the sources.
       foreach (string source in otherTeam.Sources)
       {
+        if (string.IsNullOrWhiteSpace(source)) continue;
+
         string foundSource = this.Sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
 
         if (foundSource == null)
@@ -143,6 +157,47 @@ namespace SplatTagCore
     public override string ToString()
     {
       return $"{Tag} {Name} ({Div})";
+    }
+
+    public void SetTagOption(string tag, string examplePlayerName)
+    {
+      string transformedTag = tag?.TransformString();
+      if (string.IsNullOrWhiteSpace(transformedTag))
+      {
+        // Nothing to do, no tag
+      }
+      else if (examplePlayerName.StartsWith(transformedTag, StringComparison.OrdinalIgnoreCase) || examplePlayerName.StartsWith(tag, StringComparison.OrdinalIgnoreCase))
+      {
+        this.ClanTagOption = TagOption.Front;
+      }
+      else if (examplePlayerName.EndsWith(transformedTag, StringComparison.OrdinalIgnoreCase) || examplePlayerName.EndsWith(tag, StringComparison.OrdinalIgnoreCase))
+      {
+        // Tag is at the back.
+        this.ClanTagOption = TagOption.Back;
+      }
+      else
+      {
+        // If the tag has 2 or more characters, check 'surrounding' criteria which is take the
+        // first character of the tag and check if the captain's name begins with this character,
+        // then take the last character of the tag and check if the captain's name ends with this character.
+        // e.g. Tag: //, Captain's name: /captain/
+        if (tag.Length >= 2)
+        {
+          if (examplePlayerName.StartsWith(tag[0].ToString(), StringComparison.OrdinalIgnoreCase)
+          && examplePlayerName.EndsWith(tag[tag.Length - 1].ToString(), StringComparison.OrdinalIgnoreCase))
+          {
+            this.ClanTagOption = TagOption.Surrounding;
+          }
+        }
+        if (this.ClanTagOption != TagOption.Surrounding && transformedTag.Length >= 2)
+        {
+          if (examplePlayerName.StartsWith(transformedTag[0].ToString(), StringComparison.OrdinalIgnoreCase)
+          && examplePlayerName.EndsWith(transformedTag[transformedTag.Length - 1].ToString(), StringComparison.OrdinalIgnoreCase))
+          {
+            this.ClanTagOption = TagOption.Surrounding;
+          }
+        }
+      }
     }
   }
 }

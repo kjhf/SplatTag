@@ -215,7 +215,7 @@ namespace SplatTagCore
         teamNameFunc = (t) => (matchOptions.NearCharacterRecognition ? t.Name.TransformString() : t.Name).Contains(query, comparion);
       }
 
-      // Return matches, 
+      // Return matches,
       // but we want clan tag matches to be first in the ordering.
       return
         teams.Values
@@ -230,7 +230,7 @@ namespace SplatTagCore
       Player p = new Player
       {
         Id = players.Keys.LastOrDefault() + 1,
-        Sources = new List<string> { source }
+        Sources = new string[] { source }
       };
       players.Add(p.Id, p);
       return p;

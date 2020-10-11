@@ -99,30 +99,28 @@ namespace SplatTagDatabase
       }
       else
       {
-        LUTIJsonReader lutiReader = new LUTIJsonReader(input);
-        if (lutiReader.AcceptsInput(input))
+        SendouReader sendouReader = new SendouReader(input);
+        if (sendouReader.AcceptsInput(input))
         {
           try
           {
-            var (loadedPlayers, loadedTeams) = lutiReader.Load();
-            var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
-            Merger.MergeTeams(teams, loadedTeams);
-            Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
+            var (loadedPlayers, _) = sendouReader.Load();
+            Merger.MergePlayers(players, loadedPlayers, teams);
             return "";
           }
           catch (Exception ex)
           {
-            return $"Failed to read LUTI JSON input {input}: {ex.Message}";
+            return $"Failed to read Sendou input {input}: {ex.Message}";
           }
         }
         else
         {
-          BattlefyJsonReader battlefyReader = new BattlefyJsonReader(input);
-          if (battlefyReader.AcceptsInput(input))
+          LUTIJsonReader lutiReader = new LUTIJsonReader(input);
+          if (lutiReader.AcceptsInput(input))
           {
             try
             {
-              var (loadedPlayers, loadedTeams) = battlefyReader.Load();
+              var (loadedPlayers, loadedTeams) = lutiReader.Load();
               var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
               Merger.MergeTeams(teams, loadedTeams);
               Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
@@ -130,12 +128,31 @@ namespace SplatTagDatabase
             }
             catch (Exception ex)
             {
-              return $"Failed to read Battlefy JSON input {input}: {ex.Message}";
+              return $"Failed to read LUTI JSON input {input}: {ex.Message}";
             }
           }
           else
           {
-            return "File extension not recognised or supported.";
+            BattlefyJsonReader battlefyReader = new BattlefyJsonReader(input);
+            if (battlefyReader.AcceptsInput(input))
+            {
+              try
+              {
+                var (loadedPlayers, loadedTeams) = battlefyReader.Load();
+                var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
+                Merger.MergeTeams(teams, loadedTeams);
+                Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
+                return "";
+              }
+              catch (Exception ex)
+              {
+                return $"Failed to read Battlefy JSON input {input}: {ex.Message}";
+              }
+            }
+            else
+            {
+              return "File extension not recognised or supported.";
+            }
           }
         }
       }

@@ -42,7 +42,7 @@ namespace SplatTagUnitTests
           Id = TEAM_ID,
           Name = "Example Team",
           ClanTags = new string[] { "e.g" },
-          Div = new LUTIDivision(1)
+          Div = new Division(1)
         };
 
       database.expectedTeams = new List<Team> { exampleTeam };

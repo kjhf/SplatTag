@@ -21,6 +21,7 @@ namespace SplatTagDatabase.Importers
       public string Division { get; set; } = "Unknown";
 
       private string tag;
+
       [JsonProperty("Tag")]
       public string Tag { get => tag; set => tag = value.Trim(); }
 
@@ -109,7 +110,7 @@ namespace SplatTagDatabase.Importers
           {
             CurrentTeam = _newTeam.Id,
             Name = tryPlayerName,
-            Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
+            Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) }
           });
         }
       }
@@ -130,51 +131,15 @@ namespace SplatTagDatabase.Importers
         {
           Id = (uint)teams.Count,  // This will be updated when the merge happens.
           ClanTags = new string[] { row.Tag },
-          ClanTagOption = TagOption.Front,
-          Div = new LUTIDivision(row.Division),
+          ClanTagOption = TagOption.Unknown,
+          Div = new Division(row.Division),
           Name = row.TeamName,
           Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
         };
 
         // Handle tag placements from the captain's name
+        newTeam.SetTagOption(row.Tag, row.TeamCaptain);
         string transformedTag = row.Tag?.TransformString();
-        if (string.IsNullOrWhiteSpace(transformedTag))
-        {
-          // Nothing to do, no tag
-        }
-        else if (row.TeamCaptain.StartsWith(transformedTag, StringComparison.OrdinalIgnoreCase) || row.TeamCaptain.StartsWith(row.Tag, StringComparison.OrdinalIgnoreCase))
-        {
-          // Nothing to do, the tag is at the default Front
-        }
-        else if (row.TeamCaptain.EndsWith(transformedTag, StringComparison.OrdinalIgnoreCase) || row.TeamCaptain.EndsWith(row.Tag, StringComparison.OrdinalIgnoreCase))
-        {
-          // Tag is at the back.
-          newTeam.ClanTagOption = TagOption.Back;
-        }
-        else
-        {
-          // If the tag has 2 or more characters, check 'surrounding' criteria which is take the
-          // first character of the tag and check if the captain's name begins with this character,
-          // then take the last character of the tag and check if the captain's name ends with this character.
-          // e.g. Tag: //, Captain's name: /captain/
-          if (row.Tag.Length >= 2)
-          {
-            if (row.TeamCaptain.StartsWith(row.Tag[0].ToString(), StringComparison.OrdinalIgnoreCase)
-            && row.TeamCaptain.EndsWith(row.Tag[row.Tag.Length - 1].ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-              newTeam.ClanTagOption = TagOption.Surrounding;
-            }
-          }
-          if (newTeam.ClanTagOption != TagOption.Surrounding && transformedTag.Length >= 2)
-          {
-            if (row.TeamCaptain.StartsWith(transformedTag[0].ToString(), StringComparison.OrdinalIgnoreCase)
-            && row.TeamCaptain.EndsWith(transformedTag[transformedTag.Length - 1].ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-              newTeam.ClanTagOption = TagOption.Surrounding;
-            }
-          }
-        }
-        // else tag is not present in the captain's name and therefore assume default front.
 
         teams.Add(newTeam);
         CheckAndAddPlayer(row.TeamCaptain, row.Tag, transformedTag, newTeam, players);

@@ -2,6 +2,15 @@
 
 ## In-Dev Releases
 
+### v0.0.15
+* Added Sendou data and rejigged UI details to show this detail.
+* Improved merging of known records.
+
+### v0.0.14
+* Now works off of JSON database snapshots to drastically improve startup and user experience
+* Removed db classes in favour of purely JSON
+* Division is now a single class for de/serialization purposes
+
 ### v0.0.13
 * Better div support - makes French Leagues integration ready.
 * Better sameness detection by matching names, Switch FCs, and Discord.

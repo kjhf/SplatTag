@@ -187,9 +187,9 @@ namespace SplatTagDatabase.Importers
         Team newTeam = new Team
         {
           Id = -teams.Count - 1,  // This will be updated when the merge happens.
-          ClanTags = new string[1] { tag },
-          ClanTagOption = TagOption.Front,
-          Div = new LUTIDivision(),
+          ClanTags = tag.Length == 0 ? new string[0] : new string[1] { tag },
+          ClanTagOption = tag.Length == 0 ? TagOption.Unknown : TagOption.Front,
+          Div = new Division(),
           Name = row.TeamName,
           Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
         };
@@ -224,7 +224,7 @@ namespace SplatTagDatabase.Importers
           {
             CurrentTeam = newTeam.Id,
             Names = new string[] { p.Name, p.BattlefyName },
-            Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) },
+            Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) },
             FriendCode = fcMatch.Success ? fcMatch.Value.Trim(new char[] { '(', ')' }) : ((p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null),
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
           });

@@ -145,7 +145,7 @@ namespace SplatTagConsole
             t.ClanTagOption = temp;
 
             Console.WriteLine("Div?");
-            t.Div = new LUTIDivision(Console.ReadLine());
+            t.Div = new Division(Console.ReadLine());
 
             splatTagController.SaveDatabase();
           }
