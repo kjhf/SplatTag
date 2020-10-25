@@ -2,6 +2,7 @@
 using SplatTagDatabase.Importers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -72,89 +73,95 @@ namespace SplatTagDatabase
       // Remove preceding and seceding quotes from path.
       input = input.TrimStart('"').TrimEnd('"');
 
-      // TODO --
-      // A local file should be a readable format, in priority order: json, html, database (misp), xls, xml
-      // A site should simply download the file or an html contents rep, and load the contents as if it were a local file.
-      // We should be mindful about loading files that come from the internet though: always validate first.
-      //
-      // In future, we can respell this as an array and iterate over known importers.
       if (!File.Exists(input))
       {
         return "Input does not exist on disk. Remote is not currently supported.";
       }
 
-      TwitterReader twitterReader = new TwitterReader(input);
-      if (twitterReader.AcceptsInput(input))
+      if (TwitterReader.AcceptsInput(input))
       {
         try
         {
+          TwitterReader twitterReader = new TwitterReader(input);
           var (_, loadedTeams) = twitterReader.Load();
           Merger.MergeTeams(teams, loadedTeams);
           return "";
         }
         catch (Exception ex)
         {
+          Trace.WriteLine(ex);
           return $"Failed to read Twitter input {input}: {ex.Message}";
+        }
+      }
+      else if (SendouReader.AcceptsInput(input))
+      {
+        try
+        {
+          SendouReader sendouReader = new SendouReader(input);
+          var (loadedPlayers, _) = sendouReader.Load();
+          Merger.MergePlayers(players, loadedPlayers);
+          return "";
+        }
+        catch (Exception ex)
+        {
+          Trace.WriteLine(ex);
+          return $"Failed to read Sendou input {input}: {ex.Message}";
+        }
+      }
+      else if (TSVReader.AcceptsInput(input))
+      {
+        try
+        {
+          TSVReader tsvReader = new TSVReader(input);
+          var (loadedPlayers, loadedTeams) = tsvReader.Load();
+          var mergeResult = Merger.MergeTeams(teams, loadedTeams);
+          Merger.CorrectPlayerIds(loadedPlayers, mergeResult);
+          Merger.MergePlayers(players, loadedPlayers);
+          return "";
+        }
+        catch (Exception ex)
+        {
+          Trace.WriteLine(ex);
+          return $"Failed to read TSV input {input}: {ex.Message}";
+        }
+      }
+      else if (LUTIJsonReader.AcceptsInput(input))
+      {
+        try
+        {
+          LUTIJsonReader lutiReader = new LUTIJsonReader(input);
+          var (loadedPlayers, loadedTeams) = lutiReader.Load();
+          var mergeResult = Merger.MergeTeams(teams, loadedTeams);
+          Merger.CorrectPlayerIds(loadedPlayers, mergeResult);
+          Merger.MergePlayers(players, loadedPlayers);
+          return "";
+        }
+        catch (Exception ex)
+        {
+          Trace.WriteLine(ex);
+          return $"Failed to read LUTI JSON input {input}: {ex.Message}";
+        }
+      }
+      else if (BattlefyJsonReader.AcceptsInput(input))
+      {
+        try
+        {
+          BattlefyJsonReader battlefyReader = new BattlefyJsonReader(input);
+          var (loadedPlayers, loadedTeams) = battlefyReader.Load();
+          var mergeResult = Merger.MergeTeams(teams, loadedTeams);
+          Merger.CorrectPlayerIds(loadedPlayers, mergeResult);
+          Merger.MergePlayers(players, loadedPlayers);
+          return "";
+        }
+        catch (Exception ex)
+        {
+          Trace.WriteLine(ex);
+          return $"Failed to read Battlefy JSON input {input}: {ex.Message}";
         }
       }
       else
       {
-        SendouReader sendouReader = new SendouReader(input);
-        if (sendouReader.AcceptsInput(input))
-        {
-          try
-          {
-            var (loadedPlayers, _) = sendouReader.Load();
-            Merger.MergePlayers(players, loadedPlayers, teams);
-            return "";
-          }
-          catch (Exception ex)
-          {
-            return $"Failed to read Sendou input {input}: {ex.Message}";
-          }
-        }
-        else
-        {
-          LUTIJsonReader lutiReader = new LUTIJsonReader(input);
-          if (lutiReader.AcceptsInput(input))
-          {
-            try
-            {
-              var (loadedPlayers, loadedTeams) = lutiReader.Load();
-              var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
-              Merger.MergeTeams(teams, loadedTeams);
-              Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
-              return "";
-            }
-            catch (Exception ex)
-            {
-              return $"Failed to read LUTI JSON input {input}: {ex.Message}";
-            }
-          }
-          else
-          {
-            BattlefyJsonReader battlefyReader = new BattlefyJsonReader(input);
-            if (battlefyReader.AcceptsInput(input))
-            {
-              try
-              {
-                var (loadedPlayers, loadedTeams) = battlefyReader.Load();
-                var teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
-                Merger.MergeTeams(teams, loadedTeams);
-                Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
-                return "";
-              }
-              catch (Exception ex)
-              {
-                return $"Failed to read Battlefy JSON input {input}: {ex.Message}";
-              }
-            }
-            else
-            {
-              return "File extension not recognised or supported.";
-            }
-          }
-        }
+        return "File extension not recognised or supported.";
       }
     }
   }

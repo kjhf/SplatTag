@@ -2,6 +2,12 @@
 
 ## In-Dev Releases
 
+### v0.0.16
+* Added Tab Separated Values (TSV) Importer to allow importing of early LUTI data
+* Final merge after database has been built to merge known entries. This should prevent cases where names that were previously not linked because of missing information become linked.
+* Transformed input to also match special characters. This fixes a bug where typing accented characters causes no results.
+* Minor text changes
+
 ### v0.0.15
 * Added Sendou data and rejigged UI details to show this detail.
 * Improved merging of known records.

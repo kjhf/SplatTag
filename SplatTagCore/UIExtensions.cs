@@ -45,7 +45,7 @@ namespace SplatTagCore
       }
       else
       {
-        return $"Highest Div'd player is {bestPlayer.Name} at {highestDiv}.";
+        return $"Highest div'd player is {bestPlayer.Name} at {highestDiv}.";
       }
     }
   }

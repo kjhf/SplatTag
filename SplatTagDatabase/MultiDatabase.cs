@@ -23,14 +23,10 @@ namespace SplatTagDatabase
       Dictionary<long, Team> teams = new Dictionary<long, Team>();
       foreach (var db in importers)
       {
-        Dictionary<long, Team> teamDictionaryPreMerge = new Dictionary<long, Team>();
         var (loadedPlayers, loadedTeams) = db.Load();
-        if (loadedTeams != null)
-        {
-          teamDictionaryPreMerge = loadedTeams.ToDictionary(team => team.Id, team => team);
-          Merger.MergeTeams(teams, loadedTeams);
-        }
-        Merger.MergePlayers(players, loadedPlayers, teamDictionaryPreMerge);
+        var mergeResult = Merger.MergeTeams(teams, loadedTeams);
+        Merger.CorrectPlayerIds(loadedPlayers, mergeResult);
+        Merger.MergePlayers(players, loadedPlayers);
       }
 
       // Perform a final merge.

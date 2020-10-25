@@ -2,6 +2,7 @@
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace SplatTagDatabase.Importers
@@ -19,8 +20,10 @@ namespace SplatTagDatabase.Importers
     {
       if (jsonFile == null)
       {
-        throw new InvalidOperationException("jsonFile is not set.");
+        throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
       }
+
+      Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
 
       List<Team> teams = new List<Team>();
@@ -39,10 +42,10 @@ namespace SplatTagDatabase.Importers
       return (new Player[0], teams.ToArray());
     }
 
-    public bool AcceptsInput(string input)
+    public static bool AcceptsInput(string input)
     {
-      // Is named Twitter.json
-      return Path.GetFileName(input).Equals("Twitter.json");
+      // Twitter.json
+      return Path.GetFileName(input).EndsWith("Twitter.json");
     }
   }
 }

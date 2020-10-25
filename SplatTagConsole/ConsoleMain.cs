@@ -2,49 +2,140 @@
 using SplatTagCore;
 using SplatTagDatabase;
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml.XPath;
 
 namespace SplatTagConsole
 {
-  internal static class ProgramMain
+  public static class ConsoleMain
   {
     private static readonly SplatTagController splatTagController;
     private static readonly GenericFilesImporter importer;
-    private static readonly ISplatTagDatabase database;
-    private static readonly string splatTagFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
 
-    static ProgramMain()
+    static ConsoleMain()
     {
-      importer = new GenericFilesImporter(splatTagFolder);
-      database = new MultiDatabase(splatTagFolder, importer);
-      splatTagController = new SplatTagController(database);
+      // Set Console to UTF-8
+      Console.OutputEncoding = Encoding.UTF8;
+      (splatTagController, importer) = SplatTagControllerFactory.CreateController();
     }
 
-    private static int Main(string[] args)
+    public static int Main(string[] args)
     {
-      splatTagController.Initialise();
-
-      if (args.Length > 0)
+      if (args?.Length > 0)
       {
         // Invoked from command line
+        var settings = JsonConvert.DefaultSettings();
+        settings.DefaultValueHandling = DefaultValueHandling.Ignore;
+        var serializer = JsonSerializer.Create(settings);
+
         var exactCaseOption = new Option<bool>("--exactCase", () => false, "Exact Case?");
         var exactCharacterRecognitionOption = new Option<bool>("--exactCharacterRecognition", () => false, "Exact Character Recognition?");
         var queryIsRegexOption = new Option<bool>("--queryIsRegex", () => false, "Exact Character Recognition?");
+        var keepOpenOption = new Option<bool>("--keepOpen", () => false, "Keep the console open?");
         var queryArgument = new Argument<string>("query", "The team, tag, or player query");
         var rootCommand = new RootCommand
         {
           queryArgument,
           exactCaseOption,
           exactCharacterRecognitionOption,
-          queryIsRegexOption
+          queryIsRegexOption,
+          keepOpenOption
         };
 
-        rootCommand.Handler = CommandHandler.Create<string, bool, bool, bool>(HandleCommandLineQuery);
-        return rootCommand.InvokeAsync(args).Result;
+        rootCommand.Handler = CommandHandler.Create(
+          (string query, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, bool _) =>
+          {
+            CommandLineResult result = new CommandLineResult
+            {
+              Message = "OK"
+            };
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+              result.Message = "Nothing to search!";
+              result.Players = new Player[0];
+              result.Teams = new Team[0];
+              result.AdditionalTeams = new Dictionary<long, Team>();
+              result.PlayersForTeams = new Dictionary<long, (Player, bool)[]>();
+            }
+            else
+            {
+              result.Players =
+                splatTagController.MatchPlayer(query,
+                  new MatchOptions
+                  {
+                    IgnoreCase = !exactCase,
+                    NearCharacterRecognition = !exactCharacterRecognition,
+                    QueryIsRegex = queryIsRegex
+                  }
+                );
+
+              result.Teams =
+                splatTagController.MatchTeam(query,
+                  new MatchOptions
+                  {
+                    IgnoreCase = !exactCase,
+                    NearCharacterRecognition = !exactCharacterRecognition,
+                    QueryIsRegex = queryIsRegex
+                  }
+                );
+
+              result.AdditionalTeams =
+                result.Players.SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
+                .Distinct()
+                .ToDictionary(t => t.Id, t => t);
+
+              result.PlayersForTeams =
+                result.Teams.ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
+
+              foreach (var pair in result.PlayersForTeams)
+              {
+                foreach ((Player, bool) tuple in pair.Value)
+                {
+                  foreach (long t in tuple.Item1.Teams)
+                  {
+                    result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
+                  }
+                }
+              }
+            }
+
+            StringWriter sw = new StringWriter();
+            serializer.Serialize(sw, result);
+            Console.WriteLine(sw.ToString());
+          }
+        );
+
+        int mainResult = 0;
+        var parsed = rootCommand.Parse(args);
+        bool keepOpen = parsed.Tokens.Any(t => t.Value.Contains("keepOpen"));
+
+        do
+        {
+          mainResult = parsed.Invoke();
+
+          if (keepOpen)
+          {
+            string line = Console.ReadLine();
+            if (line == null)
+            {
+              // Exited.
+              break;
+            }
+            else
+            {
+              parsed = rootCommand.Parse(line);
+            }
+          }
+        }
+        while (keepOpen);
+        return mainResult;
       }
       else
       {
@@ -58,45 +149,6 @@ namespace SplatTagConsole
           DoCommand(c);
         }
       }
-    }
-
-    public static void HandleCommandLineQuery(string query, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex)
-    {
-      CommandLineResult result = new CommandLineResult
-      {
-        Message = "OK"
-      };
-
-      if (string.IsNullOrWhiteSpace(query))
-      {
-        result.Message = "Nothing to search!";
-      }
-      else
-      {
-        result.Players =
-          splatTagController.MatchPlayer(query,
-            new MatchOptions
-            {
-              IgnoreCase = !exactCase,
-              NearCharacterRecognition = !exactCharacterRecognition,
-              QueryIsRegex = queryIsRegex
-            }
-          );
-
-        result.Teams =
-          splatTagController.MatchTeam(query,
-            new MatchOptions
-            {
-              IgnoreCase = !exactCase,
-              NearCharacterRecognition = !exactCharacterRecognition,
-              QueryIsRegex = queryIsRegex
-            }
-          );
-      }
-
-      StringWriter sw = new StringWriter();
-      new JsonSerializer().Serialize(sw, result);
-      Console.WriteLine(sw.ToString());
     }
 
     private static string GetCommandsString()

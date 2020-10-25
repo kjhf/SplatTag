@@ -14,7 +14,6 @@ namespace SplatTagCore
     /// </summary>
     public const string UNKNOWN_PLAYER = "(unknown)";
 
-    public static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?\d{4}(-| )\d{4}(-| )\d{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
     public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     /// <summary>
@@ -116,7 +115,7 @@ namespace SplatTagCore
     /// <summary>
     /// The weapons this player uses.
     /// </summary>
-    public string[] Weapons
+    public IEnumerable<string> Weapons
     {
       get => weapons.ToArray();
       set
@@ -144,7 +143,7 @@ namespace SplatTagCore
         sources = new List<string>();
         foreach (string s in value)
         {
-          if (!string.IsNullOrWhiteSpace(s) && !names.Contains(s))
+          if (!string.IsNullOrWhiteSpace(s) && !sources.Contains(s))
           {
             sources.Add(s);
           }
@@ -199,6 +198,12 @@ namespace SplatTagCore
     /// False by default.
     /// </summary>
     public bool Top500 { get; set; }
+
+    [JsonProperty("Twitter", Required = Required.Default)]
+    /// <summary>
+    /// Get or Set the player's twitter.
+    /// </summary>
+    public string Twitter { get; set; }
 
     /// <summary>
     /// Merge this player with another (newer) player instance
@@ -303,6 +308,12 @@ namespace SplatTagCore
       {
         this.Top500 = true;
       }
+
+      if (!string.IsNullOrWhiteSpace(otherPlayer.Twitter))
+      {
+        this.Twitter = otherPlayer.Twitter;
+      }
+
     }
 
     /// <summary>

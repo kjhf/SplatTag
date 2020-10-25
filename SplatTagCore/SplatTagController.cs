@@ -78,6 +78,11 @@ namespace SplatTagCore
         return players.Values.ToArray();
       }
 
+      if (matchOptions.NearCharacterRecognition)
+      {
+        query = query.TransformString();
+      }
+
       Func<Player, bool> func;
       if (matchOptions.QueryIsRegex)
       {
@@ -170,6 +175,11 @@ namespace SplatTagCore
         return teams.Values.ToArray();
       }
 
+      if (matchOptions.NearCharacterRecognition)
+      {
+        query = query.TransformString();
+      }
+
       // First, derive the function for clan tags.
       Func<Team, bool> clanTagFunc;
       if (matchOptions.QueryIsRegex)
@@ -241,7 +251,7 @@ namespace SplatTagCore
       Team t = new Team
       {
         Id = teams.Keys.LastOrDefault() + 1,
-        Sources = new List<string> { source }
+        Sources = new string[] { source }
       };
       teams.Add(t.Id, t);
       return t;

@@ -25,7 +25,6 @@ namespace SplatTagUI
     private const int MIN_CHARACTERS_FOR_TIMER_SKIP = 4;
 
     internal static readonly SplatTagController splatTagController;
-    private static readonly string saveFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
     private static readonly GenericFilesImporter sourcesImporter;
     private readonly Timer smoothSearchDelayTimer;
     private readonly SynchronizationContext context;
@@ -33,12 +32,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.15";
+    public string Version => "Version 0.0.16";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.0.16: TSV loading to include early LUTI\n" +
       "v0.0.15: Sendou details \n" +
       "v0.0.14: Now works off of snapshots to drastically improve load time. \n" +
       "v0.0.13: Better div support. Better sameness detection.\n" +
@@ -49,22 +49,7 @@ namespace SplatTagUI
 
     static MainWindow()
     {
-      SplatTagJsonSnapshotDatabase snapshotDatabase = new SplatTagJsonSnapshotDatabase(saveFolder);
-      splatTagController = new SplatTagController(snapshotDatabase);
-      splatTagController.Initialise();
-
-      // If we were able to load from a snapshot then we don't need the other importers.
-      // Otherwise, do the processing and record the snapshot.
-      if (splatTagController.MatchPlayer(null).Length == 0)
-      {
-        sourcesImporter = new GenericFilesImporter(saveFolder);
-        MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
-        splatTagController = new SplatTagController(splatTagDatabase);
-        splatTagController.Initialise();
-
-        // Now that we've initialised, take a snapshot of everything.
-        snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
-      }
+      (splatTagController, sourcesImporter) = SplatTagControllerFactory.CreateController();
     }
 
     public MainWindow()

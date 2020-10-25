@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace SplatTagDatabase
@@ -12,6 +13,7 @@ namespace SplatTagDatabase
   {
     public static void FinalisePlayers(IDictionary<uint, Player> playersToMutate)
     {
+      Debug.WriteLine("Beginning FinalisePlayers.");
       if (playersToMutate == null) return;
 
       var keys = playersToMutate.Keys.Reverse().ToArray();
@@ -30,10 +32,30 @@ namespace SplatTagDatabase
       }
     }
 
+    public static void CorrectPlayerIds(IEnumerable<Player> incomingPlayers, IDictionary<long, long> teamsMergeResult)
+    {
+      if (incomingPlayers == null || teamsMergeResult == null) return;
+
+      Parallel.ForEach(incomingPlayers, (importPlayer) =>
+      {
+        try
+        {
+          // Correct the ids
+          importPlayer.Teams = importPlayer.Teams.Select(idToMerge => teamsMergeResult[idToMerge]);
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine($"Error in CorrectPlayerIds, failed for player {importPlayer}. {ex}");
+          Debug.WriteLine(ex);
+          importPlayer.Teams = null;
+        }
+      });
+    }
+
     /// <summary>
     /// Merge the loaded players into the current players list.
     /// </summary>
-    public static void MergePlayers(IDictionary<uint, Player> playersToMutate, IEnumerable<Player> incomingPlayers, IReadOnlyDictionary<long, Team> incomingTeams)
+    public static void MergePlayers(IDictionary<uint, Player> playersToMutate, IEnumerable<Player> incomingPlayers)
     {
       if (playersToMutate == null || incomingPlayers == null) return;
 
@@ -52,12 +74,6 @@ namespace SplatTagDatabase
       {
         try
         {
-          // Correct the ids
-          if (incomingTeams != null)
-          {
-            importPlayer.Teams = importPlayer.Teams.Select(idToMerge => incomingTeams[idToMerge].Id);
-          }
-
           Player foundPlayer = FindSamePlayer(playersToMutate.Values, importPlayer, transformedPlayerNames);
 
           if (foundPlayer == null)
@@ -108,6 +124,7 @@ namespace SplatTagDatabase
         if (tryMatchFcs && p.FriendCode?.Equals(testPlayer.FriendCode) == true)
         {
           // They do.
+          Debug.WriteLine($"FindSamePlayer: Matched player {testPlayer} (Id {testPlayer.Id}) with FC {p.FriendCode} from player {p} (Id {p.Id}).");
           return true;
         }
 
@@ -115,6 +132,7 @@ namespace SplatTagDatabase
         if (tryMatchDiscordId && p.DiscordId?.Equals(testPlayer.DiscordId) == true)
         {
           // They do.
+          Debug.WriteLine($"FindSamePlayer: Matched player {testPlayer} (Id {testPlayer.Id}) with Discord Id {p.DiscordId} from player {p} (Id {p.Id}).");
           return true;
         }
 
@@ -122,6 +140,7 @@ namespace SplatTagDatabase
         if (tryMatchDiscord && p.DiscordName?.Equals(testPlayer.DiscordName, StringComparison.OrdinalIgnoreCase) == true)
         {
           // They do.
+          Debug.WriteLine($"FindSamePlayer: Matched player {testPlayer} (Id {testPlayer.Id}) with Discord name {p.DiscordName} from player {p} (Id {p.Id}).");
           return true;
         }
 
@@ -143,6 +162,7 @@ namespace SplatTagDatabase
           {
             if ((!string.IsNullOrWhiteSpace(knownName)) && (testPlayerTransformedNames.Contains(knownName)))
             {
+              Debug.WriteLine($"FindSamePlayer: Matched uncached player {testPlayer} (Id {testPlayer.Id}) with known name {knownName} from player {p} (Id {p.Id}).");
               return true;
             }
           }
@@ -159,6 +179,7 @@ namespace SplatTagDatabase
           {
             if ((!string.IsNullOrWhiteSpace(knownName)) && (testPlayerTransformedNames.Contains(knownName)))
             {
+              Debug.WriteLine($"FindSamePlayer: Matched cached player {testPlayer} (Id {testPlayer.Id}) with known name {knownName} from player {tPair.Key} (Id {tPair.Key.Id}).");
               return true;
             }
           }
@@ -171,11 +192,50 @@ namespace SplatTagDatabase
     /// <summary>
     /// Merge the loaded teams into the current teams list.
     /// </summary>
-    public static void MergeTeams(IDictionary<long, Team> teamsToMutate, IEnumerable<Team> incomingTeams)
+    /// <returns>
+    /// A dictionary of merged team ids keyed by initial with values of the new id.
+    /// </returns>
+    public static IDictionary<long, long> MergeTeams(IDictionary<long, Team> teamsToMutate, IEnumerable<Team> incomingTeams)
     {
-      if (teamsToMutate.Count > 0)
+      ConcurrentDictionary<long, long> mergeResult = new ConcurrentDictionary<long, long>();
+
+      if (incomingTeams == null)
       {
-        Dictionary<string, Team> transformedTeamNames = teamsToMutate.Values.ToDictionary(t => t.SearchableName, t => t);
+        return mergeResult;
+      }
+
+      if (teamsToMutate == null)
+      {
+        teamsToMutate = new Dictionary<long, Team>();
+      }
+
+      if (teamsToMutate?.Count > 0)
+      {
+        // Construct a SearchableNames lookup of teams.
+        Dictionary<string, Team> transformedTeamNames = new Dictionary<string, Team>();
+        ConcurrentBag<long> mergedTeams = new ConcurrentBag<long>();
+        foreach (var teamPair in teamsToMutate)
+        {
+          var id = teamPair.Key;
+          var team = teamPair.Value;
+          try
+          {
+            transformedTeamNames.Add(team.SearchableName, team);
+          }
+          catch (ArgumentException)
+          {
+            // If this team name already exists, merge the teams.
+            var existingTeam = transformedTeamNames[team.SearchableName];
+            existingTeam.Merge(team);
+            mergedTeams.Add(id);
+            mergeResult.TryAdd(id, existingTeam.Id);
+          }
+        }
+
+        foreach (var teamKey in mergedTeams)
+        {
+          teamsToMutate.Remove(teamKey);
+        }
 
         // Add if the team is new (by name) and assign them with a new id
         // Otherwise, match the found team with its id, based on name.
@@ -183,18 +243,18 @@ namespace SplatTagDatabase
         {
           // Replace spaces because people adding tags or starting with space messes up same-name detection.
           // Also transform the team name.
-          transformedTeamNames.TryGetValue(importTeam.SearchableName, out Team foundTeam);
-
-          if (foundTeam == null)
+          if (transformedTeamNames.TryGetValue(importTeam.SearchableName, out Team foundTeam))
           {
-            long key = teamsToMutate.Keys.LastOrDefault() + 1;
-            importTeam.Id = key;
-            teamsToMutate.Add(key, importTeam);
+            mergeResult.TryAdd(importTeam.Id, foundTeam.Id);
+            importTeam.Id = foundTeam.Id;
+            foundTeam.Merge(importTeam);
           }
           else
           {
-            importTeam.Id = foundTeam.Id;
-            foundTeam.Merge(importTeam);
+            long key = teamsToMutate.Keys.LastOrDefault() + 1;
+            mergeResult.TryAdd(importTeam.Id, key);
+            importTeam.Id = key;
+            teamsToMutate.Add(key, importTeam);
           }
         }
       }
@@ -204,10 +264,13 @@ namespace SplatTagDatabase
         foreach (Team importTeam in incomingTeams)
         {
           long key = teamsToMutate.Keys.LastOrDefault() + 1;
+          mergeResult.TryAdd(importTeam.Id, key);
           importTeam.Id = key;
           teamsToMutate.Add(key, importTeam);
         }
       }
+
+      return mergeResult;
     }
   }
 }

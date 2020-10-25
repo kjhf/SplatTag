@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -22,8 +23,9 @@ namespace SplatTagDatabase.Importers
     {
       if (jsonFile == null)
       {
-        throw new InvalidOperationException("jsonFile is not set.");
+        throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
       }
+      Debug.WriteLine("Loading " + jsonFile);
       JObject json = JObject.Parse(File.ReadAllText(jsonFile));
 
       List<Player> players = new List<Player>();
@@ -58,7 +60,7 @@ namespace SplatTagDatabase.Importers
         var weapons = userToken["weapons"].HasValues ? userToken["weapons"].Values<string>() : null;
         if (weapons != null)
         {
-          player.Weapons = weapons.ToArray();
+          player.Weapons = weapons;
         }
         var top500 = userToken["top500"].Value<bool?>();
         if (top500 != null)
@@ -83,7 +85,7 @@ namespace SplatTagDatabase.Importers
       return (players.ToArray(), new Team[0]);
     }
 
-    public bool AcceptsInput(string input)
+    public static bool AcceptsInput(string input)
     {
       // Is named Sendou.json
       return Path.GetFileName(input).Equals("Sendou.json");

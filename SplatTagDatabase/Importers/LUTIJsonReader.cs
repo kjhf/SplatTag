@@ -2,6 +2,7 @@
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace SplatTagDatabase.Importers
@@ -68,11 +69,6 @@ namespace SplatTagDatabase.Importers
 
     public (Player[], Team[]) Load()
     {
-      if (jsonFile == null)
-      {
-        throw new InvalidOperationException("jsonFile is not set.");
-      }
-
       void CheckAndAddPlayer(string tryPlayerName, string _tag, string _transformedTag, Team _newTeam, List<Player> _players)
       {
         if (!string.IsNullOrWhiteSpace(tryPlayerName))
@@ -115,7 +111,13 @@ namespace SplatTagDatabase.Importers
         }
       }
 
-      string json = File.ReadAllText(jsonFile);
+      if (jsonFile == null)
+      {
+        throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
+      }
+
+      Debug.WriteLine("Loading " + jsonFile);
+      string json = File.ReadAllText(jsonFile); // N.B. by default this reads UTF-8.
       LUTIJsonRow[] rows = JsonConvert.DeserializeObject<LUTIJsonRow[]>(json);
 
       List<Team> teams = new List<Team>();
@@ -134,7 +136,7 @@ namespace SplatTagDatabase.Importers
           ClanTagOption = TagOption.Unknown,
           Div = new Division(row.Division),
           Name = row.TeamName,
-          Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
+          Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) }
         };
 
         // Handle tag placements from the captain's name
@@ -157,9 +159,9 @@ namespace SplatTagDatabase.Importers
       return (players.ToArray(), teams.ToArray());
     }
 
-    public bool AcceptsInput(string input)
+    public static bool AcceptsInput(string input)
     {
-      return Path.GetFileName(input).StartsWith("LUTI-", StringComparison.InvariantCultureIgnoreCase) && Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
+      return Path.GetFileName(input).Contains("-LUTI-", StringComparison.InvariantCultureIgnoreCase) && Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
   }
 }

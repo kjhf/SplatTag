@@ -2,6 +2,7 @@
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -87,15 +88,15 @@ namespace SplatTagDatabase.Importers
         {
           if (CustomFields.Length > 0)
           {
-            if (Player.FRIEND_CODE_REGEX.IsMatch(CustomFields[0]["value"]))
+            if (FriendCode.TryParse(CustomFields[0]["value"], out FriendCode fc))
             {
-              return CustomFields[0]["value"];
+              return fc.ToString();
             }
             else if (CustomFields.Length > 1)
             {
-              if (Player.FRIEND_CODE_REGEX.IsMatch(CustomFields[1]["value"]))
+              if (FriendCode.TryParse(CustomFields[1]["value"], out FriendCode fc1))
               {
-                return CustomFields[1]["value"];
+                return fc1.ToString();
               }
             }
           }
@@ -139,9 +140,10 @@ namespace SplatTagDatabase.Importers
     {
       if (jsonFile == null)
       {
-        throw new InvalidOperationException("jsonFile is not set.");
+        throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
       }
 
+      Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
       BattlefyJsonTeam[] rows = JsonConvert.DeserializeObject<BattlefyJsonTeam[]>(json);
 
@@ -191,7 +193,7 @@ namespace SplatTagDatabase.Importers
           ClanTagOption = tag.Length == 0 ? TagOption.Unknown : TagOption.Front,
           Div = new Division(),
           Name = row.TeamName,
-          Sources = new List<string> { Path.GetFileNameWithoutExtension(jsonFile) }
+          Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) }
         };
 
         // If we already have a team of this name then merge it.
@@ -214,10 +216,10 @@ namespace SplatTagDatabase.Importers
           }
 
           // Filter the friend code from the name, if found
-          Match fcMatch = Player.FRIEND_CODE_REGEX.Match(p.Name);
+          Match fcMatch = FriendCode.FRIEND_CODE_REGEX.Match(p.Name);
           if (fcMatch.Success)
           {
-            p.Name = Player.FRIEND_CODE_REGEX.Replace(p.Name, "").Trim();
+            p.Name = FriendCode.FRIEND_CODE_REGEX.Replace(p.Name, "").Trim();
           }
 
           players.Add(new Player
@@ -234,10 +236,9 @@ namespace SplatTagDatabase.Importers
       return (players.ToArray(), teams.ToArray());
     }
 
-    public bool AcceptsInput(string input)
+    public static bool AcceptsInput(string input)
     {
-      // NOT a LUTI file but is a JSON file
-      return !Path.GetFileName(input).StartsWith("LUTI-", StringComparison.InvariantCultureIgnoreCase) && Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
+      return Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
   }
 }

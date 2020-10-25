@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 
 namespace SplatTagCore
 {
@@ -14,5 +15,11 @@ namespace SplatTagCore
 
     [JsonProperty("Teams", Required = Required.Always)]
     public Team[] Teams { get; set; }
+
+    [JsonProperty("AdditionalTeams", Required = Required.Always)]
+    public Dictionary<long, Team> AdditionalTeams { get; set; }
+
+    [JsonProperty("PlayersForTeams", Required = Required.Always)]
+    public Dictionary<long, (Player, bool)[]> PlayersForTeams { get; set; }
   }
 }

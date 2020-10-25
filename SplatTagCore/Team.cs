@@ -14,8 +14,8 @@ namespace SplatTagCore
       ClanTags = new string[] { "FA" },
       Div = new Division(),
       Id = 0,
-      Name = "(Free Agent)",
-      Sources = new List<string>()
+      Name = "(No Team)",
+      sources = new List<string>()
     };
 
     /// <summary>
@@ -25,6 +25,11 @@ namespace SplatTagCore
 
     private string name;
     private string searchableName;
+
+    /// <summary>
+    /// Back-store for the sources of this team.
+    /// </summary>
+    private List<string> sources = new List<string>();
 
     [JsonProperty("ClanTagOption", Required = Required.Default)]
     /// <summary>
@@ -75,11 +80,25 @@ namespace SplatTagCore
     /// </summary>
     public string SearchableName => searchableName ?? (searchableName = Name.Replace(" ", "").TransformString().ToLowerInvariant());
 
-    [JsonProperty("Sources", Required = Required.Always)]
+    [JsonProperty("Sources", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the current sources that make up this Team instance.
+    /// Get or Set the current sources that make up this Player instance.
     /// </summary>
-    public List<string> Sources { get; set; }
+    public string[] Sources
+    {
+      get => sources.ToArray();
+      set
+      {
+        sources = new List<string>();
+        foreach (string s in value)
+        {
+          if (!string.IsNullOrWhiteSpace(s) && !sources.Contains(s))
+          {
+            sources.Add(s);
+          }
+        }
+      }
+    }
 
     [JsonIgnore]
     /// <summary>
@@ -97,7 +116,7 @@ namespace SplatTagCore
     {
       Div = new Division();
       clanTags = new Stack<string>();
-      Sources = new List<string>();
+      sources = new List<string>();
     }
 
     /// <summary>
@@ -141,11 +160,11 @@ namespace SplatTagCore
       {
         if (string.IsNullOrWhiteSpace(source)) continue;
 
-        string foundSource = this.Sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
+        string foundSource = this.sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
 
         if (foundSource == null)
         {
-          Sources.Add(source);
+          sources.Add(source);
         }
       }
     }
