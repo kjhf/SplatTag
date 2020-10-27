@@ -45,8 +45,7 @@ namespace SplatTagUI
       "v0.0.13: Better div support. Better sameness detection.\n" +
       "v0.0.12: Added command-line. \n" +
       "v0.0.11: Added Twitter handle capability. \n" +
-      "v0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader."
-
+      "v0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader.";
 
     static MainWindow()
     {
