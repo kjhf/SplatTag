@@ -216,10 +216,10 @@ namespace SplatTagDatabase.Importers
           }
 
           // Filter the friend code from the name, if found
-          Match fcMatch = FriendCode.FRIEND_CODE_REGEX.Match(p.Name);
-          if (fcMatch.Success)
+          var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);
+          if (parsedFriendCode != null)
           {
-            p.Name = FriendCode.FRIEND_CODE_REGEX.Replace(p.Name, "").Trim();
+            p.Name = strippedName;
           }
 
           players.Add(new Player
@@ -227,7 +227,7 @@ namespace SplatTagDatabase.Importers
             CurrentTeam = newTeam.Id,
             Names = new string[] { p.Name, p.BattlefyName },
             Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) },
-            FriendCode = fcMatch.Success ? fcMatch.Value.Trim(new char[] { '(', ')' }) : ((p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null),
+            FriendCode = parsedFriendCode != null ? parsedFriendCode.ToString() : ((p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null),
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
           });
         }

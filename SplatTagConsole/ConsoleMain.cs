@@ -9,7 +9,6 @@ using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml.XPath;
 
 namespace SplatTagConsole
 {
@@ -30,6 +29,10 @@ namespace SplatTagConsole
       if (args?.Length > 0)
       {
         // Invoked from command line
+        if (JsonConvert.DefaultSettings == null)
+        {
+          JsonConvert.DefaultSettings = () => new JsonSerializerSettings();
+        }
         var settings = JsonConvert.DefaultSettings();
         settings.DefaultValueHandling = DefaultValueHandling.Ignore;
         var serializer = JsonSerializer.Create(settings);

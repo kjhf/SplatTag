@@ -131,7 +131,7 @@ namespace SplatTagDatabase.Importers
 
         Team newTeam = new Team
         {
-          Id = (uint)teams.Count,  // This will be updated when the merge happens.
+          Id = -teams.Count - 1,  // This will be updated when the merge happens.
           ClanTags = new string[] { row.Tag },
           ClanTagOption = TagOption.Unknown,
           Div = new Division(row.Division),
@@ -161,7 +161,8 @@ namespace SplatTagDatabase.Importers
 
     public static bool AcceptsInput(string input)
     {
-      return Path.GetFileName(input).Contains("-LUTI-", StringComparison.InvariantCultureIgnoreCase) && Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
+      // Must contain -LUTI- (in all caps)
+      return Path.GetFileName(input).Contains("-LUTI-") && Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
   }
 }

@@ -35,6 +35,10 @@ namespace SplatTagCore
       {
         Console.Error.WriteLine("ERROR: Failed to load.");
       }
+      else if (loadedPlayers.Length == 0)
+      {
+        Console.WriteLine("... nothing loaded.");
+      }
       else
       {
         players = new SortedDictionary<uint, Player>(loadedPlayers.ToDictionary(x => x.Id, x => x));
@@ -271,7 +275,7 @@ namespace SplatTagCore
     /// </summary>
     public Team GetTeamById(long id)
     {
-      if (id == 0)
+      if (id == Team.NoTeam.Id)
       {
         return Team.NoTeam;
       }
@@ -279,24 +283,33 @@ namespace SplatTagCore
       return matched ? found : null;
     }
 
-    public void TryLaunchTwitter(Team t)
+    /// <summary>Launch the team's Twitter account if it exists.</summary>
+    public bool TryLaunchTwitter(Team t) => TryLaunchAddress(t.Twitter);
+
+    /// <summary>Launch the Player's Twitter account if it exists.</summary>
+    public bool TryLaunchTwitter(Player p) => TryLaunchAddress(p.Twitter);
+
+    /// <summary> Launch an address in a separate internet browser. </summary>
+    public bool TryLaunchAddress(string link)
     {
-      if (t.Twitter != null)
+      if (!string.IsNullOrEmpty(link))
       {
         try
         {
-          var ps = new ProcessStartInfo(t.Twitter)
+          var ps = new ProcessStartInfo(link)
           {
             UseShellExecute = true,
             Verb = "open"
           };
           Process.Start(ps);
+          return true;
         }
         catch (Exception ex)
         {
-          Console.WriteLine($"Can't start the Twitter address at {t.Twitter}: {ex.Message}");
+          Console.WriteLine($"Can't start the address at {link}: {ex.Message}");
         }
       }
+      return false;
     }
   }
 }

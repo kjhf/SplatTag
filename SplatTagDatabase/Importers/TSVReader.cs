@@ -196,9 +196,9 @@ namespace SplatTagDatabase.Importers
         SortedDictionary<int, Player> rowPlayers = new SortedDictionary<int, Player>();
         Team t = new Team
         {
+          Id = -teams.Count - 1,  // This will be updated when the merge happens.
           ClanTagOption = TagOption.Unknown,
           Div = new Division(),
-          Id = (uint)teams.Count,  // This will be updated when the merge happens.
           Name = "(unknown)",
           Sources = new string[] { Path.GetFileNameWithoutExtension(tsvFile) }
         };
@@ -315,6 +315,11 @@ namespace SplatTagDatabase.Importers
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               p.Names = p.Names.Concat(new[] { value });
+
+              if (resolvedProperty == PropertyEnum.Twitter)
+              {
+                p.Twitter = value;
+              }
               break;
             }
 

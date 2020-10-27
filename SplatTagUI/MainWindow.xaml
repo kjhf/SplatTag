@@ -93,125 +93,136 @@
 
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <TextBlock Style="{StaticResource detailsTextBlockStyle}">
-                    <TextBlock.Text>
-                      <MultiBinding StringFormat="{}{0} {1} (Plays for {2})">
-                        <Binding Path="Top500" Converter="{StaticResource top500ToString}" />
-                        <Binding Path="Name" />
-                        <Binding Path="CurrentTeam" Converter="{StaticResource teamIdToString}" />
-                      </MultiBinding>
-                    </TextBlock.Text>
-                    <TextBlock.ContextMenu>
-                      <ContextMenu>
-                        <MenuItem>
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Names: {0}">
-                                  <Binding Path="Names" TargetNullValue="(not set)" Converter="{StaticResource joinStringsConverter}" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding Top500, Converter={StaticResource boolToVis}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>👑 Top 500 👑</TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding Country, Converter={StaticResource validStringToVisibleConverter}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Country: {0}">
-                                  <Binding Path="Country" TargetNullValue="(not set)" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding DiscordName, Converter={StaticResource validStringToVisibleConverter}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Discord Name: {0}">
-                                  <Binding Path="DiscordName" TargetNullValue="(not set)" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding DiscordId, Converter={StaticResource validStringToVisibleConverter}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Discord id: {0}">
-                                  <Binding Path="DiscordId" TargetNullValue="(not set)" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding SendouId, Converter={StaticResource validStringToVisibleConverter}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Sendou id: {0}">
-                                  <Binding Path="SendouId" TargetNullValue="(not set)" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding FriendCode, Converter={StaticResource validStringToVisibleConverter}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Friend Code: {0}">
-                                  <Binding Path="FriendCode" TargetNullValue="(not set)" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding Weapons, Converter={StaticResource validStringToVisibleConverter}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Weapons: {0}">
-                                  <Binding Path="Weapons" TargetNullValue="(not set)" Converter="{StaticResource joinStringsConverter}" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding OldTeams, Converter={StaticResource validStringToVisibleConverter}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Old Teams: {0}">
-                                  <Binding Path="." TargetNullValue="(not set)" Converter="{StaticResource playerOldTeamsToStringConverter}" ConverterParameter="&#x0a;" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem Visibility="{Binding Sources, Converter={StaticResource validStringToVisibleConverter}}">
-                          <MenuItem.Header>
-                            <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                              <TextBlock.Text>
-                                <MultiBinding StringFormat="{}Sources: {0}">
-                                  <Binding Path="Sources" TargetNullValue="(not set)" Converter="{StaticResource joinStringsConverter}" ConverterParameter="&#x0a;" />
-                                </MultiBinding>
-                              </TextBlock.Text>
-                            </TextBlock>
-                          </MenuItem.Header>
-                        </MenuItem>
-                      </ContextMenu>
-                    </TextBlock.ContextMenu>
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="19*" />
+                      <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource detailsTextBlockStyle}">
+                      <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} {1} (Plays for {2})">
+                          <Binding Path="Top500" Converter="{StaticResource top500ToString}" />
+                          <Binding Path="Name" />
+                          <Binding Path="CurrentTeam" Converter="{StaticResource teamIdToString}" />
+                        </MultiBinding>
+                      </TextBlock.Text>
+                        <Button Grid.Column="1" Width="17" Height="17" HorizontalAlignment="Right" Click="TwitterButton_Click" DataContext="{Binding .}" Visibility="{Binding Path=Twitter, Converter={StaticResource validStringToVisibleConverter}}">
+                          <Button.Background>
+                            <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitter.png" />
+                          </Button.Background>
+                        </Button>
+                      <TextBlock.ContextMenu>
+                        <ContextMenu>
+                          <MenuItem>
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Names: {0}">
+                                    <Binding Path="Names" TargetNullValue="(not set)" Converter="{StaticResource joinStringsConverter}" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding Top500, Converter={StaticResource boolToVis}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>👑 Top 500 👑</TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding Country, Converter={StaticResource validStringToVisibleConverter}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Country: {0}">
+                                    <Binding Path="Country" TargetNullValue="(not set)" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding DiscordName, Converter={StaticResource validStringToVisibleConverter}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Discord Name: {0}">
+                                    <Binding Path="DiscordName" TargetNullValue="(not set)" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding DiscordId, Converter={StaticResource validStringToVisibleConverter}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Discord id: {0}">
+                                    <Binding Path="DiscordId" TargetNullValue="(not set)" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding SendouId, Converter={StaticResource validStringToVisibleConverter}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Sendou id: {0}">
+                                    <Binding Path="SendouId" TargetNullValue="(not set)" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding FriendCode, Converter={StaticResource validStringToVisibleConverter}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Friend Code: {0}">
+                                    <Binding Path="FriendCode" TargetNullValue="(not set)" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding Weapons, Converter={StaticResource validStringToVisibleConverter}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Weapons: {0}">
+                                    <Binding Path="Weapons" TargetNullValue="(not set)" Converter="{StaticResource joinStringsConverter}" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding OldTeams, Converter={StaticResource validStringToVisibleConverter}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Old Teams: {0}">
+                                    <Binding Path="." TargetNullValue="(not set)" Converter="{StaticResource playerOldTeamsToStringConverter}" ConverterParameter="&#x0a;" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                          <MenuItem Visibility="{Binding Sources, Converter={StaticResource validStringToVisibleConverter}}">
+                            <MenuItem.Header>
+                              <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                <TextBlock.Text>
+                                  <MultiBinding StringFormat="{}Sources: {0}">
+                                    <Binding Path="Sources" TargetNullValue="(not set)" Converter="{StaticResource joinStringsConverter}" ConverterParameter="&#x0a;" />
+                                  </MultiBinding>
+                                </TextBlock.Text>
+                              </TextBlock>
+                            </MenuItem.Header>
+                          </MenuItem>
+                        </ContextMenu>
+                      </TextBlock.ContextMenu>
                   </TextBlock>
+                  </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ListBox>
@@ -229,28 +240,39 @@
                 <DataTemplate>
                   <Expander IsExpanded="{Binding IsSelected, Mode=TwoWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListBoxItem}}}" Background="Transparent">
                     <Expander.Header>
-                      <TextBlock Style="{StaticResource detailsTextBlockStyle}">
-                        <TextBlock.Text>
-                          <MultiBinding StringFormat="{}{0} {1} ({2}). {3}">
-                            <Binding Path="Tag" />
-                            <Binding Path="Name" />
-                            <Binding Path="Div" />
-                            <Binding Path="." Converter="{StaticResource getTeamBestPlayerDivConverter}" />
-                          </MultiBinding>
-                        </TextBlock.Text>
-                        <TextBlock.ContextMenu>
-                          <ContextMenu>
-                            <MenuItem>
-                              <MenuItem.Header>
-                                <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}" />
-                              </MenuItem.Header>
-                            </MenuItem>
-                          </ContextMenu>
-                        </TextBlock.ContextMenu>
-                        <TextBlock.ToolTip>
-                          <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}" />
-                        </TextBlock.ToolTip>
-                      </TextBlock>
+                      <Grid>
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="19*" />
+                          <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource detailsTextBlockStyle}">
+                          <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} {1} ({2}). {3}">
+                              <Binding Path="Tag" />
+                              <Binding Path="Name" />
+                              <Binding Path="Div" />
+                              <Binding Path="." Converter="{StaticResource getTeamBestPlayerDivConverter}" />
+                            </MultiBinding>
+                          </TextBlock.Text>
+                          <TextBlock.ContextMenu>
+                            <ContextMenu>
+                              <MenuItem>
+                                <MenuItem.Header>
+                                  <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}" />
+                                </MenuItem.Header>
+                              </MenuItem>
+                            </ContextMenu>
+                          </TextBlock.ContextMenu>
+                          <TextBlock.ToolTip>
+                            <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}" />
+                          </TextBlock.ToolTip>
+                        </TextBlock>
+                        <Button Grid.Column="1" Width="17" Height="17" HorizontalAlignment="Right" Click="TwitterButton_Click" DataContext="{Binding .}" Visibility="{Binding Path=Twitter, Converter={StaticResource validStringToVisibleConverter}}">
+                          <Button.Background>
+                            <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitter.png" />
+                          </Button.Background>
+                        </Button>
+                      </Grid>
                     </Expander.Header>
                     <Expander.Content>
                       <StackPanel>
@@ -266,11 +288,6 @@
                             </Style.Triggers>
                           </Style>
                         </StackPanel.Style>
-                        <Button Width="20" Height="20" HorizontalAlignment="Left" Click="TwitterButton_Click" DataContext="{Binding .}" Visibility="{Binding Path=Twitter, Converter={StaticResource validStringToVisibleConverter}}">
-                          <Button.Background>
-                            <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitter.png" />
-                          </Button.Background>
-                        </Button>
                         <ItemsControl ItemsSource="{Binding ., Converter={StaticResource getTeamPlayers}}" Background="Transparent" Foreground="LightSteelBlue" />
                       </StackPanel>
                     </Expander.Content>

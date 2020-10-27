@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagCore;
-using System.Collections.Generic;
 
 namespace SplatTagUnitTests
 {
@@ -69,7 +68,7 @@ namespace SplatTagUnitTests
       Assert.IsNotNull(friendCode);
       Assert.AreEqual("1234-5678-4321", friendCode.ToString());
     }
-    
+
     [TestMethod]
     public void SeparatorTest()
     {
@@ -92,6 +91,16 @@ namespace SplatTagUnitTests
       FriendCode.TryParse("This is a player name believe it or not with the fc 0123-4567-8912?", out FriendCode friendCode);
       Assert.IsNotNull(friendCode);
       Assert.AreEqual("0123.4567.8912", friendCode.ToString("."));
+    }
+
+    [TestMethod]
+    public void StripFCInsideName()
+    {
+      var (friendCode, stripped) = FriendCode.ParseAndStripFriendCode(":) Some pleb (SW: 0123-4567-8912)");
+      Assert.IsNotNull(friendCode);
+      Assert.IsNotNull(stripped);
+      Assert.AreEqual("0123 4567 8912", friendCode.ToString(" "));
+      Assert.AreEqual(":) Some pleb", stripped);
     }
   }
 }

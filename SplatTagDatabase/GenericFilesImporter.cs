@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace SplatTagDatabase
 {
@@ -35,16 +36,36 @@ namespace SplatTagDatabase
 
     public (Player[], Team[]) Load()
     {
-      foreach (string file in Sources)
+      for (int i = 0; i < sources.Count; i++)
       {
+        string file = sources[i];
         string error = TryImportFromPath(file);
         if (error != string.Empty)
         {
           Console.Error.WriteLine(error);
         }
+        Trace.WriteLine(GetProgressBar(i, sources.Count, 100));
       }
 
       return (players.Values.ToArray(), teams.Values.ToArray());
+    }
+
+    private static string GetProgressBar(int value, int capacity, int width = 10)
+    {
+      StringBuilder sb = new StringBuilder();
+      sb.Append("[");
+      int bars = Math.Min(width - 1, (int)(((value + 1) * width) / (double)capacity));
+      for (int i = 0; i < bars; i++)
+      {
+        sb.Append("=");
+      }
+      sb.Append(">");
+      for (int i = bars; i < (width - 1); i++)
+      {
+        sb.Append(" ");
+      }
+      sb.Append("]");
+      return sb.ToString();
     }
 
     public void SetSingleSource(string source)

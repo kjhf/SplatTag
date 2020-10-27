@@ -37,6 +37,8 @@ namespace SplatTagCore
     /// </summary>
     private List<string> weapons = new List<string>();
 
+    private string twitter;
+
     [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
     /// The names this player is known by.
@@ -96,11 +98,11 @@ namespace SplatTagCore
 
     [JsonIgnore]
     /// <summary>
-    /// The current team id this player plays for, or 0 if not set.
+    /// The current team id this player plays for, or NoTeam.Id if not set.
     /// </summary>
     public long CurrentTeam
     {
-      get => teams.Count > 0 ? teams[0] : 0;
+      get => teams.Count > 0 ? teams[0] : Team.NoTeam.Id;
       set
       {
         if (teams.Contains(value))
@@ -201,9 +203,31 @@ namespace SplatTagCore
 
     [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the player's twitter.
+    /// Get or Set the player's twitter link.
     /// </summary>
-    public string Twitter { get; set; }
+    public string Twitter
+    {
+      get => twitter;
+      set
+      {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+          twitter = null;
+        }
+        else if (value.Contains("twitter.com"))
+        {
+          twitter = value;
+        }
+        else
+        {
+          if (value.StartsWith("@"))
+          {
+            value = value.Substring(1);
+          }
+          twitter = "https://twitter.com/" + value;
+        }
+      }
+    }
 
     /// <summary>
     /// Merge this player with another (newer) player instance
@@ -313,7 +337,6 @@ namespace SplatTagCore
       {
         this.Twitter = otherPlayer.Twitter;
       }
-
     }
 
     /// <summary>

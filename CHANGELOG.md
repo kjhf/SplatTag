@@ -2,6 +2,10 @@
 
 ## In-Dev Releases
 
+### v0.0.17
+* Added Twitter buttons.
+* Stability improvements.
+
 ### v0.0.16
 * Added Tab Separated Values (TSV) Importer to allow importing of early LUTI data
 * Final merge after database has been built to merge known entries. This should prevent cases where names that were previously not linked because of missing information become linked.

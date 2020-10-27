@@ -70,7 +70,7 @@ namespace SplatTagUnitTests
 
       object teamsDict = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teamsDict);
-      var dictionary2 = (IDictionary<uint, Team>)teamsDict;
+      var dictionary2 = (IDictionary<long, Team>)teamsDict;
       Assert.IsNotNull(dictionary2);
       Assert.IsTrue(dictionary2.TryGetValue(TEAM_ID, out Team target2));
       Assert.IsTrue(target2.Id == TEAM_ID);

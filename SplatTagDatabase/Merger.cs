@@ -35,6 +35,12 @@ namespace SplatTagDatabase
     public static void CorrectPlayerIds(IEnumerable<Player> incomingPlayers, IDictionary<long, long> teamsMergeResult)
     {
       if (incomingPlayers == null || teamsMergeResult == null) return;
+      Debug.WriteLine("Beginning CorrectPlayerIds. Entries: ");
+      foreach (var resultPair in teamsMergeResult)
+      {
+        Debug.WriteLine($"[{resultPair.Key}] --> {resultPair.Value}");
+      }
+
 
       Parallel.ForEach(incomingPlayers, (importPlayer) =>
       {
@@ -45,7 +51,7 @@ namespace SplatTagDatabase
         }
         catch (Exception ex)
         {
-          Console.Error.WriteLine($"Error in CorrectPlayerIds, failed for player {importPlayer}. {ex}");
+          Console.Error.WriteLine($"Error in CorrectPlayerIds, failed for player {importPlayer}. Teams: {string.Join(", ", importPlayer.Teams)}. {ex}");
           Debug.WriteLine(ex);
           importPlayer.Teams = null;
         }

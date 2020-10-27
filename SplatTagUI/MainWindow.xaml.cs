@@ -32,20 +32,21 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.16";
+    public string Version => "Version 0.0.17";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.0.17: Twitter buttons for Players\n" +
       "v0.0.16: TSV loading to include early LUTI\n" +
       "v0.0.15: Sendou details \n" +
       "v0.0.14: Now works off of snapshots to drastically improve load time. \n" +
       "v0.0.13: Better div support. Better sameness detection.\n" +
       "v0.0.12: Added command-line. \n" +
       "v0.0.11: Added Twitter handle capability. \n" +
-      "v0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader. \n" +
-      "v0.0.09: Now searches FCs and Discord tags. Teams now have a highest div'd label. Stability improvements.";
+      "v0.0.10: Supports InkTV. Pulls friend codes from names. Corrected bugs around incomplete tournament data. Added a browse button to the file loader."
+
 
     static MainWindow()
     {
@@ -164,8 +165,22 @@ namespace SplatTagUI
     private void TwitterButton_Click(object sender, RoutedEventArgs e)
     {
       FrameworkElement b = (FrameworkElement)sender;
-      Team t = (Team)b.DataContext;
-      splatTagController.TryLaunchTwitter(t);
+      if (b?.DataContext == null)
+      {
+        throw new ArgumentException("Unknown Twitter Button DataContext binding, it is not bound (null).");
+      }
+      else if (b.DataContext is Team t)
+      {
+        splatTagController.TryLaunchTwitter(t);
+      }
+      else if (b.DataContext is Player p)
+      {
+        splatTagController.TryLaunchTwitter(p);
+      }
+      else
+      {
+        throw new ArgumentException("Unknown Twitter Button DataContext binding: " + b.DataContext);
+      }
     }
   }
 

@@ -17,10 +17,6 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void MatchPlayerNoMatchTest()
     {
-      UnitTestDatabase database = new UnitTestDatabase();
-      SplatTagController controller = new SplatTagController(database);
-      controller.Initialise();
-
       string filePath = Path.GetTempFileName() + ".json";
       const string JSON =
         @"[
@@ -75,31 +71,31 @@ namespace SplatTagUnitTests
       {
         File.WriteAllText(filePath, JSON);
         LUTIJsonReader reader = new LUTIJsonReader(filePath);
-        var loaded = reader.Load();
+        var (loadedPlayers, loadedTeams) = reader.Load();
 
-        Assert.AreEqual(3, loaded.Item2.Length);
-        Assert.AreEqual(18, loaded.Item1.Length);
+        Assert.AreEqual(3, loadedTeams.Length);
+        Assert.AreEqual(18, loadedPlayers.Length);
 
-        Assert.AreEqual("Example Team", loaded.Item2[0].Name);
-        Assert.AreEqual("ex", loaded.Item2[0].ClanTags[0]);
-        Assert.AreEqual("Another Team", loaded.Item2[1].Name);
-        Assert.AreEqual("AT", loaded.Item2[1].ClanTags[0]);
-        Assert.AreEqual("Oh No", loaded.Item2[2].Name);
-        Assert.AreEqual("//", loaded.Item2[2].ClanTags[0]);
+        Assert.AreEqual("Example Team", loadedTeams[0].Name);
+        Assert.AreEqual("ex", loadedTeams[0].ClanTags[0]);
+        Assert.AreEqual("Another Team", loadedTeams[1].Name);
+        Assert.AreEqual("AT", loadedTeams[1].ClanTags[0]);
+        Assert.AreEqual("Oh No", loadedTeams[2].Name);
+        Assert.AreEqual("//", loadedTeams[2].ClanTags[0]);
 
-        Assert.AreEqual(TagOption.Back, loaded.Item2[0].ClanTagOption);
-        Assert.AreEqual(TagOption.Front, loaded.Item2[1].ClanTagOption);
-        Assert.AreEqual(TagOption.Surrounding, loaded.Item2[2].ClanTagOption);
+        Assert.AreEqual(TagOption.Back, loadedTeams[0].ClanTagOption);
+        Assert.AreEqual(TagOption.Front, loadedTeams[1].ClanTagOption);
+        Assert.AreEqual(TagOption.Surrounding, loadedTeams[2].ClanTagOption);
 
-        Assert.AreEqual("Cap 1", loaded.Item1[0].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("P2", loaded.Item1[1].Name); // Assert name was loaded without the tag.
-        Assert.IsTrue(loaded.Item1[1].CurrentTeam != 0); // Test Current Team is set
+        Assert.AreEqual("Cap 1", loadedPlayers[0].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("P2", loadedPlayers[1].Name); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers[1].CurrentTeam != 0, "Current team not set"); // Test Current Team is set
 
-        Assert.AreEqual("CAP", loaded.Item1[5].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("A2", loaded.Item1[6].Name); // Assert name was loaded without the tag.
-        Assert.IsTrue(loaded.Item1[6].CurrentTeam != 0); // Test Current Team is set
+        Assert.AreEqual("CAP", loadedPlayers[5].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("A2", loadedPlayers[6].Name); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers[6].CurrentTeam != 0, "Current team not set"); // Test Current Team is set
 
-        Assert.IsTrue(loaded.Item1[15].CurrentTeam != 0); // Test Current Team is set
+        Assert.IsTrue(loadedPlayers[15].CurrentTeam != 0, "Current team not set"); // Test Current Team is set
       }
       finally
       {

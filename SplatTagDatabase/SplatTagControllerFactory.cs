@@ -1,5 +1,6 @@
 ﻿using SplatTagCore;
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace SplatTagDatabase
@@ -37,6 +38,7 @@ namespace SplatTagDatabase
         sourcesImporter = new GenericFilesImporter(saveFolder);
         MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
         splatTagController = new SplatTagController(splatTagDatabase);
+        Trace.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
         splatTagController.Initialise();
 
         // Now that we've initialised, take a snapshot of everything.

@@ -41,6 +41,7 @@ namespace SplatTagDatabase.Importers
         if (name != null)
         {
           player.Name = name;
+          player.Twitter = name;
         }
         name = userToken["username"].Value<string>();
         if (name != null)

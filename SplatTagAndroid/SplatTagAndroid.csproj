@@ -77,106 +77,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="..\.DataFiles\InkTV-2019-04-Open2-5c7e058a896bfc034f62f290.json">
-      <Link>Assets\InkTV-2019-04-Open2-5c7e058a896bfc034f62f290.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\InkTV-2019-11-BnS19-5da9454bfeefe03643e663af.json">
-      <Link>Assets\InkTV-2019-11-BnS19-5da9454bfeefe03643e663af.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\InkTV-2020-01-WinterSnowflake-5e166f4ec5d2240372657e7c.json">
-      <Link>Assets\InkTV-2020-01-WinterSnowflake-5e166f4ec5d2240372657e7c.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-03-5c71dc2bc61fc30322c85cb1.json">
-      <Link>Assets\LI-2019-03-5c71dc2bc61fc30322c85cb1.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-04-5ca0082e488399034a678759.json">
-      <Link>Assets\LI-2019-04-5ca0082e488399034a678759.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-05-5cce1c4dc90a8d032b962275.json">
-      <Link>Assets\LI-2019-05-5cce1c4dc90a8d032b962275.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-06-5cf006e2e551c1035a6435e0.json">
-      <Link>Assets\LI-2019-06-5cf006e2e551c1035a6435e0.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-07-5d05848cf15da63deda0bb22.json">
-      <Link>Assets\LI-2019-07-5d05848cf15da63deda0bb22.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-08-5d488e757a3294684c77631c.json">
-      <Link>Assets\LI-2019-08-5d488e757a3294684c77631c.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-09-5d6ae13f751f653c50ca683b.json">
-      <Link>Assets\LI-2019-09-5d6ae13f751f653c50ca683b.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-10-5d953b55f2a453690d701efd.json">
-      <Link>Assets\LI-2019-10-5d953b55f2a453690d701efd.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-11-5dbbbc02e685d86acd7398e8.json">
-      <Link>Assets\LI-2019-11-5dbbbc02e685d86acd7398e8.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2019-12-5de8517ac18a6018141969e3.json">
-      <Link>Assets\LI-2019-12-5de8517ac18a6018141969e3.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2020-01-5e08a35cfafe5a70cf3a2535.json">
-      <Link>Assets\LI-2020-01-5e08a35cfafe5a70cf3a2535.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2020-02-5e3d7c9c4174ff109642856f.json">
-      <Link>Assets\LI-2020-02-5e3d7c9c4174ff109642856f.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2020-03-5e5bb9a730d47a1097b0a408.json">
-      <Link>Assets\LI-2020-03-5e5bb9a730d47a1097b0a408.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2020-04-5e7c15cba8c5bc109aa09086.json">
-      <Link>Assets\LI-2020-04-5e7c15cba8c5bc109aa09086.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2020-05-5eab0002a36e2b2dda45b0ed.json">
-      <Link>Assets\LI-2020-05-5eab0002a36e2b2dda45b0ed.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2020-06-5ed6c6f60c8581672c929a67.json">
-      <Link>Assets\LI-2020-06-5ed6c6f60c8581672c929a67.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2020-07-5ef7f72a30e2163628b0d351.json">
-      <Link>Assets\LI-2020-07-5ef7f72a30e2163628b0d351.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LI-2020-08-5f21e5e1f5fc96423c53d094.json">
-      <Link>Assets\LI-2020-08-5f21e5e1f5fc96423c53d094.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LUTI-2018-11-S7.json">
-      <Link>Assets\LUTI-2018-11-S7.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LUTI-2019-04-S8.json">
-      <Link>Assets\LUTI-2019-04-S8.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LUTI-2019-08-S9.json">
-      <Link>Assets\LUTI-2019-08-S9.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
-    <AndroidAsset Include="..\.DataFiles\LUTI-2020-04-SX.json">
-      <Link>Assets\LUTI-2020-04-SX.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </AndroidAsset>
     <None Include="Properties\AndroidManifest.xml" />
   </ItemGroup>
   <ItemGroup>
@@ -205,7 +105,9 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Assets\" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Xamarin.Android.Support.Design" Version="28.0.0.3" />
     <PackageReference Include="Xamarin.Android.Support.Core.Utils" Version="28.0.0.3" />
