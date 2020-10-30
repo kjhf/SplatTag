@@ -16,11 +16,14 @@ namespace SplatTagDatabase
     private readonly SortedDictionary<uint, Player> players = new SortedDictionary<uint, Player>();
     private readonly SortedDictionary<long, Team> teams = new SortedDictionary<long, Team>();
     private readonly string sourcesFile;
+    private readonly string saveDirectory;
 
     public IReadOnlyCollection<string> Sources => sources;
 
     public GenericFilesImporter(string saveDirectory)
     {
+      this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
+
       this.sourcesFile = Path.Combine(saveDirectory, SourcesFileName);
       Directory.CreateDirectory(saveDirectory);
       if (File.Exists(sourcesFile))
@@ -36,6 +39,11 @@ namespace SplatTagDatabase
 
     public (Player[], Team[]) Load()
     {
+      // Make sure that relative paths are correctly defined.
+      var currentDirectory = Directory.GetCurrentDirectory();
+      Directory.SetCurrentDirectory(this.saveDirectory);
+
+      // Iterate through the sources to load them.
       for (int i = 0; i < sources.Count; i++)
       {
         string file = sources[i];
@@ -47,6 +55,10 @@ namespace SplatTagDatabase
         Trace.WriteLine(GetProgressBar(i, sources.Count, 100));
       }
 
+      // Re-set the current directory.
+      Directory.SetCurrentDirectory(currentDirectory);
+
+      // And return the loaded players and teams.
       return (players.Values.ToArray(), teams.Values.ToArray());
     }
 
@@ -96,7 +108,7 @@ namespace SplatTagDatabase
 
       if (!File.Exists(input))
       {
-        return "Input does not exist on disk. Remote is not currently supported.";
+        return $"Input does not exist on disk. Remote is not currently supported ({input}).";
       }
 
       if (TwitterReader.AcceptsInput(input))

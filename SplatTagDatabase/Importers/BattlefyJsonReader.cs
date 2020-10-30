@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace SplatTagDatabase.Importers
 {
@@ -29,8 +28,8 @@ namespace SplatTagDatabase.Importers
       [JsonProperty("inGameName")]
       public string Name { get; set; }
 
-      // [JsonProperty("userSlug", Required = Required.Default)]
-      // public string BattlefyUserSlug { get; set; }
+      [JsonProperty("userSlug", Required = Required.Default)]
+      public string BattlefyUserSlug { get; set; }
 
       [JsonProperty("username")]
       public string BattlefyName { get; set; }
@@ -229,6 +228,8 @@ namespace SplatTagDatabase.Importers
             Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) },
             FriendCode = parsedFriendCode != null ? parsedFriendCode.ToString() : ((p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null),
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
+            BattlefySlugs = new[] { p.BattlefyUserSlug },
+            BattlefyUsername = p.BattlefyName
           });
         }
       }

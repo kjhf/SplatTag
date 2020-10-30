@@ -311,15 +311,18 @@ namespace SplatTagDatabase.Importers
             }
 
             case PropertyEnum.Twitter:
+            {
+              var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
+              p.Names = p.Names.Concat(new[] { value });
+              p.Twitter = value;
+              break;
+            }
+
             case PropertyEnum.Twitch:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               p.Names = p.Names.Concat(new[] { value });
-
-              if (resolvedProperty == PropertyEnum.Twitter)
-              {
-                p.Twitter = value;
-              }
+              p.Twitch = value;
               break;
             }
 

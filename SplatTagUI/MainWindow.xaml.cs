@@ -2,10 +2,12 @@
 using SplatTagCore;
 using SplatTagDatabase;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -32,12 +34,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.17";
+    public string Version => "Version 0.0.18";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.0.18: Better context menus and info now copies.\n" +
       "v0.0.17: Twitter buttons for Players\n" +
       "v0.0.16: TSV loading to include early LUTI\n" +
       "v0.0.15: Sendou details \n" +
@@ -94,7 +97,17 @@ namespace SplatTagUI
         // Apply a filter if the length of the search is less than n characters
         if (searchInput.Text.Length < MIN_CHARACTERS_FOR_TIMER_SKIP)
         {
-          smoothSearchDelayTimer.Change((int)delaySlider.Value, Timeout.Infinite);
+          // Increase the smooth delay for low n characters cause we'll be lagging if they didn't mean it...
+          float multiplier;
+          switch (searchInput.Text.Length)
+          {
+            case 1: multiplier = 2; break;
+            case 2: multiplier = 1.6f; break;
+            case 3: multiplier = 1.3f; break;
+            default: multiplier = 1; break;
+          }
+          int time = (int)(delaySlider.Value * multiplier);
+          smoothSearchDelayTimer.Change(time, Timeout.Infinite);
         }
         else
         {
@@ -181,6 +194,13 @@ namespace SplatTagUI
         throw new ArgumentException("Unknown Twitter Button DataContext binding: " + b.DataContext);
       }
     }
+
+    private void MenuItemCopyOnClick(object sender, RoutedEventArgs e)
+    {
+      MenuItem item = ((MenuItem)sender);
+      TextBlock textBlock = (TextBlock)item.Header;
+      Clipboard.SetData(DataFormats.UnicodeText, textBlock.Text);
+    }
   }
 
   public class GetTeamPlayersConverter : IValueConverter
@@ -219,7 +239,8 @@ namespace SplatTagUI
         throw new InvalidDataException("Unknown type to convert: " + value.GetType());
       }
 
-      return string.Join(", ", sources);
+      string separator = parameter?.ToString() ?? ", ";
+      return string.Join(separator, sources);
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
@@ -360,6 +381,82 @@ namespace SplatTagUI
       }
 
       return new BooleanToVisibilityConverter().Convert(isValid, targetType, parameter, culture);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+  }
+
+  public class PlayerContextMenuConverter : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      const int MAX_ELEMENTS_UNTIL_LINE_BREAKS = 2;
+      if (value is Player p)
+      {
+        var tuples = new List<Tuple<string, string>>();
+        foreach (PropertyInfo prop in typeof(Player).GetProperties())
+        {
+          var fieldName = prop.Name;
+          var fieldVal = prop.GetValue(p, null);
+          if (fieldVal is null || fieldName == nameof(Player.OldTeams) || fieldName == nameof(Player.Name) || fieldName == nameof(Player.CurrentTeam))
+          {
+            // Don't bother listing values that are not set (or provided by other values)
+            continue;
+          }
+          else if (fieldVal is bool b)
+          {
+            fieldVal = b ? "✔" : "❌";
+          }
+          else if (fieldVal is IEnumerable<long> longs)
+          {
+            if (fieldName.Contains("teams", StringComparison.OrdinalIgnoreCase))
+            {
+              int count = longs.Count();
+              if (count == 0)
+              {
+                continue;
+              }
+              string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+
+              var oldTeams = longs.Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.NoTeam);
+              fieldVal = string.Join(separator, oldTeams);
+            }
+            else
+            {
+              int count = longs.Count();
+              if (count == 0)
+              {
+                continue;
+              }
+              string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+              fieldVal = string.Join(separator, longs);
+            }
+          }
+          else if (fieldVal is IEnumerable<string> strings)
+          {
+            int count = strings.Count();
+            if (count == 0)
+            {
+              continue;
+            }
+            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+            fieldVal = string.Join(separator, strings);
+          }
+          else if (fieldVal is IEnumerable<object> objects)
+          {
+            int count = objects.Count();
+            if (count == 0)
+            {
+              continue;
+            }
+            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+            fieldVal = string.Join(separator, objects);
+          }
+          tuples.Add(new Tuple<string, string>(fieldName, fieldVal.ToString()));
+        }
+        return tuples;
+      }
+      return new Tuple<string, string>[0];
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();

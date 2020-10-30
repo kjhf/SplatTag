@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -37,7 +38,9 @@ namespace SplatTagCore
     /// </summary>
     private List<string> weapons = new List<string>();
 
+    private string twitch;
     private string twitter;
+    private List<string> battlefySlugs = new List<string>();
 
     [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
@@ -201,6 +204,60 @@ namespace SplatTagCore
     /// </summary>
     public bool Top500 { get; set; }
 
+    [JsonProperty("BattlefyUsername", Required = Required.Default)]
+    /// <summary>
+    /// Get or Set a BattlefyUsername.
+    /// </summary>
+    public string BattlefyUsername { get; set; }
+
+    [JsonProperty("BattlefySlugs", Required = Required.Default)]
+    /// <summary>
+    /// Get or Set BattlefySlugs.
+    /// </summary>
+    public ICollection<string> BattlefySlugs
+    {
+      get => battlefySlugs;
+      set
+      {
+        battlefySlugs = new List<string>();
+        foreach (string s in value)
+        {
+          if (!string.IsNullOrWhiteSpace(s) && !battlefySlugs.Contains(s))
+          {
+            battlefySlugs.Add(s);
+          }
+        }
+      }
+    }
+
+    [JsonProperty("Twitch", Required = Required.Default)]
+    /// <summary>
+    /// Get or Set the player's Twitch link.
+    /// </summary>
+    public string Twitch
+    {
+      get => twitch;
+      set
+      {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+          twitch = null;
+        }
+        else if (value.Contains("twitch.tv"))
+        {
+          twitch = value;
+        }
+        else
+        {
+          if (value.StartsWith("@"))
+          {
+            value = value.Substring(1);
+          }
+          twitch = "https://twitch.tv/" + value;
+        }
+      }
+    }
+
     [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
     /// Get or Set the player's twitter link.
@@ -302,6 +359,17 @@ namespace SplatTagCore
         }
       }
 
+      // Merge the BattlefySlugs.
+      foreach (string slug in otherPlayer.BattlefySlugs.Where(s => !string.IsNullOrWhiteSpace(s)))
+      {
+        string found = this.battlefySlugs.Find(slugs => slugs.Equals(slug, StringComparison.OrdinalIgnoreCase));
+
+        if (found == null)
+        {
+          battlefySlugs.Add(slug);
+        }
+      }
+
       // Merge the misc data
       if (!string.IsNullOrWhiteSpace(otherPlayer.FriendCode))
       {
@@ -333,9 +401,19 @@ namespace SplatTagCore
         this.Top500 = true;
       }
 
+      if (!string.IsNullOrWhiteSpace(otherPlayer.Twitch))
+      {
+        this.Twitch = otherPlayer.Twitch;
+      }
+
       if (!string.IsNullOrWhiteSpace(otherPlayer.Twitter))
       {
         this.Twitter = otherPlayer.Twitter;
+      }
+
+      if (!string.IsNullOrWhiteSpace(otherPlayer.BattlefyUsername))
+      {
+        this.BattlefyUsername = otherPlayer.BattlefyUsername;
       }
     }
 

@@ -2,6 +2,12 @@
 
 ## In-Dev Releases
 
+### v0.0.18
+* Reworked Merger to use persistent information only.
+* Sources.yaml now accepts relative path
+* Split out BattlefySlugs, Usernames, and Twitch
+* Improved context menus and now copies its info on click.
+
 ### v0.0.17
 * Added Twitter buttons.
 * Stability improvements.
