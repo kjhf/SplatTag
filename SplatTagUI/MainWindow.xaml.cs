@@ -34,12 +34,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.18";
+    public string Version => "Version 0.0.19";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.0.19: Stat.ink compatibility.\n" +
       "v0.0.18: Better context menus and info now copies.\n" +
       "v0.0.17: Twitter buttons for Players\n" +
       "v0.0.16: TSV loading to include early LUTI\n" +

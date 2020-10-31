@@ -169,6 +169,13 @@ namespace SplatTagCore
     /// </summary>
     public ulong? SendouId { get; set; }
 
+    [JsonProperty("SplatnetId", Required = Required.Default)]
+    /// <summary>
+    /// The Splatnet database Id of the player (a hex string).
+    /// Null by default.
+    /// </summary>
+    public string SplatnetId { get; set; }
+
     [JsonProperty("DiscordId", Required = Required.Default)]
     /// <summary>
     /// The Discord database Id of the player.

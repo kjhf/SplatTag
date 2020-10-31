@@ -106,12 +106,32 @@ namespace SplatTagDatabase
       // Remove preceding and seceding quotes from path.
       input = input.TrimStart('"').TrimEnd('"');
 
-      if (!File.Exists(input))
+      if (Directory.Exists(input) && input.Contains("/statink"))
+      {
+        foreach (var file in Directory.EnumerateFiles(input))
+        {
+          if (StatInkReader.AcceptsInput(file))
+          {
+            try
+            {
+              StatInkReader reader = new StatInkReader(file);
+              var (loadedPlayers, _) = reader.Load();
+              Merger.MergePlayers(players, loadedPlayers);
+            }
+            catch (Exception ex)
+            {
+              Trace.WriteLine(ex);
+              Trace.WriteLine($"Failed to read Stat Ink JSON input {input}: {ex.Message}");
+            }
+          }
+        }
+        return "";
+      }
+      else if (!File.Exists(input))
       {
         return $"Input does not exist on disk. Remote is not currently supported ({input}).";
       }
-
-      if (TwitterReader.AcceptsInput(input))
+      else if (TwitterReader.AcceptsInput(input))
       {
         try
         {

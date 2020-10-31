@@ -2,6 +2,9 @@
 
 ## In-Dev Releases
 
+### v0.0.19
+* Stat.ink compatibility
+
 ### v0.0.18
 * Reworked Merger to use persistent information only.
 * Sources.yaml now accepts relative path

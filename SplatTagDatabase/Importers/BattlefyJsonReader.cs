@@ -216,9 +216,20 @@ namespace SplatTagDatabase.Importers
 
           // Filter the friend code from the name, if found
           var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);
+          string playerFc;
           if (parsedFriendCode != null)
           {
             p.Name = strippedName;
+            playerFc = parsedFriendCode.ToString();
+          }
+          else if (p.BattlefyName == row.Captain.BattlefyName)
+          {
+            FriendCode.TryParse(row.CaptainFriendCode, out FriendCode fc);
+            playerFc = fc?.ToString();
+          }
+          else
+          {
+            playerFc = null;
           }
 
           players.Add(new Player
@@ -226,7 +237,7 @@ namespace SplatTagDatabase.Importers
             CurrentTeam = newTeam.Id,
             Names = new string[] { p.Name, p.BattlefyName },
             Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) },
-            FriendCode = parsedFriendCode != null ? parsedFriendCode.ToString() : ((p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainFriendCode : null),
+            FriendCode = playerFc,
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
             BattlefySlugs = new[] { p.BattlefyUserSlug },
             BattlefyUsername = p.BattlefyName
