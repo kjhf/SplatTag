@@ -65,7 +65,7 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Match a query to players with default options.
+    /// Match a query to players with default options with all known players.
     /// </summary>
     public Player[] MatchPlayer(string query)
     {
@@ -73,13 +73,21 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Match a query to players with given options.
+    /// Match a query to players with given options with all known players.
     /// </summary>
     public Player[] MatchPlayer(string query, MatchOptions matchOptions)
     {
+      return MatchPlayer(query, matchOptions, players.Values);
+    }
+
+    /// <summary>
+    /// Match a query to players with given options from a set of players.
+    /// </summary>
+    public Player[] MatchPlayer(string query, MatchOptions matchOptions, ICollection<Player> playersToSearch)
+    {
       if (string.IsNullOrEmpty(query))
       {
-        return players.Values.ToArray();
+        return playersToSearch.ToArray();
       }
 
       if (matchOptions.NearCharacterRecognition)
@@ -87,7 +95,10 @@ namespace SplatTagCore
         query = query.TransformString();
       }
 
-      Func<Player, bool> func;
+      var filterOptions = matchOptions.FilterOptions;
+
+      // Function of Player in and relevance out, where 0 is no match.
+      Func<Player, int> func;
       if (matchOptions.QueryIsRegex)
       {
         // Regex match
@@ -105,24 +116,81 @@ namespace SplatTagCore
 
           func = (p) =>
           {
-            List<string> names = new List<string>();
-            names.AddRange(p.Names);
-            if (p.DiscordName != null)
+            if ((filterOptions & FilterOptions.FriendCode) != 0 && p.FriendCode != null)
             {
-              names.Add(p.DiscordName);
-            }
-            if (p.FriendCode != null)
-            {
-              names.Add(p.FriendCode);
-            }
-            if (matchOptions.NearCharacterRecognition)
-            {
-              for (int i = 0; i < names.Count; i++)
+              // If FC matches, return top match.
+              if (regex.IsMatch(p.FriendCode))
               {
-                names[i] = names[i].TransformString();
+                return int.MaxValue;
               }
             }
-            return names.Any(n => regex.IsMatch(n));
+
+            if ((filterOptions & FilterOptions.BattlefySlugs) != 0 && p.BattlefySlugs != null)
+            {
+              // If the battle slugs match, return top match.
+              foreach (string slug in p.BattlefySlugs)
+              {
+                string toMatch = (matchOptions.NearCharacterRecognition) ? slug.TransformString() : slug;
+                if (regex.IsMatch(toMatch))
+                {
+                  return int.MaxValue;
+                }
+              }
+            }
+
+            // Otherwise ...
+            int relevance = 0;
+            if ((filterOptions & FilterOptions.Name) != 0)
+            {
+              foreach (string name in p.Names)
+              {
+                string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformString() : name;
+                if (regex.IsMatch(toMatch))
+                {
+                  relevance++;
+                }
+              }
+            }
+
+            if ((filterOptions & FilterOptions.DiscordName) != 0 && p.DiscordName != null)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? p.DiscordName.TransformString() : p.DiscordName;
+              if (regex.IsMatch(toMatch))
+              {
+                relevance++;
+              }
+            }
+
+            if ((filterOptions & FilterOptions.Twitch) != 0 && p.Twitch != null)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? p.Twitch.TransformString() : p.Twitch;
+              if (regex.IsMatch(toMatch))
+              {
+                relevance++;
+              }
+            }
+
+            if ((filterOptions & FilterOptions.Twitter) != 0 && p.Twitter != null)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? p.Twitter.TransformString() : p.Twitter;
+              if (regex.IsMatch(toMatch))
+              {
+                relevance++;
+              }
+            }
+
+            if ((filterOptions & FilterOptions.Sources) != 0)
+            {
+              foreach (string name in p.Sources)
+              {
+                string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformString() : name;
+                if (regex.IsMatch(toMatch))
+                {
+                  relevance++;
+                }
+              }
+            }
+            return relevance;
           };
         }
         catch (ArgumentException)
@@ -137,28 +205,111 @@ namespace SplatTagCore
         StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         func = (p) =>
         {
-          List<string> names = new List<string>();
-          names.AddRange(p.Names);
-          if (p.DiscordName != null)
+          int relevance = 0;
+          if ((filterOptions & FilterOptions.FriendCode) != 0 && p.FriendCode != null)
           {
-            names.Add(p.DiscordName);
-          }
-          if (p.FriendCode != null)
-          {
-            names.Add(p.FriendCode);
-          }
-          if (matchOptions.NearCharacterRecognition)
-          {
-            for (int i = 0; i < names.Count; i++)
+            // If FC matches, return top match.
+            if (p.FriendCode.Equals(query, comparion))
             {
-              names[i] = names[i].TransformString();
+              return int.MaxValue;
+            }
+            else if (p.FriendCode.Contains(query, comparion))
+            {
+              relevance++;
             }
           }
-          return names.Contains(query, comparion);
+
+          if ((filterOptions & FilterOptions.BattlefySlugs) != 0 && p.BattlefySlugs != null)
+          {
+            foreach (string slug in p.BattlefySlugs)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? slug.TransformString() : slug;
+              if (toMatch.Equals(query, comparion))
+              {
+                return int.MaxValue;
+              }
+              else if (toMatch.Contains(query, comparion))
+              {
+                relevance++;
+              }
+            }
+          }
+
+          if ((filterOptions & FilterOptions.Name) != 0)
+          {
+            foreach (string name in p.Names)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformString() : name;
+              if (toMatch.Equals(query, comparion))
+              {
+                relevance += 50; // Give it more relevance
+              }
+              else if (toMatch.StartsWith(query, comparion))
+              {
+                relevance += 10;
+              }
+              else if (toMatch.Contains(query, comparion))
+              {
+                relevance += 2;
+              }
+            }
+          }
+
+          if ((filterOptions & FilterOptions.DiscordName) != 0 && p.DiscordName != null)
+          {
+            string toMatch = (matchOptions.NearCharacterRecognition) ? p.DiscordName.TransformString() : p.DiscordName;
+            if (toMatch.Equals(query, comparion))
+            {
+              relevance += 10; // Give it more relevance
+            }
+            else if (toMatch.Contains(query, comparion))
+            {
+              relevance++;
+            }
+          }
+
+          if ((filterOptions & FilterOptions.Twitch) != 0 && p.Twitch != null)
+          {
+            string toMatch = (matchOptions.NearCharacterRecognition) ? p.Twitch.TransformString() : p.Twitch;
+            if (toMatch.Equals(query, comparion))
+            {
+              relevance += 10; // Give it more relevance
+            }
+            else if (toMatch.Contains(query, comparion))
+            {
+              relevance++;
+            }
+          }
+
+          if ((filterOptions & FilterOptions.Twitter) != 0 && p.Twitter != null)
+          {
+            string toMatch = (matchOptions.NearCharacterRecognition) ? p.Twitter.TransformString() : p.Twitter;
+            if (toMatch.Equals(query, comparion))
+            {
+              relevance += 10; // Give it more relevance
+            }
+            else if (toMatch.Contains(query, comparion))
+            {
+              relevance++;
+            }
+          }
+
+          if ((filterOptions & FilterOptions.Sources) != 0)
+          {
+            foreach (string name in p.Sources)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformString() : name;
+              if (toMatch.Contains(query, comparion))
+              {
+                relevance++;
+              }
+            }
+          }
+          return relevance;
         };
       }
 
-      return players.Values.Where(p => func(p)).ToArray();
+      return playersToSearch.Select(p => (p, func(p))).Where(pair => pair.Item2 > 0).OrderByDescending(pair => pair.Item2).Select(pair => pair.p).ToArray();
     }
 
     /// <summary>
@@ -170,13 +321,21 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Match a query to teams with given options.
+    /// Match a query to teams with given options with all known teams.
     /// </summary>
     public Team[] MatchTeam(string query, MatchOptions matchOptions)
     {
+      return MatchTeam(query, matchOptions, teams.Values);
+    }
+
+    /// <summary>
+    /// Match a query to teams with given options with all known teams.
+    /// </summary>
+    public Team[] MatchTeam(string query, MatchOptions matchOptions, ICollection<Team> teamsToSearch)
+    {
       if (string.IsNullOrEmpty(query))
       {
-        return teams.Values.ToArray();
+        return teamsToSearch.ToArray();
       }
 
       if (matchOptions.NearCharacterRecognition)
@@ -184,14 +343,73 @@ namespace SplatTagCore
         query = query.TransformString();
       }
 
-      // First, derive the function for clan tags.
-      Func<Team, bool> clanTagFunc;
+      var filterOptions = matchOptions.FilterOptions;
+
+      // Function of Team in and relevance out, where 0 is no match.
+      Func<Team, int> func;
       if (matchOptions.QueryIsRegex)
       {
+        // Regex match
         try
         {
-          Regex regex = matchOptions.IgnoreCase ? new Regex(query, RegexOptions.IgnoreCase) : new Regex(query);
-          clanTagFunc = (t) => (matchOptions.NearCharacterRecognition ? StringTransformation.TransformEnumerable(t.ClanTags) : t.ClanTags).Any(n => regex.IsMatch(n));
+          Regex regex;
+          if (matchOptions.IgnoreCase)
+          {
+            regex = new Regex(query, RegexOptions.IgnoreCase);
+          }
+          else
+          {
+            regex = new Regex(query);
+          }
+
+          func = (t) =>
+          {
+            int relevance = 0;
+            if ((filterOptions & FilterOptions.ClanTag) != 0 && t.ClanTags != null)
+            {
+              foreach (string tag in t.ClanTags)
+              {
+                string toMatch = (matchOptions.NearCharacterRecognition) ? tag.TransformString() : tag;
+                if (regex.IsMatch(toMatch))
+                {
+                  // Put Clan Tag matches first
+                  return int.MaxValue;
+                }
+              }
+            }
+
+            if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? t.SearchableName : t.Name;
+              if (regex.IsMatch(toMatch))
+              {
+                relevance++;
+              }
+            }
+
+            if ((filterOptions & FilterOptions.Sources) != 0 && t.Sources != null)
+            {
+              foreach (string name in t.Sources)
+              {
+                string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformString() : name;
+                if (regex.IsMatch(toMatch))
+                {
+                  relevance++;
+                }
+              }
+            }
+
+            if ((filterOptions & FilterOptions.Twitter) != 0 && t.Twitter != null)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? t.Twitter.TransformString() : t.Twitter;
+              if (regex.IsMatch(toMatch))
+              {
+                relevance++;
+              }
+            }
+
+            return relevance;
+          };
         }
         catch (ArgumentException)
         {
@@ -203,40 +421,72 @@ namespace SplatTagCore
       {
         // Standard query
         StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        clanTagFunc = (t) => (matchOptions.NearCharacterRecognition ? StringTransformation.TransformEnumerable(t.ClanTags) : t.ClanTags).Contains(query, comparion);
-      }
-
-      // Now the names.
-      Func<Team, bool> teamNameFunc;
-
-      if (matchOptions.QueryIsRegex)
-      {
-        try
+        func = (t) =>
         {
-          Regex regex = matchOptions.IgnoreCase ? new Regex(query, RegexOptions.IgnoreCase) : new Regex(query);
-          teamNameFunc = (t) => regex.IsMatch(matchOptions.NearCharacterRecognition ? t.Name.TransformString() : t.Name);
-        }
-        catch (ArgumentException)
-        {
-          // Regex parsing error
-          return new Team[0];
-        }
-      }
-      else
-      {
-        // Standard query
-        StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        teamNameFunc = (t) => (matchOptions.NearCharacterRecognition ? t.Name.TransformString() : t.Name).Contains(query, comparion);
+          int relevance = 0;
+          if ((filterOptions & FilterOptions.ClanTag) != 0 && t.ClanTags != null)
+          {
+            foreach (string tag in t.ClanTags)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? tag.TransformString() : tag;
+              if (toMatch.Equals(query, comparion))
+              {
+                return int.MaxValue; // Clan tag perfect match
+              }
+              else if (toMatch.Contains(query, comparion))
+              {
+                relevance++;
+              }
+            }
+          }
+
+          if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
+          {
+            string toMatch = (matchOptions.NearCharacterRecognition) ? t.SearchableName : t.Name;
+            if (toMatch.Equals(query, comparion))
+            {
+              relevance += 10; // Give it more relevance
+            }
+            else if (toMatch.Contains(query, comparion))
+            {
+              relevance++;
+            }
+          }
+
+          if ((filterOptions & FilterOptions.Sources) != 0 && t.Sources != null)
+          {
+            foreach (string name in t.Sources)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformString() : name;
+              if (toMatch.Equals(query, comparion))
+              {
+                relevance += 10; // Give it more relevance
+              }
+              else if (toMatch.Contains(query, comparion))
+              {
+                relevance++;
+              }
+            }
+          }
+
+          if ((filterOptions & FilterOptions.Twitter) != 0 && t.Twitter != null)
+          {
+            string toMatch = (matchOptions.NearCharacterRecognition) ? t.Twitter.TransformString() : t.Twitter;
+            if (toMatch.Equals(query, comparion))
+            {
+              relevance += 10; // Give it more relevance
+            }
+            else if (toMatch.Contains(query, comparion))
+            {
+              relevance++;
+            }
+          }
+
+          return relevance;
+        };
       }
 
-      // Return matches,
-      // but we want clan tag matches to be first in the ordering.
-      return
-        teams.Values
-          .Where(t => clanTagFunc(t))
-          .Concat(teams.Values.Where(t => teamNameFunc(t)))
-          .Distinct()
-          .ToArray();
+      return teamsToSearch.Select(t => (t, func(t))).Where(pair => pair.Item2 > 0).OrderByDescending(pair => pair.Item2).Select(pair => pair.t).ToArray();
     }
 
     public Player CreatePlayer(string source)

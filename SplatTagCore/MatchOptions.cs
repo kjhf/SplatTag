@@ -16,5 +16,10 @@
     /// Get or set if the query should recognise 'near' characters, e.g. κ should be equivalent to k. Defaults to true.
     /// </summary>
     public bool NearCharacterRecognition { get; set; } = true;
+
+    /// <summary>
+    /// Get or set how the query should match players and teams.
+    /// </summary>
+    public FilterOptions FilterOptions { get; set; } = FilterOptions.Default;
   }
 }

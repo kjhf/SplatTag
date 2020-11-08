@@ -24,7 +24,7 @@ namespace SplatTagUI
     /// <summary>
     /// Number of characters minimum before skipping the smooth searching timer delay
     /// </summary>
-    private const int MIN_CHARACTERS_FOR_TIMER_SKIP = 4;
+    private const int MIN_CHARACTERS_FOR_TIMER_SKIP = 6;
 
     internal static readonly SplatTagController splatTagController;
     private static readonly GenericFilesImporter sourcesImporter;
@@ -34,12 +34,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.19";
+    public string Version => "Version 0.0.20";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.0.20: Reworked matching to show higher relevance results first.\n" +
       "v0.0.19: Stat.ink compatibility.\n" +
       "v0.0.18: Better context menus and info now copies.\n" +
       "v0.0.17: Twitter buttons for Players\n" +
@@ -105,6 +106,7 @@ namespace SplatTagUI
             case 1: multiplier = 2; break;
             case 2: multiplier = 1.6f; break;
             case 3: multiplier = 1.3f; break;
+            case 4: multiplier = 1.1f; break;
             default: multiplier = 1; break;
           }
           int time = (int)(delaySlider.Value * multiplier);
@@ -128,30 +130,21 @@ namespace SplatTagUI
 
     private void Search()
     {
-      if (allowEmptySearchCheckbox.IsChecked == false && searchInput.Text.Length < 1)
+      string query = searchInput.Text;
+      if (allowEmptySearchCheckbox.IsChecked == false && query.Length < 1)
       {
         return;
       }
 
-      playersListBox.ItemsSource =
-       splatTagController.MatchPlayer(searchInput.Text,
-         new MatchOptions
-         {
-           IgnoreCase = ignoreCaseCheckbox.IsChecked == true,
-           NearCharacterRecognition = nearMatchCheckbox.IsChecked == true,
-           QueryIsRegex = regexCheckbox.IsChecked == true
-         }
-       );
+      var options = new MatchOptions
+      {
+        IgnoreCase = ignoreCaseCheckbox.IsChecked == true,
+        NearCharacterRecognition = nearMatchCheckbox.IsChecked == true,
+        QueryIsRegex = regexCheckbox.IsChecked == true
+      };
 
-      teamsListBox.ItemsSource =
-      splatTagController.MatchTeam(searchInput.Text,
-        new MatchOptions
-        {
-          IgnoreCase = ignoreCaseCheckbox.IsChecked == true,
-          NearCharacterRecognition = nearMatchCheckbox.IsChecked == true,
-          QueryIsRegex = regexCheckbox.IsChecked == true
-        }
-      );
+      playersListBox.ItemsSource = splatTagController.MatchPlayer(query, options);
+      teamsListBox.ItemsSource = splatTagController.MatchTeam(query, options);
     }
 
     private void CheckedChanged(object sender, RoutedEventArgs e)

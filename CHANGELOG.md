@@ -2,6 +2,11 @@
 
 ## In-Dev Releases
 
+### v0.0.20
+* Reworked matching to show higher relevance results first.
+* Added capability of filtering the results based on what you are looking for (FilterOptions)
+* Improved FC parser
+
 ### v0.0.19
 * Stat.ink compatibility
 
