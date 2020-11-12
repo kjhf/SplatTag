@@ -2,8 +2,10 @@
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace SplatTagDatabase
 {
@@ -70,11 +72,35 @@ namespace SplatTagDatabase
 
     public void Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams)
     {
-      // Write players
-      File.WriteAllText(Path.Combine(saveDirectory, "Snapshot-Players-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"), JsonConvert.SerializeObject(savePlayers));
+      try
+      {
+        // Write players
+        File.WriteAllText(
+          Path.Combine(saveDirectory, "Snapshot-Players-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"),
+          JsonConvert.SerializeObject(savePlayers),
+          Encoding.UTF8);
+      }
+      catch (Exception ex)
+      {
+        string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} players because of an exception: {ex}";
+        Console.Error.WriteLine(error);
+        Trace.WriteLine(error);
+      }
 
-      // Write teams
-      File.WriteAllText(Path.Combine(saveDirectory, "Snapshot-Teams-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"), JsonConvert.SerializeObject(saveTeams));
+      try
+      {
+        // Write teams
+        File.WriteAllText(
+          Path.Combine(saveDirectory, "Snapshot-Teams-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"),
+          JsonConvert.SerializeObject(saveTeams),
+          Encoding.UTF8);
+      }
+      catch (Exception ex)
+      {
+        string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} teams because of an exception: {ex}";
+        Console.Error.WriteLine(error);
+        Trace.WriteLine(error);
+      }
     }
   }
 }

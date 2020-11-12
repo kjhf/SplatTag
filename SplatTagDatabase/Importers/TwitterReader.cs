@@ -31,7 +31,6 @@ namespace SplatTagDatabase.Importers
       {
         Team newTeam = new Team
         {
-          Id = -teams.Count - 1,  // This will be updated when the merge happens.
           Name = pair.Key,
           Twitter = pair.Value
         };

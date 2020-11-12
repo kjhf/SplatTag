@@ -28,21 +28,30 @@ namespace SplatTagDatabase
       // If not forced, try a load here.
       // If we were able to load from a snapshot then we don't need the other importers.
       // Otherwise, do the processing and record the snapshot.
-      if (!forceLoad)
+      try
       {
-        splatTagController.Initialise();
+        if (!forceLoad)
+        {
+          splatTagController.Initialise();
+        }
+
+        if (forceLoad || splatTagController.MatchPlayer(null).Length == 0)
+        {
+          sourcesImporter = new GenericFilesImporter(saveFolder);
+          MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
+          splatTagController = new SplatTagController(splatTagDatabase);
+          Trace.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
+          splatTagController.Initialise();
+
+          // Now that we've initialised, take a snapshot of everything.
+          snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
+        }
       }
-
-      if (forceLoad || splatTagController.MatchPlayer(null).Length == 0)
+      catch (Exception ex)
       {
-        sourcesImporter = new GenericFilesImporter(saveFolder);
-        MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
-        splatTagController = new SplatTagController(splatTagDatabase);
-        Trace.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
-        splatTagController.Initialise();
-
-        // Now that we've initialised, take a snapshot of everything.
-        snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
+        string error = $"Unable to initialise the {nameof(SplatTagController)} because of an exception: {ex}";
+        Console.Error.WriteLine(error);
+        Trace.WriteLine(error);
       }
 
       return (splatTagController, sourcesImporter);

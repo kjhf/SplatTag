@@ -90,7 +90,7 @@ namespace SplatTagDatabase.Importers
     public static bool AcceptsInput(string input)
     {
       // Is named Sendou.json
-      return Path.GetFileName(input).Equals("Sendou.json");
+      return Path.GetFileName(input).EndsWith("Sendou.json");
     }
   }
 }

@@ -51,7 +51,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleSingleQuery()
     {
-      const int millisecondsDelay = 300000; //5000;
+      const int millisecondsDelay = 5000;
       using (StringWriter sw = new StringWriter())
       {
         Console.SetOut(sw);

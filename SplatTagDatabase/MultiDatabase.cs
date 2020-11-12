@@ -1,8 +1,7 @@
 ﻿using SplatTagCore;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
+using System.Diagnostics;
 
 namespace SplatTagDatabase
 {
@@ -19,19 +18,45 @@ namespace SplatTagDatabase
 
     public (Player[], Team[]) Load()
     {
-      Dictionary<uint, Player> players = new Dictionary<uint, Player>();
-      Dictionary<long, Team> teams = new Dictionary<long, Team>();
+      List<Player> players = new List<Player>();
+      List<Team> teams = new List<Team>();
       foreach (var db in importers)
       {
-        var (loadedPlayers, loadedTeams) = db.Load();
-        var mergeResult = Merger.MergeTeams(teams, loadedTeams);
-        Merger.CorrectPlayerIds(loadedPlayers, mergeResult);
-        Merger.MergePlayers(players, loadedPlayers);
+        Player[] loadedPlayers;
+        Team[] loadedTeams;
+        try
+        {
+          (loadedPlayers, loadedTeams) = db.Load();
+        }
+        catch (Exception ex)
+        {
+          Trace.WriteLine($"ERROR: Importer {db} failed. Discarding result and continuing. {ex}");
+          continue;
+        }
+
+        try
+        {
+          var mergeResult = Merger.MergeTeams(teams, loadedTeams);
+          Merger.MergePlayers(players, loadedPlayers);
+          Merger.CorrectTeamIdsForPlayers(players, mergeResult);
+        }
+        catch (Exception ex)
+        {
+          Trace.WriteLine($"ERROR: Failed to merge during import of {db}. Discarding result and continuing. {ex}");
+        }
       }
 
       // Perform a final merge.
-      Merger.FinalisePlayers(players);
-      return (players.Values.ToArray(), teams.Values.ToArray());
+      try
+      {
+        Merger.FinalisePlayers(players);
+        Merger.DumpLogger();
+      }
+      catch (Exception ex)
+      {
+        Trace.WriteLine($"Warning: Failed {nameof(Merger.FinalisePlayers)}. Continuing anyway. {ex}");
+      }
+      return (players.ToArray(), teams.ToArray());
     }
 
     public void Save(IEnumerable<Player> players, IEnumerable<Team> teams)

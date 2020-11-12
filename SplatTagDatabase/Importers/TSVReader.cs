@@ -185,18 +185,18 @@ namespace SplatTagDatabase.Importers
         string line = text[lineIndex];
         if (!line.Contains('\t')) continue;
 
-        string[] cells = line.Split('\t').Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
-        if (numberOfHeaders < cells.Length)
+        string[] cells = line.Split('\t').ToArray();
+
+        // Warn if the values exceeds the number of defined headers (but don't bother if we're only one over and it's empty -- trailing tab)
+        if (numberOfHeaders < cells.Length && (numberOfHeaders != cells.Length - 1 || !string.IsNullOrWhiteSpace(cells[cells.Length - 1])))
         {
-          Trace.WriteLine($"Warning: Skipping line {lineIndex}, the number of cells in this row {cells.Length} is greater than the number of headers {numberOfHeaders}.");
+          Trace.WriteLine($"Warning: Line {lineIndex} contains more cells in this row {cells.Length} than headers {numberOfHeaders}.");
           Debug.WriteLine(line);
-          continue;
         }
 
         SortedDictionary<int, Player> rowPlayers = new SortedDictionary<int, Player>();
         Team t = new Team
         {
-          Id = -teams.Count - 1,  // This will be updated when the merge happens.
           ClanTagOption = TagOption.Unknown,
           Div = new Division(),
           Name = "(unknown)",
@@ -255,6 +255,11 @@ namespace SplatTagDatabase.Importers
               {
                 p.DiscordName = value;
               }
+              else if (FriendCode.TryParse(value, out FriendCode friendCode))
+              {
+                p.FriendCode = friendCode.ToString();
+                Trace.WriteLine($"Warning: This value was declared as a Discord name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
+              }
               else
               {
                 Trace.WriteLine($"Warning: DiscordName was specified ({lineIndex},{i}), but the value was not in a Discord format of name#0000. {value}.");
@@ -288,6 +293,12 @@ namespace SplatTagDatabase.Importers
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               p.Name = value;
+              if (FriendCode.TryParse(value, out FriendCode friendCode))
+              {
+                p.FriendCode = friendCode.ToString();
+                Trace.WriteLine($"Warning: This value was declared as a name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
+                Debug.WriteLine(line);
+              }
               break;
             }
 
@@ -342,6 +353,10 @@ namespace SplatTagDatabase.Importers
         foreach (var pair in rowPlayers)
         {
           Player p = pair.Value;
+          if (p.Name.Equals(Player.UNKNOWN_PLAYER))
+          {
+            continue;
+          }
           p.CurrentTeam = t.Id;
           players.Add(p);
         }

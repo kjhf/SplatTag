@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace SplatTagDatabase
 {
@@ -13,8 +11,6 @@ namespace SplatTagDatabase
   {
     public const string SourcesFileName = "sources.yaml";
     private readonly List<string> sources = new List<string>();
-    private readonly SortedDictionary<uint, Player> players = new SortedDictionary<uint, Player>();
-    private readonly SortedDictionary<long, Team> teams = new SortedDictionary<long, Team>();
     private readonly string sourcesFile;
     private readonly string saveDirectory;
 
@@ -39,45 +35,44 @@ namespace SplatTagDatabase
 
     public (Player[], Team[]) Load()
     {
+      List<Player> players = new List<Player>();
+      List<Team> teams = new List<Team>();
+
       // Make sure that relative paths are correctly defined.
       var currentDirectory = Directory.GetCurrentDirectory();
       Directory.SetCurrentDirectory(this.saveDirectory);
 
       // Iterate through the sources to load them.
+      string lastProgressBar = "";
       for (int i = 0; i < sources.Count; i++)
       {
         string file = sources[i];
-        string error = TryImportFromPath(file);
-        if (error != string.Empty)
+
+        try
         {
-          Console.Error.WriteLine(error);
+          var (loadedPlayers, loadedTeams) = TryImportFromPath(file);
+          var teamsMergeResult = Merger.MergeTeams(teams, loadedTeams);
+          Merger.MergePlayers(players, loadedPlayers);
+          Merger.CorrectTeamIdsForPlayers(players, teamsMergeResult);
         }
-        Trace.WriteLine(GetProgressBar(i, sources.Count, 100));
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine(ex);
+        }
+
+        string progressBar = Util.GetProgressBar(i, sources.Count, 100);
+        if (!progressBar.Equals(lastProgressBar))
+        {
+          Trace.WriteLine(progressBar);
+          lastProgressBar = progressBar;
+        }
       }
 
       // Re-set the current directory.
       Directory.SetCurrentDirectory(currentDirectory);
 
       // And return the loaded players and teams.
-      return (players.Values.ToArray(), teams.Values.ToArray());
-    }
-
-    private static string GetProgressBar(int value, int capacity, int width = 10)
-    {
-      StringBuilder sb = new StringBuilder();
-      sb.Append("[");
-      int bars = Math.Min(width - 1, (int)(((value + 1) * width) / (double)capacity));
-      for (int i = 0; i < bars; i++)
-      {
-        sb.Append("=");
-      }
-      sb.Append(">");
-      for (int i = bars; i < (width - 1); i++)
-      {
-        sb.Append(" ");
-      }
-      sb.Append("]");
-      return sb.ToString();
+      return (players.ToArray(), teams.ToArray());
     }
 
     public void SetSingleSource(string source)
@@ -101,13 +96,15 @@ namespace SplatTagDatabase
       }
     }
 
-    private string TryImportFromPath(string input)
+    private static (Player[], Team[]) TryImportFromPath(string input)
     {
       // Remove preceding and seceding quotes from path.
       input = input.TrimStart('"').TrimEnd('"');
 
       if (Directory.Exists(input) && input.Contains("/statink"))
       {
+        List<Player> players = new List<Player>();
+        List<Team> teams = new List<Team>();
         foreach (var file in Directory.EnumerateFiles(input))
         {
           if (StatInkReader.AcceptsInput(file))
@@ -115,8 +112,9 @@ namespace SplatTagDatabase
             try
             {
               StatInkReader reader = new StatInkReader(file);
-              var (loadedPlayers, _) = reader.Load();
-              Merger.MergePlayers(players, loadedPlayers);
+              var (loadedPlayers, loadedTeams) = reader.Load();
+              players.AddRange(loadedPlayers);
+              teams.AddRange(loadedTeams);
             }
             catch (Exception ex)
             {
@@ -125,25 +123,23 @@ namespace SplatTagDatabase
             }
           }
         }
-        return "";
+        return (players.ToArray(), teams.ToArray());
       }
       else if (!File.Exists(input))
       {
-        return $"Input does not exist on disk. Remote is not currently supported ({input}).";
+        throw new InvalidOperationException($"Input does not exist on disk. Remote is not currently supported ({input}).");
       }
       else if (TwitterReader.AcceptsInput(input))
       {
         try
         {
           TwitterReader twitterReader = new TwitterReader(input);
-          var (_, loadedTeams) = twitterReader.Load();
-          Merger.MergeTeams(teams, loadedTeams);
-          return "";
+          return twitterReader.Load();
         }
         catch (Exception ex)
         {
           Trace.WriteLine(ex);
-          return $"Failed to read Twitter input {input}: {ex.Message}";
+          throw new InvalidOperationException($"Failed to read Twitter input {input}: {ex.Message}", ex);
         }
       }
       else if (SendouReader.AcceptsInput(input))
@@ -151,14 +147,12 @@ namespace SplatTagDatabase
         try
         {
           SendouReader sendouReader = new SendouReader(input);
-          var (loadedPlayers, _) = sendouReader.Load();
-          Merger.MergePlayers(players, loadedPlayers);
-          return "";
+          return sendouReader.Load();
         }
         catch (Exception ex)
         {
           Trace.WriteLine(ex);
-          return $"Failed to read Sendou input {input}: {ex.Message}";
+          throw new InvalidOperationException($"Failed to read Sendou input {input}: {ex.Message}", ex);
         }
       }
       else if (TSVReader.AcceptsInput(input))
@@ -166,16 +160,12 @@ namespace SplatTagDatabase
         try
         {
           TSVReader tsvReader = new TSVReader(input);
-          var (loadedPlayers, loadedTeams) = tsvReader.Load();
-          var mergeResult = Merger.MergeTeams(teams, loadedTeams);
-          Merger.CorrectPlayerIds(loadedPlayers, mergeResult);
-          Merger.MergePlayers(players, loadedPlayers);
-          return "";
+          return tsvReader.Load();
         }
         catch (Exception ex)
         {
           Trace.WriteLine(ex);
-          return $"Failed to read TSV input {input}: {ex.Message}";
+          throw new InvalidOperationException($"Failed to read TSV input {input}: {ex.Message}", ex);
         }
       }
       else if (LUTIJsonReader.AcceptsInput(input))
@@ -183,16 +173,12 @@ namespace SplatTagDatabase
         try
         {
           LUTIJsonReader lutiReader = new LUTIJsonReader(input);
-          var (loadedPlayers, loadedTeams) = lutiReader.Load();
-          var mergeResult = Merger.MergeTeams(teams, loadedTeams);
-          Merger.CorrectPlayerIds(loadedPlayers, mergeResult);
-          Merger.MergePlayers(players, loadedPlayers);
-          return "";
+          return lutiReader.Load();
         }
         catch (Exception ex)
         {
           Trace.WriteLine(ex);
-          return $"Failed to read LUTI JSON input {input}: {ex.Message}";
+          throw new InvalidOperationException($"Failed to read LUTI JSON input {input}: {ex.Message}");
         }
       }
       else if (BattlefyJsonReader.AcceptsInput(input))
@@ -200,21 +186,17 @@ namespace SplatTagDatabase
         try
         {
           BattlefyJsonReader battlefyReader = new BattlefyJsonReader(input);
-          var (loadedPlayers, loadedTeams) = battlefyReader.Load();
-          var mergeResult = Merger.MergeTeams(teams, loadedTeams);
-          Merger.CorrectPlayerIds(loadedPlayers, mergeResult);
-          Merger.MergePlayers(players, loadedPlayers);
-          return "";
+          return battlefyReader.Load();
         }
         catch (Exception ex)
         {
           Trace.WriteLine(ex);
-          return $"Failed to read Battlefy JSON input {input}: {ex.Message}";
+          throw new InvalidOperationException($"Failed to read Battlefy JSON input {input}: {ex.Message}", ex);
         }
       }
       else
       {
-        return "File extension not recognised or supported.";
+        throw new NotImplementedException("File extension not recognised or supported.");
       }
     }
   }

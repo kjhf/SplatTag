@@ -3,6 +3,7 @@ using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -47,8 +48,8 @@ namespace SplatTagDatabase.Importers
       // [JsonProperty("pendingTeamID", Required = Required.Default)]
       // public string BattlefyPendingTeamId { get; set; }
 
-      // [JsonProperty("persistentTeamID", Required = Required.Default)]
-      // public string BattlefyPersistentTeamId { get; set; }
+      [JsonProperty("persistentTeamID", Required = Required.Default)]
+      public string BattlefyPersistentTeamId { get; set; }
 
       // [JsonProperty("tournamentID", Required = Required.Default)]
       // public string BattlefyTournamentId { get; set; }
@@ -152,13 +153,12 @@ namespace SplatTagDatabase.Importers
       {
         if (row.Players.Length < 1)
         {
-          Console.Error.WriteLine($"ERROR: JSON does not contain a player for team \"{row.TeamName}\". Ignoring this team entry. File: " + jsonFile);
+          // Report if the team name doesn't begin with "bye"
+          if (!row.TeamName.StartsWith("bye", StringComparison.OrdinalIgnoreCase))
+          {
+            Console.Error.WriteLine($"ERROR: JSON does not contain a player for team \"{row.TeamName}\". Ignoring this team entry. File: " + jsonFile);
+          }
           continue;
-        }
-
-        if (row.Players.Length < 4)
-        {
-          Console.WriteLine($"Warning: JSON does not contain 4+ players for team \"{row.TeamName}\". Continuing anyway. File: " + jsonFile);
         }
 
         if (row.Captain == null)
@@ -167,39 +167,37 @@ namespace SplatTagDatabase.Importers
           row.Captain = row.Players[0];
         }
 
-        if (row.CustomFields.Length < 2)
+        if (string.IsNullOrEmpty(row.Captain.Name))
         {
-          Console.WriteLine($"Warning: JSON contains {row.CustomFields.Length}/2 Custom Fields (Discord/FC) for team \"{row.TeamName}\". Continuing anyway. File: " + jsonFile);
+          Console.Error.WriteLine($"ERROR: The captain for team \"{row.TeamName}\" does not have a name. Ignoring this team entry. File: " + jsonFile);
+          continue;
         }
 
         // Attempt to resolve the team tag
-        int i;
-        string tag = "";
-        char firstPlayerLetter = row.Players[0].Name[0];
-        int smallestNameLength = row.Players.Min(p => p.Name.Length);
-        var halfTheTeam = (players.Count / 2) + 1;
-        for (i = 0; (players.Count(p => p.Name[i] == firstPlayerLetter) >= halfTheTeam) && i < smallestNameLength; i++, firstPlayerLetter = row.Players[0].Name[i]) { }
-
-        if (i >= 2)
-        {
-          tag = row.Players[0].Name.Substring(0, i);
-        }
+        // TODO should be space or symbol otherwise rarely you'll match actual characters.
 
         Team newTeam = new Team
         {
-          Id = -teams.Count - 1,  // This will be updated when the merge happens.
-          ClanTags = tag.Length == 0 ? new string[0] : new string[1] { tag },
-          ClanTagOption = tag.Length == 0 ? TagOption.Unknown : TagOption.Front,
+          BattlefyPersistentTeamId = row.BattlefyPersistentTeamId,
+          //ClanTags = tag.Length == 0 ? new string[0] : new string[1] { tag },
+          //ClanTagOption = tag.Length == 0 ? TagOption.Unknown : TagOption.Front,
           Div = new Division(),
           Name = row.TeamName,
           Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) }
         };
 
-        // If we already have a team of this name then merge it.
-        var knownTeam = teams.Find(t => t.SearchableName.Equals(newTeam.SearchableName));
-        if (knownTeam != null)
+        // If we already have a team with this id then merge it.
+        if (newTeam.BattlefyPersistentTeamId != null)
         {
-          knownTeam.Merge(newTeam);
+          var knownTeam = teams.Find(t => newTeam.BattlefyPersistentTeamId.Equals(t.BattlefyPersistentTeamId));
+          if (knownTeam != null)
+          {
+            knownTeam.Merge(newTeam);
+          }
+          else
+          {
+            teams.Add(newTeam);
+          }
         }
         else
         {
@@ -209,10 +207,10 @@ namespace SplatTagDatabase.Importers
         foreach (BattlefyJsonPlayer p in row.Players)
         {
           // Add the player
-          if (p.Name.StartsWith(tag) && p.Name != tag)
-          {
-            p.Name = p.Name.Substring(tag.Length).Trim();
-          }
+          //if (p.Name.StartsWith(tag) && p.Name != tag)
+          //{
+          //  p.Name = p.Name.Substring(tag.Length).Trim();
+          //}
 
           // Filter the friend code from the name, if found
           var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);

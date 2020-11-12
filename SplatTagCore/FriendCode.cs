@@ -13,7 +13,7 @@ namespace SplatTagCore
     /// <summary>
     /// We have exactly 12 digits, or we have 3 lots of 4 digits separated by - or . or space. The code may be wrapped in brackets ().
     /// </summary>
-    private static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?(SW|FC|sw|fc)?(:|-)?\s?(\d{4})\s*(-| |\.|_|/)\s*(\d{4})\s*(-| |\.|_|/)\s*(\d{4})\s*\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+    private static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?(SW|FC|sw|fc)?\s*(:|-)?\s?(\d{4})\s*(-| |\.|_|/)\s*(\d{4})\s*(-| |\.|_|/)\s*(\d{4})\s*\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     private static readonly Regex TWELVE_DIGITS_REGEX = new Regex(@"(\D|^)(\d{12})(\D|$)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 

@@ -10,11 +10,19 @@ namespace SplatTagCore
   {
     public static readonly Team NoTeam = new Team()
     {
-      ClanTagOption = TagOption.Unknown,
+      ClanTagOption = TagOption.Variable,
       ClanTags = new string[] { "FA" },
       Div = new Division(),
-      Id = 0,
-      Name = "(No Team)",
+      Name = "(Free Agent)",
+      sources = new List<string>()
+    };
+
+    public static readonly Team UnlinkedTeam = new Team()
+    {
+      ClanTagOption = TagOption.Variable,
+      ClanTags = new string[] { nameof(SplatTagCore) + " ERROR" },
+      Div = new Division(),
+      Name = "UNLINKED TEAM",
       sources = new List<string>()
     };
 
@@ -55,9 +63,16 @@ namespace SplatTagCore
 
     [JsonProperty("Id", Required = Required.Always)]
     /// <summary>
-    /// The database Id of the team.
+    /// The GUID of the team.
     /// </summary>
-    public long Id { get; set; }
+    public readonly Guid Id = Guid.NewGuid();
+
+    [JsonProperty("BattlefyPersistentTeamId", Required = Required.Default)]
+    /// <summary>
+    /// The Battlefy Persistent Id of the team (or null if not set).
+    /// Should be a hex string but may not be a ulong.
+    /// </summary>
+    public string BattlefyPersistentTeamId { get; set; }
 
     [JsonProperty("Name", Required = Required.Always)]
     /// <summary>

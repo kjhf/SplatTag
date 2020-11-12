@@ -89,13 +89,12 @@ namespace SplatTagUnitTests
 
         Assert.AreEqual("Cap 1", loadedPlayers[0].Name); // Assert name was loaded without the tag.
         Assert.AreEqual("P2", loadedPlayers[1].Name); // Assert name was loaded without the tag.
-        Assert.IsTrue(loadedPlayers[1].CurrentTeam != 0, "Current team not set"); // Test Current Team is set
+        Assert.IsTrue(loadedPlayers[1].CurrentTeam != Team.NoTeam.Id, "Current team not set"); // Test Current Team is set
 
         Assert.AreEqual("CAP", loadedPlayers[5].Name); // Assert name was loaded without the tag.
         Assert.AreEqual("A2", loadedPlayers[6].Name); // Assert name was loaded without the tag.
-        Assert.IsTrue(loadedPlayers[6].CurrentTeam != 0, "Current team not set"); // Test Current Team is set
-
-        Assert.IsTrue(loadedPlayers[15].CurrentTeam != 0, "Current team not set"); // Test Current Team is set
+        Assert.IsTrue(loadedPlayers[6].CurrentTeam != Team.NoTeam.Id, "Current team not set"); // Test Current Team is set
+        Assert.IsTrue(loadedPlayers[15].CurrentTeam != Team.NoTeam.Id, "Current team not set"); // Test Current Team is set
       }
       finally
       {

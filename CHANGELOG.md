@@ -2,6 +2,10 @@
 
 ## In-Dev Releases
 
+### v0.0.21
+* Reworked internal id structure
+* Reworked merging
+
 ### v0.0.20
 * Reworked matching to show higher relevance results first.
 * Added capability of filtering the results based on what you are looking for (FilterOptions)

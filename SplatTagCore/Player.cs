@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -13,7 +12,7 @@ namespace SplatTagCore
     /// <summary>
     /// Displayed string for an unknown player.
     /// </summary>
-    public const string UNKNOWN_PLAYER = "(unknown)";
+    public const string UNKNOWN_PLAYER = "(Player unknown)";
 
     public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
@@ -28,19 +27,35 @@ namespace SplatTagCore
     private List<string> sources = new List<string>();
 
     /// <summary>
-    /// Back-store for the team ids for this player. The first element is the current team.
-    /// A 0 represents no team.
+    /// Back-store for the team GUIDs for this player. The first element is the current team.
+    /// No team represented by <see cref="Team.NoTeam.Id"/>.
     /// </summary>
-    private List<long> teams = new List<long>();
+    private List<Guid> teams = new List<Guid>();
 
     /// <summary>
     /// Back-store for the weapons that the player uses (if any).
     /// </summary>
     private List<string> weapons = new List<string>();
 
+    /// <summary>
+    /// Back-store for player's Twitch.
+    /// </summary>
     private string twitch;
+
+    /// <summary>
+    /// Back-store for player's Twitter.
+    /// </summary>
     private string twitter;
+
+    /// <summary>
+    /// Back-store for player's Battlefy Slugs.
+    /// </summary>
     private List<string> battlefySlugs = new List<string>();
+
+    /// <summary>
+    /// Back-store for the transformed names of this player.
+    /// </summary>
+    private HashSet<string> transformedNames = new HashSet<string>();
 
     [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
@@ -59,6 +74,27 @@ namespace SplatTagCore
             names.Add(s);
           }
         }
+        transformedNames = null;
+      }
+    }
+
+    [JsonIgnore]
+    /// <summary>
+    /// The names this player is known by transformed into searchable query.
+    /// </summary>
+    public IReadOnlyCollection<string> TransformedNames
+    {
+      get
+      {
+        if (transformedNames == null)
+        {
+          transformedNames = new HashSet<string>();
+          foreach (var name in names)
+          {
+            transformedNames.Add(name.Replace(" ", "").TransformString().ToLowerInvariant());
+          }
+        }
+        return transformedNames;
       }
     }
 
@@ -71,9 +107,22 @@ namespace SplatTagCore
       get => names.Count > 0 ? names[0] : UNKNOWN_PLAYER;
       set
       {
-        if (!string.IsNullOrWhiteSpace(value) && !names.Contains(value))
+        if (!string.IsNullOrWhiteSpace(value))
         {
-          names.Insert(0, value);
+          if (names.Count == 0)
+          {
+            names.Add(value);
+          }
+          else if (names[0].Equals(value))
+          {
+            // Nothing to do.
+          }
+          else
+          {
+            names.Remove(value);
+            names.Insert(0, value);
+          }
+          transformedNames = null;
         }
       }
     }
@@ -81,20 +130,19 @@ namespace SplatTagCore
     [JsonProperty("Teams", Required = Required.Always)]
     /// <summary>
     /// The teams this player is played for.
-    /// A 0 represents no team.
+    /// No Team represented by <see cref="Team.NoTeam.Id"/>
     /// </summary>
-    public IEnumerable<long> Teams
+    public ICollection<Guid> Teams
     {
       get => teams.ToArray();
-      set => teams = new List<long>(value ?? new long[0]);
+      set => teams = new List<Guid>(value ?? new Guid[0]);
     }
 
     [JsonIgnore]
     /// <summary>
     /// The old teams this player has played for.
-    /// A 0 represents no team.
     /// </summary>
-    public IEnumerable<long> OldTeams
+    public IEnumerable<Guid> OldTeams
     {
       get => teams?.Skip(1).ToArray();
     }
@@ -103,16 +151,24 @@ namespace SplatTagCore
     /// <summary>
     /// The current team id this player plays for, or NoTeam.Id if not set.
     /// </summary>
-    public long CurrentTeam
+    public Guid CurrentTeam
     {
       get => teams.Count > 0 ? teams[0] : Team.NoTeam.Id;
       set
       {
-        if (teams.Contains(value))
+        if (teams.Count == 0)
+        {
+          teams.Add(value);
+        }
+        else if (teams[0].Equals(value))
+        {
+          // Nothing to do.
+        }
+        else
         {
           teams.Remove(value);
+          teams.Insert(0, value);
         }
-        teams.Insert(0, value);
       }
     }
 
@@ -160,7 +216,7 @@ namespace SplatTagCore
     /// <summary>
     /// The database Id of the player.
     /// </summary>
-    public uint Id { get; set; }
+    public readonly Guid Id = Guid.NewGuid();
 
     [JsonProperty("SendouId", Required = Required.Default)]
     /// <summary>
@@ -308,7 +364,7 @@ namespace SplatTagCore
       // so the most recent end up first in the stack.
       var reverseTeams = otherPlayer.teams.ToList();
       reverseTeams.Reverse();
-      foreach (uint t in reverseTeams)
+      foreach (Guid t in reverseTeams)
       {
         if (this.teams.Contains(t))
         {

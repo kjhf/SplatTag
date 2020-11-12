@@ -37,13 +37,11 @@ namespace SplatTagUnitTests
 
       Team t1 = controller.CreateTeam("Manual");
       t1.Name = "Team 17";
-      t1.Id = 17;
       t1.ClanTags = new string[] { "x" };
       t1.ClanTagOption = TagOption.Front;
 
       Team t2 = controller.CreateTeam("Manual");
       t2.Name = "Example 18";
-      t2.Id = 18;
       t2.ClanTags = new string[] { "e" };
       t2.ClanTagOption = TagOption.Front;
 
@@ -72,7 +70,6 @@ namespace SplatTagUnitTests
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Team 17"; // Purposefully mixed case
-      t.Id = 17;
       t.ClanTags = new string[] { "WO" };
       t.ClanTagOption = TagOption.Front;
       database.expectedTeams = new List<Team> { t };
@@ -95,7 +92,6 @@ namespace SplatTagUnitTests
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Team 17";
-      t.Id = 17;
       t.ClanTags = new string[] { "WO" }; // Purposefully upper-case
       t.ClanTagOption = TagOption.Front;
       database.expectedTeams = new List<Team> { t };
@@ -118,7 +114,6 @@ namespace SplatTagUnitTests
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Inkology";
-      t.Id = 1337;
       t.ClanTags = new string[] { "¡g" };
       t.ClanTagOption = TagOption.Front;
       database.expectedTeams = new List<Team> { t };
@@ -141,7 +136,6 @@ namespace SplatTagUnitTests
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Inkology";
-      t.Id = 1337;
       t.ClanTags = new string[] { "¡g" };
       t.ClanTagOption = TagOption.Front;
       database.expectedTeams = new List<Team> { t };
@@ -164,7 +158,6 @@ namespace SplatTagUnitTests
 
       Team t = controller.CreateTeam("Manual");
       t.Name = "Inkology";
-      t.Id = 1337;
       t.ClanTags = new string[] { "¡g" };
       t.ClanTagOption = TagOption.Front;
       database.expectedTeams = new List<Team> { t };
@@ -187,19 +180,16 @@ namespace SplatTagUnitTests
 
       Team t1 = controller.CreateTeam("Manual");
       t1.Name = "Inkology";
-      t1.Id = 1337;
       t1.ClanTags = new string[] { "¡g" };
       t1.ClanTagOption = TagOption.Front;
 
       Team t2 = controller.CreateTeam("Manual");
       t2.Name = "Inkfected";
-      t2.Id = 18;
       t2.ClanTags = new string[] { "τイ" };
       t2.ClanTagOption = TagOption.Front;
 
       Team t3 = controller.CreateTeam("Manual");
       t3.Name = "Inky Sirens";
-      t3.Id = 19;
       t3.ClanTags = new string[] { "InkS" };
       t3.ClanTagOption = TagOption.Front;
 
@@ -224,13 +214,11 @@ namespace SplatTagUnitTests
 
       Team t1 = controller.CreateTeam("Manual");
       t1.Name = "Inkology";
-      t1.Id = 1337;
       t1.ClanTags = new string[] { "¡g" };
       t1.ClanTagOption = TagOption.Front;
 
       Team t2 = controller.CreateTeam("Manual");
       t2.Name = "Inkfected";
-      t2.Id = 18;
       t2.ClanTags = new string[] { "τイ" };
       t2.ClanTagOption = TagOption.Front;
 

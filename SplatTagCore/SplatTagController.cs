@@ -11,14 +11,14 @@ namespace SplatTagCore
   public class SplatTagController
   {
     private readonly ISplatTagDatabase database;
-    private SortedDictionary<uint, Player> players;
-    private SortedDictionary<long, Team> teams;
+    private Dictionary<Guid, Player> players;
+    private Dictionary<Guid, Team> teams;
 
     public SplatTagController(ISplatTagDatabase database)
     {
       this.database = database;
-      this.players = new SortedDictionary<uint, Player>();
-      this.teams = new SortedDictionary<long, Team>();
+      this.players = new Dictionary<Guid, Player>();
+      this.teams = new Dictionary<Guid, Team>();
     }
 
     public void Initialise()
@@ -41,8 +41,8 @@ namespace SplatTagCore
       }
       else
       {
-        players = new SortedDictionary<uint, Player>(loadedPlayers.ToDictionary(x => x.Id, x => x));
-        teams = new SortedDictionary<long, Team>(loadedTeams.ToDictionary(x => x.Id, x => x));
+        players = new Dictionary<Guid, Player>(loadedPlayers.ToDictionary(x => x.Id, x => x));
+        teams = new Dictionary<Guid, Team>(loadedTeams.ToDictionary(x => x.Id, x => x));
         var diff = DateTime.Now - start;
         Console.WriteLine("Database loaded successfully.");
         Console.WriteLine($"...Done in {diff.TotalSeconds} seconds.");
@@ -380,7 +380,7 @@ namespace SplatTagCore
 
             if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? t.SearchableName : t.Name;
+              string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.TransformString() : t.Name;
               if (regex.IsMatch(toMatch))
               {
                 relevance++;
@@ -442,7 +442,7 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
           {
-            string toMatch = (matchOptions.NearCharacterRecognition) ? t.SearchableName : t.Name;
+            string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.TransformString() : t.Name;
             if (toMatch.Equals(query, comparion))
             {
               relevance += 10; // Give it more relevance
@@ -493,7 +493,6 @@ namespace SplatTagCore
     {
       Player p = new Player
       {
-        Id = players.Keys.LastOrDefault() + 1,
         Sources = new string[] { source }
       };
       players.Add(p.Id, p);
@@ -504,7 +503,6 @@ namespace SplatTagCore
     {
       Team t = new Team
       {
-        Id = teams.Keys.LastOrDefault() + 1,
         Sources = new string[] { source }
       };
       teams.Add(t.Id, t);
@@ -514,7 +512,7 @@ namespace SplatTagCore
     /// <summary>
     /// Match a Player by its id.
     /// </summary>
-    public Player GetPlayerById(uint id)
+    public Player GetPlayerById(Guid id)
     {
       bool matched = players.TryGetValue(id, out Player found);
       return matched ? found : null;
@@ -522,15 +520,16 @@ namespace SplatTagCore
 
     /// <summary>
     /// Match a Team by its id.
+    /// Never returns null.
     /// </summary>
-    public Team GetTeamById(long id)
+    public Team GetTeamById(Guid id)
     {
       if (id == Team.NoTeam.Id)
       {
         return Team.NoTeam;
       }
       bool matched = teams.TryGetValue(id, out Team found);
-      return matched ? found : null;
+      return matched ? found : Team.UnlinkedTeam;
     }
 
     /// <summary>Launch the team's Twitter account if it exists.</summary>

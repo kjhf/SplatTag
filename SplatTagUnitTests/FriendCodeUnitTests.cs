@@ -56,16 +56,18 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void MatchFCStringWithLabel()
     {
-      FriendCode.TryParse("SW: 3456.7654.9876", out FriendCode friendCode);
+      bool success = FriendCode.TryParse("SW: 3456.7654.9876", out FriendCode friendCode);
       Assert.IsNotNull(friendCode);
+      Assert.IsTrue(success);
       Assert.AreEqual("3456-7654-9876", friendCode.ToString());
     }
 
     [TestMethod]
     public void MatchFCStringWithLabel2()
     {
-      FriendCode.TryParse("SW-1234-5678-4321", out FriendCode friendCode);
+      bool success = FriendCode.TryParse("SW-1234-5678-4321", out FriendCode friendCode);
       Assert.IsNotNull(friendCode);
+      Assert.IsTrue(success);
       Assert.AreEqual("1234-5678-4321", friendCode.ToString());
     }
 

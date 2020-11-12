@@ -17,9 +17,9 @@ namespace SplatTagCore
     public Team[] Teams { get; set; }
 
     [JsonProperty("AdditionalTeams", Required = Required.Always)]
-    public Dictionary<long, Team> AdditionalTeams { get; set; }
+    public Dictionary<Guid, Team> AdditionalTeams { get; set; }
 
     [JsonProperty("PlayersForTeams", Required = Required.Always)]
-    public Dictionary<long, (Player, bool)[]> PlayersForTeams { get; set; }
+    public Dictionary<Guid, (Player, bool)[]> PlayersForTeams { get; set; }
   }
 }

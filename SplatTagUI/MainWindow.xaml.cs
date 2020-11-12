@@ -34,12 +34,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.20";
+    public string Version => "Version 0.0.21";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.0.21: Stability, merging, and other bug fixes.\n" +
       "v0.0.20: Reworked matching to show higher relevance results first.\n" +
       "v0.0.19: Stat.ink compatibility.\n" +
       "v0.0.18: Better context menus and info now copies.\n" +
@@ -208,7 +209,7 @@ namespace SplatTagUI
       return new string[] { "(Unknown Players)" };
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
   public class SourcesToStringConverter : IValueConverter
@@ -237,7 +238,7 @@ namespace SplatTagUI
       return string.Join(separator, sources);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
   public class PlayerOldTeamsToStringConverter : IValueConverter
@@ -249,7 +250,7 @@ namespace SplatTagUI
       IEnumerable<Team> oldTeams;
       if (value is Player p)
       {
-        oldTeams = p.OldTeams.Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.NoTeam);
+        oldTeams = p.OldTeams.Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
       }
       else if (value is IEnumerable<Team> t)
       {
@@ -264,7 +265,7 @@ namespace SplatTagUI
       return string.Join(separator, oldTeams);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
   public class GetTeamBestPlayerDivConverter : IValueConverter
@@ -274,7 +275,7 @@ namespace SplatTagUI
       if (value is Team t)
       {
       }
-      else if (value is long teamId)
+      else if (value is Guid teamId)
       {
         t = MainWindow.splatTagController.GetTeamById(teamId);
       }
@@ -286,7 +287,7 @@ namespace SplatTagUI
       return t.GetBestTeamPlayerDivString(MainWindow.splatTagController);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
   public class Top500ToString : IValueConverter
@@ -298,9 +299,9 @@ namespace SplatTagUI
       {
         top500 = p.Top500;
       }
-      else if (value is bool)
+      else if (value is bool x)
       {
-        top500 = (bool)value;
+        top500 = x;
       }
       else
       {
@@ -309,7 +310,7 @@ namespace SplatTagUI
       return top500 ? "👑" : "";
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
   public class TeamIdToString : IValueConverter
@@ -320,7 +321,7 @@ namespace SplatTagUI
       {
         return t;
       }
-      else if (value is long teamId)
+      else if (value is Guid teamId)
       {
         return MainWindow.splatTagController.GetTeamById(teamId);
       }
@@ -330,7 +331,7 @@ namespace SplatTagUI
       }
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
   public class JoinStringsConverter : IValueConverter
@@ -361,7 +362,7 @@ namespace SplatTagUI
       }
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
   public class ValidStringToVisibleConverter : IValueConverter
@@ -377,7 +378,7 @@ namespace SplatTagUI
       return new BooleanToVisibilityConverter().Convert(isValid, targetType, parameter, culture);
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
   public class PlayerContextMenuConverter : IValueConverter
@@ -401,30 +402,27 @@ namespace SplatTagUI
           {
             fieldVal = b ? "✔" : "❌";
           }
+          else if (fieldVal is IEnumerable<Guid> ids)
+          {
+            int count = ids.Count();
+            if (count == 0)
+            {
+              continue;
+            }
+            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+
+            var oldTeams = ids.Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
+            fieldVal = string.Join(separator, oldTeams);
+          }
           else if (fieldVal is IEnumerable<long> longs)
           {
-            if (fieldName.Contains("teams", StringComparison.OrdinalIgnoreCase))
+            int count = longs.Count();
+            if (count == 0)
             {
-              int count = longs.Count();
-              if (count == 0)
-              {
-                continue;
-              }
-              string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
-
-              var oldTeams = longs.Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.NoTeam);
-              fieldVal = string.Join(separator, oldTeams);
+              continue;
             }
-            else
-            {
-              int count = longs.Count();
-              if (count == 0)
-              {
-                continue;
-              }
-              string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
-              fieldVal = string.Join(separator, longs);
-            }
+            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+            fieldVal = string.Join(separator, longs);
           }
           else if (fieldVal is IEnumerable<string> strings)
           {
@@ -453,6 +451,6 @@ namespace SplatTagUI
       return new Tuple<string, string>[0];
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 }

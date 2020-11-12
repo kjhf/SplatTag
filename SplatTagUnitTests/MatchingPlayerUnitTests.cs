@@ -37,7 +37,6 @@ namespace SplatTagUnitTests
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "Player 17"; // Purposefully mixed case
-      p1.Id = 17;
       database.expectedPlayers = new List<Player> { p1 };
 
       controller.LoadDatabase();
@@ -58,11 +57,9 @@ namespace SplatTagUnitTests
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "Player 17";
-      p1.Id = 17;
 
       Player p2 = controller.CreatePlayer("Manual");
       p2.Name = "Player 18";
-      p2.Id = 18;
 
       database.expectedPlayers = new List<Player> { p1, p2 };
 
@@ -84,7 +81,6 @@ namespace SplatTagUnitTests
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "BΛÐ SΛVΛGΞ";
-      p1.Id = 1337;
       database.expectedPlayers = new List<Player> { p1 };
 
       controller.LoadDatabase();
@@ -105,7 +101,6 @@ namespace SplatTagUnitTests
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "BΛÐ SΛVΛGΞ";
-      p1.Id = 1337;
       database.expectedPlayers = new List<Player> { p1 };
 
       controller.LoadDatabase();
@@ -126,7 +121,6 @@ namespace SplatTagUnitTests
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "BΛÐ SΛVΛGΞ";
-      p1.Id = 1337;
       database.expectedPlayers = new List<Player> { p1 };
 
       controller.LoadDatabase();
@@ -147,11 +141,9 @@ namespace SplatTagUnitTests
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "¡g Slate";
-      p1.Id = 1337;
 
       Player p2 = controller.CreatePlayer("Manual");
       p2.Name = "Slate*NBF";
-      p2.Id = 18;
 
       database.expectedPlayers = new List<Player> { p1, p2 };
 
@@ -174,11 +166,9 @@ namespace SplatTagUnitTests
 
       Player p1 = controller.CreatePlayer("Manual");
       p1.Name = "¡g Slate";
-      p1.Id = 1337;
 
       Player p2 = controller.CreatePlayer("Manual");
       p2.Name = "Slate*NBF";
-      p2.Id = 18;
 
       database.expectedPlayers = new List<Player> { p1, p2 };
 

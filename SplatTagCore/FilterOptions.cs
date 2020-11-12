@@ -10,46 +10,59 @@ namespace SplatTagCore
     /// <summary>
     /// The query can specify a name
     /// </summary>
-    Name = 1,
+    Name = 0x1,
 
     /// <summary>
     /// The query can specify a friend code
     /// </summary>
-    FriendCode = 2,
+    FriendCode = 0x2,
 
     /// <summary>
     /// The query can specify a Discord name
     /// </summary>
-    DiscordName = 4,
+    DiscordName = 0x4,
 
     /// <summary>
     /// The query can specify a Clan (Team) Tag
     /// </summary>
-    ClanTag = 8,
+    ClanTag = 0x8,
 
     /// <summary>
     /// The query can specify a tournament or other source
     /// </summary>
-    Sources = 16,
+    Sources = 0x10,
 
     /// <summary>
     /// The query can specify a Twitter handle
     /// </summary>
-    Twitter = 32,
+    Twitter = 0x20,
 
     /// <summary>
     /// The query can specify a Twitch handle
     /// </summary>
-    Twitch = 64,
+    Twitch = 0x40,
 
     /// <summary>
     /// The query can specify a Battlefy Slug
     /// </summary>
-    BattlefySlugs = 128,
+    BattlefySlugs = 0x80,
 
     /// <summary>
-    /// Default search
+    /// The query can specify a Battlefy username
     /// </summary>
-    Default = (Name | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs)
+    BattlefyUsername = 0x100,
+
+    /// <summary>
+    /// The query can specify a Discord id
+    /// </summary>
+    DiscordId = 0x200,
+
+    /// <summary> Default search </summary>
+    /// <remarks>Omits Sources</remarks>
+    Default = (Name | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs | BattlefyUsername | DiscordId),
+
+    /// <summary> Persistent search </summary>
+    /// <remarks>Omits Sources, Clan Tags, and Names</remarks>
+    Persistent = (FriendCode | DiscordName | Twitter | Twitch | BattlefySlugs | BattlefyUsername | DiscordId)
   }
 }

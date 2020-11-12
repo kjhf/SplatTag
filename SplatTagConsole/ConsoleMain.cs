@@ -64,8 +64,8 @@ namespace SplatTagConsole
               result.Message = "Nothing to search!";
               result.Players = new Player[0];
               result.Teams = new Team[0];
-              result.AdditionalTeams = new Dictionary<long, Team>();
-              result.PlayersForTeams = new Dictionary<long, (Player, bool)[]>();
+              result.AdditionalTeams = new Dictionary<Guid, Team>();
+              result.PlayersForTeams = new Dictionary<Guid, (Player, bool)[]>();
             }
             else
             {
@@ -101,7 +101,7 @@ namespace SplatTagConsole
               {
                 foreach ((Player, bool) tuple in pair.Value)
                 {
-                  foreach (long t in tuple.Item1.Teams)
+                  foreach (Guid t in tuple.Item1.Teams)
                   {
                     result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
                   }
@@ -227,7 +227,7 @@ namespace SplatTagConsole
 
                 case 1:
                 {
-                  p.Teams = new long[1] { matchedTeams[0].Id };
+                  p.Teams = new Guid[1] { matchedTeams[0].Id };
                   Console.WriteLine("Successfully matched.");
                   break;
                 }
@@ -235,7 +235,7 @@ namespace SplatTagConsole
                 default:
                 {
                   Console.WriteLine($"More than one team matched. Assuming the first one ({matchedTeams[0].Name}).");
-                  p.Teams = new long[1] { matchedTeams[0].Id };
+                  p.Teams = new Guid[1] { matchedTeams[0].Id };
                   break;
                 }
               }
