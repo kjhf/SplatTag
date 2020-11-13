@@ -135,7 +135,7 @@ namespace SplatTagCore
     public ICollection<Guid> Teams
     {
       get => teams.ToArray();
-      set => teams = new List<Guid>(value ?? new Guid[0]);
+      set => teams = value?.Distinct().ToList() ?? new List<Guid>();
     }
 
     [JsonIgnore]
@@ -362,7 +362,7 @@ namespace SplatTagCore
       // Merge the players.
       // Iterates the other stack in reverse order so older teams are pushed first
       // so the most recent end up first in the stack.
-      var reverseTeams = otherPlayer.teams.ToList();
+      var reverseTeams = otherPlayer.teams.Distinct().ToList();
       reverseTeams.Reverse();
       foreach (Guid t in reverseTeams)
       {
