@@ -193,6 +193,12 @@ namespace SplatTagCore
       return $"{Tag} {Name} ({Div})";
     }
 
+    /// <summary>
+    /// Calculates the <see cref="ClanTagOption"/> based on the tag and the example player name.
+    /// Does NOT set the tag.
+    /// </summary>
+    /// <param name="tag"></param>
+    /// <param name="examplePlayerName"></param>
     public void SetTagOption(string tag, string examplePlayerName)
     {
       string transformedTag = tag?.TransformString();
@@ -200,33 +206,28 @@ namespace SplatTagCore
       {
         // Nothing to do, no tag
       }
-      else if (examplePlayerName.StartsWith(transformedTag, StringComparison.OrdinalIgnoreCase) || examplePlayerName.StartsWith(tag, StringComparison.OrdinalIgnoreCase))
-      {
-        this.ClanTagOption = TagOption.Front;
-      }
-      else if (examplePlayerName.EndsWith(transformedTag, StringComparison.OrdinalIgnoreCase) || examplePlayerName.EndsWith(tag, StringComparison.OrdinalIgnoreCase))
-      {
-        // Tag is at the back.
-        this.ClanTagOption = TagOption.Back;
-      }
       else
       {
-        // If the tag has 2 or more characters, check 'surrounding' criteria which is take the
-        // first character of the tag and check if the captain's name begins with this character,
-        // then take the last character of the tag and check if the captain's name ends with this character.
-        // e.g. Tag: //, Captain's name: /captain/
-        if (tag.Length >= 2)
+        if (examplePlayerName.StartsWith(tag, StringComparison.OrdinalIgnoreCase) || examplePlayerName.StartsWith(transformedTag, StringComparison.OrdinalIgnoreCase))
         {
-          if (examplePlayerName.StartsWith(tag[0].ToString(), StringComparison.OrdinalIgnoreCase)
-          && examplePlayerName.EndsWith(tag[tag.Length - 1].ToString(), StringComparison.OrdinalIgnoreCase))
-          {
-            this.ClanTagOption = TagOption.Surrounding;
-          }
+          this.ClanTagOption = TagOption.Front;
         }
-        if (this.ClanTagOption != TagOption.Surrounding && transformedTag.Length >= 2)
+        else if (examplePlayerName.EndsWith(tag, StringComparison.OrdinalIgnoreCase) || examplePlayerName.EndsWith(transformedTag, StringComparison.OrdinalIgnoreCase))
         {
-          if (examplePlayerName.StartsWith(transformedTag[0].ToString(), StringComparison.OrdinalIgnoreCase)
-          && examplePlayerName.EndsWith(transformedTag[transformedTag.Length - 1].ToString(), StringComparison.OrdinalIgnoreCase))
+          // Tag is at the back.
+          this.ClanTagOption = TagOption.Back;
+        }
+
+        if (transformedTag.Length == 2)
+        {
+          char first = transformedTag[0];
+          char second = transformedTag[1];
+          // If the tag has 2 characters, check 'surrounding' criteria which is take the
+          // first character of the tag and check if the captain's name begins with this character,
+          // then take the last character of the tag and check if the captain's name ends with this character.
+          // e.g. Tag: //, Captain's name: /captain/
+          if (examplePlayerName.StartsWith(first.ToString(), StringComparison.OrdinalIgnoreCase)
+          && examplePlayerName.EndsWith(second.ToString(), StringComparison.OrdinalIgnoreCase))
           {
             this.ClanTagOption = TagOption.Surrounding;
           }

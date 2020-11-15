@@ -130,11 +130,29 @@
                         </ContextMenu>
                       </TextBlock.ContextMenu>
                     </TextBlock>
-                    <Button Grid.Column="1" Width="17" Height="17" HorizontalAlignment="Right" Click="TwitterButton_Click" DataContext="{Binding .}" Visibility="{Binding Path=Twitter, Converter={StaticResource validStringToVisibleConverter}}">
-                      <Button.Background>
-                        <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitter.png" />
-                      </Button.Background>
-                    </Button>
+                    <StackPanel Orientation="Horizontal"  Grid.Column="1">
+                      <Button Width="17" Height="17" HorizontalAlignment="Right" Click="TwitterButton_Click" DataContext="{Binding .}" Visibility="{Binding Path=Twitter, Converter={StaticResource validStringToVisibleConverter}}">
+                        <Button.Background>
+                          <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitter.png" />
+                        </Button.Background>
+                      </Button>
+                      <ItemsControl ItemsSource="{Binding BattlefySlugs}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Width="17" Height="17" HorizontalAlignment="Right" Click="BattlefyButton_Click">
+                              <Button.Background>
+                                <ImageBrush ImageSource="/SplatTagUI;component/Assets/battlefy.png" />
+                              </Button.Background>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>

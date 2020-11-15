@@ -2,6 +2,11 @@
 
 ## In-Dev Releases
 
+### v0.0.22
+* Added Battlefy Buttons to UI
+* Added rebuild option in Console
+* Various bug fixes (especially around tags and missing one letter from names!)
+
 ### v0.0.21
 * Reworked internal id structure
 * Reworked merging

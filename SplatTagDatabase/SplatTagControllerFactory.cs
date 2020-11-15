@@ -37,14 +37,7 @@ namespace SplatTagDatabase
 
         if (forceLoad || splatTagController.MatchPlayer(null).Length == 0)
         {
-          sourcesImporter = new GenericFilesImporter(saveFolder);
-          MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
-          splatTagController = new SplatTagController(splatTagDatabase);
-          Trace.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
-          splatTagController.Initialise();
-
-          // Now that we've initialised, take a snapshot of everything.
-          snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
+          (sourcesImporter, splatTagController) = GenerateNewDatabase(saveFolder, snapshotDatabase);
         }
       }
       catch (Exception ex)
@@ -55,6 +48,33 @@ namespace SplatTagDatabase
       }
 
       return (splatTagController, sourcesImporter);
+    }
+
+    /// <summary>
+    /// Generate a new Database. Optionally save.
+    /// </summary>
+    /// <param name="saveFolder">The working directory of the Controller. Set to null for default handling.</param>
+    /// <param name="snapshotDatabase">The Snapshot Database. Set to null for default handling.</param>
+    /// <returns>The Generic Importer and the Controller.</returns>
+    /// <exception cref="Exception">This method may throw based on the Initialisation method.</exception>
+    public static (GenericFilesImporter, SplatTagController) GenerateNewDatabase(string saveFolder = null, SplatTagJsonSnapshotDatabase snapshotDatabase = null)
+    {
+      if (saveFolder == null)
+      {
+        saveFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
+      }
+      Directory.CreateDirectory(saveFolder);
+
+      GenericFilesImporter sourcesImporter = new GenericFilesImporter(saveFolder);
+      MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
+      SplatTagController splatTagController = new SplatTagController(splatTagDatabase);
+      Trace.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
+      splatTagController.Initialise();
+
+      // Now that we've initialised, take a snapshot of everything.
+      (snapshotDatabase ?? (new SplatTagJsonSnapshotDatabase(saveFolder)))
+        .Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
+      return (sourcesImporter, splatTagController);
     }
   }
 }

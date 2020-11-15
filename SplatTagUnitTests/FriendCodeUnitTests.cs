@@ -114,5 +114,32 @@ namespace SplatTagUnitTests
       Assert.AreEqual("1234-5678-9012", friendCode.ToString());
       Assert.AreEqual("My name", stripped);
     }
+
+    [TestMethod]
+    public void NegativeTestStripFCFromName()
+    {
+      var (friendCode, stripped) = FriendCode.ParseAndStripFriendCode("SomeSquid0123");
+      Assert.IsNull(friendCode);
+      Assert.IsNotNull(stripped);
+      Assert.AreEqual("SomeSquid0123", stripped);
+    }
+
+    [TestMethod]
+    public void NegativeTestStripFCFromName2()
+    {
+      var (friendCode, stripped) = FriendCode.ParseAndStripFriendCode("0123SomeSquid4567");
+      Assert.IsNull(friendCode);
+      Assert.IsNotNull(stripped);
+      Assert.AreEqual("0123SomeSquid4567", stripped);
+    }
+
+    [TestMethod]
+    public void NegativeTestStripFCFromName3()
+    {
+      var (friendCode, stripped) = FriendCode.ParseAndStripFriendCode("Ludic--<");
+      Assert.IsNull(friendCode);
+      Assert.IsNotNull(stripped);
+      Assert.AreEqual("Ludic--<", stripped);
+    }
   }
 }

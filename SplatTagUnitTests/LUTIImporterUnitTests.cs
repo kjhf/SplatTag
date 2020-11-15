@@ -26,9 +26,9 @@ namespace SplatTagUnitTests
     ""Tag"": ""ex"",
     ""Team Captain"": ""Cap 1 ex"",
     ""Player 2"": ""P2 ex"",
-    ""Player 3"": ""P3 ex"",
-    ""Player 4"": ""P4 ex"",
-    ""Player 5"": ""Sub ex"",
+    ""Player 3"": ""TagAgainstNameex "",
+    ""Player 4"": "" P4 ex"",
+    ""Player 5"": "" SubNoTag "",
     ""Player 6"": """",
     ""Player 7"": """",
     ""Player 8"": """",
@@ -41,10 +41,10 @@ namespace SplatTagUnitTests
     ""Tag"": ""AT"",
     ""Team Captain"": ""AT CAP"",
     ""Player 2"": ""AT A2"",
-    ""Player 3"": ""AT A3"",
-    ""Player 4"": ""AT A4"",
-    ""Player 5"": ""AT Alpha"",
-    ""Player 6"": ""AT Beta"",
+    ""Player 3"": ""AT A3 "",
+    ""Player 4"": "" AT A4"",
+    ""Player 5"": "" ATAlpha "",
+    ""Player 6"": ""AT  Bravo"",
     ""Player 7"": ""AT Charlie"",
     ""Player 8"": ""AT Delta"",
     ""Player 9"": ""AT Echo"",
@@ -55,8 +55,8 @@ namespace SplatTagUnitTests
     ""Division"": ""D"",
     ""Tag"": ""//"",
     ""Team Captain"": ""/Oops/"",
-    ""Player 2"": ""/We/"",
-    ""Player 3"": ""/Dropped/"",
+    ""Player 2"": ""/ We/"",
+    ""Player 3"": ""/ Dropped /"",
     ""Player 4"": """",
     ""Player 5"": """",
     ""Player 6"": """",
@@ -89,12 +89,27 @@ namespace SplatTagUnitTests
 
         Assert.AreEqual("Cap 1", loadedPlayers[0].Name); // Assert name was loaded without the tag.
         Assert.AreEqual("P2", loadedPlayers[1].Name); // Assert name was loaded without the tag.
-        Assert.IsTrue(loadedPlayers[1].CurrentTeam != Team.NoTeam.Id, "Current team not set"); // Test Current Team is set
-
+        Assert.AreEqual("TagAgainstName", loadedPlayers[2].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("P4", loadedPlayers[3].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("SubNoTag", loadedPlayers[4].Name); // Assert name was loaded.
         Assert.AreEqual("CAP", loadedPlayers[5].Name); // Assert name was loaded without the tag.
         Assert.AreEqual("A2", loadedPlayers[6].Name); // Assert name was loaded without the tag.
-        Assert.IsTrue(loadedPlayers[6].CurrentTeam != Team.NoTeam.Id, "Current team not set"); // Test Current Team is set
-        Assert.IsTrue(loadedPlayers[15].CurrentTeam != Team.NoTeam.Id, "Current team not set"); // Test Current Team is set
+        Assert.AreEqual("A3", loadedPlayers[7].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("A4", loadedPlayers[8].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("Alpha", loadedPlayers[9].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("Bravo", loadedPlayers[10].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("Charlie", loadedPlayers[11].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("Delta", loadedPlayers[12].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("Echo", loadedPlayers[13].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("Foxtrot", loadedPlayers[14].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("Oops", loadedPlayers[15].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("We", loadedPlayers[16].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual("Dropped", loadedPlayers[17].Name); // Assert name was loaded without the tag.
+
+        for (int i = 0; i < loadedPlayers.Length; i++)
+        {
+          Assert.IsTrue(loadedPlayers[i].CurrentTeam != Team.NoTeam.Id, $"Current team not set for {loadedPlayers[i].Name} ({i})"); // Test Current Team is set
+        }
       }
       finally
       {

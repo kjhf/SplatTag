@@ -174,16 +174,15 @@ namespace SplatTagDatabase.Importers
         }
 
         // Attempt to resolve the team tag
-        // TODO should be space or symbol otherwise rarely you'll match actual characters.
-
+        string source = Path.GetFileNameWithoutExtension(jsonFile);
         Team newTeam = new Team
         {
           BattlefyPersistentTeamId = row.BattlefyPersistentTeamId,
-          //ClanTags = tag.Length == 0 ? new string[0] : new string[1] { tag },
-          //ClanTagOption = tag.Length == 0 ? TagOption.Unknown : TagOption.Front,
+          // ClanTags = tag.Length == 0 ? new string[0] : new string[1] { tag },
+          // ClanTagOption = tag.Length == 0 ? TagOption.Unknown : TagOption.Front,
           Div = new Division(),
           Name = row.TeamName,
-          Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) }
+          Sources = new string[] { source }
         };
 
         // If we already have a team with this id then merge it.
@@ -234,7 +233,7 @@ namespace SplatTagDatabase.Importers
           {
             CurrentTeam = newTeam.Id,
             Names = new string[] { p.Name, p.BattlefyName },
-            Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) },
+            Sources = new string[] { source },
             FriendCode = playerFc,
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
             BattlefySlugs = new[] { p.BattlefyUserSlug },

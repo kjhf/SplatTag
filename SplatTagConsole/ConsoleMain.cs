@@ -41,6 +41,7 @@ namespace SplatTagConsole
         var exactCharacterRecognitionOption = new Option<bool>("--exactCharacterRecognition", () => false, "Exact Character Recognition?");
         var queryIsRegexOption = new Option<bool>("--queryIsRegex", () => false, "Exact Character Recognition?");
         var keepOpenOption = new Option<bool>("--keepOpen", () => false, "Keep the console open?");
+        var rebuildDatabaseOption = new Option<bool>("--rebuild", () => false, "Rebuilds the database");
         var queryArgument = new Argument<string>("query", "The team, tag, or player query");
         var rootCommand = new RootCommand
         {
@@ -48,18 +49,29 @@ namespace SplatTagConsole
           exactCaseOption,
           exactCharacterRecognitionOption,
           queryIsRegexOption,
-          keepOpenOption
+          rebuildDatabaseOption,
+          keepOpenOption,
         };
 
         rootCommand.Handler = CommandHandler.Create(
-          (string query, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, bool _) =>
+          // Note that the parameter names must match the --option name
+          (string query, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, bool rebuild, bool _) =>
           {
             CommandLineResult result = new CommandLineResult
             {
               Message = "OK"
             };
 
-            if (string.IsNullOrWhiteSpace(query))
+            if (rebuild)
+            {
+              SplatTagControllerFactory.GenerateNewDatabase();
+              result.Message = "Database rebuilt!";
+              result.Players = new Player[0];
+              result.Teams = new Team[0];
+              result.AdditionalTeams = new Dictionary<Guid, Team>();
+              result.PlayersForTeams = new Dictionary<Guid, (Player, bool)[]>();
+            }
+            else if (string.IsNullOrWhiteSpace(query))
             {
               result.Message = "Nothing to search!";
               result.Players = new Player[0];

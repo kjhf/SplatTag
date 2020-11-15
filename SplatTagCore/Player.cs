@@ -223,7 +223,7 @@ namespace SplatTagCore
     /// The Sendou database Id of the player.
     /// Null by default.
     /// </summary>
-    public ulong? SendouId { get; set; }
+    public Guid? SendouId { get; set; }
 
     [JsonProperty("SplatnetId", Required = Required.Default)]
     /// <summary>

@@ -450,5 +450,73 @@ namespace SplatTagDatabase
 
       return false;
     }
+
+    /// <summary>
+    /// Adds a new player to the players list with respect to their team and its tag.
+    /// Returns the player that was added (or null).
+    /// </summary>
+    /// <param name="playerName">The player's name on the roster</param>
+    /// <param name="teamTag">The team's tag</param>
+    /// <param name="transformedTag"></param>
+    /// <param name="newTeam"></param>
+    /// <param name="players"></param>
+    /// <param name="source"></param>
+    public static Player AddPlayerFromTag(string playerName, string teamTag, string transformedTag, Team newTeam, List<Player> players, string source)
+    {
+      if (!string.IsNullOrWhiteSpace(playerName))
+      {
+        playerName = playerName.Trim();
+        switch (newTeam.ClanTagOption)
+        {
+          case TagOption.Front:
+            if (playerName.StartsWith(teamTag, StringComparison.OrdinalIgnoreCase))
+            {
+              playerName = playerName.Substring(teamTag.Length).Trim();
+            }
+            else if (playerName.StartsWith(transformedTag, StringComparison.OrdinalIgnoreCase))
+            {
+              playerName = playerName.Substring(transformedTag.Length).Trim();
+            }
+            break;
+
+          case TagOption.Back:
+            if (playerName.EndsWith(teamTag, StringComparison.OrdinalIgnoreCase))
+            {
+              playerName = playerName.Substring(0, playerName.Length - teamTag.Length).Trim();
+            }
+            else if (playerName.EndsWith(transformedTag, StringComparison.OrdinalIgnoreCase))
+            {
+              playerName = playerName.Substring(0, playerName.Length - transformedTag.Length).Trim();
+            }
+            break;
+
+          case TagOption.Surrounding:
+            if (playerName.StartsWith(teamTag[0].ToString(), StringComparison.OrdinalIgnoreCase) && playerName.EndsWith(teamTag[1].ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+              playerName = playerName.Substring(1, playerName.Length - 2).Trim();
+            }
+            else if (playerName.StartsWith(transformedTag[0].ToString(), StringComparison.OrdinalIgnoreCase) && playerName.EndsWith(transformedTag[1].ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+              playerName = playerName.Substring(1, playerName.Length - 2).Trim();
+            }
+            break;
+
+          default:
+            // Just leave it.
+            break;
+        }
+
+        var p = new Player
+        {
+          CurrentTeam = newTeam.Id,
+          Name = playerName,
+          Sources = new string[] { source }
+        };
+        players.Add(p);
+        return p;
+      }
+
+      return null;
+    }
   }
 }

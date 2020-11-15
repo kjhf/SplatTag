@@ -73,7 +73,7 @@ namespace SplatTagCore
       fcMatch = TWELVE_DIGITS_REGEX.Match(trimmed);
       if (fcMatch.Captures.Count != 1)
       {
-        return (null, trimmed);
+        return (null, value);
       }
       else
       {

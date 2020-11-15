@@ -34,12 +34,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.21";
+    public string Version => "Version 0.0.21.1";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.0.22: More merging bug fixes. UI now has Battlefy buttons if the slug(s) are known.\n" +
       "v0.0.21: Stability, merging, and other bug fixes.\n" +
       "v0.0.20: Reworked matching to show higher relevance results first.\n" +
       "v0.0.19: Stat.ink compatibility.\n" +
@@ -183,6 +184,23 @@ namespace SplatTagUI
       else if (b.DataContext is Player p)
       {
         splatTagController.TryLaunchTwitter(p);
+      }
+      else
+      {
+        throw new ArgumentException("Unknown Twitter Button DataContext binding: " + b.DataContext);
+      }
+    }
+
+    private void BattlefyButton_Click(object sender, RoutedEventArgs e)
+    {
+      FrameworkElement b = (FrameworkElement)sender;
+      if (b?.DataContext == null)
+      {
+        throw new ArgumentException("Unknown Twitter Button DataContext binding, it is not bound (null).");
+      }
+      else if (b.DataContext is string slug)
+      {
+        splatTagController.TryLaunchAddress("https://battlefy.com/users/" + slug);
       }
       else
       {
@@ -369,12 +387,20 @@ namespace SplatTagUI
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-      bool isValid = !string.IsNullOrWhiteSpace(value?.ToString());
-      if (value is IEnumerable<string> collection)
+      bool isValid;
+
+      if (value == null)
+      {
+        isValid = false;
+      }
+      else if (value is IEnumerable<string> collection)
       {
         isValid = collection.Any(s => !string.IsNullOrWhiteSpace(s?.ToString()));
       }
-
+      else
+      {
+        isValid = !string.IsNullOrWhiteSpace(value?.ToString());
+      }
       return new BooleanToVisibilityConverter().Convert(isValid, targetType, parameter, culture);
     }
 

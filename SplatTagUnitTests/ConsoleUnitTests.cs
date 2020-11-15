@@ -1,11 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagConsole;
-using SplatTagCore;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SplatTagUnitTests
@@ -69,6 +65,33 @@ namespace SplatTagUnitTests
         Assert.IsTrue(actual.Contains("kjhf1273"));
         Assert.IsTrue(actual.Contains("Inkology"));
         Assert.IsTrue(actual.Contains("Revitalize"));
+      }
+    }
+
+    /// <summary>
+    /// Verify that the console handles case sensitive.
+    /// </summary>
+    [TestMethod]
+    public void ConsoleCaseSensitiveQuery()
+    {
+      const int millisecondsDelay = 5000;
+      using (StringWriter sw = new StringWriter())
+      {
+        Console.SetOut(sw);
+
+        var timeoutTask = Task.Delay(millisecondsDelay);
+        var mainTask = Task.Run(() =>
+        {
+          return ConsoleMain.Main("slAte --exactCase".Split(" "));
+        });
+        Task.WaitAny(timeoutTask, mainTask);
+        Console.SetOut(consoleOut);
+        string actual = sw.ToString();
+        Console.WriteLine(actual);
+
+        // Should NOT contain the result because the name is "Slate"
+        Assert.IsFalse(actual.Contains("kjhf1273"));
+        Assert.IsTrue(actual.Contains("OK"));
       }
     }
 

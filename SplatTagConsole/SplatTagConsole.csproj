@@ -13,5 +13,4 @@
     <ProjectReference Include="..\SplatTagCore\SplatTagCore.csproj" />
     <ProjectReference Include="..\SplatTagDatabase\SplatTagDatabase.csproj" />
   </ItemGroup>
-
 </Project>

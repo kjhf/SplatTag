@@ -2,6 +2,10 @@
   "profiles": {
     "SplatTagConsole": {
       "commandName": "Project"
+    },
+    "RebuildDatabase": {
+      "commandName": "Project",
+      "commandLineArgs": "--exactCase --rebuild \".\""
     }
   }
 }

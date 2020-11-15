@@ -1,12 +1,9 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 
 namespace SplatTagDatabase.Importers
 {
@@ -50,9 +47,9 @@ namespace SplatTagDatabase.Importers
           player.Name = name;
         }
         var sendouId = userToken["id"].Value<string>();
-        if (sendouId != null && ulong.TryParse(sendouId, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out ulong id))
+        if (sendouId != null && Guid.TryParse(sendouId, out Guid guid))
         {
-          player.SendouId = id;
+          player.SendouId = guid;
         }
         var country = userToken["country"].Value<string>();
         if (name != null)
@@ -74,7 +71,7 @@ namespace SplatTagDatabase.Importers
         {
           player.DiscordName = $"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}";
           var discordId = discord["id"].Value<string>();
-          if (discordId != null && ulong.TryParse(discordId, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out ulong parsedId))
+          if (discordId != null && ulong.TryParse(discordId, out ulong parsedId))
           {
             player.DiscordId = parsedId;
           }

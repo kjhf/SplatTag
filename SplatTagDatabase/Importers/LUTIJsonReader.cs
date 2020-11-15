@@ -69,48 +69,6 @@ namespace SplatTagDatabase.Importers
 
     public (Player[], Team[]) Load()
     {
-      void CheckAndAddPlayer(string tryPlayerName, string _tag, string _transformedTag, Team _newTeam, List<Player> _players)
-      {
-        if (!string.IsNullOrWhiteSpace(tryPlayerName))
-        {
-          switch (_newTeam.ClanTagOption)
-          {
-            case TagOption.Front:
-              if (tryPlayerName.StartsWith(_tag))
-              {
-                tryPlayerName = tryPlayerName.Substring(_tag.Length).Trim();
-              }
-              else if (tryPlayerName.StartsWith(_transformedTag))
-              {
-                tryPlayerName = tryPlayerName.Substring(_transformedTag.Length).Trim();
-              }
-              break;
-
-            case TagOption.Back:
-              if (tryPlayerName.EndsWith(_tag))
-              {
-                tryPlayerName = tryPlayerName.Substring(0, tryPlayerName.Length - _tag.Length - 1).Trim();
-              }
-              else if (tryPlayerName.EndsWith(_transformedTag))
-              {
-                tryPlayerName = tryPlayerName.Substring(0, tryPlayerName.Length - _transformedTag.Length - 1).Trim();
-              }
-              break;
-
-            default:
-              // Just leave it.
-              break;
-          }
-
-          _players.Add(new Player
-          {
-            CurrentTeam = _newTeam.Id,
-            Name = tryPlayerName,
-            Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) }
-          });
-        }
-      }
-
       if (jsonFile == null)
       {
         throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
@@ -143,16 +101,17 @@ namespace SplatTagDatabase.Importers
         string transformedTag = row.Tag?.TransformString();
 
         teams.Add(newTeam);
-        CheckAndAddPlayer(row.TeamCaptain, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player2, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player3, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player4, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player5, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player6, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player7, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player8, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player9, row.Tag, transformedTag, newTeam, players);
-        CheckAndAddPlayer(row.Player10, row.Tag, transformedTag, newTeam, players);
+        string source = Path.GetFileNameWithoutExtension(jsonFile);
+        Merger.AddPlayerFromTag(row.TeamCaptain, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player2, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player3, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player4, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player5, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player6, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player7, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player8, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player9, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player10, row.Tag, transformedTag, newTeam, players, source);
       }
 
       return (players.ToArray(), teams.ToArray());
