@@ -8,6 +8,11 @@ namespace SplatTagCore
   [Serializable]
   public class Team
   {
+    /// <summary>
+    /// Displayed string for an unknown team.
+    /// </summary>
+    public const string UNKNOWN_TEAM = "(Unnamed Team)";
+
     public static readonly Team NoTeam = new Team()
     {
       ClanTagOption = TagOption.Variable,
@@ -31,13 +36,35 @@ namespace SplatTagCore
     /// </summary>
     private Stack<string> clanTags;
 
-    private string name;
-    private string searchableName;
+    /// <summary>
+    /// Back-store for the names of this team. The first element is the current name.
+    /// </summary>
+    private List<string> names = new List<string>();
+
+    /// <summary>
+    /// Back-store for the transformed names of this team.
+    /// </summary>
+    /// <remarks>
+    /// Though a HashSet may seem more performant, for collections with
+    /// a small number of elements (under 20), List is actually better
+    /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
+    /// </remarks>
+    private List<string> transformedNames = new List<string>();
 
     /// <summary>
     /// Back-store for the sources of this team.
     /// </summary>
     private List<string> sources = new List<string>();
+
+    /// <summary>
+    /// Back-store for the persistent ids of this team.
+    /// </summary>
+    /// <remarks>
+    /// Though a HashSet may seem more performant, for collections with
+    /// a small number of elements (under 20), List is actually better
+    /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
+    /// </remarks>
+    private List<string> battlefyPersistentTeamIds = new List<string>();
 
     [JsonProperty("ClanTagOption", Required = Required.Default)]
     /// <summary>
@@ -72,34 +99,125 @@ namespace SplatTagCore
     /// The Battlefy Persistent Id of the team (or null if not set).
     /// Should be a hex string but may not be a ulong.
     /// </summary>
-    public string BattlefyPersistentTeamId { get; set; }
+    public string BattlefyPersistentTeamId
+    {
+      get => battlefyPersistentTeamIds.Count > 0 ? battlefyPersistentTeamIds[0] : null;
+      set
+      {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+          if (battlefyPersistentTeamIds.Count == 0)
+          {
+            battlefyPersistentTeamIds.Add(value);
+          }
+          else if (battlefyPersistentTeamIds[0].Equals(value))
+          {
+            // Nothing to do.
+          }
+          else
+          {
+            battlefyPersistentTeamIds.Remove(value);
+            battlefyPersistentTeamIds.Insert(0, value);
+          }
+        }
+      }
+    }
 
-    [JsonProperty("Name", Required = Required.Always)]
+    [JsonProperty("BattlefyPersistentTeamIds", Required = Required.Default)]
+    /// <summary>
+    /// The known Battlefy Persistent Ids of the team.
+    /// </summary>
+    public IList<string> BattlefyPersistentTeamIds
+    {
+      get => battlefyPersistentTeamIds.ToArray();
+      set
+      {
+        battlefyPersistentTeamIds = new List<string>();
+        foreach (string s in value)
+        {
+          if (!string.IsNullOrWhiteSpace(s) && !battlefyPersistentTeamIds.Contains(s))
+          {
+            battlefyPersistentTeamIds.Add(s);
+          }
+        }
+      }
+    }
+
+    [JsonProperty("Names", Required = Required.Default)]
+    /// <summary>
+    /// The names this team is known by
+    /// </summary>
+    public IEnumerable<string> Names
+    {
+      get => names.ToArray();
+      set
+      {
+        names = new List<string>();
+        foreach (string s in value)
+        {
+          if (!string.IsNullOrWhiteSpace(s) && !names.Contains(s))
+          {
+            names.Add(s);
+          }
+        }
+        transformedNames = null; // Invalidate searchable names.
+      }
+    }
+
+    [JsonIgnore]
+    /// <summary>
+    /// The names this team is known by transformed into searchable query.
+    /// </summary>
+    public IReadOnlyCollection<string> TransformedNames
+    {
+      get
+      {
+        if (transformedNames == null)
+        {
+          transformedNames = new List<string>();
+          foreach (var name in names)
+          {
+            transformedNames.Add(name.Replace(" ", "").TransformString().ToLowerInvariant());
+          }
+        }
+        return transformedNames;
+      }
+    }
+
+    [JsonProperty("Name", Required = Required.Default)]
     /// <summary>
     /// The name of the team
     /// </summary>
     public string Name
     {
-      get => name;
+      get => names.Count > 0 ? names[0] : UNKNOWN_TEAM;
       set
       {
-        if (string.IsNullOrWhiteSpace(value)) return;
-
-        name = value;
-        searchableName = null; // Invalidate searchable name.
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+          if (names.Count == 0)
+          {
+            names.Add(value);
+          }
+          else if (names[0].Equals(value))
+          {
+            // Nothing to do.
+          }
+          else
+          {
+            names.Remove(value);
+            names.Insert(0, value);
+          }
+          transformedNames = null;
+        }
       }
     }
-
-    /// <summary>
-    /// Get the searchable name for this team (i.e. the transformed lower-case team name).
-    /// </summary>
-    public string SearchableName => searchableName ?? (searchableName = Name.Replace(" ", "").TransformString().ToLowerInvariant());
 
     [JsonProperty("Sources", Required = Required.Default)]
     /// <summary>
     /// Get or Set the current sources that make up this Player instance.
     /// </summary>
-    public string[] Sources
+    public IList<string> Sources
     {
       get => sources.ToArray();
       set
@@ -135,51 +253,125 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Filter all players to return only those in this team.
+    /// </summary>
+    public IEnumerable<Player> GetPlayers(IEnumerable<Player> allPlayers)
+    {
+      return allPlayers.Where(p => p.Teams.Contains(this.Id));
+    }
+
+    /// <summary>
     /// Merge this team with another (newer) team instance
     /// </summary>
-    /// <param name="otherTeam"></param>
-    public void Merge(Team otherTeam)
+    /// <param name="newerTeam"></param>
+    public void Merge(Team newerTeam)
     {
       // Merge the tags.
-      // Iterates the other stack in reverse order so older tags are pushed first
-      // so the most recent end up first in the stack.
-      foreach (string tag in otherTeam.clanTags.Reverse())
+      if (clanTags.Count == 0)
       {
-        if (string.IsNullOrWhiteSpace(tag)) continue;
-
-        string foundTag = this.clanTags.FirstOrDefault(teamTags => teamTags.Equals(tag, StringComparison.OrdinalIgnoreCase));
-
-        if (foundTag == null)
+        ClanTags = newerTeam.ClanTags;
+      }
+      else
+      {
+        // Iterates the other stack in reverse order so older tags are pushed first
+        // so the most recent end up first in the stack.
+        foreach (string tag in newerTeam.clanTags.Reverse())
         {
-          clanTags.Push(tag);
+          if (string.IsNullOrWhiteSpace(tag)) continue;
 
-          // The tag has changed, update the tag option.
-          this.ClanTagOption = otherTeam.ClanTagOption;
+          string foundTag = this.clanTags.FirstOrDefault(teamTags => teamTags.Equals(tag, StringComparison.OrdinalIgnoreCase));
+
+          if (foundTag == null)
+          {
+            clanTags.Push(tag);
+
+            // The tag has changed, update the tag option.
+            this.ClanTagOption = newerTeam.ClanTagOption;
+          }
         }
       }
 
       // Merge Twitter
-      if (!string.IsNullOrWhiteSpace(otherTeam.Twitter))
+      if (!string.IsNullOrWhiteSpace(newerTeam.Twitter))
       {
-        this.Twitter = otherTeam.Twitter;
+        this.Twitter = newerTeam.Twitter;
       }
 
       // Update the div if the other div is known.
-      if (otherTeam.Div.Value != Division.UNKNOWN)
+      if (newerTeam.Div.Value != Division.UNKNOWN)
       {
-        this.Div = otherTeam.Div;
+        this.Div = newerTeam.Div;
+      }
+
+      // Merge the team's name(s).
+      if (names.Count == 0)
+      {
+        Names = newerTeam.names;
+      }
+      else
+      {
+        // Iterates the other stack in reverse order so older names are pushed first
+        // so the most recent end up first in the stack.
+        var reverseTeamNames = newerTeam.names.ToList();
+        reverseTeamNames.Reverse();
+        foreach (string n in reverseTeamNames.Where(s => !string.IsNullOrWhiteSpace(s)))
+        {
+          string foundName = this.names.Find(teamNames => teamNames.Equals(n, StringComparison.OrdinalIgnoreCase));
+
+          if (foundName == null)
+          {
+            names.Insert(0, n);
+          }
+          else
+          {
+            names.Remove(foundName);
+            names.Insert(0, n);
+          }
+        }
+      }
+
+      // Merge the team's persistent battlefy id(s).
+      if (battlefyPersistentTeamIds.Count == 0)
+      {
+        BattlefyPersistentTeamIds = newerTeam.battlefyPersistentTeamIds;
+      }
+      else
+      {
+        // Iterates the other stack in reverse order so older names are pushed first
+        // so the most recent end up first in the stack.
+        var reverseBattlefyIds = newerTeam.BattlefyPersistentTeamIds.ToList();
+        reverseBattlefyIds.Reverse();
+        foreach (string n in reverseBattlefyIds.Where(s => !string.IsNullOrWhiteSpace(s)))
+        {
+          string foundId = this.battlefyPersistentTeamIds.Find(ids => ids.Equals(n, StringComparison.OrdinalIgnoreCase));
+
+          if (foundId == null)
+          {
+            battlefyPersistentTeamIds.Insert(0, n);
+          }
+          else
+          {
+            battlefyPersistentTeamIds.Remove(foundId);
+            battlefyPersistentTeamIds.Insert(0, n);
+          }
+        }
       }
 
       // Merge the sources.
-      foreach (string source in otherTeam.Sources)
+      if (sources.Count == 0)
       {
-        if (string.IsNullOrWhiteSpace(source)) continue;
-
-        string foundSource = this.sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
-
-        if (foundSource == null)
+        Sources = newerTeam.sources;
+      }
+      else
+      {
+        foreach (string source in newerTeam.Sources.Where(s => !string.IsNullOrWhiteSpace(s)))
         {
-          sources.Add(source);
+          string foundSource = this.sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
+
+          if (foundSource == null)
+          {
+            sources.Add(source);
+          }
         }
       }
     }

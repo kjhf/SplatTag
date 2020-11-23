@@ -10,7 +10,7 @@ namespace SplatTagCore
   /// For LUTI, X is div 0. X+ is div -1.
   /// Higher divs are LOWER in number.
   /// </summary>
-  public class Division
+  public class Division : IComparable<Division>
   {
     public const int UNKNOWN = int.MaxValue;
     public const int X = 0;
@@ -22,6 +22,44 @@ namespace SplatTagCore
 
     [JsonProperty("Value", Required = Required.Always)]
     public readonly int Value = UNKNOWN;
+
+    /// <summary>
+    /// Get a LUTI-equivalent value representing <see cref="Value"/>.
+    /// </summary>
+    public int NormalisedValue
+    {
+      get
+      {
+        switch (DivType)
+        {
+          case DivType.DSB:
+          {
+            /*
+             *  DSB | LUTI
+                ----------
+                D1  | D1-D3
+                D2  | D4-D7
+                D3-8| D8
+             */
+            switch (Value)
+            {
+              case 1: return 2;
+              case 2: return 5;
+              default: return 8;
+            }
+          }
+
+          case DivType.EBTV:
+            return Value + 2;
+
+          case DivType.LUTI:
+            return Value;
+
+          default:
+            return UNKNOWN;
+        }
+      }
+    }
 
     [JsonConstructor]
     public Division(int value = UNKNOWN, DivType divType = DivType.Unknown)
@@ -85,6 +123,56 @@ namespace SplatTagCore
 
     [JsonIgnore]
     public string Name => ToString();
+
+    /// <summary>
+    /// Compare one Div to another. Remember, lower is better!
+    /// </summary>
+    public int CompareTo(Division other)
+    {
+      return NormalisedValue.CompareTo(other.NormalisedValue);
+    }
+
+    /// <summary>
+    /// Compare left division is on the same level as right.
+    /// </summary>
+    public static bool operator ==(Division left, Division right)
+    {
+      return left.CompareTo(right) == 0;
+    }
+
+    /// <summary>
+    /// Compare left is not on the same level as right.
+    /// </summary>
+    public static bool operator !=(Division left, Division right)
+    {
+      return left.CompareTo(right) != 0;
+    }
+
+    /// <summary>
+    /// Compare left is higher (worse) than right.
+    /// </summary>
+    public static bool operator >(Division left, Division right)
+    {
+      return left.CompareTo(right) == 1;
+    }
+
+    /// <summary>
+    /// Compare left is lower (better) than right.
+    /// </summary>
+    public static bool operator <(Division left, Division right)
+    {
+      return left.CompareTo(right) == -1;
+    }
+
+    public static bool operator >=(Division left, Division right)
+    {
+      return left.CompareTo(right) >= 0;
+    }
+
+    public static bool operator <=(Division left, Division right)
+    {
+      return left.CompareTo(right) <= 0;
+    }
 
     public override string ToString()
     {

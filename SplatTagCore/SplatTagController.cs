@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SplatTagUnitTests")]
 
@@ -11,14 +12,17 @@ namespace SplatTagCore
   public class SplatTagController
   {
     private readonly ISplatTagDatabase database;
-    private Dictionary<Guid, Player> players;
-    private Dictionary<Guid, Team> teams;
+    private Player[] players;
+    private Team[] teams;
+    private Task cachingTask;
+    private readonly Dictionary<Team, (Player, bool)[]> playersForTeam;
 
     public SplatTagController(ISplatTagDatabase database)
     {
       this.database = database;
-      this.players = new Dictionary<Guid, Player>();
-      this.teams = new Dictionary<Guid, Team>();
+      this.players = new Player[0];
+      this.teams = new Team[0];
+      this.playersForTeam = new Dictionary<Team, (Player, bool)[]>();
     }
 
     public void Initialise()
@@ -35,14 +39,28 @@ namespace SplatTagCore
       {
         Console.Error.WriteLine("ERROR: Failed to load.");
       }
-      else if (loadedPlayers.Length == 0)
+      else if (loadedPlayers.Length == 0 && loadedTeams.Length == 0)
       {
         Console.WriteLine("... nothing loaded.");
       }
       else
       {
-        players = new Dictionary<Guid, Player>(loadedPlayers.ToDictionary(x => x.Id, x => x));
-        teams = new Dictionary<Guid, Team>(loadedTeams.ToDictionary(x => x.Id, x => x));
+        players = loadedPlayers;
+        teams = loadedTeams;
+
+        cachingTask = Task.Run(() =>
+        {
+          // Cache the players and their teams.
+          foreach (var t in teams)
+          {
+            var teamPlayers =
+              t.GetPlayers(players)
+              .Select(p => (p, p.CurrentTeam == t.Id))
+              .ToArray();
+            playersForTeam.Add(t, teamPlayers);
+          }
+        });
+
         var diff = DateTime.Now - start;
         Console.WriteLine("Database loaded successfully.");
         Console.WriteLine($"...Done in {diff.TotalSeconds} seconds.");
@@ -51,7 +69,7 @@ namespace SplatTagCore
 
     public void SaveDatabase()
     {
-      database.Save(players.Values, teams.Values);
+      database.Save(players, teams);
     }
 
     /// <summary>
@@ -60,8 +78,11 @@ namespace SplatTagCore
     /// </summary>
     public (Player, bool)[] GetPlayersForTeam(Team t)
     {
-      var teamPlayers = players.Values.Where(p => p.Teams.Contains(t.Id));
-      return teamPlayers.Select(p => (p, p.CurrentTeam == t.Id)).ToArray();
+      if (!cachingTask.IsCompleted)
+      {
+        cachingTask.Wait();
+      }
+      return playersForTeam[t];
     }
 
     /// <summary>
@@ -77,7 +98,7 @@ namespace SplatTagCore
     /// </summary>
     public Player[] MatchPlayer(string query, MatchOptions matchOptions)
     {
-      return MatchPlayer(query, matchOptions, players.Values);
+      return MatchPlayer(query, matchOptions, players);
     }
 
     /// <summary>
@@ -325,7 +346,7 @@ namespace SplatTagCore
     /// </summary>
     public Team[] MatchTeam(string query, MatchOptions matchOptions)
     {
-      return MatchTeam(query, matchOptions, teams.Values);
+      return MatchTeam(query, matchOptions, teams);
     }
 
     /// <summary>
@@ -489,34 +510,21 @@ namespace SplatTagCore
       return teamsToSearch.Select(t => (t, func(t))).Where(pair => pair.Item2 > 0).OrderByDescending(pair => pair.Item2).Select(pair => pair.t).ToArray();
     }
 
-    public Player CreatePlayer(string source)
-    {
-      Player p = new Player
-      {
-        Sources = new string[] { source }
-      };
-      players.Add(p.Id, p);
-      return p;
-    }
-
-    public Team CreateTeam(string source)
-    {
-      Team t = new Team
-      {
-        Sources = new string[] { source }
-      };
-      teams.Add(t.Id, t);
-      return t;
-    }
+    /// <summary>
+    /// Create a new Player object.
+    /// This does NOT save to a database.
+    /// </summary>
+    /// <param name="source"></param>
+    /// <returns></returns>
+    public Player CreatePlayer(string source = "Manual") => new Player { Sources = new string[] { source } };
 
     /// <summary>
-    /// Match a Player by its id.
+    /// Create a new Team object.
+    /// This does NOT save to a database.
     /// </summary>
-    public Player GetPlayerById(Guid id)
-    {
-      bool matched = players.TryGetValue(id, out Player found);
-      return matched ? found : null;
-    }
+    /// <param name="source"></param>
+    /// <returns></returns>
+    public Team CreateTeam(string source = "Manual") => new Team { Sources = new string[] { source } };
 
     /// <summary>
     /// Match a Team by its id.
@@ -528,8 +536,7 @@ namespace SplatTagCore
       {
         return Team.NoTeam;
       }
-      bool matched = teams.TryGetValue(id, out Team found);
-      return matched ? found : Team.UnlinkedTeam;
+      return Array.Find(teams, t => t.Id.Equals(id)) ?? Team.UnlinkedTeam;
     }
 
     /// <summary>Launch the team's Twitter account if it exists.</summary>

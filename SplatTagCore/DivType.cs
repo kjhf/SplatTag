@@ -7,6 +7,7 @@ namespace SplatTagCore
   {
     Unknown,
     LUTI,
-    EBTV
+    EBTV,
+    DSB
   }
 }

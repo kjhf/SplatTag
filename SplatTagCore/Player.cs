@@ -12,7 +12,7 @@ namespace SplatTagCore
     /// <summary>
     /// Displayed string for an unknown player.
     /// </summary>
-    public const string UNKNOWN_PLAYER = "(Player unknown)";
+    public const string UNKNOWN_PLAYER = "(Unnamed Player)";
 
     public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
@@ -55,7 +55,12 @@ namespace SplatTagCore
     /// <summary>
     /// Back-store for the transformed names of this player.
     /// </summary>
-    private HashSet<string> transformedNames = new HashSet<string>();
+    /// <remarks>
+    /// Though a HashSet may seem more performant, for collections with
+    /// a small number of elements (under 20), List is actually better
+    /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
+    /// </remarks>
+    private List<string> transformedNames = new List<string>();
 
     [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
@@ -88,7 +93,7 @@ namespace SplatTagCore
       {
         if (transformedNames == null)
         {
-          transformedNames = new HashSet<string>();
+          transformedNames = new List<string>();
           foreach (var name in names)
           {
             transformedNames.Add(name.Replace(" ", "").TransformString().ToLowerInvariant());
@@ -176,7 +181,7 @@ namespace SplatTagCore
     /// <summary>
     /// The weapons this player uses.
     /// </summary>
-    public IEnumerable<string> Weapons
+    public IList<string> Weapons
     {
       get => weapons.ToArray();
       set
@@ -196,7 +201,7 @@ namespace SplatTagCore
     /// <summary>
     /// Get or Set the current sources that make up this Player instance.
     /// </summary>
-    public string[] Sources
+    public IList<string> Sources
     {
       get => sources.ToArray();
       set
@@ -260,6 +265,19 @@ namespace SplatTagCore
     /// </summary>
     public string Country { get; set; }
 
+    [JsonIgnore]
+    /// <summary>
+    /// Get the emoji flag of the <see cref="Country"/> specified.
+    /// </summary>
+    public string CountryFlag
+    {
+      get
+      {
+        if (Country == null) return null;
+        return string.Concat(Country.ToUpper().Select(x => char.ConvertFromUtf32(x + 0x1F1A5)));
+      }
+    }
+
     [JsonProperty("Top500", Required = Required.Default)]
     /// <summary>
     /// Get or Set Top 500 flag.
@@ -277,7 +295,7 @@ namespace SplatTagCore
     /// <summary>
     /// Get or Set BattlefySlugs.
     /// </summary>
-    public ICollection<string> BattlefySlugs
+    public IList<string> BattlefySlugs
     {
       get => battlefySlugs;
       set
@@ -352,131 +370,161 @@ namespace SplatTagCore
     /// <summary>
     /// Merge this player with another (newer) player instance
     /// </summary>
-    /// <param name="otherPlayer"></param>
-    /// <exception cref="ArgumentNullException"><paramref name="otherPlayer"/> is <c>null</c>.</exception>
-    public void Merge(Player otherPlayer)
+    /// <param name="newerPlayer">The new import record</param>
+    /// <exception cref="ArgumentNullException"><paramref name="newerPlayer"/> is <c>null</c>.</exception>
+    public void Merge(Player newerPlayer)
     {
-      if (otherPlayer == null) throw new ArgumentNullException(nameof(otherPlayer));
-      if (ReferenceEquals(this, otherPlayer)) return;
+      if (newerPlayer == null) throw new ArgumentNullException(nameof(newerPlayer));
+      if (ReferenceEquals(this, newerPlayer)) return;
 
       // Merge the players.
-      // Iterates the other stack in reverse order so older teams are pushed first
-      // so the most recent end up first in the stack.
-      var reverseTeams = otherPlayer.teams.Distinct().ToList();
-      reverseTeams.Reverse();
-      foreach (Guid t in reverseTeams)
+      if (teams.Count == 0)
       {
-        if (this.teams.Contains(t))
+        // Shortcut, just set the teams.
+        Teams = newerPlayer.teams;
+      }
+      else
+      {
+        // Iterates the other stack in reverse order so older teams are pushed first
+        // so the most recent end up first in the stack.
+        var reverseTeams = newerPlayer.teams.Distinct().ToList();
+        reverseTeams.Reverse();
+        foreach (Guid t in reverseTeams)
         {
+          // If this team is already first, there's nothing to do.
           if (teams[0] != t)
           {
-            teams.Remove(t);
+            teams.Remove(t); // If the team isn't found, this just returns false.
             teams.Insert(0, t);
           }
-        }
-        else
-        {
-          teams.Insert(0, t);
         }
       }
 
       // Merge the player's name(s).
-      // Iterates the other stack in reverse order so older names are pushed first
-      // so the most recent end up first in the stack.
-      var reversePlayers = otherPlayer.names.ToList();
-      reversePlayers.Reverse();
-      foreach (string n in reversePlayers.Where(s => !string.IsNullOrWhiteSpace(s)))
+      if (names.Count == 0)
       {
-        string foundName = this.names.Find(playerNames => playerNames.Equals(n, StringComparison.OrdinalIgnoreCase));
+        Names = newerPlayer.names;
+      }
+      else
+      {
+        // Iterates the other stack in reverse order so older names are pushed first
+        // so the most recent end up first in the stack.
+        var reversePlayers = newerPlayer.names.ToList();
+        reversePlayers.Reverse();
+        foreach (string n in reversePlayers.Where(s => !string.IsNullOrWhiteSpace(s)))
+        {
+          string foundName = this.names.Find(playerNames => playerNames.Equals(n, StringComparison.OrdinalIgnoreCase));
 
-        if (foundName == null)
-        {
-          names.Insert(0, n);
-        }
-        else
-        {
-          names.Remove(foundName);
-          names.Insert(0, n);
+          if (foundName == null)
+          {
+            names.Insert(0, n);
+          }
+          else
+          {
+            names.Remove(foundName);
+            names.Insert(0, n);
+          }
         }
       }
 
       // Merge the sources.
-      foreach (string source in otherPlayer.Sources.Where(s => !string.IsNullOrWhiteSpace(s)))
+      if (sources.Count == 0)
       {
-        string foundSource = this.sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
-
-        if (foundSource == null)
+        Sources = newerPlayer.sources;
+      }
+      else
+      {
+        foreach (string source in newerPlayer.Sources.Where(s => !string.IsNullOrWhiteSpace(s)))
         {
-          sources.Add(source);
+          string foundSource = this.sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
+
+          if (foundSource == null)
+          {
+            sources.Add(source);
+          }
         }
       }
 
       // Merge the weapons.
-      foreach (string weapon in otherPlayer.Weapons.Where(s => !string.IsNullOrWhiteSpace(s)))
+      if (weapons.Count == 0)
       {
-        string foundWeapon = weapons.Find(wep => weapon.Equals(wep, StringComparison.OrdinalIgnoreCase));
-
-        if (foundWeapon == null)
+        Weapons = newerPlayer.weapons;
+      }
+      else
+      {
+        foreach (string weapon in newerPlayer.Weapons.Where(s => !string.IsNullOrWhiteSpace(s)))
         {
-          weapons.Add(weapon);
+          string foundWeapon = weapons.Find(wep => weapon.Equals(wep, StringComparison.OrdinalIgnoreCase));
+
+          if (foundWeapon == null)
+          {
+            weapons.Add(weapon);
+          }
         }
       }
 
       // Merge the BattlefySlugs.
-      foreach (string slug in otherPlayer.BattlefySlugs.Where(s => !string.IsNullOrWhiteSpace(s)))
+      if (battlefySlugs.Count == 0)
       {
-        string found = this.battlefySlugs.Find(slugs => slugs.Equals(slug, StringComparison.OrdinalIgnoreCase));
-
-        if (found == null)
+        BattlefySlugs = newerPlayer.battlefySlugs;
+      }
+      else
+      {
+        foreach (string slug in newerPlayer.BattlefySlugs.Where(s => !string.IsNullOrWhiteSpace(s)))
         {
-          battlefySlugs.Add(slug);
+          string found = this.battlefySlugs.Find(slugs => slugs.Equals(slug, StringComparison.OrdinalIgnoreCase));
+
+          if (found == null)
+          {
+            battlefySlugs.Add(slug);
+          }
         }
       }
 
       // Merge the misc data
-      if (!string.IsNullOrWhiteSpace(otherPlayer.FriendCode))
+      if (!string.IsNullOrWhiteSpace(newerPlayer.FriendCode))
       {
-        this.FriendCode = otherPlayer.FriendCode;
+        this.FriendCode = newerPlayer.FriendCode;
       }
 
-      if (!string.IsNullOrWhiteSpace(otherPlayer.DiscordName))
+      if (!string.IsNullOrWhiteSpace(newerPlayer.DiscordName))
       {
-        this.DiscordName = otherPlayer.DiscordName;
+        this.DiscordName = newerPlayer.DiscordName;
       }
 
-      if (otherPlayer.DiscordId != null)
+      if (newerPlayer.DiscordId != null)
       {
-        this.DiscordId = otherPlayer.DiscordId;
+        this.DiscordId = newerPlayer.DiscordId;
       }
 
-      if (!string.IsNullOrWhiteSpace(otherPlayer.Country))
+      if (!string.IsNullOrWhiteSpace(newerPlayer.Country))
       {
-        this.Country = otherPlayer.Country;
+        this.Country = newerPlayer.Country;
       }
 
-      if (otherPlayer.SendouId != null)
+      if (newerPlayer.SendouId != null)
       {
-        this.SendouId = otherPlayer.SendouId;
+        this.SendouId = newerPlayer.SendouId;
       }
 
-      if (otherPlayer.Top500)
+      if (newerPlayer.Top500)
       {
         this.Top500 = true;
       }
 
-      if (!string.IsNullOrWhiteSpace(otherPlayer.Twitch))
+      if (!string.IsNullOrWhiteSpace(newerPlayer.Twitch))
       {
-        this.Twitch = otherPlayer.Twitch;
+        this.Twitch = newerPlayer.Twitch;
       }
 
-      if (!string.IsNullOrWhiteSpace(otherPlayer.Twitter))
+      if (!string.IsNullOrWhiteSpace(newerPlayer.Twitter))
       {
-        this.Twitter = otherPlayer.Twitter;
+        this.Twitter = newerPlayer.Twitter;
       }
 
-      if (!string.IsNullOrWhiteSpace(otherPlayer.BattlefyUsername))
+      if (!string.IsNullOrWhiteSpace(newerPlayer.BattlefyUsername))
       {
-        this.BattlefyUsername = otherPlayer.BattlefyUsername;
+        this.BattlefyUsername = newerPlayer.BattlefyUsername;
       }
     }
 

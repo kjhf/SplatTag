@@ -26,6 +26,8 @@ namespace SplatTagUI
     /// </summary>
     private const int MIN_CHARACTERS_FOR_TIMER_SKIP = 6;
 
+    private readonly string titleLead;
+
     internal static readonly SplatTagController splatTagController;
     private static readonly GenericFilesImporter sourcesImporter;
     private readonly Timer smoothSearchDelayTimer;
@@ -34,13 +36,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.21.1";
+    public string Version => "Version 0.0.22";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
-      "v0.0.22: More merging bug fixes. UI now has Battlefy buttons if the slug(s) are known.\n" +
+      "v0.0.22: More merging bug fixes. UI now has Battlefy buttons if the slug(s) are known. DSB compatibility.\n" +
       "v0.0.21: Stability, merging, and other bug fixes.\n" +
       "v0.0.20: Reworked matching to show higher relevance results first.\n" +
       "v0.0.19: Stat.ink compatibility.\n" +
@@ -62,7 +64,8 @@ namespace SplatTagUI
     public MainWindow()
     {
       InitializeComponent();
-      Title = $"Slapp - {splatTagController.MatchPlayer(null).Length} Players and {splatTagController.MatchTeam(null).Length} Teams loaded!";
+      titleLead = $"Slapp - {splatTagController.MatchPlayer(null).Length} Players and {splatTagController.MatchTeam(null).Length} Teams loaded! - ";
+      Title = titleLead;
 
       // Initialise the delay timer if we have a UI context, otherwise don't use the timer.
       context = SynchronizationContext.Current;
@@ -145,8 +148,11 @@ namespace SplatTagUI
         QueryIsRegex = regexCheckbox.IsChecked == true
       };
 
-      playersListBox.ItemsSource = splatTagController.MatchPlayer(query, options);
-      teamsListBox.ItemsSource = splatTagController.MatchTeam(query, options);
+      var playersMatched = splatTagController.MatchPlayer(query, options);
+      var teamsMatched = splatTagController.MatchTeam(query, options);
+      Title = titleLead + $"Matched {playersMatched.Length} players and {teamsMatched.Length} teams!";
+      playersListBox.ItemsSource = playersMatched;
+      teamsListBox.ItemsSource = teamsMatched;
     }
 
     private void CheckedChanged(object sender, RoutedEventArgs e)

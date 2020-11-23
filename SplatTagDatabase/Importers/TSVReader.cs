@@ -19,7 +19,10 @@ namespace SplatTagDatabase.Importers
       Team_Offset = 0,
       TeamName = 1,
       Tag = 2,
-      LUTIDivision = 3,
+      Div = 3,
+      LUTIDiv = 4,
+      EBTVDiv = 5,
+      DSBDiv = 6,
 
       UnspecifiedPlayer_Offset = 10,
       Name,
@@ -45,12 +48,16 @@ namespace SplatTagDatabase.Importers
       { "teamname", PropertyEnum.TeamName },
       { "tag", PropertyEnum.Tag },
       { "teamtag", PropertyEnum.Tag },
-      { "div", PropertyEnum.LUTIDivision },
-      { "teamdiv", PropertyEnum.LUTIDivision },
-      { "division", PropertyEnum.LUTIDivision },
-      { "teamdivision", PropertyEnum.LUTIDivision },
-      { "lutidivision", PropertyEnum.LUTIDivision },
-      { "teamlutidivision", PropertyEnum.LUTIDivision },
+      { "div", PropertyEnum.Div },
+      { "teamdiv", PropertyEnum.Div },
+      { "division", PropertyEnum.Div },
+      { "teamdivision", PropertyEnum.Div },
+      { "lutidivision", PropertyEnum.LUTIDiv },
+      { "teamlutidivision", PropertyEnum.LUTIDiv },
+      { "ebtvdivision", PropertyEnum.EBTVDiv },
+      { "teamebtvdivision", PropertyEnum.EBTVDiv },
+      { "dsbdivision", PropertyEnum.DSBDiv },
+      { "teamdsbdivision", PropertyEnum.DSBDiv },
       { "name", PropertyEnum.Name },
       { "playername", PropertyEnum.Name },
       { "player", PropertyEnum.Name },
@@ -199,7 +206,6 @@ namespace SplatTagDatabase.Importers
         {
           ClanTagOption = TagOption.Unknown,
           Div = new Division(),
-          Name = "(unknown)",
           Sources = new string[] { Path.GetFileNameWithoutExtension(tsvFile) }
         };
 
@@ -283,9 +289,39 @@ namespace SplatTagDatabase.Importers
               break;
             }
 
-            case PropertyEnum.LUTIDivision:
+            case PropertyEnum.Div:
             {
-              t.Div = new Division(value);
+              bool found = false;
+              foreach (DivType type in Enum.GetValues(typeof(DivType)))
+              {
+                if (tsvFile.Contains(type.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                  t.Div = new Division(value, type);
+                  found = true;
+                  break;
+                }
+              }
+
+              if (!found)
+              {
+                t.Div = new Division(value, DivType.Unknown);
+                Trace.WriteLine($"Warning: Div was specified ({lineIndex},{i}), but I don't know what type of division this file represents.");
+              }
+              break;
+            }
+            case PropertyEnum.LUTIDiv:
+            {
+              t.Div = new Division(value, DivType.LUTI);
+              break;
+            }
+            case PropertyEnum.EBTVDiv:
+            {
+              t.Div = new Division(value, DivType.EBTV);
+              break;
+            }
+            case PropertyEnum.DSBDiv:
+            {
+              t.Div = new Division(value, DivType.DSB);
               break;
             }
 
@@ -305,7 +341,7 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.Role:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Weapons = value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s));
+              p.Weapons = value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
               break;
             }
 

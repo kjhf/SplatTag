@@ -51,7 +51,7 @@ namespace SplatTagDatabase
         try
         {
           var (loadedPlayers, loadedTeams) = TryImportFromPath(file);
-          var teamsMergeResult = Merger.MergeTeams(teams, loadedTeams);
+          var teamsMergeResult = Merger.MergeTeamsByPersistentIds(teams, loadedTeams);
           Merger.MergePlayers(players, loadedPlayers);
           Merger.CorrectTeamIdsForPlayers(players, teamsMergeResult);
         }

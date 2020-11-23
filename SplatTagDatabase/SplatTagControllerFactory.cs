@@ -42,7 +42,7 @@ namespace SplatTagDatabase
       }
       catch (Exception ex)
       {
-        string error = $"Unable to initialise the {nameof(SplatTagController)} because of an exception: {ex}";
+        string error = $"Unable to initialise the {nameof(SplatTagController)} because of an exception:\n {ex} \n";
         Console.Error.WriteLine(error);
         Trace.WriteLine(error);
       }

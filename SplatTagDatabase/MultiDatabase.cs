@@ -36,7 +36,7 @@ namespace SplatTagDatabase
 
         try
         {
-          var mergeResult = Merger.MergeTeams(teams, loadedTeams);
+          var mergeResult = Merger.MergeTeamsByPersistentIds(teams, loadedTeams);
           Merger.MergePlayers(players, loadedPlayers);
           Merger.CorrectTeamIdsForPlayers(players, mergeResult);
         }
@@ -50,7 +50,8 @@ namespace SplatTagDatabase
       try
       {
         Merger.FinalisePlayers(players);
-        Merger.DumpLogger();
+        var mergeResult = Merger.FinaliseTeams(players, teams);
+        Merger.CorrectTeamIdsForPlayers(players, mergeResult);
       }
       catch (Exception ex)
       {

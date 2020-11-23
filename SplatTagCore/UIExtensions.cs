@@ -22,11 +22,11 @@ namespace SplatTagCore
       Player bestPlayer = null;
       foreach ((Player, bool) pair in playersForTeam)
       {
-        if (pair.Item2 && pair.Item1.Teams.Count() > 1)
+        if (pair.Item2 && pair.Item1.Teams.Count > 1)
         {
           foreach (Team playerTeam in pair.Item1.Teams.Select(id => splatTagController.GetTeamById(id)))
           {
-            if (playerTeam.Div.Value < highestDiv.Value)
+            if (playerTeam.Div < highestDiv)
             {
               highestDiv = playerTeam.Div;
               bestPlayer = pair.Item1;

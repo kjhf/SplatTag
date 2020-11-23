@@ -13,17 +13,15 @@ namespace SplatTagDatabase
   internal static class Merger
   {
     /// <summary>
-    /// Logging string builder used when merging.
+    /// Final time-consuming call to look at all player entries and merge where appropriate.
     /// </summary>
-    private static readonly StringBuilder logger = new StringBuilder();
-
-    public static void FinalisePlayers(IList<Player> playersToMutate)
+    /// <param name="playersToMutate"></param>
+    public static void FinalisePlayers(IList<Player> playersToMutate, TextWriter logger = null)
     {
       if (playersToMutate == null) return;
 
       string logMessage = $"Beginning {nameof(FinalisePlayers)} on {playersToMutate.Count} entries.";
-      logger.AppendLine(logMessage);
-      Trace.WriteLine(logMessage);
+      logger?.WriteLine(logMessage);
 
       string lastProgressBar = "";
       for (int i = playersToMutate.Count - 1; i >= 0; --i)
@@ -38,6 +36,7 @@ namespace SplatTagDatabase
           if (PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Persistent, logger))
           {
             foundPlayer = olderPlayerRecord;
+            break;
           }
         }
 
@@ -50,6 +49,7 @@ namespace SplatTagDatabase
             if (PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Name, logger))
             {
               foundPlayer = olderPlayerRecord;
+              break;
             }
           }
         }
@@ -57,48 +57,91 @@ namespace SplatTagDatabase
         // If a player has now been found, merge it.
         if (foundPlayer != null)
         {
+          logger?.WriteLine($"Merging player {newerPlayerRecord} with teams [{string.Join(", ", newerPlayerRecord.Teams)}] into {foundPlayer} with teams [{string.Join(", ", foundPlayer.Teams)}].");
           foundPlayer.Merge(newerPlayerRecord);
-          playersToMutate.RemoveAt(i);
+          playersToMutate.RemoveAt(i); // remove the newer record
         }
 
         string progressBar = Util.GetProgressBar(playersToMutate.Count - i, playersToMutate.Count, 100);
         if (!progressBar.Equals(lastProgressBar))
         {
-          Trace.WriteLine(progressBar);
+          logger?.WriteLine(progressBar);
           lastProgressBar = progressBar;
         }
       }
 
       logMessage = $"Finished {nameof(FinalisePlayers)} with {playersToMutate.Count} entries.";
-      logger.AppendLine(logMessage);
-      Trace.WriteLine(logMessage);
+      logger?.WriteLine(logMessage);
     }
 
-    public static void DumpLogger()
+    /// <summary>
+    /// Final time-consuming call to look at all team entries and merge where appropriate.
+    /// </summary>
+    /// <returns>
+    /// A dictionary of merged team ids keyed by initial with values of the new id.
+    /// </returns>
+    public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, IList<Team> teamsToMutate, TextWriter logger = null)
     {
-      string path = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + "_MergeResult.txt";
-      Trace.WriteLine("Writing merge result log to " + Path.GetFullPath(path));
+      if (teamsToMutate == null) new Dictionary<Guid, Guid>();
+      ConcurrentDictionary<Guid, Guid> mergeResult = new ConcurrentDictionary<Guid, Guid>();
 
-      try
+      logger?.WriteLine($"Beginning {nameof(FinaliseTeams)} on {teamsToMutate.Count} entries.");
+
+      string lastProgressBar = "";
+      for (int i = teamsToMutate.Count - 1; i >= 0; --i)
       {
-        File.WriteAllText(path, logger.ToString(), Encoding.UTF8);
+        var newerTeamRecord = teamsToMutate[i];
+
+        // Try match teams.
+        Team foundTeam = null;
+        for (int j = 0; j < i; ++j)
+        {
+          var olderTeamRecord = teamsToMutate[j];
+          if (TeamsMatch(allPlayers, olderTeamRecord, newerTeamRecord, logger))
+          {
+            foundTeam = olderTeamRecord;
+            break;
+          }
+        }
+
+        // If a teams has now been found, merge it.
+        if (foundTeam != null)
+        {
+          MergeExistingTeam(mergeResult, newerTeamRecord, foundTeam);
+          teamsToMutate.RemoveAt(i);
+        }
+
+        string progressBar = Util.GetProgressBar(teamsToMutate.Count - i, teamsToMutate.Count, 100);
+        if (!progressBar.Equals(lastProgressBar))
+        {
+          logger?.WriteLine(progressBar);
+          lastProgressBar = progressBar;
+        }
       }
-      catch (Exception ex)
-      {
-        Trace.WriteLine("ERROR: Failed to write the merge log. " + ex);
-      }
-      logger.Clear();
+
+      logger?.WriteLine($"Finished {nameof(FinaliseTeams)} with {teamsToMutate.Count} entries.");
+      return mergeResult;
     }
 
-    public static void CorrectTeamIdsForPlayers(ICollection<Player> incomingPlayers, IDictionary<Guid, Guid> teamsMergeResult)
+    public static void CorrectTeamIdsForPlayers(ICollection<Player> incomingPlayers, IDictionary<Guid, Guid> teamsMergeResult, TextWriter logger = null)
     {
       if (incomingPlayers == null || teamsMergeResult == null || incomingPlayers.Count == 0 || teamsMergeResult.Count == 0) return;
 
-      logger.Append(nameof(CorrectTeamIdsForPlayers)).Append(" called with ").Append(incomingPlayers.Count).AppendLine(" entries.");
-      logger.AppendLine("Entries: ");
-      foreach (var resultPair in teamsMergeResult)
+      if (logger != null)
       {
-        logger.Append('[').Append(resultPair.Key).Append("] --> ").Append(resultPair.Value).AppendLine();
+        logger.Write(nameof(CorrectTeamIdsForPlayers));
+        logger.Write(" called with ");
+        logger.Write(incomingPlayers.Count);
+        logger.WriteLine(" entries.");
+        logger.WriteLine("Entries: ");
+        foreach (var resultPair in teamsMergeResult)
+        {
+          logger.Write('[');
+          logger.Write(resultPair.Key);
+          logger.Write("] --> ");
+          logger.Write(resultPair.Value);
+          logger.WriteLine();
+        }
       }
 
       // For each team, correct the id as specified.
@@ -126,7 +169,7 @@ namespace SplatTagDatabase
     /// <summary>
     /// Merge the loaded players into the current players list.
     /// </summary>
-    public static void MergePlayers(ICollection<Player> playersToMutate, IEnumerable<Player> incomingPlayers)
+    public static void MergePlayers(ICollection<Player> playersToMutate, IEnumerable<Player> incomingPlayers, TextWriter logger = null)
     {
       if (playersToMutate == null || incomingPlayers == null) return;
 
@@ -177,7 +220,7 @@ namespace SplatTagDatabase
     /// <param name="playersToMutate">The players to search</param>
     /// <param name="testPlayer">The player instance to try and find</param>
     /// <returns>The matched player, or null if new</returns>
-    private static Player FindSamePlayerPersistent(IEnumerable<Player> playersToMutate, Player testPlayer)
+    private static Player FindSamePlayerPersistent(IEnumerable<Player> playersToMutate, Player testPlayer, TextWriter logger = null)
     {
       FilterOptions matchOptions = FilterOptions.None;
       if (!string.IsNullOrEmpty(testPlayer.FriendCode))
@@ -218,7 +261,7 @@ namespace SplatTagDatabase
     /// <returns>
     /// A dictionary of merged team ids keyed by initial with values of the new id.
     /// </returns>
-    public static IDictionary<Guid, Guid> MergeTeams(ICollection<Team> teamsToMutate, IEnumerable<Team> incomingTeams)
+    public static IDictionary<Guid, Guid> MergeTeamsByPersistentIds(ICollection<Team> teamsToMutate, IEnumerable<Team> incomingTeams)
     {
       ConcurrentDictionary<Guid, Guid> mergeResult = new ConcurrentDictionary<Guid, Guid>();
 
@@ -234,31 +277,20 @@ namespace SplatTagDatabase
 
       if (teamsToMutate?.Count > 0)
       {
-        // Construct a SearchableNames lookup of teams.
-        Dictionary<string, Team> transformedTeamNames = new Dictionary<string, Team>();
-        foreach (var importTeam in teamsToMutate)
-        {
-          try
-          {
-            transformedTeamNames.Add(importTeam.SearchableName, importTeam);
-          }
-          catch (ArgumentException)
-          {
-            // If this team name already exists, merge the teams.
-            var existingTeam = transformedTeamNames[importTeam.SearchableName];
-            MergeExistingTeam(mergeResult, importTeam, existingTeam);
-          }
-        }
-
-        // Add if the team is new (by name) and assign them with a new id
-        // Otherwise, match the found team with its id, based on name.
+        // Merge teams based on the Battlefy Persistent Id.
         foreach (Team importTeam in incomingTeams)
         {
-          // Replace spaces because people adding tags or starting with space messes up same-name detection.
-          // Also transform the team name.
-          if (transformedTeamNames.TryGetValue(importTeam.SearchableName, out Team existingTeam))
+          if (importTeam.BattlefyPersistentTeamId != null)
           {
-            MergeExistingTeam(mergeResult, importTeam, existingTeam);
+            var foundTeam = teamsToMutate.FirstOrDefault(t => importTeam.BattlefyPersistentTeamId.Equals(t?.BattlefyPersistentTeamId));
+            if (foundTeam != null)
+            {
+              MergeExistingTeam(mergeResult, importTeam, foundTeam);
+            }
+            else
+            {
+              teamsToMutate.Add(importTeam);
+            }
           }
           else
           {
@@ -278,10 +310,10 @@ namespace SplatTagDatabase
       return mergeResult;
     }
 
-    private static void MergeExistingTeam(ConcurrentDictionary<Guid, Guid> mergeResult, Team importTeam, Team existingTeam)
+    private static void MergeExistingTeam(ConcurrentDictionary<Guid, Guid> mergeResult, Team newerTeam, Team olderTeam)
     {
-      mergeResult.TryAdd(importTeam.Id, existingTeam.Id);
-      existingTeam.Merge(importTeam);
+      mergeResult.TryAdd(newerTeam.Id, olderTeam.Id);
+      olderTeam.Merge(newerTeam);
     }
 
     /// <summary>
@@ -292,24 +324,30 @@ namespace SplatTagDatabase
     /// <param name="matchOptions">How to match</param>
     /// <param name="logger">Logger to write to (or null to not write)</param>
     /// <returns>Players are equal based on the match options</returns>
-    public static bool PlayersMatch(Player first, Player second, FilterOptions matchOptions, StringBuilder logger = null)
+    public static bool PlayersMatch(Player first, Player second, FilterOptions matchOptions, TextWriter logger = null)
     {
+      // Quick out if they're literally the same.
+      if (first.Id == second.Id) return true;
+
       // Test if the Discord Ids match.
       if ((matchOptions & FilterOptions.DiscordId) != 0 && second.DiscordId?.Equals(first.DiscordId) == true)
       {
         // They do.
-        logger?.Append(nameof(PlayersMatch))
-              .Append(": Matched player ")
-              .Append(first.ToString())
-              .Append(" (Id ")
-              .Append(first.Id)
-              .Append(") with Discord Id ")
-              .Append(second.DiscordId)
-              .Append(" from player ")
-              .Append(second)
-              .Append(" (Id ")
-              .Append(second.Id)
-              .AppendLine(").");
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with Discord Id ");
+          logger.Write(second.DiscordId);
+          logger.Write(" from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
         return true;
       }
 
@@ -317,18 +355,21 @@ namespace SplatTagDatabase
       if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && second.BattlefyUsername?.Equals(first.BattlefyUsername) == true)
       {
         // They do.
-        logger?.Append(nameof(PlayersMatch))
-              .Append(": Matched player ")
-              .Append(first.ToString())
-              .Append(" (Id ")
-              .Append(first.Id)
-              .Append(") with BattlefyUsername ")
-              .Append(first.BattlefyUsername)
-              .Append(" from player ")
-              .Append(second)
-              .Append(" (Id ")
-              .Append(second.Id)
-              .AppendLine(").");
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with BattlefyUsername ");
+          logger.Write(first.BattlefyUsername);
+          logger.Write(" from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
         return true;
       }
 
@@ -336,18 +377,21 @@ namespace SplatTagDatabase
       if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && second.BattlefySlugs.Intersect(first.BattlefySlugs).Any())
       {
         // They do.
-        logger?.Append(nameof(PlayersMatch))
-              .Append(": Matched player ")
-              .Append(first.ToString())
-              .Append(" (Id ")
-              .Append(first.Id)
-              .Append(") with test BattlefySlug(s) e.g. ")
-              .Append(first.BattlefySlugs.FirstOrDefault())
-              .Append(" with player ")
-              .Append(second)
-              .Append(" (Id ")
-              .Append(second.Id)
-              .AppendLine(").");
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with test BattlefySlug(s) e.g. ");
+          logger.Write(first.BattlefySlugs.FirstOrDefault());
+          logger.Write(" with player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
         return true;
       }
 
@@ -355,18 +399,21 @@ namespace SplatTagDatabase
       if ((matchOptions & FilterOptions.FriendCode) != 0 && second.FriendCode?.Equals(first.FriendCode) == true)
       {
         // They do.
-        logger?.Append(nameof(PlayersMatch))
-              .Append(": Matched player ")
-              .Append(first.ToString())
-              .Append(" (Id ")
-              .Append(first.Id)
-              .Append(") with FC ")
-              .Append(first.FriendCode)
-              .Append(" from player ")
-              .Append(second)
-              .Append(" (Id ")
-              .Append(second.Id)
-              .AppendLine(").");
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with FC ");
+          logger.Write(first.FriendCode);
+          logger.Write(" from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
         return true;
       }
 
@@ -374,18 +421,21 @@ namespace SplatTagDatabase
       if ((matchOptions & FilterOptions.Twitch) != 0 && second.Twitch?.Equals(first.Twitch) == true)
       {
         // They do.
-        logger?.Append(nameof(PlayersMatch))
-              .Append(": Matched player ")
-              .Append(first.ToString())
-              .Append(" (Id ")
-              .Append(first.Id)
-              .Append(") with Twitch ")
-              .Append(first.Twitch)
-              .Append(" from player ")
-              .Append(second)
-              .Append(" (Id ")
-              .Append(second.Id)
-              .AppendLine(").");
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with Twitch ");
+          logger.Write(first.Twitch);
+          logger.Write(" from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
         return true;
       }
 
@@ -393,18 +443,21 @@ namespace SplatTagDatabase
       if ((matchOptions & FilterOptions.Twitter) != 0 && second.Twitter?.Equals(first.Twitter) == true)
       {
         // They do.
-        logger?.Append(nameof(PlayersMatch))
-              .Append(": Matched player ")
-              .Append(first.ToString())
-              .Append(" (Id ")
-              .Append(first.Id)
-              .Append(") with Twitter ")
-              .Append(first.Twitter)
-              .Append(" from player ")
-              .Append(second)
-              .Append(" (Id ")
-              .Append(second.Id)
-              .AppendLine(").");
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with Twitter ");
+          logger.Write(first.Twitter);
+          logger.Write(" from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
         return true;
       }
 
@@ -412,18 +465,21 @@ namespace SplatTagDatabase
       if ((matchOptions & FilterOptions.DiscordName) != 0 && second.DiscordName?.Equals(first.DiscordName) == true)
       {
         // They do.
-        logger?.Append(nameof(PlayersMatch))
-              .Append(": Matched player ")
-              .Append(first.ToString())
-              .Append(" (Id ")
-              .Append(first.Id)
-              .Append(") with Discord name ")
-              .Append(first.DiscordName)
-              .Append(" from player ")
-              .Append(second)
-              .Append(" (Id ")
-              .Append(second.Id)
-              .AppendLine(").");
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with Discord name ");
+          logger.Write(first.DiscordName);
+          logger.Write(" from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
         return true;
       }
 
@@ -431,21 +487,106 @@ namespace SplatTagDatabase
         && first.Teams.Intersect(second.Teams).Any()
         && first.TransformedNames.Intersect(second.TransformedNames).Any())
       {
-        logger.Append(nameof(PlayersMatch))
-              .Append(": Matched player ")
-              .Append(first.ToString())
-              .Append(" (Id ")
-              .Append(first.Id)
-              .Append(") with transformed names [")
-              .Append(string.Join(", ", first.TransformedNames))
-              .Append("] from player ")
-              .Append(second)
-              .Append(" (Id ")
-              .Append(second.Id)
-              .Append(") with transformed names [")
-              .Append(string.Join(", ", second.TransformedNames))
-              .AppendLine("].");
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with transformed names [");
+          logger.Write(string.Join(", ", first.TransformedNames));
+          logger.Write("] from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.Write(") with transformed names [");
+          logger.Write(string.Join(", ", second.TransformedNames));
+          logger.WriteLine("].");
+        }
         return true;
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Get if two Teams match.
+    /// This is implemented as:
+    /// - BattlefyPersistentIds match, or
+    /// - The names are (roughly) the same AND the teams have AT LEAST TWO players the same.
+    /// </summary>
+    /// <param name="first">First Team to match</param>
+    /// <param name="second">Second Team to match</param>
+    /// <param name="logger">Logger to write to (or null to not write)</param>
+    /// <returns>Teams match</returns>
+    public static bool TeamsMatch(IReadOnlyCollection<Player> allPlayers, Team first, Team second, TextWriter logger = null)
+    {
+      // Quick out if they're literally the same.
+      if (first.Id == second.Id) return true;
+
+      // Get if the Battlefy Ids match.
+      if (first.BattlefyPersistentTeamId != null && first.BattlefyPersistentTeamId == second.BattlefyPersistentTeamId)
+      {
+        // They do.
+        if (logger != null)
+        {
+          logger.Write(nameof(TeamsMatch));
+          logger.Write(": Matched team ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with BattlefyPersistentTeamId ");
+          logger.Write(first.BattlefyPersistentTeamId);
+          logger.Write(" from team ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
+        return true;
+      }
+
+      var matchedTransformedNames = first.TransformedNames.Intersect(second.TransformedNames);
+      if (matchedTransformedNames.Any())
+      {
+        // They do.
+        int sharedPlayersCount = 0;
+        var firstPlayers = first.GetPlayers(allPlayers);
+        var secondPlayers = second.GetPlayers(allPlayers);
+        foreach (var firstPlayer in firstPlayers)
+        {
+          foreach (var secondPlayer in secondPlayers)
+          {
+            if (PlayersMatch(firstPlayer, secondPlayer, FilterOptions.Default))
+            {
+              ++sharedPlayersCount;
+            }
+          }
+        }
+
+        if (logger != null)
+        {
+          logger.Write(nameof(TeamsMatch));
+          logger.Write(": Matched team ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with TransformedNames [");
+          logger.Write(string.Join(", ", matchedTransformedNames));
+          logger.Write("] from team ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.Write(") with ");
+          logger.Write(sharedPlayersCount);
+          logger.WriteLine(" shared player(s).");
+        }
+
+        if (sharedPlayersCount >= 2)
+        {
+          return true;
+        }
       }
 
       return false;

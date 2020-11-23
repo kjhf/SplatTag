@@ -33,21 +33,20 @@ namespace SplatTagUnitTests
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
-      controller.Initialise();
 
-      Team t1 = controller.CreateTeam("Manual");
+      Team t1 = controller.CreateTeam();
       t1.Name = "Team 17";
       t1.ClanTags = new string[] { "x" };
       t1.ClanTagOption = TagOption.Front;
 
-      Team t2 = controller.CreateTeam("Manual");
+      Team t2 = controller.CreateTeam();
       t2.Name = "Example 18";
       t2.ClanTags = new string[] { "e" };
       t2.ClanTagOption = TagOption.Front;
 
       database.expectedTeams = new List<Team> { t1, t2 };
+      controller.Initialise();
 
-      controller.LoadDatabase();
       // Match 'e' which will match the  'e' for a tag and 'e' in team
       Team[] matched = controller.MatchTeam("e");
       Assert.IsNotNull(matched);
@@ -68,7 +67,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Manual");
+      Team t = controller.CreateTeam();
       t.Name = "Team 17"; // Purposefully mixed case
       t.ClanTags = new string[] { "WO" };
       t.ClanTagOption = TagOption.Front;
@@ -90,7 +89,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Manual");
+      Team t = controller.CreateTeam();
       t.Name = "Team 17";
       t.ClanTags = new string[] { "WO" }; // Purposefully upper-case
       t.ClanTagOption = TagOption.Front;
@@ -112,7 +111,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Manual");
+      Team t = controller.CreateTeam();
       t.Name = "Inkology";
       t.ClanTags = new string[] { "¡g" };
       t.ClanTagOption = TagOption.Front;
@@ -134,7 +133,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Manual");
+      Team t = controller.CreateTeam();
       t.Name = "Inkology";
       t.ClanTags = new string[] { "¡g" };
       t.ClanTagOption = TagOption.Front;
@@ -156,7 +155,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Manual");
+      Team t = controller.CreateTeam();
       t.Name = "Inkology";
       t.ClanTags = new string[] { "¡g" };
       t.ClanTagOption = TagOption.Front;
@@ -178,17 +177,17 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t1 = controller.CreateTeam("Manual");
+      Team t1 = controller.CreateTeam();
       t1.Name = "Inkology";
       t1.ClanTags = new string[] { "¡g" };
       t1.ClanTagOption = TagOption.Front;
 
-      Team t2 = controller.CreateTeam("Manual");
+      Team t2 = controller.CreateTeam();
       t2.Name = "Inkfected";
       t2.ClanTags = new string[] { "τイ" };
       t2.ClanTagOption = TagOption.Front;
 
-      Team t3 = controller.CreateTeam("Manual");
+      Team t3 = controller.CreateTeam();
       t3.Name = "Inky Sirens";
       t3.ClanTags = new string[] { "InkS" };
       t3.ClanTagOption = TagOption.Front;
@@ -212,12 +211,12 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t1 = controller.CreateTeam("Manual");
+      Team t1 = controller.CreateTeam();
       t1.Name = "Inkology";
       t1.ClanTags = new string[] { "¡g" };
       t1.ClanTagOption = TagOption.Front;
 
-      Team t2 = controller.CreateTeam("Manual");
+      Team t2 = controller.CreateTeam();
       t2.Name = "Inkfected";
       t2.ClanTags = new string[] { "τイ" };
       t2.ClanTagOption = TagOption.Front;

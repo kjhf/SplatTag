@@ -6,6 +6,7 @@
 * Added Battlefy Buttons to UI
 * Added rebuild option in Console
 * Various bug fixes (especially around tags and missing one letter from names!)
+* DSB compatibility
 
 ### v0.0.21
 * Reworked internal id structure
