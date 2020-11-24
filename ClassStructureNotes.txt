@@ -1,0 +1,152 @@
+﻿{
+  lookup_name("slate", Options.CaseInsensitive | Options.SymbolsInsensitive)  /* Player. Params are name and options. The options include case sensitivity, near symbols (κ = k), and regex */
+  {
+    id,
+    teams
+    {
+      id,
+      current_name
+      {
+        name,
+        normalised_name,  /* name after string transformed into characters available on the Nintendo Switch */
+        sources
+      }
+      current_tag
+      {
+        tag,
+        layout_option,  /* e.g. unknown, front, back, surrounding, inconsistent */
+        sources
+      },
+      current_div
+      {
+        div_type
+        {
+          name,  /* e.g. "LUTI", "EBTV" */
+          enum_value  /* e.g. 1, 2 */
+        },
+        div_value,  /* e.g. "X+", "6", "8eu" */
+        sources
+      },
+      names,
+      tags,
+      divs,
+      twitter
+      {
+        handles,
+        urls,
+        sources  /* the sources that corroborate the twitter link(s) */
+      },
+      sources
+    },
+    current_team,
+    old_teams,
+
+    current_name
+    {
+      name,
+      normalised_name,
+      sources
+    },
+    level
+    {
+      level,
+      star_level,
+      ranks
+      {
+        SZ,
+        RM,
+        TC,
+        CB,
+      },
+      rank_power_peak
+      {
+        SZ,
+        RM,
+        TC,
+        CB,
+        Any
+      },
+      rank_power_current
+      {
+        SZ,
+        RM,
+        TC,
+        CB,
+        Any  /* takes best */
+      },
+      top_500  /* bools */
+      {
+        SZ,
+        RM,
+        TC,
+        CB,
+        Any
+      }
+    },
+    weapons
+    {
+      name,
+      reskin_of,  /* e.g. hero variants will have the splat version here */
+      source
+    }
+    twitter
+    {
+      handles,
+      urls,
+      sources
+    },
+    twitch
+    {
+      handles,
+      urls,
+      sources  /* sources that corroborate the twitch link(s) */
+    },
+    battlefy
+    {
+      slugs
+      {
+        name,
+        sources
+      },
+      usernames
+      {
+        name,
+        sources
+      }
+    },
+    sendou
+    {
+      sendou_id,
+      url /* also the source */
+    },
+    splatnet
+    {
+      id,
+      sources
+    },
+    discord
+    {
+      id,
+      verified,  /* could lookup the id to find valid account */
+      names,  /* including discriminator, all names this player is known by. Discord id is persistent, names are not */
+      sources
+    },
+    friend_code
+    {
+      string,  /* return as "0123-4567-8901" */
+      array,  /* return as [0123, 4567, 8901] */
+      verified,  /* has the fc been verified (i.e. it may be incorrectly entered or belong to another player) */
+      sources
+    },
+    country
+    {
+      /* Could be used to distinguish names but different regions or flags. */
+      initial,  /* e.g. "gb" */
+      sources
+    }
+
+    names,  /* all known names of the player */
+    sources, /* all sources */
+    last_updated
+  }
+}

@@ -133,22 +133,6 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Compare left division is on the same level as right.
-    /// </summary>
-    public static bool operator ==(Division left, Division right)
-    {
-      return left.CompareTo(right) == 0;
-    }
-
-    /// <summary>
-    /// Compare left is not on the same level as right.
-    /// </summary>
-    public static bool operator !=(Division left, Division right)
-    {
-      return left.CompareTo(right) != 0;
-    }
-
-    /// <summary>
     /// Compare left is higher (worse) than right.
     /// </summary>
     public static bool operator >(Division left, Division right)
