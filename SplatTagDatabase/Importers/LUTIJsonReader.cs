@@ -13,7 +13,7 @@ namespace SplatTagDatabase.Importers
     internal class LUTIJsonRow
     {
       [JsonProperty("Team Name")]
-      public string TeamName { get; set; }
+      public string TeamName { get; set; } = Team.UNKNOWN_TEAM;
 
       [JsonProperty("Div", Required = Required.Default)]
       public string Div { get => Division; set => Division = value; }
@@ -21,7 +21,7 @@ namespace SplatTagDatabase.Importers
       [JsonProperty("Division", Required = Required.Default)]
       public string Division { get; set; } = "Unknown";
 
-      private string tag;
+      private string tag = Team.NoTeam.Tag;
 
       [JsonProperty("Tag")]
       public string Tag { get => tag; set => tag = value.Trim(); }
@@ -33,31 +33,31 @@ namespace SplatTagDatabase.Importers
       public string Player1 { get => TeamCaptain; set => TeamCaptain = value; }
 
       [JsonProperty("Player 2")]
-      public string Player2 { get; set; }
+      public string Player2 { get; set; } = "";
 
       [JsonProperty("Player 3")]
-      public string Player3 { get; set; }
+      public string Player3 { get; set; } = "";
 
       [JsonProperty("Player 4")]
-      public string Player4 { get; set; }
+      public string Player4 { get; set; } = "";
 
       [JsonProperty("Player 5")]
-      public string Player5 { get; set; }
+      public string Player5 { get; set; } = "";
 
       [JsonProperty("Player 6")]
-      public string Player6 { get; set; }
+      public string Player6 { get; set; } = "";
 
       [JsonProperty("Player 7")]
-      public string Player7 { get; set; }
+      public string Player7 { get; set; } = "";
 
       [JsonProperty("Player 8")]
-      public string Player8 { get; set; }
+      public string Player8 { get; set; } = "";
 
       [JsonProperty("Player 9")]
-      public string Player9 { get; set; }
+      public string Player9 { get; set; } = "";
 
       [JsonProperty("Player 10")]
-      public string Player10 { get; set; }
+      public string Player10 { get; set; } = "";
     }
 
     private readonly string jsonFile;
@@ -98,7 +98,7 @@ namespace SplatTagDatabase.Importers
 
         // Handle tag placements from the captain's name
         newTeam.SetTagOption(row.Tag, row.TeamCaptain);
-        string transformedTag = row.Tag?.TransformString();
+        string transformedTag = row.Tag.TransformString();
 
         teams.Add(newTeam);
         string source = Path.GetFileNameWithoutExtension(jsonFile);

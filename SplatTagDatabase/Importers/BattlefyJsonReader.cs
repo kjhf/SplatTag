@@ -15,7 +15,7 @@ namespace SplatTagDatabase.Importers
     internal class BattlefyJsonPlayer
     {
       [JsonProperty("_id", Required = Required.Default)]
-      public string BattlefyId { get; set; }
+      public string? BattlefyId { get; set; }
 
       // [JsonProperty("onTeam", Required = Required.Default)]
       // public bool OnTeam { get; set; }
@@ -27,29 +27,29 @@ namespace SplatTagDatabase.Importers
       // public bool BeCaptain { get; set; }
 
       [JsonProperty("inGameName")]
-      public string Name { get; set; }
+      public string? Name { get; set; }
 
       [JsonProperty("userSlug", Required = Required.Default)]
-      public string BattlefyUserSlug { get; set; }
+      public string? BattlefyUserSlug { get; set; }
 
       [JsonProperty("username")]
-      public string BattlefyName { get; set; }
+      public string? BattlefyName { get; set; }
     }
 
     [Serializable]
     internal class BattlefyJsonTeam
     {
       [JsonProperty("_id", Required = Required.Default)]
-      public string BattlefyId { get; set; }
+      public string? BattlefyId { get; set; }
 
       [JsonProperty("name")]
-      public string TeamName { get; set; }
+      public string? TeamName { get; set; }
 
       // [JsonProperty("pendingTeamID", Required = Required.Default)]
       // public string BattlefyPendingTeamId { get; set; }
 
       [JsonProperty("persistentTeamID", Required = Required.Default)]
-      public string BattlefyPersistentTeamId { get; set; }
+      public string? BattlefyPersistentTeamId { get; set; }
 
       // [JsonProperty("tournamentID", Required = Required.Default)]
       // public string BattlefyTournamentId { get; set; }
@@ -58,13 +58,13 @@ namespace SplatTagDatabase.Importers
       // public string BattlefyUserId { get; set; }
 
       [JsonProperty("customFields")]
-      public Dictionary<string, string>[] CustomFields { get; set; }
+      public Dictionary<string, string>[]? CustomFields { get; set; }
 
-      public string CaptainDiscordName
+      public string? CaptainDiscordName
       {
         get
         {
-          if (CustomFields.Length > 0)
+          if (CustomFields?.Length > 0)
           {
             if (Player.DISCORD_NAME_REGEX.IsMatch(CustomFields[0]["value"]))
             {
@@ -82,21 +82,21 @@ namespace SplatTagDatabase.Importers
         }
       }
 
-      public string CaptainFriendCode
+      public string? CaptainFriendCode
       {
         get
         {
-          if (CustomFields.Length > 0)
+          if (CustomFields?.Length > 0)
           {
-            if (FriendCode.TryParse(CustomFields[0]["value"], out FriendCode fc))
+            if (FriendCode.TryParse(CustomFields[0]["value"], out FriendCode? fc))
             {
-              return fc.ToString();
+              return fc?.ToString();
             }
             else if (CustomFields.Length > 1)
             {
-              if (FriendCode.TryParse(CustomFields[1]["value"], out FriendCode fc1))
+              if (FriendCode.TryParse(CustomFields[1]["value"], out FriendCode? fc1))
               {
-                return fc1.ToString();
+                return fc1?.ToString();
               }
             }
           }
@@ -123,10 +123,10 @@ namespace SplatTagDatabase.Importers
       // public string CheckedInAt { get; set; }
 
       [JsonProperty("captain")]
-      public BattlefyJsonPlayer Captain { get; set; }
+      public BattlefyJsonPlayer? Captain { get; set; }
 
       [JsonProperty("players")]
-      public BattlefyJsonPlayer[] Players { get; set; }
+      public BattlefyJsonPlayer[]? Players { get; set; }
     }
 
     private readonly string jsonFile;
@@ -151,6 +151,12 @@ namespace SplatTagDatabase.Importers
       List<Player> players = new List<Player>();
       foreach (BattlefyJsonTeam row in rows)
       {
+        if (row.TeamName == null || row.Players == null)
+        {
+          Console.Error.WriteLine($"ERROR: JSON did not import a team correctly. Ignoring this team entry. File: " + jsonFile);
+          continue;
+        }
+
         if (row.Players.Length < 1)
         {
           // Report if the team name doesn't begin with "bye"
@@ -205,6 +211,12 @@ namespace SplatTagDatabase.Importers
 
         foreach (BattlefyJsonPlayer p in row.Players)
         {
+          if (p.Name == null || p.BattlefyName == null || p.BattlefyUserSlug == null)
+          {
+            Console.Error.WriteLine($"ERROR: Player's Name, BattlefyName, or BattlefyUserSlug not populated. Ignoring this player entry. File: " + jsonFile);
+            continue;
+          }
+
           // Add the player
           //if (p.Name.StartsWith(tag) && p.Name != tag)
           //{
@@ -213,15 +225,15 @@ namespace SplatTagDatabase.Importers
 
           // Filter the friend code from the name, if found
           var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);
-          string playerFc;
+          string? playerFc;
           if (parsedFriendCode != null)
           {
             p.Name = strippedName;
             playerFc = parsedFriendCode.ToString();
           }
-          else if (p.BattlefyName == row.Captain.BattlefyName)
+          else if (p.BattlefyName == row.Captain.BattlefyName && row.CaptainFriendCode != null)
           {
-            FriendCode.TryParse(row.CaptainFriendCode, out FriendCode fc);
+            FriendCode.TryParse(row.CaptainFriendCode, out FriendCode? fc);
             playerFc = fc?.ToString();
           }
           else

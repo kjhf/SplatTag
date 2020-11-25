@@ -40,12 +40,12 @@ namespace SplatTagCore
     /// <summary>
     /// Back-store for player's Twitch.
     /// </summary>
-    private string twitch;
+    private string? twitch;
 
     /// <summary>
     /// Back-store for player's Twitter.
     /// </summary>
-    private string twitter;
+    private string? twitter;
 
     /// <summary>
     /// Back-store for player's Battlefy Slugs.
@@ -79,7 +79,7 @@ namespace SplatTagCore
             names.Add(s);
           }
         }
-        transformedNames = null;
+        transformedNames.Clear();
       }
     }
 
@@ -127,7 +127,7 @@ namespace SplatTagCore
             names.Remove(value);
             names.Insert(0, value);
           }
-          transformedNames = null;
+          transformedNames.Clear();
         }
       }
     }
@@ -149,7 +149,7 @@ namespace SplatTagCore
     /// </summary>
     public IEnumerable<Guid> OldTeams
     {
-      get => teams?.Skip(1).ToArray();
+      get => teams.Skip(1).ToArray();
     }
 
     [JsonIgnore]
@@ -235,7 +235,7 @@ namespace SplatTagCore
     /// The Splatnet database Id of the player (a hex string).
     /// Null by default.
     /// </summary>
-    public string SplatnetId { get; set; }
+    public string? SplatnetId { get; set; }
 
     [JsonProperty("DiscordId", Required = Required.Default)]
     /// <summary>
@@ -249,27 +249,27 @@ namespace SplatTagCore
     /// Get or Set the Discord Name.
     /// Null by default.
     /// </summary>
-    public string DiscordName { get; set; }
+    public string? DiscordName { get; set; }
 
     [JsonProperty("FriendCode", Required = Required.Default)]
     /// <summary>
     /// Get or Set the Friend Code.
     /// Null by default.
     /// </summary>
-    public string FriendCode { get; set; }
+    public string? FriendCode { get; set; }
 
     [JsonProperty("Country", Required = Required.Default)]
     /// <summary>
     /// Get or Set the Country.
     /// Null by default.
     /// </summary>
-    public string Country { get; set; }
+    public string? Country { get; set; }
 
     [JsonIgnore]
     /// <summary>
     /// Get the emoji flag of the <see cref="Country"/> specified.
     /// </summary>
-    public string CountryFlag
+    public string? CountryFlag
     {
       get
       {
@@ -288,8 +288,9 @@ namespace SplatTagCore
     [JsonProperty("BattlefyUsername", Required = Required.Default)]
     /// <summary>
     /// Get or Set a BattlefyUsername.
+    /// Null by default.
     /// </summary>
-    public string BattlefyUsername { get; set; }
+    public string? BattlefyUsername { get; set; }
 
     [JsonProperty("BattlefySlugs", Required = Required.Default)]
     /// <summary>
@@ -315,12 +316,12 @@ namespace SplatTagCore
     /// <summary>
     /// Get or Set the player's Twitch link.
     /// </summary>
-    public string Twitch
+    public string? Twitch
     {
       get => twitch;
       set
       {
-        if (string.IsNullOrWhiteSpace(value))
+        if (value == null || string.IsNullOrWhiteSpace(value))
         {
           twitch = null;
         }
@@ -343,12 +344,12 @@ namespace SplatTagCore
     /// <summary>
     /// Get or Set the player's twitter link.
     /// </summary>
-    public string Twitter
+    public string? Twitter
     {
       get => twitter;
       set
       {
-        if (string.IsNullOrWhiteSpace(value))
+        if (value == null || string.IsNullOrWhiteSpace(value))
         {
           twitter = null;
         }

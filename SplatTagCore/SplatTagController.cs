@@ -14,7 +14,7 @@ namespace SplatTagCore
     private readonly ISplatTagDatabase database;
     private Player[] players;
     private Team[] teams;
-    private Task cachingTask;
+    private Task? cachingTask;
     private readonly Dictionary<Team, (Player, bool)[]> playersForTeam;
 
     public SplatTagController(ISplatTagDatabase database)
@@ -78,7 +78,7 @@ namespace SplatTagCore
     /// </summary>
     public (Player, bool)[] GetPlayersForTeam(Team t)
     {
-      if (!cachingTask.IsCompleted)
+      if (cachingTask != null && !cachingTask.IsCompleted)
       {
         cachingTask.Wait();
       }
@@ -88,7 +88,7 @@ namespace SplatTagCore
     /// <summary>
     /// Match a query to players with default options with all known players.
     /// </summary>
-    public Player[] MatchPlayer(string query)
+    public Player[] MatchPlayer(string? query)
     {
       return MatchPlayer(query, new MatchOptions());
     }
@@ -96,7 +96,7 @@ namespace SplatTagCore
     /// <summary>
     /// Match a query to players with given options with all known players.
     /// </summary>
-    public Player[] MatchPlayer(string query, MatchOptions matchOptions)
+    public Player[] MatchPlayer(string? query, MatchOptions matchOptions)
     {
       return MatchPlayer(query, matchOptions, players);
     }
@@ -104,9 +104,9 @@ namespace SplatTagCore
     /// <summary>
     /// Match a query to players with given options from a set of players.
     /// </summary>
-    public Player[] MatchPlayer(string query, MatchOptions matchOptions, ICollection<Player> playersToSearch)
+    public Player[] MatchPlayer(string? query, MatchOptions matchOptions, ICollection<Player> playersToSearch)
     {
-      if (string.IsNullOrEmpty(query))
+      if (query == null || query == string.Empty)
       {
         return playersToSearch.ToArray();
       }
@@ -336,7 +336,7 @@ namespace SplatTagCore
     /// <summary>
     /// Match a query to teams with default options.
     /// </summary>
-    public Team[] MatchTeam(string query)
+    public Team[] MatchTeam(string? query)
     {
       return MatchTeam(query, new MatchOptions());
     }
@@ -344,7 +344,7 @@ namespace SplatTagCore
     /// <summary>
     /// Match a query to teams with given options with all known teams.
     /// </summary>
-    public Team[] MatchTeam(string query, MatchOptions matchOptions)
+    public Team[] MatchTeam(string? query, MatchOptions matchOptions)
     {
       return MatchTeam(query, matchOptions, teams);
     }
@@ -352,9 +352,9 @@ namespace SplatTagCore
     /// <summary>
     /// Match a query to teams with given options with all known teams.
     /// </summary>
-    public Team[] MatchTeam(string query, MatchOptions matchOptions, ICollection<Team> teamsToSearch)
+    public Team[] MatchTeam(string? query, MatchOptions matchOptions, ICollection<Team> teamsToSearch)
     {
-      if (string.IsNullOrEmpty(query))
+      if (query == null || query == string.Empty)
       {
         return teamsToSearch.ToArray();
       }
@@ -546,7 +546,7 @@ namespace SplatTagCore
     public bool TryLaunchTwitter(Player p) => TryLaunchAddress(p.Twitter);
 
     /// <summary> Launch an address in a separate internet browser. </summary>
-    public bool TryLaunchAddress(string link)
+    public bool TryLaunchAddress(string? link)
     {
       if (!string.IsNullOrEmpty(link))
       {
