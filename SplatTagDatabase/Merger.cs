@@ -82,10 +82,6 @@ namespace SplatTagDatabase
     /// </returns>
     public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, IList<Team> teamsToMutate, TextWriter? logger = null)
     {
-      if (teamsToMutate == null)
-      {
-        teamsToMutate = new List<Team>();
-      }
       ConcurrentDictionary<Guid, Guid> mergeResult = new ConcurrentDictionary<Guid, Guid>();
 
       logger?.WriteLine($"Beginning {nameof(FinaliseTeams)} on {teamsToMutate.Count} entries.");

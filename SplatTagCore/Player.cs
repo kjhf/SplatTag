@@ -60,7 +60,7 @@ namespace SplatTagCore
     /// a small number of elements (under 20), List is actually better
     /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
     /// </remarks>
-    private List<string> transformedNames = new List<string>();
+    private readonly List<string> transformedNames = new List<string>();
 
     [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
@@ -91,9 +91,8 @@ namespace SplatTagCore
     {
       get
       {
-        if (transformedNames == null)
+        if (transformedNames.Count == 0)
         {
-          transformedNames = new List<string>();
           foreach (var name in names)
           {
             transformedNames.Add(name.Replace(" ", "").TransformString().ToLowerInvariant());
