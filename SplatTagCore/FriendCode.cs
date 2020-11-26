@@ -18,14 +18,14 @@ namespace SplatTagCore
     private static readonly Regex TWELVE_DIGITS_REGEX = new Regex(@"(\D|^)(\d{12})(\D|$)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     [JsonProperty("FC", Required = Required.Default)]
-    public short[] FC { get; private set; }
+    public short[]? FC { get; private set; }
 
     /// <summary>
     /// Take a string and parse a friend code from it, returning it and true if parsed, or null and false if not.
     /// </summary>
     /// <param name="value">The string to search</param>
     /// <param name="outFriendCode">The resulting friend code.</param>
-    public static bool TryParse(string value, out FriendCode outFriendCode)
+    public static bool TryParse(string value, out FriendCode? outFriendCode)
     {
       (outFriendCode, _) = ParseAndStripFriendCode(value);
       return outFriendCode != null;
@@ -37,7 +37,7 @@ namespace SplatTagCore
     /// </summary>
     /// <param name="value">The string to search</param>
     /// <returns>A tuple containing the friend code and the stripped value result.</returns>
-    public static (FriendCode, string) ParseAndStripFriendCode(string value)
+    public static (FriendCode?, string) ParseAndStripFriendCode(string value)
     {
       if (string.IsNullOrWhiteSpace(value)) return (null, value);
 
@@ -107,7 +107,7 @@ namespace SplatTagCore
     /// <exception cref="ArgumentException">String is not in the correct format. Use <see cref="TryParse(string, out FriendCode)"/>.</exception>
     public FriendCode(string fc)
     {
-      if (TryParse(fc, out FriendCode friendCode))
+      if (TryParse(fc, out FriendCode? friendCode) && friendCode != null)
       {
         this.FC = friendCode.FC;
       }

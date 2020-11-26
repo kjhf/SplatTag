@@ -8,20 +8,26 @@ namespace SplatTagDatabase
   public static class SplatTagControllerFactory
   {
     /// <summary>
+    /// Get the SplatTag application data folder
+    /// </summary>
+    /// <returns></returns>
+    public static string GetDefaultPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
+
+    /// <summary>
     /// Create the <see cref="SplatTagController"/> and an optional <see cref="GenericFilesImporter"/>.
     /// </summary>
     /// <param name="forceLoad">Force generating a GenericFilesImporter and subsequent source loading.</param>
     /// <param name="saveFolder">Optional save folder. If null, defaults to %appdata%/SplatTag.</param>
     /// <returns>SplatTagController and GenericFilesImporter if one was created.</returns>
-    public static (SplatTagController, GenericFilesImporter) CreateController(bool forceLoad = false, string saveFolder = null)
+    public static (SplatTagController, GenericFilesImporter?) CreateController(bool forceLoad = false, string? saveFolder = null)
     {
       if (saveFolder == null)
       {
-        saveFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
+        saveFolder = GetDefaultPath();
       }
       Directory.CreateDirectory(saveFolder);
 
-      GenericFilesImporter sourcesImporter = null;
+      GenericFilesImporter? sourcesImporter = null;
       SplatTagJsonSnapshotDatabase snapshotDatabase = new SplatTagJsonSnapshotDatabase(saveFolder);
       SplatTagController splatTagController = new SplatTagController(snapshotDatabase);
 
@@ -57,11 +63,11 @@ namespace SplatTagDatabase
     /// <param name="snapshotDatabase">The Snapshot Database. Set to null for default handling.</param>
     /// <returns>The Generic Importer and the Controller.</returns>
     /// <exception cref="Exception">This method may throw based on the Initialisation method.</exception>
-    public static (GenericFilesImporter, SplatTagController) GenerateNewDatabase(string saveFolder = null, SplatTagJsonSnapshotDatabase snapshotDatabase = null)
+    public static (GenericFilesImporter, SplatTagController) GenerateNewDatabase(string? saveFolder = null, SplatTagJsonSnapshotDatabase? snapshotDatabase = null)
     {
       if (saveFolder == null)
       {
-        saveFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
+        saveFolder = GetDefaultPath();
       }
       Directory.CreateDirectory(saveFolder);
 

@@ -1,4 +1,6 @@
-﻿using Microsoft.Win32;
+﻿#nullable enable
+
+using Microsoft.Win32;
 using System.Windows;
 
 namespace SplatTagUI

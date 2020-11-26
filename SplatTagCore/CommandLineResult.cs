@@ -8,18 +8,18 @@ namespace SplatTagCore
   public class CommandLineResult
   {
     [JsonProperty("Message", Required = Required.Always)]
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     [JsonProperty("Players", Required = Required.Always)]
-    public Player[] Players { get; set; }
+    public Player[]? Players { get; set; }
 
     [JsonProperty("Teams", Required = Required.Always)]
-    public Team[] Teams { get; set; }
+    public Team[]? Teams { get; set; }
 
     [JsonProperty("AdditionalTeams", Required = Required.Always)]
-    public Dictionary<Guid, Team> AdditionalTeams { get; set; }
+    public Dictionary<Guid, Team>? AdditionalTeams { get; set; }
 
     [JsonProperty("PlayersForTeams", Required = Required.Always)]
-    public Dictionary<Guid, (Player, bool)[]> PlayersForTeams { get; set; }
+    public Dictionary<Guid, (Player, bool)[]>? PlayersForTeams { get; set; }
   }
 }

@@ -11,10 +11,10 @@ namespace SplatTagDatabase
 {
   public class SplatTagJsonSnapshotDatabase : ISplatTagDatabase
   {
-    private readonly string saveDirectory;
+    private readonly string? saveDirectory;
     private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
-    private string playersSnapshotFile = null;
-    private string teamsSnapshotFile = null;
+    private string? playersSnapshotFile = null;
+    private string? teamsSnapshotFile = null;
 
     public SplatTagJsonSnapshotDatabase(string saveDirectory)
     {
@@ -61,7 +61,7 @@ namespace SplatTagDatabase
       return Load(playersSnapshotFile, teamsSnapshotFile);
     }
 
-    private static (Player[], Team[]) Load(string playersSnapshotFile, string teamsSnapshotFile)
+    private static (Player[], Team[]) Load(string? playersSnapshotFile, string? teamsSnapshotFile)
     {
       if (playersSnapshotFile == null || teamsSnapshotFile == null) return (new Player[0], new Team[0]);
 

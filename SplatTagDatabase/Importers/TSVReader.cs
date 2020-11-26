@@ -261,9 +261,9 @@ namespace SplatTagDatabase.Importers
               {
                 p.DiscordName = value;
               }
-              else if (FriendCode.TryParse(value, out FriendCode friendCode))
+              else if (FriendCode.TryParse(value, out FriendCode? friendCode))
               {
-                p.FriendCode = friendCode.ToString();
+                p.FriendCode = friendCode?.ToString();
                 Trace.WriteLine($"Warning: This value was declared as a Discord name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
               }
               else
@@ -277,9 +277,9 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.FC:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              if (FriendCode.TryParse(value, out FriendCode friendCode))
+              if (FriendCode.TryParse(value, out FriendCode? friendCode))
               {
-                p.FriendCode = friendCode.ToString();
+                p.FriendCode = friendCode?.ToString();
               }
               else
               {
@@ -329,9 +329,9 @@ namespace SplatTagDatabase.Importers
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               p.Name = value;
-              if (FriendCode.TryParse(value, out FriendCode friendCode))
+              if (FriendCode.TryParse(value, out FriendCode? friendCode))
               {
-                p.FriendCode = friendCode.ToString();
+                p.FriendCode = friendCode?.ToString();
                 Trace.WriteLine($"Warning: This value was declared as a name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
                 Debug.WriteLine(line);
               }

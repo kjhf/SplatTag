@@ -1,4 +1,6 @@
-﻿using SplatTagCore;
+﻿#nullable enable
+
+using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,7 +18,7 @@ namespace SplatTagUI
   public partial class DatabaseEditor : Window
   {
     private readonly ObservableCollection<string> filesSource = new ObservableCollection<string>();
-    private readonly SplatTagController splatTagController;
+    private readonly SplatTagController? splatTagController;
 
     /// <summary>Take a copy of the file sources selected by the user that should make up the database.</summary>
     public string[] DatabaseSources => filesSource.ToArray();
@@ -26,7 +28,7 @@ namespace SplatTagUI
       InitializeComponent();
     }
 
-    public DatabaseEditor(SplatTagController splatTagController, IEnumerable<string> originalFilesSource = null)
+    public DatabaseEditor(SplatTagController splatTagController, IEnumerable<string>? originalFilesSource = null)
     {
       InitializeComponent();
       if (originalFilesSource != null)
@@ -45,11 +47,14 @@ namespace SplatTagUI
 
     private void ReloadButton_Click(object sender, RoutedEventArgs e)
     {
-      var result = MessageBox.Show("Are you sure? This will overwrite any imported database changes.", "", MessageBoxButton.YesNo, MessageBoxImage.Question);
-      if (result == MessageBoxResult.Yes)
+      if (splatTagController != null)
       {
-        splatTagController.LoadDatabase();
-        MessageBox.Show("Reloaded successfully.");
+        var result = MessageBox.Show("Are you sure? This will overwrite any imported database changes.", "", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (result == MessageBoxResult.Yes)
+        {
+          splatTagController.LoadDatabase();
+          MessageBox.Show("Reloaded successfully.");
+        }
       }
     }
 
@@ -94,8 +99,11 @@ namespace SplatTagUI
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
-      splatTagController.SaveDatabase();
-      MessageBox.Show("Saved successfully.");
+      if (splatTagController != null)
+      {
+        splatTagController.SaveDatabase();
+        MessageBox.Show("Saved successfully.");
+      }
     }
 
     private void RemoveButton_Click(object sender, RoutedEventArgs e)

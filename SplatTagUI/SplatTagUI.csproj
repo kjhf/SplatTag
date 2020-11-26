@@ -15,6 +15,9 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <LangVersion>8.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>CS8600;CS8602;CS8603</WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -25,6 +28,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>CS8600;CS8602;CS8603</WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,6 +39,8 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>CS8600;CS8602;CS8603</WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>icon.ico</ApplicationIcon>
