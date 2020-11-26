@@ -9,7 +9,7 @@ namespace SplatTagCore
     /// <summary>
     /// The matches that make up the bracket
     /// </summary>
-    public IList<Match> Matches { get; set; }
+    public IList<Game>? Matches { get; set; }
 
     /// <summary>
     /// Name of the bracket if specified
@@ -17,16 +17,16 @@ namespace SplatTagCore
     /// <example>Top Cut</example>
     /// <example>Alpha</example>
     /// <example>Swiss</example>
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// The players that have played in the bracket
     /// </summary>
-    public IList<Guid> Players { get; set; }
+    public IList<Guid>? Players { get; set; }
 
     /// <summary>
     /// The teams that have played in the bracket
     /// </summary>
-    public IList<Guid> Teams { get; set; }
+    public IList<Guid>? Teams { get; set; }
   }
 }

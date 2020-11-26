@@ -24,6 +24,6 @@ namespace SplatTagCore
     /// <summary>
     /// Score points, indexed by team.
     /// </summary>
-    public IList<int> Points { get; set; }
+    public IList<int>? Points { get; set; }
   }
 }

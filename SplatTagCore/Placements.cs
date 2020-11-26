@@ -8,11 +8,11 @@ namespace SplatTagCore
     /// <summary>
     /// Players ordered by placement.
     /// </summary>
-    public IList<Guid> PlayersByPlacement { get; set; }
+    public IList<Guid>? PlayersByPlacement { get; set; }
 
     /// <summary>
     /// Teams ordered by placement.
     /// </summary>
-    public IList<Guid> TeamsByPlacement { get; set; }
+    public IList<Guid>? TeamsByPlacement { get; set; }
   }
 }
