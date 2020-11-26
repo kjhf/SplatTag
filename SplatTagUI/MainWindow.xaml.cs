@@ -1,14 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿#nullable enable
+
 using SplatTagCore;
 using SplatTagDatabase;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,9 +28,9 @@ namespace SplatTagUI
     private readonly string titleLead;
 
     internal static readonly SplatTagController splatTagController;
-    private static readonly GenericFilesImporter sourcesImporter;
-    private readonly Timer smoothSearchDelayTimer;
-    private readonly SynchronizationContext context;
+    private static readonly GenericFilesImporter? sourcesImporter;
+    private readonly Timer? smoothSearchDelayTimer;
+    private readonly SynchronizationContext? context;
 
     /// <summary>
     /// Version string to display.
@@ -94,7 +93,7 @@ namespace SplatTagUI
 
     private void TimerExpired(object state)
     {
-      this.context.Post((_) => Search(), this);
+      this.context?.Post((_) => Search(), this);
     }
 
     private void SearchWithTimerDelay()

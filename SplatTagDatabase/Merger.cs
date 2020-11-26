@@ -16,7 +16,7 @@ namespace SplatTagDatabase
     /// Final time-consuming call to look at all player entries and merge where appropriate.
     /// </summary>
     /// <param name="playersToMutate"></param>
-    public static void FinalisePlayers(IList<Player> playersToMutate, TextWriter logger = null)
+    public static void FinalisePlayers(IList<Player> playersToMutate, TextWriter? logger = null)
     {
       if (playersToMutate == null) return;
 
@@ -29,7 +29,7 @@ namespace SplatTagDatabase
         var newerPlayerRecord = playersToMutate[i];
 
         // First, try match through persistent information only.
-        Player foundPlayer = null;
+        Player? foundPlayer = null;
         for (int j = 0; j < i; ++j)
         {
           var olderPlayerRecord = playersToMutate[j];
@@ -80,9 +80,8 @@ namespace SplatTagDatabase
     /// <returns>
     /// A dictionary of merged team ids keyed by initial with values of the new id.
     /// </returns>
-    public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, IList<Team> teamsToMutate, TextWriter logger = null)
+    public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, IList<Team> teamsToMutate, TextWriter? logger = null)
     {
-      if (teamsToMutate == null) new Dictionary<Guid, Guid>();
       ConcurrentDictionary<Guid, Guid> mergeResult = new ConcurrentDictionary<Guid, Guid>();
 
       logger?.WriteLine($"Beginning {nameof(FinaliseTeams)} on {teamsToMutate.Count} entries.");
@@ -93,7 +92,7 @@ namespace SplatTagDatabase
         var newerTeamRecord = teamsToMutate[i];
 
         // Try match teams.
-        Team foundTeam = null;
+        Team? foundTeam = null;
         for (int j = 0; j < i; ++j)
         {
           var olderTeamRecord = teamsToMutate[j];
@@ -123,7 +122,7 @@ namespace SplatTagDatabase
       return mergeResult;
     }
 
-    public static void CorrectTeamIdsForPlayers(ICollection<Player> incomingPlayers, IDictionary<Guid, Guid> teamsMergeResult, TextWriter logger = null)
+    public static void CorrectTeamIdsForPlayers(ICollection<Player> incomingPlayers, IDictionary<Guid, Guid> teamsMergeResult, TextWriter? logger = null)
     {
       if (incomingPlayers == null || teamsMergeResult == null || incomingPlayers.Count == 0 || teamsMergeResult.Count == 0) return;
 
@@ -169,7 +168,7 @@ namespace SplatTagDatabase
     /// <summary>
     /// Merge the loaded players into the current players list.
     /// </summary>
-    public static void MergePlayers(ICollection<Player> playersToMutate, IEnumerable<Player> incomingPlayers, TextWriter logger = null)
+    public static void MergePlayers(ICollection<Player> playersToMutate, IEnumerable<Player> incomingPlayers, TextWriter? logger = null)
     {
       if (playersToMutate == null || incomingPlayers == null) return;
 
@@ -220,7 +219,7 @@ namespace SplatTagDatabase
     /// <param name="playersToMutate">The players to search</param>
     /// <param name="testPlayer">The player instance to try and find</param>
     /// <returns>The matched player, or null if new</returns>
-    private static Player FindSamePlayerPersistent(IEnumerable<Player> playersToMutate, Player testPlayer, TextWriter logger = null)
+    private static Player FindSamePlayerPersistent(IEnumerable<Player> playersToMutate, Player testPlayer, TextWriter? logger = null)
     {
       FilterOptions matchOptions = FilterOptions.None;
       if (!string.IsNullOrEmpty(testPlayer.FriendCode))
@@ -275,7 +274,7 @@ namespace SplatTagDatabase
         teamsToMutate = new List<Team>();
       }
 
-      if (teamsToMutate?.Count > 0)
+      if (teamsToMutate.Count > 0)
       {
         // Merge teams based on the Battlefy Persistent Id.
         foreach (Team importTeam in incomingTeams)
@@ -324,7 +323,7 @@ namespace SplatTagDatabase
     /// <param name="matchOptions">How to match</param>
     /// <param name="logger">Logger to write to (or null to not write)</param>
     /// <returns>Players are equal based on the match options</returns>
-    public static bool PlayersMatch(Player first, Player second, FilterOptions matchOptions, TextWriter logger = null)
+    public static bool PlayersMatch(Player first, Player second, FilterOptions matchOptions, TextWriter? logger = null)
     {
       // Quick out if they're literally the same.
       if (first.Id == second.Id) return true;
@@ -520,7 +519,7 @@ namespace SplatTagDatabase
     /// <param name="second">Second Team to match</param>
     /// <param name="logger">Logger to write to (or null to not write)</param>
     /// <returns>Teams match</returns>
-    public static bool TeamsMatch(IReadOnlyCollection<Player> allPlayers, Team first, Team second, TextWriter logger = null)
+    public static bool TeamsMatch(IReadOnlyCollection<Player> allPlayers, Team first, Team second, TextWriter? logger = null)
     {
       // Quick out if they're literally the same.
       if (first.Id == second.Id) return true;
@@ -594,7 +593,7 @@ namespace SplatTagDatabase
 
     /// <summary>
     /// Adds a new player to the players list with respect to their team and its tag.
-    /// Returns the player that was added (or null).
+    /// Returns the player that was added (or null if playername was null or empty).
     /// </summary>
     /// <param name="playerName">The player's name on the roster</param>
     /// <param name="teamTag">The team's tag</param>
@@ -602,9 +601,9 @@ namespace SplatTagDatabase
     /// <param name="newTeam"></param>
     /// <param name="players"></param>
     /// <param name="source"></param>
-    public static Player AddPlayerFromTag(string playerName, string teamTag, string transformedTag, Team newTeam, List<Player> players, string source)
+    public static Player? AddPlayerFromTag(string? playerName, string teamTag, string transformedTag, Team newTeam, List<Player> players, string source)
     {
-      if (!string.IsNullOrWhiteSpace(playerName))
+      if (playerName != null && !string.IsNullOrWhiteSpace(playerName))
       {
         playerName = playerName.Trim();
         switch (newTeam.ClanTagOption)
@@ -656,8 +655,10 @@ namespace SplatTagDatabase
         players.Add(p);
         return p;
       }
-
-      return null;
+      else
+      {
+        return null;
+      }
     }
   }
 }

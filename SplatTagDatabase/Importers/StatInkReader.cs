@@ -20,10 +20,10 @@ namespace SplatTagDatabase.Importers
       public long SplatnetNumber { get; set; }
 
       [JsonProperty("url")]
-      public Uri Url { get; set; }
+      public Uri? Url { get; set; }
 
       [JsonProperty("user")]
-      public User User { get; set; }
+      public User? User { get; set; }
 
       //[JsonProperty("lobby")]
       //public KeyNamePair Lobby { get; set; }
@@ -227,7 +227,7 @@ namespace SplatTagDatabase.Importers
       //public string PeriodRange { get; set; }
 
       [JsonProperty("players")]
-      public PlayerElement[] Players { get; set; }
+      public PlayerElement[]? Players { get; set; }
 
       //[JsonProperty("events")]
       //public object Events { get; set; }
@@ -260,7 +260,7 @@ namespace SplatTagDatabase.Importers
       //public TimeNode StartAt { get; set; }
 
       [JsonProperty("end_at")]
-      public TimeNode EndAt { get; set; }
+      public TimeNode? EndAt { get; set; }
 
       //[JsonProperty("register_at")]
       //public TimeNode RegisterAt { get; set; }
@@ -272,7 +272,7 @@ namespace SplatTagDatabase.Importers
       public long Time { get; set; }
 
       [JsonProperty("iso8601")]
-      public DateTimeOffset Iso8601 { get; set; }
+      public DateTimeOffset? Iso8601 { get; set; }
     }
 
     public class TranslatableName
@@ -281,7 +281,7 @@ namespace SplatTagDatabase.Importers
       //public string DeDe { get; set; }
 
       [JsonProperty("en_GB")]
-      public string EnGb { get; set; }
+      public string? EnGb { get; set; }
 
       //[JsonProperty("en_US")]
       //public string EnUs { get; set; }
@@ -320,22 +320,22 @@ namespace SplatTagDatabase.Importers
     public class KeyNamePair
     {
       [JsonProperty("key")]
-      public string Key { get; set; }
+      public string? Key { get; set; }
 
       [JsonProperty("name")]
-      public TranslatableName Name { get; set; }
+      public TranslatableName? Name { get; set; }
     }
 
     public class PlayerElement
     {
       [JsonProperty("team")]
-      public string Team { get; set; }
+      public string? Team { get; set; }
 
       [JsonProperty("is_me")]
       public bool IsMe { get; set; }
 
       [JsonProperty("weapon")]
-      public StatInkReaderWeapon Weapon { get; set; }
+      public StatInkReaderWeapon? Weapon { get; set; }
 
       [JsonProperty("level")]
       public long Level { get; set; }
@@ -368,7 +368,7 @@ namespace SplatTagDatabase.Importers
       //public long Point { get; set; }
 
       [JsonProperty("name")]
-      public string Name { get; set; }
+      public string? Name { get; set; }
 
       //[JsonProperty("species")]
       //public object Species { get; set; }
@@ -380,13 +380,13 @@ namespace SplatTagDatabase.Importers
       //public object FestTitle { get; set; }
 
       [JsonProperty("splatnet_id")]
-      public string SplatnetId { get; set; }
+      public string? SplatnetId { get; set; }
 
       [JsonProperty("top_500")]
       public bool? Top500 { get; set; }
 
       [JsonProperty("icon")]
-      public string Icon { get; set; }
+      public string? Icon { get; set; }
     }
 
     public class StatInkReaderWeapon
@@ -413,7 +413,7 @@ namespace SplatTagDatabase.Importers
       //public string ReskinOf { get; set; }
 
       [JsonProperty("main_ref")]
-      public string MainRef { get; set; }
+      public string? MainRef { get; set; }
 
       //[JsonProperty("main_power_up")]
       //public KeyNamePair MainPowerUp { get; set; }
@@ -568,22 +568,22 @@ namespace SplatTagDatabase.Importers
     public class User
     {
       [JsonProperty("id")]
-      public long Id { get; set; }
+      public long? Id { get; set; }
 
       [JsonProperty("name")]
-      public string Name { get; set; }
+      public string? Name { get; set; }
 
       [JsonProperty("screen_name")]
-      public string ScreenName { get; set; }
+      public string? ScreenName { get; set; }
 
       [JsonProperty("url")]
-      public Uri Url { get; set; }
+      public Uri? Url { get; set; }
 
       //[JsonProperty("join_at")]
       //public TimeNode JoinAt { get; set; }
 
       [JsonProperty("profile")]
-      public Profile Profile { get; set; }
+      public Profile? Profile { get; set; }
 
       //[JsonProperty("stat")]
       //public object Stat { get; set; }
@@ -595,10 +595,10 @@ namespace SplatTagDatabase.Importers
       //public string Nnid { get; set; }
 
       [JsonProperty("friend_code")]
-      public string FriendCode { get; set; }
+      public string? FriendCode { get; set; }
 
       [JsonProperty("twitter")]
-      public string Twitter { get; set; }
+      public string? Twitter { get; set; }
 
       //[JsonProperty("ikanakama")]
       //public object Ikanakama { get; set; }
@@ -614,7 +614,7 @@ namespace SplatTagDatabase.Importers
     {
       public override bool CanConvert(Type t) => t == typeof(long) || t == typeof(long?);
 
-      public override object ReadJson(JsonReader reader, Type t, object existingValue, JsonSerializer serializer)
+      public override object? ReadJson(JsonReader reader, Type t, object existingValue, JsonSerializer serializer)
       {
         if (reader.TokenType == JsonToken.Null) return null;
         var value = serializer.Deserialize<string>(reader);
@@ -656,7 +656,7 @@ namespace SplatTagDatabase.Importers
       List<Player> players = new List<Player>();
 
       // Don't load the details if they are manual entries.
-      if (!root.Automated)
+      if (!root.Automated || root.Players == null)
       {
         return (players.ToArray(), new Team[0]);
       }
@@ -665,13 +665,13 @@ namespace SplatTagDatabase.Importers
       {
         players.Add(new Player
         {
-          Names = new string[] { p.Name },
+          Names = new string[] { p.Name ?? Player.UNKNOWN_PLAYER },
           Sources = new string[] { root.Url == null ? Path.GetFileNameWithoutExtension(jsonFile) : root.Url.AbsoluteUri },
-          FriendCode = p.IsMe ? root.User.Profile.FriendCode : null,
+          FriendCode = p.IsMe ? root.User?.Profile?.FriendCode : null,
           SplatnetId = p.SplatnetId,
           Top500 = p.Top500 == true,
-          Twitter = p.IsMe ? root.User.Profile.Twitter : null,
-          Weapons = new string[] { p.Weapon.MainRef }
+          Twitter = p.IsMe ? root.User?.Profile?.Twitter : null,
+          Weapons = new string[] { p.Weapon?.MainRef ?? "" }
         });
       }
 

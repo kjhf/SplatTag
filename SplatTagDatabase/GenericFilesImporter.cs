@@ -11,8 +11,8 @@ namespace SplatTagDatabase
   {
     public const string SourcesFileName = "sources.yaml";
     private readonly List<string> sources = new List<string>();
-    private readonly string sourcesFile;
-    private readonly string saveDirectory;
+    private readonly string? sourcesFile;
+    private readonly string? saveDirectory;
 
     public IReadOnlyCollection<string> Sources => sources;
 

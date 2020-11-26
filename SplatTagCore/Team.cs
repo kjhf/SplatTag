@@ -49,7 +49,7 @@ namespace SplatTagCore
     /// a small number of elements (under 20), List is actually better
     /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
     /// </remarks>
-    private List<string> transformedNames = new List<string>();
+    private readonly List<string> transformedNames = new List<string>();
 
     /// <summary>
     /// Back-store for the sources of this team.
@@ -98,13 +98,14 @@ namespace SplatTagCore
     /// <summary>
     /// The Battlefy Persistent Id of the team (or null if not set).
     /// Should be a hex string but may not be a ulong.
+    /// May be null.
     /// </summary>
-    public string BattlefyPersistentTeamId
+    public string? BattlefyPersistentTeamId
     {
       get => battlefyPersistentTeamIds.Count > 0 ? battlefyPersistentTeamIds[0] : null;
       set
       {
-        if (!string.IsNullOrWhiteSpace(value))
+        if (value != null && !string.IsNullOrWhiteSpace(value))
         {
           if (battlefyPersistentTeamIds.Count == 0)
           {
@@ -160,7 +161,7 @@ namespace SplatTagCore
             names.Add(s);
           }
         }
-        transformedNames = null; // Invalidate searchable names.
+        transformedNames.Clear(); // Invalidate searchable names.
       }
     }
 
@@ -172,9 +173,8 @@ namespace SplatTagCore
     {
       get
       {
-        if (transformedNames == null)
+        if (transformedNames.Count == 0)
         {
-          transformedNames = new List<string>();
           foreach (var name in names)
           {
             transformedNames.Add(name.Replace(" ", "").TransformString().ToLowerInvariant());
@@ -208,7 +208,7 @@ namespace SplatTagCore
             names.Remove(value);
             names.Insert(0, value);
           }
-          transformedNames = null;
+          transformedNames.Clear();
         }
       }
     }
@@ -242,8 +242,9 @@ namespace SplatTagCore
     [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
     /// Get or Set the team's twitter link.
+    /// Null by default.
     /// </summary>
-    public string Twitter { get; set; }
+    public string? Twitter { get; set; }
 
     public Team()
     {
@@ -393,7 +394,7 @@ namespace SplatTagCore
     /// <param name="examplePlayerName"></param>
     public void SetTagOption(string tag, string examplePlayerName)
     {
-      string transformedTag = tag?.TransformString();
+      string transformedTag = tag.TransformString();
       if (string.IsNullOrWhiteSpace(transformedTag))
       {
         // Nothing to do, no tag

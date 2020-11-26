@@ -68,7 +68,7 @@ namespace SplatTagUnitTests
       var dict = arr.ToDictionary(p => p.Id, p => p);
 
       // ...now check the dictionary.
-      Assert.AreEqual(dict.Count, 2, "Expected 2 players remaining - the others should be merged.");
+      Assert.AreEqual(2, dict.Count, "Expected 2 players remaining - the others should be merged.");
       Assert.IsTrue(dict.ContainsKey(id1), "Expected id1.");
       Assert.AreEqual(4, dict[id1].BattlefySlugs.Intersect(new string[] { "slug", "user", "unrelated", "another" }).Count(), "Expected slugs to be merged.");
       Assert.AreEqual(3, dict[id1].Names.Intersect(new string[] { "username", "person", "name_matching_slug" }).Count(), "Expected names to be merged.");
@@ -93,81 +93,95 @@ namespace SplatTagUnitTests
       Team t1 = new Team
       {
         BattlefyPersistentTeamId = T1_STRING,
-        Name = "Shared Name"
+        Name = "Shared Name",
+        Sources = new[] { "t1" }
       };
 
       Team t2 = new Team
       {
         BattlefyPersistentTeamId = T2_STRING,
-        Name = "TeamB"
+        Name = "TeamB",
+        Sources = new[] { "t2" }
       };
 
       // t3 -> t2
       Team t3 = new Team
       {
         BattlefyPersistentTeamId = T2_STRING,
-        Name = "AnotherTeam"
+        Name = "AnotherTeam",
+        Sources = new[] { "t3" }
       };
 
       // t4 -> t1
       Team t4 = new Team
       {
         BattlefyPersistentTeamId = T3_STRING,
-        Name = "Shared Name"
+        Name = "Shared Name",
+        Sources = new[] { "t4" }
       };
 
       // t5 should be left because it has no players in common.
       Team t5 = new Team
       {
         Name = "Shared Name",
-        Div = new Division(5, DivType.LUTI)
+        Div = new Division(5, DivType.LUTI),
+        Sources = new[] { "t5" }
       };
 
       // t6 -> t5
       Team t6 = new Team
       {
         Name = "Shared Name",
-        Div = new Division(4, DivType.LUTI)
+        Div = new Division(4, DivType.LUTI),
+        Sources = new[] { "t6" }
       };
 
       Player p1 = new Player
       {
         BattlefySlugs = new string[] { "user", "slug" },
         Name = "username",
-        Teams = new[] { t1.Id, t2.Id, t4.Id }
+        Teams = new[] { t1.Id, t2.Id, t4.Id },
+        Sources = new[] { "p1" }
       };
 
       Player p2 = new Player
       {
         Name = "player",
-        Teams = new[] { t1.Id, t2.Id, t4.Id }
+        Teams = new[] { t1.Id, t2.Id, t4.Id },
+        Sources = new[] { "p2" }
       };
 
       Player p3 = new Player
       {
         Name = "another player",
-        Teams = new[] { t1.Id, t2.Id, t4.Id }
+        Teams = new[] { t1.Id, t2.Id, t4.Id },
+        Sources = new[] { "p3" }
       };
 
       Player p4 = new Player
       {
         Name = "player 4",
-        Teams = new[] { t6.Id, t5.Id }
+        Teams = new[] { t6.Id, t5.Id },
+        Sources = new[] { "p4" }
       };
 
       Player p5 = new Player
       {
         Name = "player 5",
-        Teams = new[] { t6.Id, t5.Id }
+        Teams = new[] { t6.Id, t5.Id },
+        Sources = new[] { "p5" }
       };
 
       // Perform the merge
       var players = new List<Player>() { p1, p2, p3, p4, p5 };
       var teams = new List<Team>() { t1, t2, t3, t4, t5, t6 };
-      var result = Merger.FinaliseTeams(players, teams);
 
-      Assert.AreEqual(3, result.Count, "3 teams should have been merged.");
-      Assert.AreEqual(3, teams.Count, "3 teams should be left.");
+      DumpPlayers(players, "Players before merge:");
+      DumpTeams(teams, "Teams before merge:");
+      var result = Merger.FinaliseTeams(players, teams, Console.Out);
+      DumpPlayers(players, "Players after merge:");
+      DumpTeams(teams, "Teams after merge:");
+
       Assert.IsTrue(result.ContainsKey(t6.Id), "Expected t6 to be merged");
       Assert.AreEqual(t5.Id, result[t6.Id], "Expected t6 to be merged --> t5");
       Assert.AreEqual(4, t5.Div.Value, "Expected t6 to be merged --> t5 (Div should now be 4, not 5)");
@@ -180,6 +194,9 @@ namespace SplatTagUnitTests
       Assert.AreEqual(t2.Id, result[t3.Id], "Expected t3 to be merged --> t2");
       Assert.AreEqual("AnotherTeam", t2.Name, "Expected t3 to be merged --> t2 (Names should have merged)");
 
+      Assert.AreEqual(3, result.Count, "3 teams should have been merged.");
+      Assert.AreEqual(3, teams.Count, "3 teams should be left.");
+
       // Fix the players.
       Merger.CorrectTeamIdsForPlayers(players, result, Console.Out);
       Assert.AreEqual(p1.CurrentTeam, t1.Id, "Expected p1's current team to still be team 1");
@@ -188,6 +205,24 @@ namespace SplatTagUnitTests
       Assert.AreEqual(p4.CurrentTeam, t5.Id, "Expected p4's current team to now be t5");
       Assert.AreEqual(1, p5.Teams.Count, "Expected p5's number of teams to now be 1");
       Assert.AreEqual(p5.CurrentTeam, t5.Id, "Expected p5's current team to now be t5");
+    }
+
+    private static void DumpPlayers(IList<Player> players, string v)
+    {
+      Console.WriteLine(v);
+      foreach (var p in players)
+      {
+        Console.WriteLine("[" + (p.Sources.Any() ? string.Join(", ", p.Sources) : "") + "]: " + p.ToString());
+      }
+    }
+
+    private static void DumpTeams(IList<Team> teams, string v)
+    {
+      Console.WriteLine(v);
+      foreach (var t in teams)
+      {
+        Console.WriteLine("[" + (t.Sources.Any() ? string.Join(", ", t.Sources) : "") + "]: " + t.ToString());
+      }
     }
   }
 }
