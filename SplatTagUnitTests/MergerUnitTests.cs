@@ -27,8 +27,8 @@ namespace SplatTagUnitTests
       {
         CurrentTeam = team1
       };
-      p1.AddBattlefySlug("user", Builtins.ManualSource);
-      p1.AddBattlefySlug("slug", Builtins.ManualSource);
+      p1.AddBattlefyInformation("user", "user", Builtins.ManualSource);
+      p1.AddBattlefyInformation("slug", "z", Builtins.ManualSource);
       var id1 = p1.Id;
 
       // p2 -> p1
@@ -36,8 +36,8 @@ namespace SplatTagUnitTests
       {
         CurrentTeam = team1
       };
-      p2.AddBattlefySlug("unrelated", Builtins.ManualSource);
-      p2.AddBattlefySlug("slug", Builtins.ManualSource);
+      p2.AddBattlefyInformation("unrelated", "unrelated", Builtins.ManualSource);
+      p2.AddBattlefyInformation("slug", "x", Builtins.ManualSource);
 
       Player p3 = new Player("player_ign_team", new Source("p3"))
       {
@@ -56,8 +56,8 @@ namespace SplatTagUnitTests
       {
         CurrentTeam = team2
       };
-      p5.AddBattlefySlug("another", Builtins.ManualSource);
-      p5.AddBattlefySlug("slug", Builtins.ManualSource);
+      p5.AddBattlefyInformation("another", "another", Builtins.ManualSource);
+      p5.AddBattlefyInformation("slug", "y", Builtins.ManualSource);
 
       var players = new List<Player>() { p1, p2, p3, p4, p5 };
 
@@ -70,13 +70,16 @@ namespace SplatTagUnitTests
       var dict = players.ToDictionary(p => p.Id, p => p);
 
       // ...now check the dictionary.
-      Assert.AreEqual(2, dict.Count, $"Expected 2 players remaining - the others should be merged, actually: {string.Join("\n", dict.Keys.Select(k => k.ToString()))}");
+      Assert.AreEqual(2, dict.Count,
+        $"Expected 2 players remaining - the others should be merged, actually: {string.Join("\n", dict.Keys.Select(k => k.ToString()))}");
       Assert.IsTrue(dict.ContainsKey(id1), "Expected id1.");
-      Assert.AreEqual(4, Merger.NamesMatch(dict[id1].BattlefySlugs, Name.FromStrings(new[] { "slug", "user", "unrelated", "another" }, Builtins.ManualSource)),
+      Assert.AreEqual(4, Merger.NamesMatch(dict[id1].Battlefy, Name.FromStrings(new[] { "slug", "user", "unrelated", "another" }, Builtins.ManualSource)),
         "Expected slugs to be merged.");
+      Assert.AreEqual(6, Merger.GenericMatch<string>(dict[id1].BattlefyUsernames, new[] { "user", "unrelated", "another", "x", "y", "z" }),
+        $"Expected usernames to be merged, actually: {string.Join("\n", dict[id1].BattlefyUsernames)}");
       Assert.AreEqual(3, Merger.NamesMatch(dict[id1].Names, Name.FromStrings(new[] { "p1_username", "p2_person", "p5_slug" }, Builtins.ManualSource)),
         "Expected names to be merged.");
-      Assert.AreEqual(2, Merger.IdsMatch(dict[id1].Teams, new Guid[] { team1, team2 }),
+      Assert.AreEqual(2, Merger.GenericMatch(dict[id1].Teams, new Guid[] { team1, team2 }),
         "Expected teams to be merged. Teams: [" + string.Join(", ", dict[id1].Teams) + "]");
 
       Assert.IsTrue(dict.ContainsKey(id3), "Expected id3.");
@@ -131,8 +134,8 @@ namespace SplatTagUnitTests
       };
 
       Player p1 = new Player("username", new[] { t1.Id, t2.Id, t4.Id }, new Source("p1"));
-      p1.AddBattlefySlug("user", Builtins.ManualSource);
-      p1.AddBattlefySlug("slug", Builtins.ManualSource);
+      p1.AddBattlefyInformation("user", "user", Builtins.ManualSource);
+      p1.AddBattlefyInformation("slug", "user", Builtins.ManualSource);
 
       Player p2 = new Player("player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p2"));
       Player p3 = new Player("another player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p3"));

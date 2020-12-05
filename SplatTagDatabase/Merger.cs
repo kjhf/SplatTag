@@ -317,7 +317,7 @@ namespace SplatTagDatabase
       }
 
       // Test if the Battlefy Usernames match.
-      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && second.BattlefyUsername?.Equals(first.BattlefyUsername) == true)
+      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && GenericMatch(first.BattlefyUsernames, second.BattlefyUsernames) > 0)
       {
         // They do.
         if (logger != null)
@@ -327,8 +327,8 @@ namespace SplatTagDatabase
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with BattlefyUsername ");
-          logger.Write(first.BattlefyUsername);
+          logger.Write(") with BattlefyUsername(s) e.g. ");
+          logger.Write(first.BattlefyUsernames.FirstOrDefault());
           logger.Write(" from player ");
           logger.Write(second);
           logger.Write(" (Id ");
@@ -339,7 +339,7 @@ namespace SplatTagDatabase
       }
 
       // Test if any of the Battlefy Slugs match.
-      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && NamesMatch(first.BattlefySlugs, second.BattlefySlugs) > 0)
+      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && NamesMatch(first.Battlefy, second.Battlefy) > 0)
       {
         // They do.
         if (logger != null)
@@ -350,7 +350,7 @@ namespace SplatTagDatabase
           logger.Write(" (Id ");
           logger.Write(first.Id);
           logger.Write(") with test BattlefySlug(s) e.g. ");
-          logger.Write(first.BattlefySlugs.FirstOrDefault());
+          logger.Write(first.Battlefy.FirstOrDefault());
           logger.Write(" with player ");
           logger.Write(second);
           logger.Write(" (Id ");
@@ -484,9 +484,9 @@ namespace SplatTagDatabase
     }
 
     /// <summary>
-    /// Count number of matches between <see cref="Name"/>s of first and second.
+    /// Count number of matches between lists of first and second with a default comparison.
     /// </summary>
-    public static int IdsMatch(IEnumerable<Guid> first, IEnumerable<Guid> second)
+    public static int GenericMatch<T>(IEnumerable<T> first, IEnumerable<T> second)
     {
       return second.Intersect(first).Count();
     }
@@ -602,12 +602,9 @@ namespace SplatTagDatabase
       {
         matchOptions |= FilterOptions.Twitter;
       }
-      if (testPlayer.BattlefySlugs?.Count > 0)
+      if (testPlayer.Battlefy?.Count > 0)
       {
         matchOptions |= FilterOptions.BattlefySlugs;
-      }
-      if (testPlayer.BattlefyUsername != null)
-      {
         matchOptions |= FilterOptions.BattlefyUsername;
       }
 

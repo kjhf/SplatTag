@@ -1,6 +1,6 @@
-﻿using System;
+﻿using SplatTagCore.Social;
+using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SplatTagCore
 {
@@ -14,19 +14,72 @@ namespace SplatTagCore
     /// </summary>
     /// <typeparam name="T">The type, which must be a Name (including Social)</typeparam>
     /// <param name="name">The name or handle</param>
+    /// <param name="sources">The sources</param>
+    /// <param name="privateList">Reference to the player's private list</param>
+    internal static Battlefy? AddBattlefy(string slug, IEnumerable<string> usernames, IEnumerable<Source> sources, List<Battlefy> privateList)
+    {
+      if (!string.IsNullOrWhiteSpace(slug))
+      {
+        if (privateList.Count == 0)
+        {
+          privateList.Add(new Battlefy(slug, usernames, sources));
+        }
+        else if (privateList[0].Value.Equals(slug))
+        {
+          privateList[0].AddSources(sources);
+          privateList[0].AddUsernames(usernames);
+        }
+        else
+        {
+          var foundName = privateList.Find(n => n.Value.Equals(slug));
+          if (foundName != null)
+          {
+            privateList.Remove(foundName);
+            privateList.Insert(0, foundName);
+            privateList[0].AddSources(sources);
+            privateList[0].AddUsernames(usernames);
+          }
+          else
+          {
+            privateList.Insert(0, new Battlefy(slug, usernames, sources));
+          }
+        }
+
+        return privateList[0];
+      }
+      return null;
+    }
+
+    /// <summary>
+    /// Add a name or handle and its source to the private list.
+    /// </summary>
+    /// <typeparam name="T">The type, which must be a Name (including Social)</typeparam>
+    /// <param name="name">The name or handle</param>
     /// <param name="source">The source</param>
     /// <param name="privateList">Reference to the player's private list</param>
     internal static T? AddName<T>(string name, Source source, List<T> privateList) where T : Name
+    {
+      return AddName(name, source.AsEnumerable(), privateList);
+    }
+
+    /// <summary>
+    /// Add a name or handle and its sources to the private list.
+    /// </summary>
+    /// <typeparam name="T">The type, which must be a Name (including Social)</typeparam>
+    /// <param name="name">The name or handle</param>
+    /// <param name="sources">The sources</param>
+    /// <param name="privateList">Reference to the player's private list</param>
+    internal static T? AddName<T>(string name, IEnumerable<Source> sources, List<T> privateList) where T : Name
     {
       if (!string.IsNullOrWhiteSpace(name))
       {
         if (privateList.Count == 0)
         {
-          privateList.Add((T)Activator.CreateInstance(typeof(T), name, source));
+          privateList.Add((T)Activator.CreateInstance(typeof(T), name, sources));
         }
         else if (privateList[0].Value.Equals(name))
         {
-          privateList[0].AddSource(source);
+          privateList[0].AddSources(sources);
         }
         else
         {
@@ -35,13 +88,14 @@ namespace SplatTagCore
           {
             privateList.Remove(foundName);
             privateList.Insert(0, foundName);
-            foundName.AddSource(source);
+            privateList[0].AddSources(sources);
           }
           else
           {
-            privateList.Insert(0, (T)Activator.CreateInstance(typeof(T), name, source));
+            privateList.Insert(0, (T)Activator.CreateInstance(typeof(T), name, sources));
           }
         }
+
         return privateList[0];
       }
       return null;
@@ -59,24 +113,19 @@ namespace SplatTagCore
       {
         foreach (T name in value)
         {
-          if (!string.IsNullOrWhiteSpace(name.Value))
-          {
-            if (privateList.Count == 0)
-            {
-              privateList.Add(name);
-            }
-            else if (privateList[0].Equals(value))
-            {
-              // Nothing to do.
-            }
-            else
-            {
-              privateList.Remove(name);
-              privateList.Insert(0, name);
-            }
-          }
+          AddName(name.Value, name.Sources, privateList);
         }
       }
+    }
+
+    /// <summary>
+    /// Add sources to the list if not currently contained.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="privateList"></param>
+    internal static void AddSource(Source value, List<Source> privateList)
+    {
+      AddSources(value.AsEnumerable(), privateList);
     }
 
     /// <summary>
@@ -95,6 +144,35 @@ namespace SplatTagCore
           if (foundSource == null)
           {
             privateList.Add(source);
+          }
+        }
+      }
+    }
+
+    /// <summary>
+    /// Add strings to the list if not currently contained.
+    /// </summary>
+    internal static void AddStrings(IEnumerable<string> value, List<string> privateList)
+    {
+      if (value != null)
+      {
+        foreach (string w in value)
+        {
+          if (!string.IsNullOrWhiteSpace(w))
+          {
+            if (privateList.Count == 0)
+            {
+              privateList.Add(w);
+            }
+            else if (privateList[0].Equals(w, StringComparison.OrdinalIgnoreCase))
+            {
+              // Nothing to do.
+            }
+            else
+            {
+              privateList.Remove(w);
+              privateList.Insert(0, w);
+            }
           }
         }
       }

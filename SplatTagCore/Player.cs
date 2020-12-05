@@ -19,9 +19,9 @@ namespace SplatTagCore
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
-    /// Back-store for player's Battlefy Slugs.
+    /// Back-store for player's Battlefy information.
     /// </summary>
-    private readonly List<Name> battlefySlugs = new List<Name>();
+    private readonly List<Battlefy> battlefy = new List<Battlefy>();
 
     /// <summary>
     /// Back-store for the names of this player. The first element is the current name.
@@ -94,18 +94,17 @@ namespace SplatTagCore
       this.sources.Add(source);
     }
 
-    [JsonProperty("BattlefySlugs", Required = Required.Default)]
+    [JsonProperty("Battlefy", Required = Required.Default)]
     /// <summary>
-    /// Get or Set BattlefySlugs.
+    /// Get the player's Battlefy profile details. This iterates over Battlefy slugs if used as a <see cref="Name"/> class.
     /// </summary>
-    public IReadOnlyList<Name> BattlefySlugs => battlefySlugs;
+    public IReadOnlyList<Battlefy> Battlefy => battlefy;
 
-    [JsonProperty("BattlefyUsername", Required = Required.Default)]
+    [JsonIgnore]
     /// <summary>
-    /// Get or Set a BattlefyUsername.
-    /// Null by default.
+    /// Get the player's Battlefy Usernames.
     /// </summary>
-    public string? BattlefyUsername { get; set; }
+    public IReadOnlyList<string> BattlefyUsernames => battlefy.SelectMany(bf => bf.Usernames).Distinct().ToArray();
 
     [JsonProperty("Country", Required = Required.Default)]
     /// <summary>
@@ -248,14 +247,17 @@ namespace SplatTagCore
     /// </summary>
     public IReadOnlyList<string> Weapons => weapons;
 
-    public void AddBattlefySlug(string slug, Source source)
+    public void AddBattlefyInformation(string slug, string username, Source source)
     {
-      SplatTagCommon.AddName(slug, source, battlefySlugs);
+      SplatTagCommon.AddBattlefy(slug, username.AsEnumerable(), source.AsEnumerable(), battlefy);
     }
 
-    public void AddBattlefySlugs(IEnumerable<Name> value)
+    public void AddBattlefyInformation(IEnumerable<Battlefy> value)
     {
-      SplatTagCommon.AddNames(value, battlefySlugs);
+      foreach (var bf in value)
+      {
+        SplatTagCommon.AddBattlefy(bf.Value, bf.Usernames, bf.Sources, battlefy);
+      }
     }
 
     public void AddName(string name, Source source)
@@ -273,7 +275,7 @@ namespace SplatTagCore
       SplatTagCommon.AddName(handle, source, sendouProfiles);
     }
 
-    public void AddSendouProfiles(IEnumerable<Sendou> value)
+    public void AddSendou(IEnumerable<Sendou> value)
     {
       SplatTagCommon.AddNames(value, sendouProfiles);
     }
@@ -314,7 +316,7 @@ namespace SplatTagCore
       SplatTagCommon.AddName(handle, source, twitchProfiles);
     }
 
-    public void AddTwitchProfiles(IEnumerable<Twitch> value)
+    public void AddTwitch(IEnumerable<Twitch> value)
     {
       SplatTagCommon.AddNames(value, twitchProfiles);
     }
@@ -324,23 +326,14 @@ namespace SplatTagCore
       SplatTagCommon.AddName(handle, source, twitterProfiles);
     }
 
-    public void AddTwitterProfiles(IEnumerable<Twitter> value)
+    public void AddTwitter(IEnumerable<Twitter> value)
     {
       SplatTagCommon.AddNames(value, twitterProfiles);
     }
 
     public void AddWeapons(IEnumerable<string> value)
     {
-      if (value != null)
-      {
-        foreach (string w in value)
-        {
-          if (!string.IsNullOrWhiteSpace(w) && !weapons.Contains(w, StringComparison.OrdinalIgnoreCase))
-          {
-            weapons.Add(w);
-          }
-        }
-      }
+      SplatTagCommon.AddStrings(value, weapons);
     }
 
     /// <summary>
@@ -412,7 +405,7 @@ namespace SplatTagCore
       AddWeapons(newerPlayer.weapons);
 
       // Merge the BattlefySlugs.
-      AddBattlefySlugs(newerPlayer.battlefySlugs);
+      AddBattlefyInformation(newerPlayer.battlefy);
 
       // Merge the misc data
       AddFCs(newerPlayer.friendCodes);
@@ -433,18 +426,13 @@ namespace SplatTagCore
       }
 
       // Merge the Social Data.
-      AddSendouProfiles(newerPlayer.SendouProfiles);
-      AddTwitchProfiles(newerPlayer.twitchProfiles);
-      AddTwitterProfiles(newerPlayer.twitterProfiles);
+      AddSendou(newerPlayer.SendouProfiles);
+      AddTwitch(newerPlayer.twitchProfiles);
+      AddTwitter(newerPlayer.twitterProfiles);
 
       if (newerPlayer.Top500)
       {
         this.Top500 = true;
-      }
-
-      if (!string.IsNullOrWhiteSpace(newerPlayer.BattlefyUsername))
-      {
-        this.BattlefyUsername = newerPlayer.BattlefyUsername;
       }
     }
 

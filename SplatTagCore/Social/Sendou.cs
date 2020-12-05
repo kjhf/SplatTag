@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SplatTagCore.Social
 {
@@ -8,6 +9,11 @@ namespace SplatTagCore.Social
 
     public Sendou(string handle, Source source)
       : base(handle, source)
+    {
+    }
+
+    public Sendou(string handle, IEnumerable<Source> sources)
+      : base(handle, sources)
     {
     }
   }

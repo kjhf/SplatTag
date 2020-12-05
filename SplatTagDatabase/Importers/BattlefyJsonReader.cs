@@ -230,10 +230,9 @@ namespace SplatTagDatabase.Importers
           var newPlayer = new Player(p.Name, source)
           {
             CurrentTeam = newTeam.Id,
-            DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
-            BattlefyUsername = p.BattlefyName
+            DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null
           };
-          newPlayer.AddBattlefySlugs(new Name(p.BattlefyUserSlug, source.AsEnumerable()).AsEnumerable());
+          newPlayer.AddBattlefyInformation(p.BattlefyUserSlug, p.BattlefyName, source);
           newPlayer.AddFCs(parsedFriendCode.AsEnumerable());
           players.Add(newPlayer);
         }

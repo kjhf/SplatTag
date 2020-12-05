@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SplatTagCore.Social
 {
@@ -7,13 +8,20 @@ namespace SplatTagCore.Social
     /// <summary>
     /// Construct a Social account based on the name and the source
     /// </summary>
-    /// <param name="handle"></param>
-    /// <param name="source"></param>
+    protected Social(string handle, Source source)
+      : base(handle, source)
+    {
+      base.Value = ProcessHandle(handle);
+    }
+
+    /// <summary>
+    /// Construct a Social account based on the name and the source
+    /// </summary>
     /// <remarks>
     /// This constructor is used by <see cref="Activator"/>.
     /// </remarks>
-    protected Social(string handle, Source source)
-      : base(handle, source)
+    protected Social(string handle, IEnumerable<Source> sources)
+      : base(handle, sources)
     {
       base.Value = ProcessHandle(handle);
     }

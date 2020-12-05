@@ -31,9 +31,6 @@ namespace SplatTagCore
     /// <summary>
     /// Constructor for Name
     /// </summary>
-    /// <remarks>
-    /// This constructor is used by <see cref="Activator"/>.
-    /// </remarks>
     public Name(string name, Source source)
     {
       this.Value = name;
@@ -44,6 +41,9 @@ namespace SplatTagCore
     /// <summary>
     /// Constructor for Name
     /// </summary>
+    /// <remarks>
+    /// This constructor is used by <see cref="Activator"/>.
+    /// </remarks>
     public Name(string name, IEnumerable<Source> sources)
     {
       this.Value = name;
@@ -51,12 +51,9 @@ namespace SplatTagCore
       this.sources.AddRange(sources.Distinct());
     }
 
-    public void AddSource(Source source)
+    public void AddSources(IEnumerable<Source> sources)
     {
-      if (!this.sources.Contains(source))
-      {
-        this.sources.Add(source);
-      }
+      SplatTagCommon.AddSources(sources, this.sources);
     }
 
     /// <summary>
