@@ -82,25 +82,25 @@ namespace SplatTagDatabase.Importers
         }
       }
 
-      public string? CaptainFriendCode
+      public FriendCode CaptainFriendCode
       {
         get
         {
           if (CustomFields?.Length > 0)
           {
-            if (FriendCode.TryParse(CustomFields[0]["value"], out FriendCode? fc))
+            if (FriendCode.TryParse(CustomFields[0]["value"], out FriendCode fc))
             {
-              return fc?.ToString();
+              return fc;
             }
             else if (CustomFields.Length > 1)
             {
-              if (FriendCode.TryParse(CustomFields[1]["value"], out FriendCode? fc1))
+              if (FriendCode.TryParse(CustomFields[1]["value"], out FriendCode fc1))
               {
-                return fc1?.ToString();
+                return fc1;
               }
             }
           }
-          return null;
+          return FriendCode.NO_FRIEND_CODE;
         }
       }
 
@@ -218,30 +218,23 @@ namespace SplatTagDatabase.Importers
 
           // Filter the friend code from the name, if found
           var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);
-          string? playerFc;
           if (parsedFriendCode != null)
           {
             p.Name = strippedName;
-            playerFc = parsedFriendCode.ToString();
           }
           else if (p.BattlefyName == row.Captain.BattlefyName && row.CaptainFriendCode != null)
           {
-            FriendCode.TryParse(row.CaptainFriendCode, out FriendCode? fc);
-            playerFc = fc?.ToString();
-          }
-          else
-          {
-            playerFc = null;
+            parsedFriendCode = row.CaptainFriendCode;
           }
 
           var newPlayer = new Player(p.Name, source)
           {
             CurrentTeam = newTeam.Id,
-            FriendCode = playerFc,
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
             BattlefyUsername = p.BattlefyName
           };
           newPlayer.AddBattlefySlugs(new Name(p.BattlefyUserSlug, source.AsEnumerable()).AsEnumerable());
+          newPlayer.AddFCs(parsedFriendCode.AsEnumerable());
           players.Add(newPlayer);
         }
       }

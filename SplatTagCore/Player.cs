@@ -29,6 +29,11 @@ namespace SplatTagCore
     private readonly List<Name> names = new List<Name>();
 
     /// <summary>
+    /// Back-store for player's FCs.
+    /// </summary>
+    private readonly List<FriendCode> friendCodes = new List<FriendCode>();
+
+    /// <summary>
     /// Back-store for the Sendou Profiles of this player.
     /// </summary>
     private readonly List<Sendou> sendouProfiles = new List<Sendou>();
@@ -163,10 +168,10 @@ namespace SplatTagCore
 
     [JsonProperty("FriendCode", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the Friend Code.
-    /// Null by default.
+    /// Get the Friend Code.
+    /// NO_FRIEND_CODE by default.
     /// </summary>
-    public string? FriendCode { get; set; }
+    public FriendCode FC => friendCodes.Count > 0 ? friendCodes[0] : FriendCode.NO_FRIEND_CODE;
 
     [JsonIgnore]
     /// <summary>
@@ -278,6 +283,32 @@ namespace SplatTagCore
       SplatTagCommon.AddSources(value, sources);
     }
 
+    public void AddFCs(IEnumerable<FriendCode> value)
+    {
+      if (value != null)
+      {
+        foreach (FriendCode fc in value)
+        {
+          if (fc != FriendCode.NO_FRIEND_CODE)
+          {
+            if (friendCodes.Count == 0)
+            {
+              friendCodes.Add(fc);
+            }
+            else if (friendCodes[0].Equals(value))
+            {
+              // Nothing to do.
+            }
+            else
+            {
+              friendCodes.Remove(fc);
+              friendCodes.Insert(0, fc);
+            }
+          }
+        }
+      }
+    }
+
     public void AddTwitch(string handle, Source source)
     {
       SplatTagCommon.AddName(handle, source, twitchProfiles);
@@ -384,10 +415,7 @@ namespace SplatTagCore
       AddBattlefySlugs(newerPlayer.battlefySlugs);
 
       // Merge the misc data
-      if (!string.IsNullOrWhiteSpace(newerPlayer.FriendCode))
-      {
-        this.FriendCode = newerPlayer.FriendCode;
-      }
+      AddFCs(newerPlayer.friendCodes);
 
       if (!string.IsNullOrWhiteSpace(newerPlayer.DiscordName))
       {

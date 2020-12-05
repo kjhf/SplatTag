@@ -361,7 +361,7 @@ namespace SplatTagDatabase
       }
 
       // Test if the Switch FC's match.
-      if ((matchOptions & FilterOptions.FriendCode) != 0 && second.FriendCode?.Equals(first.FriendCode) == true)
+      if ((matchOptions & FilterOptions.FriendCode) != 0 && first.FC != FriendCode.NO_FRIEND_CODE && second.FC == first.FC)
       {
         // They do.
         if (logger != null)
@@ -372,7 +372,7 @@ namespace SplatTagDatabase
           logger.Write(" (Id ");
           logger.Write(first.Id);
           logger.Write(") with FC ");
-          logger.Write(first.FriendCode);
+          logger.Write(first.FC);
           logger.Write(" from player ");
           logger.Write(second);
           logger.Write(" (Id ");
@@ -582,7 +582,7 @@ namespace SplatTagDatabase
     private static Player FindSamePlayerPersistent(IEnumerable<Player> playersToMutate, Player testPlayer, TextWriter? logger = null)
     {
       FilterOptions matchOptions = FilterOptions.None;
-      if (!string.IsNullOrEmpty(testPlayer.FriendCode))
+      if (testPlayer.FC != FriendCode.NO_FRIEND_CODE)
       {
         matchOptions |= FilterOptions.FriendCode;
       }

@@ -664,13 +664,22 @@ namespace SplatTagDatabase.Importers
         };
         var newPlayer = new Player(p.Name ?? Builtins.UNKNOWN_PLAYER, source)
         {
-          FriendCode = p.IsMe ? root.User?.Profile?.FriendCode : null,
           SplatnetId = p.SplatnetId,
           Top500 = p.Top500 == true,
         };
-        if (p.IsMe && root.User?.Profile?.Twitter != null)
+        if (p.IsMe)
         {
-          newPlayer.AddTwitter(root.User.Profile.Twitter, source);
+          if (root.User?.Profile?.Twitter != null)
+          {
+            newPlayer.AddTwitter(root.User.Profile.Twitter, source);
+          }
+          if (root.User?.Profile?.FriendCode != null)
+          {
+            if (FriendCode.TryParse(root.User.Profile.FriendCode, out FriendCode friendCode))
+            {
+              newPlayer.AddFCs(friendCode.AsEnumerable());
+            }
+          }
         }
         if (p.Weapon?.MainRef != null)
         {

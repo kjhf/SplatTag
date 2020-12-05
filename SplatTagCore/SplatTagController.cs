@@ -138,10 +138,10 @@ namespace SplatTagCore
 
           func = (p) =>
           {
-            if ((filterOptions & FilterOptions.FriendCode) != 0 && p.FriendCode != null)
+            if ((filterOptions & FilterOptions.FriendCode) != 0 && p.FC != FriendCode.NO_FRIEND_CODE)
             {
               // If FC matches, return top match.
-              if (regex.IsMatch(p.FriendCode))
+              if (regex.IsMatch(p.FC.ToString()))
               {
                 return int.MaxValue;
               }
@@ -238,14 +238,14 @@ namespace SplatTagCore
         func = (p) =>
         {
           int relevance = 0;
-          if ((filterOptions & FilterOptions.FriendCode) != 0 && p.FriendCode != null)
+          if ((filterOptions & FilterOptions.FriendCode) != 0 && p.FC != FriendCode.NO_FRIEND_CODE)
           {
             // If FC matches, return top match.
-            if (p.FriendCode.Equals(query, comparion))
+            if (p.FC.ToString().Equals(query, comparion))
             {
               return int.MaxValue;
             }
-            else if (p.FriendCode.Contains(query, comparion))
+            else if (p.FC.ToString().Contains(query, comparion))
             {
               relevance++;
             }
