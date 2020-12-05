@@ -14,7 +14,7 @@ namespace SplatTagCore
     /// <summary>
     /// The source identifier
     /// </summary>
-    public Guid Id { get; set; }
+    public Guid Id { get; } = Guid.NewGuid();
 
     /// <summary>
     /// The friendly name for the source
@@ -42,5 +42,26 @@ namespace SplatTagCore
     /// Relevant URI for the source
     /// </summary>
     public Uri? Uri { get; set; }
+
+    /// <summary>
+    /// Default constructor
+    /// </summary>
+    public Source()
+    {
+    }
+
+    /// <summary>
+    /// Construct a source with a name.
+    /// </summary>
+    /// <param name="name"></param>
+    public Source(string name)
+    {
+      Name = name;
+    }
+
+    public override string ToString()
+    {
+      return Name ?? base.ToString();
+    }
   }
 }

@@ -1,6 +1,7 @@
 ﻿#nullable enable
 
 using SplatTagCore;
+using SplatTagCore.Social;
 using SplatTagDatabase;
 using System;
 using System.Collections.Generic;
@@ -184,11 +185,15 @@ namespace SplatTagUI
       }
       else if (b.DataContext is Team t)
       {
-        splatTagController.TryLaunchTwitter(t);
+        splatTagController.TryLaunchAddress(t.Twitter.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchTwitter(p);
+        splatTagController.TryLaunchAddress(p.Twitter.FirstOrDefault()?.Uri?.AbsoluteUri);
+      }
+      else if (b.DataContext is Social s)
+      {
+        splatTagController.TryLaunchAddress(s.Uri?.AbsoluteUri);
       }
       else
       {
@@ -206,6 +211,10 @@ namespace SplatTagUI
       else if (b.DataContext is string slug)
       {
         splatTagController.TryLaunchAddress("https://battlefy.com/users/" + slug);
+      }
+      else if (b.DataContext is Social s)
+      {
+        splatTagController.TryLaunchAddress(s.Uri?.AbsoluteUri);
       }
       else
       {
@@ -246,11 +255,11 @@ namespace SplatTagUI
       }
       else if (value is Player p)
       {
-        sources = p.Sources;
+        sources = p.Sources.Select(s => s.Name ?? s.Id.ToString());
       }
       else if (value is Team t)
       {
-        sources = t.Sources;
+        sources = t.Sources.Select(s => s.Name ?? s.Id.ToString());
       }
       else
       {

@@ -3,6 +3,9 @@ using System.Text;
 
 namespace SplatTagCore
 {
+  /// <summary>
+  /// Util functions
+  /// </summary>
   public static class Util
   {
     /// <summary>

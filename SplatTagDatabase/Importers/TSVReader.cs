@@ -41,6 +41,7 @@ namespace SplatTagDatabase.Importers
     }
 
     private readonly string tsvFile;
+    private readonly Source source;
 
     private static readonly ReadOnlyDictionary<string, PropertyEnum> propertyValueStringMap = new ReadOnlyDictionary<string, PropertyEnum>(new Dictionary<string, PropertyEnum>()
     {
@@ -103,15 +104,11 @@ namespace SplatTagDatabase.Importers
     public TSVReader(string tsvFile)
     {
       this.tsvFile = tsvFile ?? throw new ArgumentNullException(nameof(tsvFile));
+      this.source = new Source(Path.GetFileNameWithoutExtension(tsvFile));
     }
 
     public (Player[], Team[]) Load()
     {
-      if (tsvFile == null)
-      {
-        throw new InvalidOperationException(nameof(tsvFile) + " is not set.");
-      }
-
       Debug.WriteLine("Loading " + tsvFile);
       string[] text = File.ReadAllLines(tsvFile);
       if (text.Length < 1)
@@ -202,12 +199,7 @@ namespace SplatTagDatabase.Importers
         }
 
         SortedDictionary<int, Player> rowPlayers = new SortedDictionary<int, Player>();
-        Team t = new Team
-        {
-          ClanTagOption = TagOption.Unknown,
-          Div = new Division(),
-          Sources = new string[] { Path.GetFileNameWithoutExtension(tsvFile) }
-        };
+        Team t = new Team();
 
         for (int i = 0; i < cells.Length && i < numberOfHeaders; ++i)
         {
@@ -328,7 +320,7 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.Name:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Name = value;
+              p.AddName(value, source);
               if (FriendCode.TryParse(value, out FriendCode? friendCode))
               {
                 p.FriendCode = friendCode?.ToString();
@@ -341,35 +333,33 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.Role:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Weapons = value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
+              p.AddWeapons(value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)));
               break;
             }
 
             case PropertyEnum.Tag:
             {
-              t.ClanTags = new string[] { value };
+              t.AddClanTag(value, source);
               break;
             }
 
             case PropertyEnum.TeamName:
             {
-              t.Name = value;
+              t.AddName(value, source);
               break;
             }
 
             case PropertyEnum.Twitter:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Names = p.Names.Concat(new[] { value });
-              p.Twitter = value;
+              p.AddTwitter(value, source);
               break;
             }
 
             case PropertyEnum.Twitch:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Names = p.Names.Concat(new[] { value });
-              p.Twitch = value;
+              p.AddTwitch(value, source);
               break;
             }
 
@@ -389,12 +379,21 @@ namespace SplatTagDatabase.Importers
         foreach (var pair in rowPlayers)
         {
           Player p = pair.Value;
-          if (p.Name.Equals(Player.UNKNOWN_PLAYER))
+          if (p.Name.Equals(Builtins.UNKNOWN_PLAYER))
           {
             continue;
           }
           p.CurrentTeam = t.Id;
           players.Add(p);
+        }
+
+        // Add the source.
+        t.AddSources(source.AsEnumerable());
+
+        // Recalculate the ClanTag layout
+        if (t.Tag != null && players.Any())
+        {
+          t.Tag.CalculateTagOption(players.First().Name.Value);
         }
         teams.Add(t);
       }
@@ -410,10 +409,8 @@ namespace SplatTagDatabase.Importers
       }
       else
       {
-        Player p = new Player
-        {
-          Sources = new string[] { Path.GetFileNameWithoutExtension(tsvFile) }
-        };
+        Player p = new Player();
+        p.AddSources(source.AsEnumerable());
         rowPlayers.Add(playerNum, p);
         return p;
       }

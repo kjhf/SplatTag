@@ -21,5 +21,16 @@ namespace SplatTagCore
     {
       return s.Any(str => str.IndexOf(other, comp) != -1);
     }
+
+    /// <summary>
+    /// Convert an object to an enumerable (containing only itself)
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="obj"></param>
+    /// <returns></returns>
+    public static IEnumerable<T> AsEnumerable<T>(this T obj)
+    {
+      yield return obj;
+    }
   }
 }

@@ -13,7 +13,7 @@ namespace SplatTagDatabase.Importers
     internal class LUTIJsonRow
     {
       [JsonProperty("Team Name")]
-      public string TeamName { get; set; } = Team.UNKNOWN_TEAM;
+      public string TeamName { get; set; } = Builtins.UNKNOWN_TEAM;
 
       [JsonProperty("Div", Required = Required.Default)]
       public string Div { get => Division; set => Division = value; }
@@ -21,10 +21,20 @@ namespace SplatTagDatabase.Importers
       [JsonProperty("Division", Required = Required.Default)]
       public string Division { get; set; } = "Unknown";
 
-      private string tag = Team.NoTeam.Tag;
+      private string? tag = Team.NoTeam.Tag?.Value;
 
       [JsonProperty("Tag")]
-      public string Tag { get => tag; set => tag = value.Trim(); }
+      public string? Tag
+      {
+        get => tag;
+        set
+        {
+          if (value != null && !string.IsNullOrWhiteSpace(value))
+          {
+            tag = value.Trim();
+          }
+        }
+      }
 
       [JsonProperty("Team Captain", Required = Required.Default)]
       public string TeamCaptain { get; set; } = "";
@@ -61,19 +71,16 @@ namespace SplatTagDatabase.Importers
     }
 
     private readonly string jsonFile;
+    private readonly Source source;
 
     public LUTIJsonReader(string jsonFile)
     {
       this.jsonFile = jsonFile ?? throw new ArgumentNullException(nameof(jsonFile));
+      this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
     }
 
     public (Player[], Team[]) Load()
     {
-      if (jsonFile == null)
-      {
-        throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
-      }
-
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile); // N.B. by default this reads UTF-8.
       LUTIJsonRow[] rows = JsonConvert.DeserializeObject<LUTIJsonRow[]>(json);
@@ -87,31 +94,27 @@ namespace SplatTagDatabase.Importers
           throw new ArgumentException("JSON does not contain a Team Captain. Check format of spreadsheet.");
         }
 
-        Team newTeam = new Team
+        Team newTeam = new Team(row.TeamName, source)
         {
-          ClanTags = new string[] { row.Tag },
-          ClanTagOption = TagOption.Unknown,
           Div = new Division(row.Division),
-          Name = row.TeamName,
-          Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) }
         };
-
-        // Handle tag placements from the captain's name
-        newTeam.SetTagOption(row.Tag, row.TeamCaptain);
-        string transformedTag = row.Tag.TransformString();
+        if (row.Tag != null)
+        {
+          // Handle tag placements from the captain's name
+          newTeam.AddClanTag(row.Tag, source, ClanTag.CalculateTagOption(row.Tag, row.TeamCaptain));
+        }
 
         teams.Add(newTeam);
-        string source = Path.GetFileNameWithoutExtension(jsonFile);
-        Merger.AddPlayerFromTag(row.TeamCaptain, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player2, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player3, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player4, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player5, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player6, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player7, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player8, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player9, row.Tag, transformedTag, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player10, row.Tag, transformedTag, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.TeamCaptain, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player2, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player3, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player4, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player5, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player6, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player7, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player8, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player9, newTeam, players, source);
+        Merger.AddPlayerFromTag(row.Player10, newTeam, players, source);
       }
 
       return (players.ToArray(), teams.ToArray());

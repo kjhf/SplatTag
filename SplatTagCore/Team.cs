@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,53 +9,31 @@ namespace SplatTagCore
   [Serializable]
   public class Team
   {
-    /// <summary>
-    /// Displayed string for an unknown team.
-    /// </summary>
-    public const string UNKNOWN_TEAM = "(Unnamed Team)";
-
-    public static readonly Team NoTeam = new Team()
+    public static readonly Team NoTeam = new Team("(Free Agent)", Builtins.BuiltinSource)
     {
-      ClanTagOption = TagOption.Variable,
-      ClanTags = new string[] { "FA" },
-      Div = new Division(),
-      Name = "(Free Agent)",
-      sources = new List<string>()
+      clanTags = new List<ClanTag> { new ClanTag("FA", TagOption.Variable, Builtins.BuiltinSource.AsEnumerable()) },
     };
 
-    public static readonly Team UnlinkedTeam = new Team()
+    public static readonly Team UnlinkedTeam = new Team("(UNLINKED TEAM)", Builtins.BuiltinSource)
     {
-      ClanTagOption = TagOption.Variable,
-      ClanTags = new string[] { nameof(SplatTagCore) + " ERROR" },
-      Div = new Division(),
-      Name = "UNLINKED TEAM",
-      sources = new List<string>()
+      clanTags = new List<ClanTag> { new ClanTag(nameof(SplatTagCore).ToUpper() + "ERROR", TagOption.Variable, Builtins.BuiltinSource.AsEnumerable()) },
     };
 
+    [JsonProperty("Id", Required = Required.Always)]
     /// <summary>
-    /// The tag(s) of the team, first is the current tag.
+    /// The GUID of the team.
     /// </summary>
-    private Stack<string> clanTags;
-
-    /// <summary>
-    /// Back-store for the names of this team. The first element is the current name.
-    /// </summary>
-    private List<string> names = new List<string>();
-
-    /// <summary>
-    /// Back-store for the transformed names of this team.
-    /// </summary>
-    /// <remarks>
-    /// Though a HashSet may seem more performant, for collections with
-    /// a small number of elements (under 20), List is actually better
-    /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
-    /// </remarks>
-    private readonly List<string> transformedNames = new List<string>();
+    public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
     /// Back-store for the sources of this team.
     /// </summary>
-    private List<string> sources = new List<string>();
+    private readonly List<Source> sources = new List<Source>();
+
+    /// <summary>
+    /// Back-store for the Twitter Profiles of this player.
+    /// </summary>
+    private readonly List<Twitter> twitterProfiles = new List<Twitter>();
 
     /// <summary>
     /// Back-store for the persistent ids of this team.
@@ -66,33 +45,38 @@ namespace SplatTagCore
     /// </remarks>
     private List<string> battlefyPersistentTeamIds = new List<string>();
 
-    [JsonProperty("ClanTagOption", Required = Required.Default)]
     /// <summary>
-    /// The placement of the tag
+    /// The tag(s) of the team, first is the current tag.
     /// </summary>
-    public TagOption ClanTagOption { get; set; }
+    private List<ClanTag> clanTags = new List<ClanTag>();
 
-    [JsonProperty("ClanTags", Required = Required.Always)]
     /// <summary>
-    /// The tag(s) of the team
+    /// Back-store for the names of this team. The first element is the current name.
     /// </summary>
-    public string[] ClanTags
+    /// <remarks>
+    /// Though a HashSet may seem more performant, for collections with
+    /// a small number of elements (under 20), List is actually better
+    /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
+    /// </remarks>
+    private List<Name> names = new List<Name>();
+
+    /// <summary>
+    /// Default construct a Team
+    /// </summary>
+    public Team()
     {
-      get => clanTags.ToArray();
-      set => clanTags = new Stack<string>(value.Where(s => !string.IsNullOrEmpty(s)));
     }
 
-    [JsonProperty("Div", Required = Required.Always)]
     /// <summary>
-    /// The division of the team
+    /// Construct a Team with their name and source
     /// </summary>
-    public Division Div { get; set; }
-
-    [JsonProperty("Id", Required = Required.Always)]
-    /// <summary>
-    /// The GUID of the team.
-    /// </summary>
-    public readonly Guid Id = Guid.NewGuid();
+    /// <param name="ign"></param>
+    /// <param name="source"></param>
+    public Team(string ign, Source source)
+    {
+      this.names.Add(new Name(ign, source));
+      this.sources.Add(source);
+    }
 
     [JsonProperty("BattlefyPersistentTeamId", Required = Required.Default)]
     /// <summary>
@@ -144,113 +128,93 @@ namespace SplatTagCore
       }
     }
 
-    [JsonProperty("Names", Required = Required.Default)]
+    [JsonIgnore]
     /// <summary>
-    /// The names this team is known by
+    /// The placement of the current tag (null if the team does not have a tag)
     /// </summary>
-    public IEnumerable<string> Names
-    {
-      get => names.ToArray();
-      set
-      {
-        names = new List<string>();
-        foreach (string s in value)
-        {
-          if (!string.IsNullOrWhiteSpace(s) && !names.Contains(s))
-          {
-            names.Add(s);
-          }
-        }
-        transformedNames.Clear(); // Invalidate searchable names.
-      }
-    }
+    public TagOption? ClanTagOption => Tag?.LayoutOption;
+
+    [JsonProperty("ClanTags", Required = Required.Always)]
+    /// <summary>
+    /// The tag(s) of the team
+    /// </summary>
+    public IReadOnlyList<ClanTag> ClanTags => clanTags;
+
+    [JsonProperty("Div", Required = Required.Always)]
+    /// <summary>
+    /// The division of the team
+    /// </summary>
+    public Division Div { get; set; } = new Division();
 
     [JsonIgnore]
     /// <summary>
-    /// The names this team is known by transformed into searchable query.
+    /// The last known used name for the Team
     /// </summary>
-    public IReadOnlyCollection<string> TransformedNames
-    {
-      get
-      {
-        if (transformedNames.Count == 0)
-        {
-          foreach (var name in names)
-          {
-            transformedNames.Add(name.Replace(" ", "").TransformString().ToLowerInvariant());
-          }
-        }
-        return transformedNames;
-      }
-    }
+    public Name Name => names.Count > 0 ? names[0] : Builtins.UnknownTeamName;
 
-    [JsonProperty("Name", Required = Required.Default)]
+    [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
-    /// The name of the team
+    /// The names this player is known by.
     /// </summary>
-    public string Name
-    {
-      get => names.Count > 0 ? names[0] : UNKNOWN_TEAM;
-      set
-      {
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-          if (names.Count == 0)
-          {
-            names.Add(value);
-          }
-          else if (names[0].Equals(value))
-          {
-            // Nothing to do.
-          }
-          else
-          {
-            names.Remove(value);
-            names.Insert(0, value);
-          }
-          transformedNames.Clear();
-        }
-      }
-    }
+    public IReadOnlyList<Name> Names => names;
 
     [JsonProperty("Sources", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the current sources that make up this Player instance.
+    /// Get or Set the current sources that make up this Team instance.
     /// </summary>
-    public IList<string> Sources
-    {
-      get => sources.ToArray();
-      set
-      {
-        sources = new List<string>();
-        foreach (string s in value)
-        {
-          if (!string.IsNullOrWhiteSpace(s) && !sources.Contains(s))
-          {
-            sources.Add(s);
-          }
-        }
-      }
-    }
+    public IReadOnlyList<Source> Sources => sources;
 
     [JsonIgnore]
     /// <summary>
     /// The most recent tag of the team
     /// </summary>
-    public string Tag => ClanTags.Length > 0 ? ClanTags[0] : "";
+    public ClanTag? Tag => ClanTags.Count > 0 ? ClanTags[0] : null;
+
+    [JsonIgnore]
+    /// <summary>
+    /// The names this player is known by transformed into searchable query.
+    /// </summary>
+    public IReadOnlyList<string> TransformedNames => Names.Select(n => n.TransformedName).ToArray();
 
     [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the team's twitter link.
-    /// Null by default.
+    /// Get the team's Twitter profile details.
     /// </summary>
-    public string? Twitter { get; set; }
+    public IReadOnlyList<Twitter> Twitter => twitterProfiles;
 
-    public Team()
+    public ClanTag? AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
     {
-      Div = new Division();
-      clanTags = new Stack<string>();
-      sources = new List<string>();
+      ClanTag? clanTag = SplatTagCommon.AddName(tag, source, clanTags);
+      if (clanTag != null)
+      {
+        clanTag.LayoutOption = option;
+      }
+      return clanTag;
+    }
+
+    public void AddClanTags(IEnumerable<ClanTag> value)
+    {
+      SplatTagCommon.AddNames(value, clanTags);
+    }
+
+    public void AddName(string name, Source source)
+    {
+      SplatTagCommon.AddName(name, source, names);
+    }
+
+    public void AddSources(IEnumerable<Source> value)
+    {
+      SplatTagCommon.AddSources(value, sources);
+    }
+
+    public Twitter? AddTwitter(string handle, Source source)
+    {
+      return SplatTagCommon.AddName(handle, source, twitterProfiles);
+    }
+
+    public void AddTwitterProfiles(IEnumerable<Twitter> value)
+    {
+      SplatTagCommon.AddNames(value, twitterProfiles);
     }
 
     /// <summary>
@@ -268,35 +232,10 @@ namespace SplatTagCore
     public void Merge(Team newerTeam)
     {
       // Merge the tags.
-      if (clanTags.Count == 0)
-      {
-        ClanTags = newerTeam.ClanTags;
-      }
-      else
-      {
-        // Iterates the other stack in reverse order so older tags are pushed first
-        // so the most recent end up first in the stack.
-        foreach (string tag in newerTeam.clanTags.Reverse())
-        {
-          if (string.IsNullOrWhiteSpace(tag)) continue;
-
-          string foundTag = this.clanTags.FirstOrDefault(teamTags => teamTags.Equals(tag, StringComparison.OrdinalIgnoreCase));
-
-          if (foundTag == null)
-          {
-            clanTags.Push(tag);
-
-            // The tag has changed, update the tag option.
-            this.ClanTagOption = newerTeam.ClanTagOption;
-          }
-        }
-      }
+      SplatTagCommon.AddNames(newerTeam.clanTags, clanTags);
 
       // Merge Twitter
-      if (!string.IsNullOrWhiteSpace(newerTeam.Twitter))
-      {
-        this.Twitter = newerTeam.Twitter;
-      }
+      AddTwitterProfiles(newerTeam.twitterProfiles);
 
       // Update the div if the other div is known.
       if (newerTeam.Div.Value != Division.UNKNOWN)
@@ -305,31 +244,7 @@ namespace SplatTagCore
       }
 
       // Merge the team's name(s).
-      if (names.Count == 0)
-      {
-        Names = newerTeam.names;
-      }
-      else
-      {
-        // Iterates the other stack in reverse order so older names are pushed first
-        // so the most recent end up first in the stack.
-        var reverseTeamNames = newerTeam.names.ToList();
-        reverseTeamNames.Reverse();
-        foreach (string n in reverseTeamNames.Where(s => !string.IsNullOrWhiteSpace(s)))
-        {
-          string foundName = this.names.Find(teamNames => teamNames.Equals(n, StringComparison.OrdinalIgnoreCase));
-
-          if (foundName == null)
-          {
-            names.Insert(0, n);
-          }
-          else
-          {
-            names.Remove(foundName);
-            names.Insert(0, n);
-          }
-        }
-      }
+      SplatTagCommon.AddNames(newerTeam.names, names);
 
       // Merge the team's persistent battlefy id(s).
       if (battlefyPersistentTeamIds.Count == 0)
@@ -359,22 +274,7 @@ namespace SplatTagCore
       }
 
       // Merge the sources.
-      if (sources.Count == 0)
-      {
-        Sources = newerTeam.sources;
-      }
-      else
-      {
-        foreach (string source in newerTeam.Sources.Where(s => !string.IsNullOrWhiteSpace(s)))
-        {
-          string foundSource = this.sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
-
-          if (foundSource == null)
-          {
-            sources.Add(source);
-          }
-        }
-      }
+      SplatTagCommon.AddSources(newerTeam.sources, sources);
     }
 
     /// <summary>
@@ -384,48 +284,6 @@ namespace SplatTagCore
     public override string ToString()
     {
       return $"{Tag} {Name} ({Div})";
-    }
-
-    /// <summary>
-    /// Calculates the <see cref="ClanTagOption"/> based on the tag and the example player name.
-    /// Does NOT set the tag.
-    /// </summary>
-    /// <param name="tag"></param>
-    /// <param name="examplePlayerName"></param>
-    public void SetTagOption(string tag, string examplePlayerName)
-    {
-      string transformedTag = tag.TransformString();
-      if (string.IsNullOrWhiteSpace(transformedTag))
-      {
-        // Nothing to do, no tag
-      }
-      else
-      {
-        if (examplePlayerName.StartsWith(tag, StringComparison.OrdinalIgnoreCase) || examplePlayerName.StartsWith(transformedTag, StringComparison.OrdinalIgnoreCase))
-        {
-          this.ClanTagOption = TagOption.Front;
-        }
-        else if (examplePlayerName.EndsWith(tag, StringComparison.OrdinalIgnoreCase) || examplePlayerName.EndsWith(transformedTag, StringComparison.OrdinalIgnoreCase))
-        {
-          // Tag is at the back.
-          this.ClanTagOption = TagOption.Back;
-        }
-
-        if (transformedTag.Length == 2)
-        {
-          char first = transformedTag[0];
-          char second = transformedTag[1];
-          // If the tag has 2 characters, check 'surrounding' criteria which is take the
-          // first character of the tag and check if the captain's name begins with this character,
-          // then take the last character of the tag and check if the captain's name ends with this character.
-          // e.g. Tag: //, Captain's name: /captain/
-          if (examplePlayerName.StartsWith(first.ToString(), StringComparison.OrdinalIgnoreCase)
-          && examplePlayerName.EndsWith(second.ToString(), StringComparison.OrdinalIgnoreCase))
-          {
-            this.ClanTagOption = TagOption.Surrounding;
-          }
-        }
-      }
     }
   }
 }

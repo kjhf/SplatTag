@@ -130,19 +130,16 @@ namespace SplatTagDatabase.Importers
     }
 
     private readonly string jsonFile;
+    private readonly Source source;
 
     public BattlefyJsonReader(string jsonFile)
     {
       this.jsonFile = jsonFile ?? throw new ArgumentNullException(nameof(jsonFile));
+      this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
     }
 
     public (Player[], Team[]) Load()
     {
-      if (jsonFile == null)
-      {
-        throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
-      }
-
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
       BattlefyJsonTeam[] rows = JsonConvert.DeserializeObject<BattlefyJsonTeam[]>(json);
@@ -179,16 +176,12 @@ namespace SplatTagDatabase.Importers
           continue;
         }
 
-        // Attempt to resolve the team tag
-        string source = Path.GetFileNameWithoutExtension(jsonFile);
-        Team newTeam = new Team
+        // Attempt to resolve the team tags
+        Team newTeam = new Team(row.TeamName, source)
         {
           BattlefyPersistentTeamId = row.BattlefyPersistentTeamId,
           // ClanTags = tag.Length == 0 ? new string[0] : new string[1] { tag },
           // ClanTagOption = tag.Length == 0 ? TagOption.Unknown : TagOption.Front,
-          Div = new Division(),
-          Name = row.TeamName,
-          Sources = new string[] { source }
         };
 
         // If we already have a team with this id then merge it.
@@ -241,16 +234,15 @@ namespace SplatTagDatabase.Importers
             playerFc = null;
           }
 
-          players.Add(new Player
+          var newPlayer = new Player(p.Name, source)
           {
             CurrentTeam = newTeam.Id,
-            Names = new string[] { p.Name, p.BattlefyName },
-            Sources = new string[] { source },
             FriendCode = playerFc,
             DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null,
-            BattlefySlugs = new[] { p.BattlefyUserSlug },
             BattlefyUsername = p.BattlefyName
-          });
+          };
+          newPlayer.AddBattlefySlugs(new Name(p.BattlefyUserSlug, source.AsEnumerable()).AsEnumerable());
+          players.Add(newPlayer);
         }
       }
 

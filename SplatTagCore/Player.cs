@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,146 +10,116 @@ namespace SplatTagCore
   [Serializable]
   public class Player
   {
-    /// <summary>
-    /// Displayed string for an unknown player.
-    /// </summary>
-    public const string UNKNOWN_PLAYER = "(Unnamed Player)";
-
     public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+    [JsonProperty("Id", Required = Required.Always)]
+    /// <summary>
+    /// The database Id of the player.
+    /// </summary>
+    public readonly Guid Id = Guid.NewGuid();
+
+    /// <summary>
+    /// Back-store for player's Battlefy Slugs.
+    /// </summary>
+    private readonly List<Name> battlefySlugs = new List<Name>();
 
     /// <summary>
     /// Back-store for the names of this player. The first element is the current name.
     /// </summary>
-    private List<string> names = new List<string>();
+    private readonly List<Name> names = new List<Name>();
+
+    /// <summary>
+    /// Back-store for the Sendou Profiles of this player.
+    /// </summary>
+    private readonly List<Sendou> sendouProfiles = new List<Sendou>();
 
     /// <summary>
     /// Back-store for the sources of this player.
     /// </summary>
-    private List<string> sources = new List<string>();
+    private readonly List<Source> sources = new List<Source>();
 
     /// <summary>
     /// Back-store for the team GUIDs for this player. The first element is the current team.
     /// No team represented by <see cref="Team.NoTeam.Id"/>.
     /// </summary>
-    private List<Guid> teams = new List<Guid>();
+    private readonly List<Guid> teams = new List<Guid>();
+
+    /// <summary>
+    /// Back-store for the Twitch Profiles of this player.
+    /// </summary>
+    private readonly List<Twitch> twitchProfiles = new List<Twitch>();
+
+    /// <summary>
+    /// Back-store for the Twitter Profiles of this player.
+    /// </summary>
+    private readonly List<Twitter> twitterProfiles = new List<Twitter>();
 
     /// <summary>
     /// Back-store for the weapons that the player uses (if any).
     /// </summary>
-    private List<string> weapons = new List<string>();
+    private readonly List<string> weapons = new List<string>();
 
     /// <summary>
-    /// Back-store for player's Twitch.
+    /// Default construct a player
     /// </summary>
-    private string? twitch;
-
-    /// <summary>
-    /// Back-store for player's Twitter.
-    /// </summary>
-    private string? twitter;
-
-    /// <summary>
-    /// Back-store for player's Battlefy Slugs.
-    /// </summary>
-    private List<string> battlefySlugs = new List<string>();
-
-    /// <summary>
-    /// Back-store for the transformed names of this player.
-    /// </summary>
-    /// <remarks>
-    /// Though a HashSet may seem more performant, for collections with
-    /// a small number of elements (under 20), List is actually better
-    /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
-    /// </remarks>
-    private readonly List<string> transformedNames = new List<string>();
-
-    [JsonProperty("Names", Required = Required.Always)]
-    /// <summary>
-    /// The names this player is known by.
-    /// </summary>
-    public IEnumerable<string> Names
+    public Player()
     {
-      get => names.ToArray();
-      set
-      {
-        names = new List<string>();
-        foreach (string s in value)
-        {
-          if (!string.IsNullOrWhiteSpace(s) && !names.Contains(s))
-          {
-            names.Add(s);
-          }
-        }
-        transformedNames.Clear();
-      }
     }
+
+    /// <summary>
+    /// Construct a player with their name and source
+    /// </summary>
+    /// <param name="ign"></param>
+    /// <param name="source"></param>
+    public Player(string ign, Source source)
+    {
+      this.names.Add(new Name(ign, source));
+      this.sources.Add(source);
+    }
+
+    /// <summary>
+    /// Construct a player with their name, teams, and source
+    /// </summary>
+    /// <param name="ign"></param>
+    /// <param name="source"></param>
+    public Player(string ign, IEnumerable<Guid> teams, Source source)
+    {
+      this.names.Add(new Name(ign, source));
+      this.teams.AddRange(teams);
+      this.sources.Add(source);
+    }
+
+    [JsonProperty("BattlefySlugs", Required = Required.Default)]
+    /// <summary>
+    /// Get or Set BattlefySlugs.
+    /// </summary>
+    public IReadOnlyList<Name> BattlefySlugs => battlefySlugs;
+
+    [JsonProperty("BattlefyUsername", Required = Required.Default)]
+    /// <summary>
+    /// Get or Set a BattlefyUsername.
+    /// Null by default.
+    /// </summary>
+    public string? BattlefyUsername { get; set; }
+
+    [JsonProperty("Country", Required = Required.Default)]
+    /// <summary>
+    /// Get or Set the Country.
+    /// Null by default.
+    /// </summary>
+    public string? Country { get; set; }
 
     [JsonIgnore]
     /// <summary>
-    /// The names this player is known by transformed into searchable query.
+    /// Get the emoji flag of the <see cref="Country"/> specified.
     /// </summary>
-    public IReadOnlyCollection<string> TransformedNames
+    public string? CountryFlag
     {
       get
       {
-        if (transformedNames.Count == 0)
-        {
-          foreach (var name in names)
-          {
-            transformedNames.Add(name.Replace(" ", "").TransformString().ToLowerInvariant());
-          }
-        }
-        return transformedNames;
+        if (Country == null) return null;
+        return string.Concat(Country.ToUpper().Select(x => char.ConvertFromUtf32(x + 0x1F1A5)));
       }
-    }
-
-    [JsonIgnore]
-    /// <summary>
-    /// The last known used name for the player
-    /// </summary>
-    public string Name
-    {
-      get => names.Count > 0 ? names[0] : UNKNOWN_PLAYER;
-      set
-      {
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-          if (names.Count == 0)
-          {
-            names.Add(value);
-          }
-          else if (names[0].Equals(value))
-          {
-            // Nothing to do.
-          }
-          else
-          {
-            names.Remove(value);
-            names.Insert(0, value);
-          }
-          transformedNames.Clear();
-        }
-      }
-    }
-
-    [JsonProperty("Teams", Required = Required.Always)]
-    /// <summary>
-    /// The teams this player is played for.
-    /// No Team represented by <see cref="Team.NoTeam.Id"/>
-    /// </summary>
-    public ICollection<Guid> Teams
-    {
-      get => teams.ToArray();
-      set => teams = value?.Distinct().ToList() ?? new List<Guid>();
-    }
-
-    [JsonIgnore]
-    /// <summary>
-    /// The old teams this player has played for.
-    /// </summary>
-    public IEnumerable<Guid> OldTeams
-    {
-      get => teams.Skip(1).ToArray();
     }
 
     [JsonIgnore]
@@ -176,66 +147,6 @@ namespace SplatTagCore
       }
     }
 
-    [JsonProperty("Weapons", Required = Required.Default)]
-    /// <summary>
-    /// The weapons this player uses.
-    /// </summary>
-    public IList<string> Weapons
-    {
-      get => weapons.ToArray();
-      set
-      {
-        weapons = new List<string>();
-        foreach (string s in value)
-        {
-          if (!string.IsNullOrWhiteSpace(s) && !weapons.Contains(s, StringComparison.OrdinalIgnoreCase))
-          {
-            weapons.Add(s);
-          }
-        }
-      }
-    }
-
-    [JsonProperty("Sources", Required = Required.Default)]
-    /// <summary>
-    /// Get or Set the current sources that make up this Player instance.
-    /// </summary>
-    public IList<string> Sources
-    {
-      get => sources.ToArray();
-      set
-      {
-        sources = new List<string>();
-        foreach (string s in value)
-        {
-          if (!string.IsNullOrWhiteSpace(s) && !sources.Contains(s))
-          {
-            sources.Add(s);
-          }
-        }
-      }
-    }
-
-    [JsonProperty("Id", Required = Required.Always)]
-    /// <summary>
-    /// The database Id of the player.
-    /// </summary>
-    public readonly Guid Id = Guid.NewGuid();
-
-    [JsonProperty("SendouId", Required = Required.Default)]
-    /// <summary>
-    /// The Sendou database Id of the player.
-    /// Null by default.
-    /// </summary>
-    public Guid? SendouId { get; set; }
-
-    [JsonProperty("SplatnetId", Required = Required.Default)]
-    /// <summary>
-    /// The Splatnet database Id of the player (a hex string).
-    /// Null by default.
-    /// </summary>
-    public string? SplatnetId { get; set; }
-
     [JsonProperty("DiscordId", Required = Required.Default)]
     /// <summary>
     /// The Discord database Id of the player.
@@ -257,25 +168,49 @@ namespace SplatTagCore
     /// </summary>
     public string? FriendCode { get; set; }
 
-    [JsonProperty("Country", Required = Required.Default)]
+    [JsonIgnore]
     /// <summary>
-    /// Get or Set the Country.
-    /// Null by default.
+    /// The last known used name for the player
     /// </summary>
-    public string? Country { get; set; }
+    public Name Name => names.Count > 0 ? names[0] : Builtins.UnknownPlayerName;
+
+    [JsonProperty("Names", Required = Required.Always)]
+    /// <summary>
+    /// The names this player is known by.
+    /// </summary>
+    public IReadOnlyList<Name> Names => names;
 
     [JsonIgnore]
     /// <summary>
-    /// Get the emoji flag of the <see cref="Country"/> specified.
+    /// The old teams this player has played for.
     /// </summary>
-    public string? CountryFlag
-    {
-      get
-      {
-        if (Country == null) return null;
-        return string.Concat(Country.ToUpper().Select(x => char.ConvertFromUtf32(x + 0x1F1A5)));
-      }
-    }
+    public IReadOnlyList<Guid> OldTeams => teams.Skip(1).ToArray();
+
+    [JsonProperty("Sendou", Required = Required.Default)]
+    /// <summary>
+    /// Get the player's Sendou profile details.
+    /// </summary>
+    public IReadOnlyList<Sendou> SendouProfiles => sendouProfiles;
+
+    [JsonProperty("Sources", Required = Required.Default)]
+    /// <summary>
+    /// Get or Set the current sources that make up this Player instance.
+    /// </summary>
+    public IReadOnlyList<Source> Sources => sources;
+
+    [JsonProperty("SplatnetId", Required = Required.Default)]
+    /// <summary>
+    /// The Splatnet database Id of the player (a hex string).
+    /// Null by default.
+    /// </summary>
+    public string? SplatnetId { get; set; }
+
+    [JsonProperty("Teams", Required = Required.Always)]
+    /// <summary>
+    /// The teams this player is played for.
+    /// No Team represented by <see cref="Team.NoTeam.Id"/>
+    /// </summary>
+    public IReadOnlyList<Guid> Teams => teams.ToArray();
 
     [JsonProperty("Top500", Required = Required.Default)]
     /// <summary>
@@ -284,85 +219,121 @@ namespace SplatTagCore
     /// </summary>
     public bool Top500 { get; set; }
 
-    [JsonProperty("BattlefyUsername", Required = Required.Default)]
+    [JsonIgnore]
     /// <summary>
-    /// Get or Set a BattlefyUsername.
-    /// Null by default.
+    /// The names this player is known by transformed into searchable query.
     /// </summary>
-    public string? BattlefyUsername { get; set; }
-
-    [JsonProperty("BattlefySlugs", Required = Required.Default)]
-    /// <summary>
-    /// Get or Set BattlefySlugs.
-    /// </summary>
-    public IList<string> BattlefySlugs
-    {
-      get => battlefySlugs;
-      set
-      {
-        battlefySlugs = new List<string>();
-        foreach (string s in value)
-        {
-          if (!string.IsNullOrWhiteSpace(s) && !battlefySlugs.Contains(s))
-          {
-            battlefySlugs.Add(s);
-          }
-        }
-      }
-    }
+    public IReadOnlyList<string> TransformedNames => Names.Select(n => n.TransformedName).ToArray();
 
     [JsonProperty("Twitch", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the player's Twitch link.
+    /// Get the player's Twitch profile details.
     /// </summary>
-    public string? Twitch
+    public IReadOnlyList<Twitch> Twitch => twitchProfiles;
+
+    [JsonProperty("Twitter", Required = Required.Default)]
+    /// <summary>
+    /// Get the player's Twitter profile details.
+    /// </summary>
+    public IReadOnlyList<Twitter> Twitter => twitterProfiles;
+
+    [JsonProperty("Weapons", Required = Required.Default)]
+    /// <summary>
+    /// The weapons this player uses.
+    /// </summary>
+    public IReadOnlyList<string> Weapons => weapons;
+
+    public void AddBattlefySlug(string slug, Source source)
     {
-      get => twitch;
-      set
+      SplatTagCommon.AddName(slug, source, battlefySlugs);
+    }
+
+    public void AddBattlefySlugs(IEnumerable<Name> value)
+    {
+      SplatTagCommon.AddNames(value, battlefySlugs);
+    }
+
+    public void AddName(string name, Source source)
+    {
+      SplatTagCommon.AddName(name, source, names);
+    }
+
+    public void AddNames(IEnumerable<Name> value)
+    {
+      SplatTagCommon.AddNames(value, names);
+    }
+
+    public void AddSendou(string handle, Source source)
+    {
+      SplatTagCommon.AddName(handle, source, sendouProfiles);
+    }
+
+    public void AddSendouProfiles(IEnumerable<Sendou> value)
+    {
+      SplatTagCommon.AddNames(value, sendouProfiles);
+    }
+
+    public void AddSources(IEnumerable<Source> value)
+    {
+      SplatTagCommon.AddSources(value, sources);
+    }
+
+    public void AddTwitch(string handle, Source source)
+    {
+      SplatTagCommon.AddName(handle, source, twitchProfiles);
+    }
+
+    public void AddTwitchProfiles(IEnumerable<Twitch> value)
+    {
+      SplatTagCommon.AddNames(value, twitchProfiles);
+    }
+
+    public void AddTwitter(string handle, Source source)
+    {
+      SplatTagCommon.AddName(handle, source, twitterProfiles);
+    }
+
+    public void AddTwitterProfiles(IEnumerable<Twitter> value)
+    {
+      SplatTagCommon.AddNames(value, twitterProfiles);
+    }
+
+    public void AddWeapons(IEnumerable<string> value)
+    {
+      if (value != null)
       {
-        if (value == null || string.IsNullOrWhiteSpace(value))
+        foreach (string w in value)
         {
-          twitch = null;
-        }
-        else if (value.Contains("twitch.tv"))
-        {
-          twitch = value;
-        }
-        else
-        {
-          if (value.StartsWith("@"))
+          if (!string.IsNullOrWhiteSpace(w) && !weapons.Contains(w, StringComparison.OrdinalIgnoreCase))
           {
-            value = value.Substring(1);
+            weapons.Add(w);
           }
-          twitch = "https://twitch.tv/" + value;
         }
       }
     }
 
-    [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the player's twitter link.
+    /// Correct the team ids for this player given a merge result (containing old team id --> new id)
     /// </summary>
-    public string? Twitter
+    public void CorrectTeamIds(IDictionary<Guid, Guid> teamsMergeResult)
     {
-      get => twitter;
-      set
+      // Reverse order to reduce Remove impact
+      for (int i = teams.Count - 1; i >= 0; i--)
       {
-        if (value == null || string.IsNullOrWhiteSpace(value))
+        if (teamsMergeResult.ContainsKey(teams[i]))
         {
-          twitter = null;
-        }
-        else if (value.Contains("twitter.com"))
-        {
-          twitter = value;
-        }
-        else
-        {
-          if (value.StartsWith("@"))
+          var correctedId = teamsMergeResult[teams[i]];
+
+          // If the id already exists in this list, remove this entry.
+          if (teams.Contains(correctedId))
           {
-            value = value.Substring(1);
+            teams.RemoveAt(i);
           }
-          twitter = "https://twitter.com/" + value;
+          else
+          {
+            // Otherwise set the new id.
+            teams[i] = correctedId;
+          }
         }
       }
     }
@@ -381,7 +352,7 @@ namespace SplatTagCore
       if (teams.Count == 0)
       {
         // Shortcut, just set the teams.
-        Teams = newerPlayer.teams;
+        teams.AddRange(newerPlayer.teams);
       }
       else
       {
@@ -401,85 +372,16 @@ namespace SplatTagCore
       }
 
       // Merge the player's name(s).
-      if (names.Count == 0)
-      {
-        Names = newerPlayer.names;
-      }
-      else
-      {
-        // Iterates the other stack in reverse order so older names are pushed first
-        // so the most recent end up first in the stack.
-        var reversePlayers = newerPlayer.names.ToList();
-        reversePlayers.Reverse();
-        foreach (string n in reversePlayers.Where(s => !string.IsNullOrWhiteSpace(s)))
-        {
-          string foundName = this.names.Find(playerNames => playerNames.Equals(n, StringComparison.OrdinalIgnoreCase));
-
-          if (foundName == null)
-          {
-            names.Insert(0, n);
-          }
-          else
-          {
-            names.Remove(foundName);
-            names.Insert(0, n);
-          }
-        }
-      }
+      AddNames(newerPlayer.names);
 
       // Merge the sources.
-      if (sources.Count == 0)
-      {
-        Sources = newerPlayer.sources;
-      }
-      else
-      {
-        foreach (string source in newerPlayer.Sources.Where(s => !string.IsNullOrWhiteSpace(s)))
-        {
-          string foundSource = this.sources.Find(sources => sources.Equals(source, StringComparison.OrdinalIgnoreCase));
-
-          if (foundSource == null)
-          {
-            sources.Add(source);
-          }
-        }
-      }
+      AddSources(newerPlayer.sources);
 
       // Merge the weapons.
-      if (weapons.Count == 0)
-      {
-        Weapons = newerPlayer.weapons;
-      }
-      else
-      {
-        foreach (string weapon in newerPlayer.Weapons.Where(s => !string.IsNullOrWhiteSpace(s)))
-        {
-          string foundWeapon = weapons.Find(wep => weapon.Equals(wep, StringComparison.OrdinalIgnoreCase));
-
-          if (foundWeapon == null)
-          {
-            weapons.Add(weapon);
-          }
-        }
-      }
+      AddWeapons(newerPlayer.weapons);
 
       // Merge the BattlefySlugs.
-      if (battlefySlugs.Count == 0)
-      {
-        BattlefySlugs = newerPlayer.battlefySlugs;
-      }
-      else
-      {
-        foreach (string slug in newerPlayer.BattlefySlugs.Where(s => !string.IsNullOrWhiteSpace(s)))
-        {
-          string found = this.battlefySlugs.Find(slugs => slugs.Equals(slug, StringComparison.OrdinalIgnoreCase));
-
-          if (found == null)
-          {
-            battlefySlugs.Add(slug);
-          }
-        }
-      }
+      AddBattlefySlugs(newerPlayer.battlefySlugs);
 
       // Merge the misc data
       if (!string.IsNullOrWhiteSpace(newerPlayer.FriendCode))
@@ -502,24 +404,14 @@ namespace SplatTagCore
         this.Country = newerPlayer.Country;
       }
 
-      if (newerPlayer.SendouId != null)
-      {
-        this.SendouId = newerPlayer.SendouId;
-      }
+      // Merge the Social Data.
+      AddSendouProfiles(newerPlayer.SendouProfiles);
+      AddTwitchProfiles(newerPlayer.twitchProfiles);
+      AddTwitterProfiles(newerPlayer.twitterProfiles);
 
       if (newerPlayer.Top500)
       {
         this.Top500 = true;
-      }
-
-      if (!string.IsNullOrWhiteSpace(newerPlayer.Twitch))
-      {
-        this.Twitch = newerPlayer.Twitch;
-      }
-
-      if (!string.IsNullOrWhiteSpace(newerPlayer.Twitter))
-      {
-        this.Twitter = newerPlayer.Twitter;
       }
 
       if (!string.IsNullOrWhiteSpace(newerPlayer.BattlefyUsername))
@@ -534,7 +426,7 @@ namespace SplatTagCore
     /// <returns></returns>
     public override string ToString()
     {
-      return Name;
+      return Name.Value;
     }
   }
 }
