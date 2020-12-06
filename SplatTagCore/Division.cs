@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace SplatTagCore
@@ -22,6 +23,9 @@ namespace SplatTagCore
 
     [JsonProperty("Value", Required = Required.Always)]
     public readonly int Value = UNKNOWN;
+
+    [JsonProperty("Value", Required = Required.Always)]
+    public readonly string Season = "";
 
     /// <summary>
     /// Get a LUTI-equivalent value representing <see cref="Value"/>.
@@ -62,15 +66,18 @@ namespace SplatTagCore
     }
 
     [JsonConstructor]
-    public Division(int value = UNKNOWN, DivType divType = DivType.Unknown)
+    public Division(int value = UNKNOWN, DivType divType = DivType.Unknown, string season = "")
     {
       this.Value = value;
       this.DivType = divType;
+      this.Season = season;
     }
 
-    public Division(string valueStr, DivType divType = DivType.LUTI)
+    public Division(string valueStr, DivType divType, string season)
     {
       this.DivType = divType;
+      this.Season = season;
+
       if (valueStr == null)
       {
         this.Value = UNKNOWN;
@@ -168,6 +175,7 @@ namespace SplatTagCore
       {
         StringBuilder sb = new StringBuilder();
         sb.Append(DivType);
+        sb.Append(Season);
         sb.Append(" Div ");
         switch (Value)
         {

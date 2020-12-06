@@ -211,7 +211,7 @@ namespace SplatTagConsole
             t.AddClanTag(tag, Builtins.ManualSource, to);
 
             Console.WriteLine("Div?");
-            t.Div = new Division(Console.ReadLine() ?? "");
+            t.AddDivision(new Division(Console.ReadLine() ?? "", DivType.LUTI, ""));
 
             splatTagController.SaveDatabase();
           }

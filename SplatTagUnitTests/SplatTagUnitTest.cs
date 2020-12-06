@@ -38,7 +38,7 @@ namespace SplatTagUnitTests
       database.loadCalled = false;
       Team exampleTeam = controller.CreateTeam("Example Team");
       exampleTeam.AddClanTag("e.g", Builtins.ManualSource, TagOption.Front);
-      exampleTeam.Div = new Division(1);
+      exampleTeam.AddDivision(new Division(1, DivType.DSB));
       var TEAM_ID = exampleTeam.Id;
 
       database.expectedTeams = new List<Team> { exampleTeam };
@@ -67,7 +67,8 @@ namespace SplatTagUnitTests
       Team? team1 = teams.FirstOrDefault(t => t.Id == TEAM_ID);
       Assert.IsNotNull(team1);
       Assert.IsTrue(team1!.Id == TEAM_ID);
-      Assert.IsTrue(team1.Div.Value == 1);
+      Assert.IsTrue(team1.CurrentDiv.Value == 1);
+      Assert.IsTrue(team1.CurrentDiv.DivType == DivType.DSB);
 
       // Verify getting the players for that team returns our player
       (Player, bool)[] playersForExampleTeam = controller.GetPlayersForTeam(exampleTeam);

@@ -122,16 +122,12 @@ namespace SplatTagUnitTests
       };
 
       // t5 should be left because it has no players in common.
-      Team t5 = new Team("Shared Name", new Source("t5"))
-      {
-        Div = new Division(5, DivType.LUTI),
-      };
+      Team t5 = new Team("Shared Name", new Source("t5"));
+      t5.AddDivision(new Division(5, DivType.LUTI));
 
       // t6 -> t5
-      Team t6 = new Team("Shared Name", new Source("t6"))
-      {
-        Div = new Division(4, DivType.LUTI),
-      };
+      Team t6 = new Team("Shared Name", new Source("t6"));
+      t5.AddDivision(new Division(4, DivType.LUTI));
 
       Player p1 = new Player("username", new[] { t1.Id, t2.Id, t4.Id }, new Source("p1"));
       p1.AddBattlefyInformation("user", "user", Builtins.ManualSource);
@@ -154,7 +150,7 @@ namespace SplatTagUnitTests
 
       Assert.IsTrue(result.ContainsKey(t6.Id), "Expected t6 to be merged");
       Assert.AreEqual(t5.Id, result[t6.Id], "Expected t6 to be merged --> t5");
-      Assert.AreEqual(4, t5.Div.Value, "Expected t6 to be merged --> t5 (Div should now be 4, not 5)");
+      Assert.AreEqual(4, t5.CurrentDiv.Value, "Expected t6 to be merged --> t5 (Div should now be 4, not 5)");
 
       Assert.IsTrue(result.ContainsKey(t4.Id), "Expected t4 to be merged");
       Assert.AreEqual(t1.Id, result[t4.Id], "Expected t4 to be merged --> t1");

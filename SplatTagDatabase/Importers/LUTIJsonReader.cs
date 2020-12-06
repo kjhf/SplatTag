@@ -72,11 +72,21 @@ namespace SplatTagDatabase.Importers
 
     private readonly string jsonFile;
     private readonly Source source;
+    private readonly string season;
 
     public LUTIJsonReader(string jsonFile)
     {
       this.jsonFile = jsonFile ?? throw new ArgumentNullException(nameof(jsonFile));
-      this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
+      string fileName = Path.GetFileNameWithoutExtension(jsonFile);
+      this.source = new Source(fileName);
+      if (fileName.Contains("LUTI-"))
+      {
+        season = fileName.Substring(fileName.IndexOf("LUTI-") + "LUTI-".Length);
+      }
+      else
+      {
+        season = fileName;
+      }
     }
 
     public (Player[], Team[]) Load()
@@ -94,10 +104,9 @@ namespace SplatTagDatabase.Importers
           throw new ArgumentException("JSON does not contain a Team Captain. Check format of spreadsheet.");
         }
 
-        Team newTeam = new Team(row.TeamName, source)
-        {
-          Div = new Division(row.Division),
-        };
+        Team newTeam = new Team(row.TeamName, source);
+        newTeam.AddDivision(new Division(row.Division, DivType.LUTI, season));
+
         if (row.Tag != null)
         {
           // Handle tag placements from the captain's name

@@ -9,15 +9,8 @@ namespace SplatTagCore
   [Serializable]
   public class Team
   {
-    public static readonly Team NoTeam = new Team("(Free Agent)", Builtins.BuiltinSource)
-    {
-      clanTags = new List<ClanTag> { new ClanTag("FA", TagOption.Variable, Builtins.BuiltinSource.AsEnumerable()) },
-    };
-
-    public static readonly Team UnlinkedTeam = new Team("(UNLINKED TEAM)", Builtins.BuiltinSource)
-    {
-      clanTags = new List<ClanTag> { new ClanTag(nameof(SplatTagCore).ToUpper() + "ERROR", TagOption.Variable, Builtins.BuiltinSource.AsEnumerable()) },
-    };
+    public static readonly Team NoTeam = new Team("(Free Agent)", Builtins.BuiltinSource);
+    public static readonly Team UnlinkedTeam = new Team("(UNLINKED TEAM)", Builtins.BuiltinSource);
 
     [JsonProperty("Id", Required = Required.Always)]
     /// <summary>
@@ -39,16 +32,17 @@ namespace SplatTagCore
     /// Back-store for the persistent ids of this team.
     /// </summary>
     /// <remarks>
-    /// Though a HashSet may seem more performant, for collections with
-    /// a small number of elements (under 20), List is actually better
-    /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
-    /// </remarks>
     private List<string> battlefyPersistentTeamIds = new List<string>();
 
     /// <summary>
     /// The tag(s) of the team, first is the current tag.
     /// </summary>
-    private List<ClanTag> clanTags = new List<ClanTag>();
+    private readonly List<ClanTag> clanTags = new List<ClanTag>();
+
+    /// <summary>
+    /// The division(s) of the team, first is the current.
+    /// </summary>
+    private readonly Stack<Division> divisions = new Stack<Division>();
 
     /// <summary>
     /// Back-store for the names of this team. The first element is the current name.
@@ -142,9 +136,9 @@ namespace SplatTagCore
 
     [JsonProperty("Div", Required = Required.Always)]
     /// <summary>
-    /// The division of the team
+    /// The current division of the team
     /// </summary>
-    public Division Div { get; set; } = new Division();
+    public Division CurrentDiv => divisions.Any() ? divisions.Peek() : Division.Unknown;
 
     [JsonIgnore]
     /// <summary>
@@ -181,6 +175,14 @@ namespace SplatTagCore
     /// Get the team's Twitter profile details.
     /// </summary>
     public IReadOnlyList<Twitter> Twitter => twitterProfiles;
+
+    public void AddDivision(Division division)
+    {
+      if (division != Division.Unknown && (division != CurrentDiv || !division.Season.Equals(CurrentDiv.Season)))
+      {
+        this.divisions.Push(division);
+      }
+    }
 
     public ClanTag? AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
     {
@@ -238,10 +240,7 @@ namespace SplatTagCore
       AddTwitterProfiles(newerTeam.twitterProfiles);
 
       // Update the div if the other div is known.
-      if (newerTeam.Div.Value != Division.UNKNOWN)
-      {
-        this.Div = newerTeam.Div;
-      }
+      AddDivision(newerTeam.CurrentDiv);
 
       // Merge the team's name(s).
       SplatTagCommon.AddNames(newerTeam.names, names);
@@ -283,7 +282,7 @@ namespace SplatTagCore
     /// <returns></returns>
     public override string ToString()
     {
-      return $"{Tag} {Name} ({Div})";
+      return $"{Tag} {Name} ({CurrentDiv})";
     }
   }
 }

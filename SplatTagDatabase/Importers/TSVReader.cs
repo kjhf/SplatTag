@@ -42,6 +42,8 @@ namespace SplatTagDatabase.Importers
 
     private readonly string tsvFile;
     private readonly Source source;
+    private readonly string season;
+    private readonly DivType divType;
 
     private static readonly ReadOnlyDictionary<string, PropertyEnum> propertyValueStringMap = new ReadOnlyDictionary<string, PropertyEnum>(new Dictionary<string, PropertyEnum>()
     {
@@ -104,7 +106,21 @@ namespace SplatTagDatabase.Importers
     public TSVReader(string tsvFile)
     {
       this.tsvFile = tsvFile ?? throw new ArgumentNullException(nameof(tsvFile));
-      this.source = new Source(Path.GetFileNameWithoutExtension(tsvFile));
+      string fileName = Path.GetFileNameWithoutExtension(tsvFile);
+      this.source = new Source(fileName);
+      this.season = fileName;
+      this.divType = DivType.Unknown;
+
+      // Try and calculate Div Type and season
+      foreach (DivType type in Enum.GetValues(typeof(DivType)))
+      {
+        if (fileName.Contains(type.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+          divType = type;
+          season = fileName.Substring(fileName.IndexOf(type.ToString()) + type.ToString().Length).Trim('-');
+          break;
+        }
+      }
     }
 
     public (Player[], Team[]) Load()
@@ -283,37 +299,27 @@ namespace SplatTagDatabase.Importers
 
             case PropertyEnum.Div:
             {
-              bool found = false;
-              foreach (DivType type in Enum.GetValues(typeof(DivType)))
-              {
-                if (tsvFile.Contains(type.ToString(), StringComparison.OrdinalIgnoreCase))
-                {
-                  t.Div = new Division(value, type);
-                  found = true;
-                  break;
-                }
-              }
+              t.AddDivision(new Division(value, divType, season));
 
-              if (!found)
+              if (divType == DivType.Unknown)
               {
-                t.Div = new Division(value, DivType.Unknown);
                 Trace.WriteLine($"Warning: Div was specified ({lineIndex},{i}), but I don't know what type of division this file represents.");
               }
               break;
             }
             case PropertyEnum.LUTIDiv:
             {
-              t.Div = new Division(value, DivType.LUTI);
+              t.AddDivision(new Division(value, DivType.LUTI, season));
               break;
             }
             case PropertyEnum.EBTVDiv:
             {
-              t.Div = new Division(value, DivType.EBTV);
+              t.AddDivision(new Division(value, DivType.EBTV, season));
               break;
             }
             case PropertyEnum.DSBDiv:
             {
-              t.Div = new Division(value, DivType.DSB);
+              t.AddDivision(new Division(value, DivType.DSB, season));
               break;
             }
 

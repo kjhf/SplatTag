@@ -142,7 +142,7 @@ namespace SplatTagAndroid
             StringBuilder teamStrings = new StringBuilder();
             foreach (var t in teams)
             {
-              string div = t.Div.Name;
+              string div = t.CurrentDiv.Name;
               string bestPlayer = t.GetBestTeamPlayerDivString(splatTagController);
               string[] teamPlayers = t.GetTeamPlayersStrings(splatTagController);
               teamStrings
