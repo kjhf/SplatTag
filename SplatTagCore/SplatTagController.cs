@@ -14,7 +14,7 @@ namespace SplatTagCore
   {
     private readonly ISplatTagDatabase database;
     private Player[] players;
-    private Team[] teams;
+    private Dictionary<Guid, Team> teams;
     private Task? cachingTask;
     private readonly Dictionary<Team, (Player, bool)[]> playersForTeam;
 
@@ -22,7 +22,7 @@ namespace SplatTagCore
     {
       this.database = database;
       this.players = new Player[0];
-      this.teams = new Team[0];
+      this.teams = new Dictionary<Guid, Team>();
       this.playersForTeam = new Dictionary<Team, (Player, bool)[]>();
     }
 
@@ -47,12 +47,12 @@ namespace SplatTagCore
       else
       {
         players = loadedPlayers;
-        teams = loadedTeams;
+        teams = loadedTeams.ToDictionary(t => t.Id, t => t);
 
         cachingTask = Task.Run(() =>
         {
           // Cache the players and their teams.
-          foreach (var t in teams)
+          foreach (var t in teams.Values)
           {
             var teamPlayers =
               t.GetPlayers(players)
@@ -70,7 +70,7 @@ namespace SplatTagCore
 
     public void SaveDatabase()
     {
-      database.Save(players, teams);
+      database.Save(players, teams.Values);
     }
 
     /// <summary>
@@ -381,7 +381,7 @@ namespace SplatTagCore
     /// </summary>
     public Team[] MatchTeam(string? query, MatchOptions matchOptions)
     {
-      return MatchTeam(query, matchOptions, teams);
+      return MatchTeam(query, matchOptions, teams.Values);
     }
 
     /// <summary>
@@ -483,7 +483,7 @@ namespace SplatTagCore
       else
       {
         // Standard query
-        StringComparison comparion = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        StringComparison comparison = matchOptions.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         func = (t) =>
         {
           int relevance = 0;
@@ -492,11 +492,11 @@ namespace SplatTagCore
             foreach (ClanTag tag in t.ClanTags)
             {
               string toMatch = (matchOptions.NearCharacterRecognition) ? tag.TransformedName : tag.Value;
-              if (toMatch.Equals(query, comparion))
+              if (toMatch.Equals(query, comparison))
               {
                 return int.MaxValue; // Clan tag perfect match
               }
-              else if (toMatch.Contains(query, comparion))
+              else if (toMatch.Contains(query, comparison))
               {
                 relevance++;
               }
@@ -506,14 +506,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
           {
             string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.TransformedName : t.Name.Value;
-            if (toMatch.Equals(query, comparion))
-            {
-              relevance += 10; // Give it more relevance
-            }
-            else if (toMatch.Contains(query, comparion))
-            {
-              relevance++;
-            }
+            AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
           }
 
           if ((filterOptions & FilterOptions.Sources) != 0 && t.Sources != null)
@@ -524,11 +517,11 @@ namespace SplatTagCore
               {
                 string name = source.Name;
                 string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformString() : name;
-                if (toMatch.Equals(query, comparion))
+                if (toMatch.Equals(query, comparison))
                 {
                   relevance += 10; // Give it more relevance
                 }
-                else if (toMatch.Contains(query, comparion))
+                else if (toMatch.Contains(query, comparison))
                 {
                   relevance++;
                 }
@@ -541,18 +534,7 @@ namespace SplatTagCore
             foreach (Name name in t.Twitter)
             {
               string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformedName : name.Value;
-              if (toMatch.Equals(query, comparion))
-              {
-                relevance += 50; // Give it more relevance
-              }
-              else if (toMatch.StartsWith(query, comparion))
-              {
-                relevance += 10;
-              }
-              else if (toMatch.Contains(query, comparion))
-              {
-                relevance += 2;
-              }
+              AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
             }
           }
           return relevance;
@@ -594,7 +576,7 @@ namespace SplatTagCore
       {
         return Team.NoTeam;
       }
-      return Array.Find(teams, t => t.Id.Equals(id)) ?? Team.UnlinkedTeam;
+      return teams.ContainsKey(id) ? teams[id] : Team.UnlinkedTeam;
     }
 
     /// <summary> Launch an address in a separate internet browser. </summary>

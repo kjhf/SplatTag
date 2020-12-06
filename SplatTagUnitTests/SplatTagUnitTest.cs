@@ -62,9 +62,9 @@ namespace SplatTagUnitTests
 
       object? teamsDict = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teamsDict);
-      var teams = (IList<Team>)teamsDict!;
+      var teams = (IDictionary<Guid, Team>)teamsDict!;
       Assert.IsNotNull(teams);
-      Team? team1 = teams.FirstOrDefault(t => t.Id == TEAM_ID);
+      Team? team1 = teams[TEAM_ID];
       Assert.IsNotNull(team1);
       Assert.IsTrue(team1!.Id == TEAM_ID);
       Assert.IsTrue(team1.CurrentDiv.Value == 1);

@@ -59,7 +59,7 @@
         <TextBox x:Name="searchInput" MinWidth="50" Background="Transparent" TextChanged="SearchInput_TextChanged" />
         <!-- Hint Text -->
         <TextBlock Style="{StaticResource hintTextBlockStyle}" Margin="5,2" MinWidth="50"
-                   Text="Search a team, player, tag, friend code, or Discord tag" IsHitTestVisible="False"
+                   Text="Search for a name, tag, friend code, Discord, Twitter, Twitch, or Battlefy detail" IsHitTestVisible="False"
                    Visibility="{Binding ElementName=searchInput, Path=Text.IsEmpty, Converter={StaticResource boolToVis}}" />
       </Grid>
       <Grid x:Name="searchFunctionsGrid"  Grid.Column="1">
@@ -131,12 +131,7 @@
                       </TextBlock.ContextMenu>
                     </TextBlock>
                     <StackPanel Orientation="Horizontal"  Grid.Column="1">
-                      <Button Width="17" Height="17" HorizontalAlignment="Right" Click="TwitterButton_Click" DataContext="{Binding .}" Visibility="{Binding Path=Twitter, Converter={StaticResource validStringToVisibleConverter}}">
-                        <Button.Background>
-                          <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitter.png" />
-                        </Button.Background>
-                      </Button>
-                      <ItemsControl ItemsSource="{Binding BattlefySlugs}">
+                      <ItemsControl ItemsSource="{Binding Battlefy}">
                         <ItemsControl.ItemsPanel>
                           <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" />
@@ -147,6 +142,38 @@
                             <Button Width="17" Height="17" HorizontalAlignment="Right" Click="BattlefyButton_Click">
                               <Button.Background>
                                 <ImageBrush ImageSource="/SplatTagUI;component/Assets/battlefy.png" />
+                              </Button.Background>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <ItemsControl ItemsSource="{Binding Twitter}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Width="17" Height="17" HorizontalAlignment="Right" Click="TwitterButton_Click">
+                              <Button.Background>
+                                <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitter.png" />
+                              </Button.Background>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <ItemsControl ItemsSource="{Binding Twitch}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Width="17" Height="17" HorizontalAlignment="Right" Click="TwitchButton_Click">
+                              <Button.Background>
+                                <ImageBrush ImageSource="/SplatTagUI;component/Assets/twitch.png" />
                               </Button.Background>
                             </Button>
                           </DataTemplate>

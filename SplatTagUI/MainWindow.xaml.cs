@@ -36,12 +36,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.22";
+    public string Version => "Version 0.1.0";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.1.0: Major restructure to include sourcing every detail.\n" +
       "v0.0.22: More merging bug fixes. UI now has Battlefy buttons if the slug(s) are known. DSB compatibility.\n" +
       "v0.0.21: Stability, merging, and other bug fixes.\n" +
       "v0.0.20: Reworked matching to show higher relevance results first.\n" +
@@ -201,16 +202,16 @@ namespace SplatTagUI
       }
     }
 
-    private void BattlefyButton_Click(object sender, RoutedEventArgs e)
+    private void TwitchButton_Click(object sender, RoutedEventArgs e)
     {
       FrameworkElement b = (FrameworkElement)sender;
       if (b?.DataContext == null)
       {
-        throw new ArgumentException("Unknown Twitter Button DataContext binding, it is not bound (null).");
+        throw new ArgumentException("Unknown Twitch Button DataContext binding, it is not bound (null).");
       }
-      else if (b.DataContext is string slug)
+      else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchAddress("https://battlefy.com/users/" + slug);
+        splatTagController.TryLaunchAddress(p.Twitch.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Social s)
       {
@@ -218,7 +219,28 @@ namespace SplatTagUI
       }
       else
       {
-        throw new ArgumentException("Unknown Twitter Button DataContext binding: " + b.DataContext);
+        throw new ArgumentException("Unknown Twitch Button DataContext binding: " + b.DataContext);
+      }
+    }
+
+    private void BattlefyButton_Click(object sender, RoutedEventArgs e)
+    {
+      FrameworkElement b = (FrameworkElement)sender;
+      if (b?.DataContext == null)
+      {
+        throw new ArgumentException("Unknown Battlefy Button DataContext binding, it is not bound (null).");
+      }
+      else if (b.DataContext is Player p)
+      {
+        splatTagController.TryLaunchAddress(p.Battlefy.FirstOrDefault()?.Uri?.AbsoluteUri);
+      }
+      else if (b.DataContext is Social s)
+      {
+        splatTagController.TryLaunchAddress(s.Uri?.AbsoluteUri);
+      }
+      else
+      {
+        throw new ArgumentException("Unknown Battlefy Button DataContext binding: " + b.DataContext);
       }
     }
 
