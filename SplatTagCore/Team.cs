@@ -19,6 +19,16 @@ namespace SplatTagCore
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
+    /// The tag(s) of the team, first is the current tag.
+    /// </summary>
+    private readonly List<ClanTag> clanTags = new List<ClanTag>();
+
+    /// <summary>
+    /// The division(s) of the team, first is the current.
+    /// </summary>
+    private readonly Stack<Division> divisions = new Stack<Division>();
+
+    /// <summary>
     /// Back-store for the sources of this team.
     /// </summary>
     private readonly List<Source> sources = new List<Source>();
@@ -32,17 +42,7 @@ namespace SplatTagCore
     /// Back-store for the persistent ids of this team.
     /// </summary>
     /// <remarks>
-    private List<string> battlefyPersistentTeamIds = new List<string>();
-
-    /// <summary>
-    /// The tag(s) of the team, first is the current tag.
-    /// </summary>
-    private readonly List<ClanTag> clanTags = new List<ClanTag>();
-
-    /// <summary>
-    /// The division(s) of the team, first is the current.
-    /// </summary>
-    private readonly Stack<Division> divisions = new Stack<Division>();
+    private readonly List<Name> battlefyPersistentTeamIds = new List<Name>();
 
     /// <summary>
     /// Back-store for the names of this team. The first element is the current name.
@@ -72,55 +72,17 @@ namespace SplatTagCore
       this.sources.Add(source);
     }
 
-    [JsonProperty("BattlefyPersistentTeamId", Required = Required.Default)]
+    [JsonIgnore]
     /// <summary>
-    /// The Battlefy Persistent Id of the team (or null if not set).
-    /// Should be a hex string but may not be a ulong.
-    /// May be null.
+    /// The last known Battlefy Persistent Ids of the team.
     /// </summary>
-    public string? BattlefyPersistentTeamId
-    {
-      get => battlefyPersistentTeamIds.Count > 0 ? battlefyPersistentTeamIds[0] : null;
-      set
-      {
-        if (value != null && !string.IsNullOrWhiteSpace(value))
-        {
-          if (battlefyPersistentTeamIds.Count == 0)
-          {
-            battlefyPersistentTeamIds.Add(value);
-          }
-          else if (battlefyPersistentTeamIds[0].Equals(value))
-          {
-            // Nothing to do.
-          }
-          else
-          {
-            battlefyPersistentTeamIds.Remove(value);
-            battlefyPersistentTeamIds.Insert(0, value);
-          }
-        }
-      }
-    }
+    public Name? BattlefyPersistentTeamId => battlefyPersistentTeamIds.Count > 0 ? battlefyPersistentTeamIds[0] : null;
 
     [JsonProperty("BattlefyPersistentTeamIds", Required = Required.Default)]
     /// <summary>
     /// The known Battlefy Persistent Ids of the team.
     /// </summary>
-    public IList<string> BattlefyPersistentTeamIds
-    {
-      get => battlefyPersistentTeamIds.ToArray();
-      set
-      {
-        battlefyPersistentTeamIds = new List<string>();
-        foreach (string s in value)
-        {
-          if (!string.IsNullOrWhiteSpace(s) && !battlefyPersistentTeamIds.Contains(s))
-          {
-            battlefyPersistentTeamIds.Add(s);
-          }
-        }
-      }
-    }
+    public IReadOnlyList<Name> BattlefyPersistentTeamIds => battlefyPersistentTeamIds;
 
     [JsonIgnore]
     /// <summary>
@@ -176,12 +138,14 @@ namespace SplatTagCore
     /// </summary>
     public IReadOnlyList<Twitter> Twitter => twitterProfiles;
 
-    public void AddDivision(Division division)
+    public void AddBattlefyIds(IEnumerable<Name> value)
     {
-      if (division != Division.Unknown && (division != CurrentDiv || !division.Season.Equals(CurrentDiv.Season)))
-      {
-        this.divisions.Push(division);
-      }
+      SplatTagCommon.AddNames(value, battlefyPersistentTeamIds);
+    }
+
+    public Name? AddBattlefyId(string id, Source source)
+    {
+      return SplatTagCommon.AddName(id, source, battlefyPersistentTeamIds);
     }
 
     public ClanTag? AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
@@ -199,9 +163,22 @@ namespace SplatTagCore
       SplatTagCommon.AddNames(value, clanTags);
     }
 
+    public void AddDivision(Division division)
+    {
+      if (division != Division.Unknown && (division != CurrentDiv || !division.Season.Equals(CurrentDiv.Season)))
+      {
+        this.divisions.Push(division);
+      }
+    }
+
     public void AddName(string name, Source source)
     {
       SplatTagCommon.AddName(name, source, names);
+    }
+
+    public void AddNames(IEnumerable<Name> value)
+    {
+      SplatTagCommon.AddNames(value, names);
     }
 
     public void AddSources(IEnumerable<Source> value)
@@ -234,7 +211,7 @@ namespace SplatTagCore
     public void Merge(Team newerTeam)
     {
       // Merge the tags.
-      SplatTagCommon.AddNames(newerTeam.clanTags, clanTags);
+      AddClanTags(newerTeam.clanTags);
 
       // Merge Twitter
       AddTwitterProfiles(newerTeam.twitterProfiles);
@@ -243,37 +220,13 @@ namespace SplatTagCore
       AddDivision(newerTeam.CurrentDiv);
 
       // Merge the team's name(s).
-      SplatTagCommon.AddNames(newerTeam.names, names);
+      AddNames(newerTeam.names);
 
       // Merge the team's persistent battlefy id(s).
-      if (battlefyPersistentTeamIds.Count == 0)
-      {
-        BattlefyPersistentTeamIds = newerTeam.battlefyPersistentTeamIds;
-      }
-      else
-      {
-        // Iterates the other stack in reverse order so older names are pushed first
-        // so the most recent end up first in the stack.
-        var reverseBattlefyIds = newerTeam.BattlefyPersistentTeamIds.ToList();
-        reverseBattlefyIds.Reverse();
-        foreach (string n in reverseBattlefyIds.Where(s => !string.IsNullOrWhiteSpace(s)))
-        {
-          string foundId = this.battlefyPersistentTeamIds.Find(ids => ids.Equals(n, StringComparison.OrdinalIgnoreCase));
-
-          if (foundId == null)
-          {
-            battlefyPersistentTeamIds.Insert(0, n);
-          }
-          else
-          {
-            battlefyPersistentTeamIds.Remove(foundId);
-            battlefyPersistentTeamIds.Insert(0, n);
-          }
-        }
-      }
+      AddBattlefyIds(newerTeam.battlefyPersistentTeamIds);
 
       // Merge the sources.
-      SplatTagCommon.AddSources(newerTeam.sources, sources);
+      AddSources(newerTeam.sources);
     }
 
     /// <summary>

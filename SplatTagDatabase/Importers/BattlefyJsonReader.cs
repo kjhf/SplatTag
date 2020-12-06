@@ -177,12 +177,11 @@ namespace SplatTagDatabase.Importers
         }
 
         // Attempt to resolve the team tags
-        Team newTeam = new Team(row.TeamName, source)
+        Team newTeam = new Team(row.TeamName, source);
+        if (row.BattlefyPersistentTeamId != null)
         {
-          BattlefyPersistentTeamId = row.BattlefyPersistentTeamId,
-          // ClanTags = tag.Length == 0 ? new string[0] : new string[1] { tag },
-          // ClanTagOption = tag.Length == 0 ? TagOption.Unknown : TagOption.Front,
-        };
+          newTeam.AddBattlefyId(row.BattlefyPersistentTeamId, source);
+        }
 
         // If we already have a team with this id then merge it.
         if (newTeam.BattlefyPersistentTeamId != null)

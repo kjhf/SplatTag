@@ -253,7 +253,7 @@ namespace SplatTagDatabase
         {
           if (importTeam.BattlefyPersistentTeamId != null)
           {
-            var foundTeam = teamsToMutate.FirstOrDefault(t => importTeam.BattlefyPersistentTeamId.Equals(t?.BattlefyPersistentTeamId));
+            var foundTeam = teamsToMutate.FirstOrDefault(t => importTeam.BattlefyPersistentTeamId.Value.Equals(t?.BattlefyPersistentTeamId?.Value));
             if (foundTeam != null)
             {
               MergeExistingTeam(mergeResult, importTeam, foundTeam);
@@ -507,7 +507,7 @@ namespace SplatTagDatabase
       if (first.Id == second.Id) return true;
 
       // Get if the Battlefy Ids match.
-      if (first.BattlefyPersistentTeamId != null && first.BattlefyPersistentTeamId == second.BattlefyPersistentTeamId)
+      if (first.BattlefyPersistentTeamId != null && NamesMatch(first.BattlefyPersistentTeamIds, second.BattlefyPersistentTeamIds) > 0)
       {
         // They do.
         if (logger != null)
@@ -517,7 +517,7 @@ namespace SplatTagDatabase
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with BattlefyPersistentTeamId ");
+          logger.Write(") with BattlefyPersistentTeamIds e.g. ");
           logger.Write(first.BattlefyPersistentTeamId);
           logger.Write(" from team ");
           logger.Write(second);

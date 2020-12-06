@@ -97,29 +97,21 @@ namespace SplatTagUnitTests
     {
       const string T1_STRING = "cafef00d";
       const string T2_STRING = "deadb33f";
-      const string T3_STRING = "b335";
+      const string T4_STRING = "b335";
 
-      Team t1 = new Team("Shared Name", new Source("t1"))
-      {
-        BattlefyPersistentTeamId = T1_STRING,
-      };
+      Team t1 = new Team("Shared Name", new Source("t1"));
+      t1.AddBattlefyId(T1_STRING, Builtins.ManualSource);
 
-      Team t2 = new Team("TeamB", new Source("t2"))
-      {
-        BattlefyPersistentTeamId = T2_STRING,
-      };
+      Team t2 = new Team("TeamB", new Source("t2"));
+      t2.AddBattlefyId(T2_STRING, Builtins.ManualSource);
 
       // t3 -> t2
-      Team t3 = new Team("AnotherTeam", new Source("t3"))
-      {
-        BattlefyPersistentTeamId = T2_STRING,
-      };
+      Team t3 = new Team("AnotherTeam", new Source("t3"));
+      t3.AddBattlefyId(T2_STRING, Builtins.ManualSource);
 
       // t4 -> t1
-      Team t4 = new Team("Shared Name", new Source("t4"))
-      {
-        BattlefyPersistentTeamId = T3_STRING,
-      };
+      Team t4 = new Team("Shared Name", new Source("t4"));
+      t4.AddBattlefyId(T4_STRING, Builtins.ManualSource);
 
       // t5 should be left because it has no players in common.
       Team t5 = new Team("Shared Name", new Source("t5"));
@@ -154,7 +146,7 @@ namespace SplatTagUnitTests
 
       Assert.IsTrue(result.ContainsKey(t4.Id), "Expected t4 to be merged");
       Assert.AreEqual(t1.Id, result[t4.Id], "Expected t4 to be merged --> t1");
-      Assert.AreEqual(T3_STRING, t1.BattlefyPersistentTeamId, "Expected t4 to be merged --> t1 (Battlefy Id should have merged)");
+      Assert.AreEqual<string>(T4_STRING, t1.BattlefyPersistentTeamId?.Value!, "Expected t4 to be merged --> t1 (Battlefy Id should have merged)");
 
       Assert.IsTrue(result.ContainsKey(t3.Id), "Expected t3 to be merged");
       Assert.AreEqual(t2.Id, result[t3.Id], "Expected t3 to be merged --> t2");
