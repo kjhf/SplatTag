@@ -237,7 +237,7 @@ namespace SplatTagConsole
 
                 case 1:
                 {
-                  p.CurrentTeam = matchedTeams[0].Id;
+                  p.AddTeams(matchedTeams[0].Id.AsEnumerable());
                   Console.WriteLine("Successfully matched.");
                   break;
                 }
@@ -245,7 +245,7 @@ namespace SplatTagConsole
                 default:
                 {
                   Console.WriteLine($"More than one team matched. Assuming the first one ({matchedTeams[0].Name}).");
-                  p.CurrentTeam = matchedTeams[0].Id;
+                  p.AddTeams(matchedTeams[0].Id.AsEnumerable());
                   break;
                 }
               }

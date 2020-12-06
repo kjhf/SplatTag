@@ -252,7 +252,7 @@ namespace SplatTagDatabase.Importers
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out ulong parsedId))
               {
-                p.DiscordId = parsedId;
+                p.AddDiscordId(value, source);
               }
               else
               {
@@ -267,7 +267,7 @@ namespace SplatTagDatabase.Importers
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               if (Player.DISCORD_NAME_REGEX.IsMatch(value))
               {
-                p.DiscordName = value;
+                p.AddDiscordName(value, source);
               }
               else if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
@@ -389,7 +389,7 @@ namespace SplatTagDatabase.Importers
           {
             continue;
           }
-          p.CurrentTeam = t.Id;
+          p.AddTeams(t.Id.AsEnumerable());
           players.Add(p);
         }
 

@@ -217,20 +217,26 @@ namespace SplatTagDatabase.Importers
 
           // Filter the friend code from the name, if found
           var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);
-          if (parsedFriendCode != null)
+          if (parsedFriendCode != FriendCode.NO_FRIEND_CODE)
           {
             p.Name = strippedName;
           }
-          else if (p.BattlefyName == row.Captain.BattlefyName && row.CaptainFriendCode != null)
+
+          var newPlayer = new Player(p.Name, new[] { newTeam.Id }, source);
+
+          if (p.BattlefyName == row.Captain.BattlefyName)
           {
-            parsedFriendCode = row.CaptainFriendCode;
+            if (parsedFriendCode == FriendCode.NO_FRIEND_CODE && row.CaptainFriendCode != FriendCode.NO_FRIEND_CODE)
+            {
+              parsedFriendCode = row.CaptainFriendCode;
+            }
+
+            if (row.CaptainDiscordName != null)
+            {
+              newPlayer.AddDiscordName(row.CaptainDiscordName, source);
+            }
           }
 
-          var newPlayer = new Player(p.Name, source)
-          {
-            CurrentTeam = newTeam.Id,
-            DiscordName = (p.BattlefyName == row.Captain.BattlefyName) ? row.CaptainDiscordName : null
-          };
           newPlayer.AddBattlefyInformation(p.BattlefyUserSlug, p.BattlefyName, source);
           newPlayer.AddFCs(parsedFriendCode.AsEnumerable());
           players.Add(newPlayer);

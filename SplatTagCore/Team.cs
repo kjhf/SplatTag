@@ -52,7 +52,7 @@ namespace SplatTagCore
     /// a small number of elements (under 20), List is actually better
     /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
     /// </remarks>
-    private List<Name> names = new List<Name>();
+    private readonly List<Name> names = new List<Name>();
 
     /// <summary>
     /// Default construct a Team

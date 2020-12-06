@@ -1,6 +1,7 @@
 ﻿using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SplatTagCore
 {
@@ -48,6 +49,37 @@ namespace SplatTagCore
         return privateList[0];
       }
       return null;
+    }
+
+    /// <summary>
+    /// Add Ids to the list if not currently contained.
+    /// </summary>
+    internal static void AddIds(IEnumerable<Guid> value, List<Guid> privateList)
+    {
+      if (value != null)
+      {
+        if (privateList.Count == 0)
+        {
+          // Shortcut, just set the teams.
+          privateList.AddRange(value.Distinct());
+        }
+        else
+        {
+          // Iterates the other stack in reverse order so older teams are pushed first
+          // so the most recent end up first in the stack.
+          var reverseTeams = value.Distinct().ToList();
+          reverseTeams.Reverse();
+          foreach (Guid t in reverseTeams)
+          {
+            // If this team is already first, there's nothing to do.
+            if (privateList[0] != t)
+            {
+              privateList.Remove(t); // If the team isn't found, this just returns false.
+              privateList.Insert(0, t);
+            }
+          }
+        }
+      }
     }
 
     /// <summary>

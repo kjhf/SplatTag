@@ -66,11 +66,11 @@ namespace SplatTagDatabase.Importers
         JToken discord = userToken["discord"];
         if (discord != null)
         {
-          player.DiscordName = $"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}";
+          player.AddDiscordName($"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}", source);
           var discordId = discord["id"].Value<string>();
-          if (discordId != null && ulong.TryParse(discordId, out ulong parsedId))
+          if (discordId != null)
           {
-            player.DiscordId = parsedId;
+            player.AddDiscordId(discordId, source);
           }
         }
 

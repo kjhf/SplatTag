@@ -24,14 +24,19 @@ namespace SplatTagCore
     private readonly List<Battlefy> battlefy = new List<Battlefy>();
 
     /// <summary>
-    /// Back-store for the names of this player. The first element is the current name.
+    /// Back-store for player's Discord information.
     /// </summary>
-    private readonly List<Name> names = new List<Name>();
+    private readonly Discord discord = new Discord();
 
     /// <summary>
     /// Back-store for player's FCs.
     /// </summary>
     private readonly List<FriendCode> friendCodes = new List<FriendCode>();
+
+    /// <summary>
+    /// Back-store for the names of this player. The first element is the current name.
+    /// </summary>
+    private readonly List<Name> names = new List<Name>();
 
     /// <summary>
     /// Back-store for the Sendou Profiles of this player.
@@ -96,7 +101,7 @@ namespace SplatTagCore
 
     [JsonProperty("Battlefy", Required = Required.Default)]
     /// <summary>
-    /// Get the player's Battlefy profile details. This iterates over Battlefy slugs if used as a <see cref="Name"/> class.
+    /// Get the player's Battlefy profile details. This iterates over Battlefy slugs if used as a <see cref="SplatTagCore.Name"/> class.
     /// </summary>
     public IReadOnlyList<Battlefy> Battlefy => battlefy;
 
@@ -128,47 +133,31 @@ namespace SplatTagCore
 
     [JsonIgnore]
     /// <summary>
-    /// The current team id this player plays for, or NoTeam.Id if not set.
+    /// The current team id this player plays for, or <see cref="Team.NoTeam.Id"/> if not set.
     /// </summary>
-    public Guid CurrentTeam
-    {
-      get => teams.Count > 0 ? teams[0] : Team.NoTeam.Id;
-      set
-      {
-        if (teams.Count == 0)
-        {
-          teams.Add(value);
-        }
-        else if (teams[0].Equals(value))
-        {
-          // Nothing to do.
-        }
-        else
-        {
-          teams.Remove(value);
-          teams.Insert(0, value);
-        }
-      }
-    }
+    public Guid CurrentTeam => teams.Count > 0 ? teams[0] : Team.NoTeam.Id;
+
+    [JsonProperty("Discord", Required = Required.Default)]
+    /// <summary>
+    /// Get the player's Discord profile details.
+    /// </summary>
+    public Discord Discord => discord;
 
     [JsonProperty("DiscordId", Required = Required.Default)]
     /// <summary>
-    /// The Discord database Id of the player.
-    /// Null by default.
+    /// The last known Discord Id of the player. Returns null if none.
     /// </summary>
-    public ulong? DiscordId { get; set; }
+    public string? DiscordId => Discord.Ids.FirstOrDefault()?.Value;
 
     [JsonProperty("DiscordName", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the Discord Name.
-    /// Null by default.
+    /// The last known Discord name of the player. Returns null if none.
     /// </summary>
-    public string? DiscordName { get; set; }
+    public string? DiscordName => Discord.Usernames.FirstOrDefault()?.Value;
 
     [JsonProperty("FriendCode", Required = Required.Default)]
     /// <summary>
-    /// Get the Friend Code.
-    /// NO_FRIEND_CODE by default.
+    /// Get the Friend Code. Returns <see cref="FriendCode.NO_FRIEND_CODE"/> if none.
     /// </summary>
     public FriendCode FC => friendCodes.Count > 0 ? friendCodes[0] : FriendCode.NO_FRIEND_CODE;
 
@@ -216,18 +205,18 @@ namespace SplatTagCore
     /// </summary>
     public IReadOnlyList<Guid> Teams => teams.ToArray();
 
+    [JsonIgnore]
+    /// <summary>
+    /// The Names of this Player transformed.
+    /// </summary>
+    public IEnumerable<string> TransformedNames => Names.Select(n => n.TransformedName);
+
     [JsonProperty("Top500", Required = Required.Default)]
     /// <summary>
     /// Get or Set Top 500 flag.
     /// False by default.
     /// </summary>
     public bool Top500 { get; set; }
-
-    [JsonIgnore]
-    /// <summary>
-    /// The names this player is known by transformed into searchable query.
-    /// </summary>
-    public IReadOnlyList<string> TransformedNames => Names.Select(n => n.TransformedName).ToArray();
 
     [JsonProperty("Twitch", Required = Required.Default)]
     /// <summary>
@@ -260,29 +249,20 @@ namespace SplatTagCore
       }
     }
 
-    public void AddName(string name, Source source)
+    public void AddDiscord(Discord value)
     {
-      SplatTagCommon.AddName(name, source, names);
+      Discord.AddIds(value.Ids);
+      Discord.AddUsernames(value.Usernames);
     }
 
-    public void AddNames(IEnumerable<Name> value)
+    public void AddDiscordId(string id, Source source)
     {
-      SplatTagCommon.AddNames(value, names);
+      Discord.AddIds(new Name(id, source).AsEnumerable());
     }
 
-    public void AddSendou(string handle, Source source)
+    public void AddDiscordName(string username, Source source)
     {
-      SplatTagCommon.AddName(handle, source, sendouProfiles);
-    }
-
-    public void AddSendou(IEnumerable<Sendou> value)
-    {
-      SplatTagCommon.AddNames(value, sendouProfiles);
-    }
-
-    public void AddSources(IEnumerable<Source> value)
-    {
-      SplatTagCommon.AddSources(value, sources);
+      Discord.AddUsernames(new Name(username, source).AsEnumerable());
     }
 
     public void AddFCs(IEnumerable<FriendCode> value)
@@ -309,6 +289,36 @@ namespace SplatTagCore
           }
         }
       }
+    }
+
+    public void AddName(string name, Source source)
+    {
+      SplatTagCommon.AddName(name, source, names);
+    }
+
+    public void AddNames(IEnumerable<Name> value)
+    {
+      SplatTagCommon.AddNames(value, names);
+    }
+
+    public void AddSendou(string handle, Source source)
+    {
+      SplatTagCommon.AddName(handle, source, sendouProfiles);
+    }
+
+    public void AddSendou(IEnumerable<Sendou> value)
+    {
+      SplatTagCommon.AddNames(value, sendouProfiles);
+    }
+
+    public void AddSources(IEnumerable<Source> value)
+    {
+      SplatTagCommon.AddSources(value, sources);
+    }
+
+    public void AddTeams(IEnumerable<Guid> value)
+    {
+      SplatTagCommon.AddIds(value, teams);
     }
 
     public void AddTwitch(string handle, Source source)
@@ -372,28 +382,8 @@ namespace SplatTagCore
       if (newerPlayer == null) throw new ArgumentNullException(nameof(newerPlayer));
       if (ReferenceEquals(this, newerPlayer)) return;
 
-      // Merge the players.
-      if (teams.Count == 0)
-      {
-        // Shortcut, just set the teams.
-        teams.AddRange(newerPlayer.teams);
-      }
-      else
-      {
-        // Iterates the other stack in reverse order so older teams are pushed first
-        // so the most recent end up first in the stack.
-        var reverseTeams = newerPlayer.teams.Distinct().ToList();
-        reverseTeams.Reverse();
-        foreach (Guid t in reverseTeams)
-        {
-          // If this team is already first, there's nothing to do.
-          if (teams[0] != t)
-          {
-            teams.Remove(t); // If the team isn't found, this just returns false.
-            teams.Insert(0, t);
-          }
-        }
-      }
+      // Merge the teams.
+      AddTeams(newerPlayer.teams);
 
       // Merge the player's name(s).
       AddNames(newerPlayer.names);
@@ -404,31 +394,24 @@ namespace SplatTagCore
       // Merge the weapons.
       AddWeapons(newerPlayer.weapons);
 
-      // Merge the BattlefySlugs.
+      // Merge the Battlefy Slugs and usernames.
       AddBattlefyInformation(newerPlayer.battlefy);
 
-      // Merge the misc data
-      AddFCs(newerPlayer.friendCodes);
-
-      if (!string.IsNullOrWhiteSpace(newerPlayer.DiscordName))
-      {
-        this.DiscordName = newerPlayer.DiscordName;
-      }
-
-      if (newerPlayer.DiscordId != null)
-      {
-        this.DiscordId = newerPlayer.DiscordId;
-      }
-
-      if (!string.IsNullOrWhiteSpace(newerPlayer.Country))
-      {
-        this.Country = newerPlayer.Country;
-      }
+      // Merge the Discord Slugs and usernames.
+      AddDiscord(newerPlayer.discord);
 
       // Merge the Social Data.
       AddSendou(newerPlayer.SendouProfiles);
       AddTwitch(newerPlayer.twitchProfiles);
       AddTwitter(newerPlayer.twitterProfiles);
+
+      // Merge the misc data
+      AddFCs(newerPlayer.friendCodes);
+
+      if (!string.IsNullOrWhiteSpace(newerPlayer.Country))
+      {
+        this.Country = newerPlayer.Country;
+      }
 
       if (newerPlayer.Top500)
       {
