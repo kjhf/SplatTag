@@ -63,7 +63,7 @@ namespace SplatTagDatabase
 
     private static (Player[], Team[]) Load(string? playersSnapshotFile, string? teamsSnapshotFile)
     {
-      if (playersSnapshotFile == null || teamsSnapshotFile == null) return (new Player[0], new Team[0]);
+      if (playersSnapshotFile == null || teamsSnapshotFile == null) return (Array.Empty<Player>(), Array.Empty<Team>());
 
       var players = JsonConvert.DeserializeObject<Player[]>(File.ReadAllText(playersSnapshotFile));
       var teams = JsonConvert.DeserializeObject<Team[]>(File.ReadAllText(teamsSnapshotFile));

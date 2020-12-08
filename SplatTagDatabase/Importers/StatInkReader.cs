@@ -653,7 +653,7 @@ namespace SplatTagDatabase.Importers
       // Don't load the details if they are manual entries.
       if (!root.Automated || root.Players == null)
       {
-        return (players.ToArray(), new Team[0]);
+        return (players.ToArray(), Array.Empty<Team>());
       }
 
       foreach (var p in root.Players)
@@ -688,7 +688,7 @@ namespace SplatTagDatabase.Importers
         players.Add(newPlayer);
       }
 
-      return (players.ToArray(), new Team[0]);
+      return (players.ToArray(), Array.Empty<Team>());
     }
 
     public static bool AcceptsInput(string input)

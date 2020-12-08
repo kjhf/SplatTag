@@ -7,7 +7,7 @@ using System.Linq;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Team
+  public class Team : ISourceable
   {
     public static readonly Team NoTeam = new Team("(Free Agent)", Builtins.BuiltinSource);
     public static readonly Team UnlinkedTeam = new Team("(UNLINKED TEAM)", Builtins.BuiltinSource);
@@ -114,11 +114,10 @@ namespace SplatTagCore
     /// </summary>
     public IReadOnlyList<Name> Names => names;
 
-    [JsonProperty("Sources", Required = Required.Default)]
     /// <summary>
-    /// Get or Set the current sources that make up this Team instance.
+    /// List of sources that this name has been used under
     /// </summary>
-    public IReadOnlyList<Source> Sources => sources;
+    public IList<Source> Sources => sources;
 
     [JsonIgnore]
     /// <summary>
@@ -130,7 +129,7 @@ namespace SplatTagCore
     /// <summary>
     /// The names this player is known by transformed into searchable query.
     /// </summary>
-    public IReadOnlyList<string> TransformedNames => Names.Select(n => n.TransformedName).ToArray();
+    public IReadOnlyList<string> TransformedNames => Names.Select(n => n.Transformed).ToArray();
 
     [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
@@ -143,19 +142,14 @@ namespace SplatTagCore
       SplatTagCommon.AddNames(value, battlefyPersistentTeamIds);
     }
 
-    public Name? AddBattlefyId(string id, Source source)
+    public Name AddBattlefyId(string id, Source source)
     {
-      return SplatTagCommon.AddName(id, source, battlefyPersistentTeamIds);
+      return SplatTagCommon.AddName(new Name(id, source), battlefyPersistentTeamIds);
     }
 
-    public ClanTag? AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
+    public ClanTag AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
     {
-      ClanTag? clanTag = SplatTagCommon.AddName(tag, source, clanTags);
-      if (clanTag != null)
-      {
-        clanTag.LayoutOption = option;
-      }
-      return clanTag;
+      return SplatTagCommon.AddName(new ClanTag(tag, option, source.AsEnumerable()), clanTags);
     }
 
     public void AddClanTags(IEnumerable<ClanTag> value)
@@ -173,7 +167,7 @@ namespace SplatTagCore
 
     public void AddName(string name, Source source)
     {
-      SplatTagCommon.AddName(name, source, names);
+      SplatTagCommon.AddName(new Name(name, source), names);
     }
 
     public void AddNames(IEnumerable<Name> value)
@@ -186,9 +180,9 @@ namespace SplatTagCore
       SplatTagCommon.AddSources(value, sources);
     }
 
-    public Twitter? AddTwitter(string handle, Source source)
+    public Twitter AddTwitter(string handle, Source source)
     {
-      return SplatTagCommon.AddName(handle, source, twitterProfiles);
+      return SplatTagCommon.AddName(new Twitter(handle, source), twitterProfiles);
     }
 
     public void AddTwitterProfiles(IEnumerable<Twitter> value)

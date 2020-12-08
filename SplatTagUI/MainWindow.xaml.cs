@@ -232,7 +232,7 @@ namespace SplatTagUI
       }
       else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchAddress(p.Battlefy.FirstOrDefault()?.Uri?.AbsoluteUri);
+        splatTagController.TryLaunchAddress(p.BattlefySlugs.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Social s)
       {
@@ -510,7 +510,7 @@ namespace SplatTagUI
         }
         return tuples;
       }
-      return new Tuple<string, string>[0];
+      return Array.Empty<Tuple<string, string>>();
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();

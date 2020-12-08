@@ -58,9 +58,9 @@ namespace SplatTagUnitTests
       Assert.AreEqual(2, dict.Count,
         $"Expected 2 players remaining - the others should be merged, actually: {string.Join("\n", dict.Keys.Select(k => k.ToString()))}");
       Assert.IsTrue(dict.ContainsKey(id1), "Expected id1.");
-      Assert.AreEqual(4, Matcher.NamesMatch(dict[id1].Battlefy, Name.FromStrings(new[] { "slug", "user", "unrelated", "another" }, Builtins.ManualSource)),
+      Assert.AreEqual(4, Matcher.NamesMatch(dict[id1].BattlefySlugs, Name.FromStrings(new[] { "slug", "user", "unrelated", "another" }, Builtins.ManualSource)),
         "Expected slugs to be merged.");
-      Assert.AreEqual(6, Matcher.GenericMatch<string>(dict[id1].BattlefyUsernames, new[] { "user", "unrelated", "another", "x", "y", "z" }),
+      Assert.AreEqual(6, Matcher.NamesMatch(dict[id1].BattlefyUsernames, Name.FromStrings(new[] { "user", "unrelated", "another", "x", "y", "z" }, Builtins.ManualSource)),
         $"Expected usernames to be merged, actually: {string.Join("\n", dict[id1].BattlefyUsernames)}");
       Assert.AreEqual(3, Matcher.NamesMatch(dict[id1].Names, Name.FromStrings(new[] { "p1_username", "p2_person", "p5_slug" }, Builtins.ManualSource)),
         "Expected names to be merged.");

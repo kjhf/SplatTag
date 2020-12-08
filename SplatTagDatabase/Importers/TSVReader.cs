@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore;
+﻿using SplatTagCore;
+using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,44 +7,11 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace SplatTagDatabase.Importers
 {
   internal class TSVReader : IImporter
   {
-    private enum PropertyEnum
-    {
-      UNKNOWN = -1,
-      Team_Offset = 0,
-      TeamName = 1,
-      Tag = 2,
-      Div = 3,
-      LUTIDiv = 4,
-      EBTVDiv = 5,
-      DSBDiv = 6,
-
-      UnspecifiedPlayer_Offset = 10,
-      Name,
-      FC,
-      DiscordName,
-      DiscordId,
-      Twitch,
-      Twitter,
-      Country,
-      Role,
-
-      /// <summary>
-      /// Player N offset, where N = 1, 2, 3... to give 100, 200, 300 ...
-      /// </summary>
-      PlayerN_Offset = 100,
-    }
-
-    private readonly string tsvFile;
-    private readonly Source source;
-    private readonly string season;
-    private readonly DivType divType;
-
     private static readonly ReadOnlyDictionary<string, PropertyEnum> propertyValueStringMap = new ReadOnlyDictionary<string, PropertyEnum>(new Dictionary<string, PropertyEnum>()
     {
       { "team", PropertyEnum.TeamName },
@@ -103,6 +70,14 @@ namespace SplatTagDatabase.Importers
       { "captain", (int)PropertyEnum.PlayerN_Offset + PropertyEnum.Name }
     });
 
+    private readonly DivType divType;
+
+    private readonly string season;
+
+    private readonly Source source;
+
+    private readonly string tsvFile;
+
     public TSVReader(string tsvFile)
     {
       this.tsvFile = tsvFile ?? throw new ArgumentNullException(nameof(tsvFile));
@@ -121,6 +96,38 @@ namespace SplatTagDatabase.Importers
           break;
         }
       }
+    }
+
+    private enum PropertyEnum
+    {
+      UNKNOWN = -1,
+      Team_Offset = 0,
+      TeamName = 1,
+      Tag = 2,
+      Div = 3,
+      LUTIDiv = 4,
+      EBTVDiv = 5,
+      DSBDiv = 6,
+
+      UnspecifiedPlayer_Offset = 10,
+      Name,
+      FC,
+      DiscordName,
+      DiscordId,
+      Twitch,
+      Twitter,
+      Country,
+      Role,
+
+      /// <summary>
+      /// Player N offset, where N = 1, 2, 3... to give 100, 200, 300 ...
+      /// </summary>
+      PlayerN_Offset = 100,
+    }
+
+    public static bool AcceptsInput(string input)
+    {
+      return Path.GetExtension(input).Equals(".tsv", StringComparison.OrdinalIgnoreCase);
     }
 
     public (Player[], Team[]) Load()
@@ -265,7 +272,7 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.DiscordName:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              if (Player.DISCORD_NAME_REGEX.IsMatch(value))
+              if (Discord.DISCORD_NAME_REGEX.IsMatch(value))
               {
                 p.AddDiscordName(value, source);
               }
@@ -420,11 +427,6 @@ namespace SplatTagDatabase.Importers
         rowPlayers.Add(playerNum, p);
         return p;
       }
-    }
-
-    public static bool AcceptsInput(string input)
-    {
-      return Path.GetExtension(input).Equals(".tsv", StringComparison.OrdinalIgnoreCase);
     }
   }
 }

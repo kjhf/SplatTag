@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SplatTagCore
@@ -8,7 +9,8 @@ namespace SplatTagCore
   [Serializable]
   public struct FriendCode : IEquatable<FriendCode>
   {
-    public static readonly FriendCode NO_FRIEND_CODE = new FriendCode(new short[3] { 0, 0, 0 });
+    private static readonly short[] NO_FRIEND_CODE_SHORTS = new short[3] { 0, 0, 0 };
+    public static readonly FriendCode NO_FRIEND_CODE = new FriendCode(NO_FRIEND_CODE_SHORTS);
 
     /// <summary>
     /// We have exactly 12 digits, or we have 3 lots of 4 digits separated by - or . or space. The code may be wrapped in brackets ().
@@ -127,7 +129,7 @@ namespace SplatTagCore
     /// </summary>
     public string ToString(string separator)
     {
-      return this == NO_FRIEND_CODE ? ("(not set)") :
+      return FC.SequenceEqual(NO_FRIEND_CODE_SHORTS) ? ("(not set)") :
         $"{FC[0].ToString().PadLeft(4, '0')}{separator}{FC[1].ToString().PadLeft(4, '0')}{separator}{FC[2].ToString().PadLeft(4, '0')}";
     }
 

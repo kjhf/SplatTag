@@ -1,27 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
-  public class Name
+  [Serializable]
+  public class Name : ISerializable, ISourceable, IEquatable<Name?>
   {
-    private readonly Lazy<string> transformedName;
+    /// <summary>
+    /// Cached transformed name
+    /// </summary>
+    private string? transformedName;
 
     /// <summary>
-    /// The name
+    /// The name.
     /// </summary>
     public string Value { get; protected set; }
 
     /// <summary>
     /// The name as a transformed string
     /// </summary>
-    public string TransformedName => transformedName.Value;
+    public string Transformed => transformedName ??= Value.TransformString();
 
     /// <summary>
     /// List of sources that this name has been used under
     /// </summary>
-    public IReadOnlyCollection<Source> Sources => sources;
+    public IList<Source> Sources => sources;
 
     /// <summary>
     /// List of sources that this name has been used under
@@ -29,12 +34,29 @@ namespace SplatTagCore
     private readonly List<Source> sources = new List<Source>();
 
     /// <summary>
+    /// Constructor for Name (source only).
+    /// Derived class is responsible for setting <see cref="Value"/>.
+    /// </summary>
+    protected Name(Source source)
+      : this(string.Empty, source)
+    {
+    }
+
+    /// <summary>
+    /// Constructor for Name (source only).
+    /// Derived class is responsible for setting <see cref="Value"/>.
+    /// </summary>
+    protected Name(IEnumerable<Source> sources)
+      : this(string.Empty, sources)
+    {
+    }
+
+    /// <summary>
     /// Constructor for Name
     /// </summary>
     public Name(string name, Source source)
     {
       this.Value = name;
-      this.transformedName = new Lazy<string>(() => Value.TransformString());
       sources.Add(source);
     }
 
@@ -47,7 +69,6 @@ namespace SplatTagCore
     public Name(string name, IEnumerable<Source> sources)
     {
       this.Value = name;
-      this.transformedName = new Lazy<string>(() => Value.TransformString());
       this.sources.AddRange(sources.Distinct());
     }
 
@@ -73,12 +94,45 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Get the name's value.
+    /// Overridden string, get the name's value.
     /// </summary>
-    /// <returns></returns>
     public override string ToString()
     {
       return Value;
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Name(SerializationInfo info, StreamingContext context)
+    {
+      this.Value = (string)info.GetValue("Value", typeof(string));
+      this.sources = (List<Source>)info.GetValue("Sources", typeof(List<Source>));
+    }
+
+    // Serialize
+    public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      info.AddValue("Value", this.Value);
+      info.AddValue("Sources", this.sources);
+    }
+
+    public override bool Equals(object? obj)
+    {
+      return Equals(obj as Name);
+    }
+
+    public bool Equals(Name? other)
+    {
+      return other != null &&
+             Value == other.Value;
+    }
+
+    public override int GetHashCode()
+    {
+      return -1937169414 + EqualityComparer<string>.Default.GetHashCode(Value);
+    }
+
+    #endregion Serialization
   }
 }

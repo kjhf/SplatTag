@@ -25,7 +25,7 @@ namespace SplatTagCore
       if (first.Id == second.Id) return true;
 
       // Test if the Discord Ids match.
-      if ((matchOptions & FilterOptions.DiscordId) != 0 && second.DiscordId?.Equals(first.DiscordId) == true)
+      if ((matchOptions & FilterOptions.DiscordId) != 0 && NamesMatch(first.DiscordIds, second.DiscordIds) > 0)
       {
         // They do.
         if (logger != null)
@@ -35,9 +35,9 @@ namespace SplatTagCore
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with Discord Id ");
-          logger.Write(second.DiscordId);
-          logger.Write(" from player ");
+          logger.Write(") with Discord Id(s) [");
+          logger.Write(string.Join(", ", first.DiscordIds));
+          logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
@@ -57,9 +57,9 @@ namespace SplatTagCore
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with BattlefyUsername(s) e.g. ");
-          logger.Write(first.BattlefyUsernames.FirstOrDefault());
-          logger.Write(" from player ");
+          logger.Write(") with BattlefyUsername(s) [");
+          logger.Write(string.Join(", ", first.BattlefyUsernames));
+          logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
@@ -69,7 +69,7 @@ namespace SplatTagCore
       }
 
       // Test if any of the Battlefy Slugs match.
-      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && NamesMatch(first.Battlefy, second.Battlefy) > 0)
+      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && NamesMatch(first.Battlefy.Slugs, second.Battlefy.Slugs) > 0)
       {
         // They do.
         if (logger != null)
@@ -79,9 +79,9 @@ namespace SplatTagCore
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with test BattlefySlug(s) e.g. ");
-          logger.Write(first.Battlefy.FirstOrDefault());
-          logger.Write(" with player ");
+          logger.Write(") with Battlefy Slugs(s) [");
+          logger.Write(string.Join(", ", first.Battlefy.Slugs));
+          logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
@@ -91,7 +91,7 @@ namespace SplatTagCore
       }
 
       // Test if the Switch FC's match.
-      if ((matchOptions & FilterOptions.FriendCode) != 0 && first.FC != FriendCode.NO_FRIEND_CODE && second.FC == first.FC)
+      if ((matchOptions & FilterOptions.FriendCode) != 0 && GenericMatch<FriendCode>(first.FriendCodes, second.FriendCodes) > 0)
       {
         // They do.
         if (logger != null)
@@ -101,9 +101,9 @@ namespace SplatTagCore
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with FC ");
-          logger.Write(first.FC);
-          logger.Write(" from player ");
+          logger.Write(") with Friend Code(s) [");
+          logger.Write(string.Join(", ", first.FriendCodes));
+          logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
@@ -123,9 +123,9 @@ namespace SplatTagCore
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with Twitch(es) e.g. ");
-          logger.Write(first.Twitch.FirstOrDefault());
-          logger.Write(" from player ");
+          logger.Write(") with Twitch(es) [");
+          logger.Write(string.Join(", ", first.Twitch));
+          logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
@@ -145,9 +145,9 @@ namespace SplatTagCore
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with Twitter(s) e.g. ");
-          logger.Write(first.Twitter.FirstOrDefault());
-          logger.Write(" from player ");
+          logger.Write(") with Twitter(s) [");
+          logger.Write(string.Join(", ", first.Twitter));
+          logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
@@ -157,7 +157,7 @@ namespace SplatTagCore
       }
 
       // Test if the Discord names match.
-      if ((matchOptions & FilterOptions.DiscordName) != 0 && second.DiscordName?.Equals(first.DiscordName) == true)
+      if ((matchOptions & FilterOptions.DiscordName) != 0 && second.DiscordNames?.Equals(first.DiscordNames) == true)
       {
         // They do.
         if (logger != null)
@@ -167,9 +167,9 @@ namespace SplatTagCore
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with Discord name ");
-          logger.Write(first.DiscordName);
-          logger.Write(" from player ");
+          logger.Write(") with Discord Names [");
+          logger.Write(string.Join(", ", first.DiscordNames));
+          logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);

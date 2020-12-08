@@ -288,29 +288,32 @@ namespace SplatTagDatabase
     private static Player FindSamePlayerPersistent(IEnumerable<Player> playersToMutate, Player testPlayer, TextWriter? logger = null)
     {
       FilterOptions matchOptions = FilterOptions.None;
-      if (testPlayer.FC != FriendCode.NO_FRIEND_CODE)
+      if (testPlayer.FriendCodes.Count > 0)
       {
         matchOptions |= FilterOptions.FriendCode;
       }
-      if (!string.IsNullOrEmpty(testPlayer.DiscordName))
+      if (testPlayer.DiscordNames.Count > 0)
       {
         matchOptions |= FilterOptions.DiscordName;
       }
-      if (testPlayer.DiscordId != null)
+      if (testPlayer.DiscordIds.Count > 0)
       {
         matchOptions |= FilterOptions.DiscordId;
       }
-      if (testPlayer.Twitch != null)
+      if (testPlayer.Twitch.Count > 0)
       {
         matchOptions |= FilterOptions.Twitch;
       }
-      if (testPlayer.Twitter != null)
+      if (testPlayer.Twitter.Count > 0)
       {
         matchOptions |= FilterOptions.Twitter;
       }
-      if (testPlayer.Battlefy?.Count > 0)
+      if (testPlayer.Battlefy.Slugs?.Count > 0)
       {
         matchOptions |= FilterOptions.BattlefySlugs;
+      }
+      if (testPlayer.Battlefy.Usernames?.Count > 0)
+      {
         matchOptions |= FilterOptions.BattlefyUsername;
       }
 

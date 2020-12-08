@@ -1,50 +1,104 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore.Social
 {
-  public class Battlefy : Social
+  [Serializable]
+  public class Battlefy : ISerializable
   {
-    protected override string SocialBaseAddress => "battlefy.com/users/";
-    private readonly List<string> usernames = new List<string>();
-    public IReadOnlyList<string> Usernames => usernames;
+    private const string baseAddress = "battlefy.com/users";
 
-    public Battlefy(string slug, Source source)
-      : this(slug, new string[0], source.AsEnumerable())
+    /// <summary>
+    /// Back-store for the Battlefy slugs
+    /// </summary>
+    private readonly List<Social> slugs = new List<Social>();
+
+    /// <summary>
+    /// Back-store for the Battlefy usernames
+    /// </summary>
+    private readonly List<Name> usernames = new List<Name>();
+
+    public Battlefy()
     {
     }
 
-    public Battlefy(string slug, IEnumerable<Source> sources)
-      : this(slug, new string[0], sources)
+    /// <summary>
+    /// The persistent Battlefy slugs
+    /// </summary>
+    public IReadOnlyList<Social> Slugs => slugs;
+
+    /// <summary>
+    /// The Battlefy usernames
+    /// </summary>
+    public IReadOnlyList<Name> Usernames => usernames;
+
+    /// <summary>
+    /// Add a new Battlefy slug to the front of this Battlefy profile
+    /// </summary>
+    /// <param name="ids"></param>
+    public void AddSlug(string slug, Source source)
     {
+      SplatTagCommon.InsertFrontUniqueSourced(new Social(slug, source, baseAddress), this.slugs);
     }
 
-    public Battlefy(string slug, string username, Source source)
-      : this(slug, username.AsEnumerable(), source.AsEnumerable())
+    /// <summary>
+    /// Add new Battlefy slugs to the front of this Battlefy profile
+    /// </summary>
+    /// <param name="ids"></param>
+    public void AddSlugs(IEnumerable<Social> slugs)
     {
+      SplatTagCommon.AddNames(slugs, this.slugs);
     }
 
-    public Battlefy(string slug, IEnumerable<string> usernames, Source source)
-      : this(slug, usernames, source.AsEnumerable())
+    /// <summary>
+    /// Add a new Battlefy username to the front of this Battlefy profile
+    /// </summary>
+    public void AddUsername(string username, Source source)
     {
+      SplatTagCommon.AddName(new Name(username, source), this.usernames);
     }
 
-    public Battlefy(string slug, IEnumerable<string> usernames, IEnumerable<Source> sources)
-      : base(slug, sources)
+    /// <summary>
+    /// Add new Battlefy usernames to the front of this Battlefy profile
+    /// </summary>
+    public void AddUsernames(IEnumerable<Name> usernames)
     {
-      AddUsernames(usernames);
+      SplatTagCommon.AddNames(usernames, this.usernames);
     }
 
-    public void AddUsernames(IEnumerable<string> usernames)
+    /// <summary>
+    /// Return if this Battlefy matches another in any regard
+    /// </summary>
+    public bool MatchAny(Battlefy other)
     {
-      SplatTagCommon.AddStrings(usernames, this.usernames);
+      return MatchPersistent(other) || Matcher.NamesMatch(this.usernames, other.usernames) > 0;
     }
 
-    public bool Match(Battlefy other, StringComparison stringComparison = StringComparison.OrdinalIgnoreCase)
+    /// <summary>
+    /// Return if this Battlefy matches another by persistent data (ids).
+    /// </summary>
+    public bool MatchPersistent(Battlefy other)
     {
-      return this.Value.Equals(other.Value, stringComparison)
-        || this.usernames.Intersect(other.usernames).Any();
+      return Matcher.NamesMatch(this.slugs, other.slugs) > 0;
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Battlefy(SerializationInfo info, StreamingContext context)
+    {
+      this.slugs = (List<Social>)info.GetValue("Slugs", typeof(List<Social>));
+      this.usernames = (List<Name>)info.GetValue("Usernames", typeof(List<Name>));
+    }
+
+    // Serialize
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      info.AddValue("Slugs", this.slugs);
+      info.AddValue("Usernames", this.usernames);
+    }
+
+    #endregion Serialization
   }
 }

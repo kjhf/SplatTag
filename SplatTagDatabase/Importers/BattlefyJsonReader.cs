@@ -1,9 +1,9 @@
 ﻿using Newtonsoft.Json;
 using SplatTagCore;
+using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -11,131 +11,19 @@ namespace SplatTagDatabase.Importers
 {
   internal class BattlefyJsonReader : IImporter
   {
-    [Serializable]
-    internal class BattlefyJsonPlayer
-    {
-      [JsonProperty("_id", Required = Required.Default)]
-      public string? BattlefyId { get; set; }
-
-      // [JsonProperty("onTeam", Required = Required.Default)]
-      // public bool OnTeam { get; set; }
-
-      // [JsonProperty("isFreeAgent", Required = Required.Default)]
-      // public bool IsFreeAgent { get; set; }
-
-      // [JsonProperty("beCaptain", Required = Required.Default)]
-      // public bool BeCaptain { get; set; }
-
-      [JsonProperty("inGameName")]
-      public string? Name { get; set; }
-
-      [JsonProperty("userSlug", Required = Required.Default)]
-      public string? BattlefyUserSlug { get; set; }
-
-      [JsonProperty("username")]
-      public string? BattlefyName { get; set; }
-    }
-
-    [Serializable]
-    internal class BattlefyJsonTeam
-    {
-      [JsonProperty("_id", Required = Required.Default)]
-      public string? BattlefyId { get; set; }
-
-      [JsonProperty("name")]
-      public string? TeamName { get; set; }
-
-      // [JsonProperty("pendingTeamID", Required = Required.Default)]
-      // public string BattlefyPendingTeamId { get; set; }
-
-      [JsonProperty("persistentTeamID", Required = Required.Default)]
-      public string? BattlefyPersistentTeamId { get; set; }
-
-      // [JsonProperty("tournamentID", Required = Required.Default)]
-      // public string BattlefyTournamentId { get; set; }
-
-      // [JsonProperty("userID", Required = Required.Default)]
-      // public string BattlefyUserId { get; set; }
-
-      [JsonProperty("customFields")]
-      public Dictionary<string, string>[]? CustomFields { get; set; }
-
-      public string? CaptainDiscordName
-      {
-        get
-        {
-          if (CustomFields?.Length > 0)
-          {
-            if (Player.DISCORD_NAME_REGEX.IsMatch(CustomFields[0]["value"]))
-            {
-              return CustomFields[0]["value"];
-            }
-            else if (CustomFields.Length > 1)
-            {
-              if (Player.DISCORD_NAME_REGEX.IsMatch(CustomFields[1]["value"]))
-              {
-                return CustomFields[1]["value"];
-              }
-            }
-          }
-          return null;
-        }
-      }
-
-      public FriendCode CaptainFriendCode
-      {
-        get
-        {
-          if (CustomFields?.Length > 0)
-          {
-            if (FriendCode.TryParse(CustomFields[0]["value"], out FriendCode fc))
-            {
-              return fc;
-            }
-            else if (CustomFields.Length > 1)
-            {
-              if (FriendCode.TryParse(CustomFields[1]["value"], out FriendCode fc1))
-              {
-                return fc1;
-              }
-            }
-          }
-          return FriendCode.NO_FRIEND_CODE;
-        }
-      }
-
-      // [JsonProperty("ownerID", Required = Required.Default)]
-      // public string BattlefyOwnerId { get; set; }
-
-      // [JsonProperty("createdAt", Required = Required.Default)]
-      // public string CreatedAt { get; set; }
-
-      // [JsonProperty("playerIDs", Required = Required.Default)]
-      // public string[] PlayerIDs { get; set; }
-
-      // [JsonProperty("captainID", Required = Required.Default)]
-      // public string CaptainId { get; set; }
-
-      // [JsonProperty("checkedInAt", Required = Required.Default)]
-      // public string CheckedInAt { get; set; }
-
-      // [JsonProperty("checkedInAt", Required = Required.Default)]
-      // public string CheckedInAt { get; set; }
-
-      [JsonProperty("captain")]
-      public BattlefyJsonPlayer? Captain { get; set; }
-
-      [JsonProperty("players")]
-      public BattlefyJsonPlayer[]? Players { get; set; }
-    }
-
     private readonly string jsonFile;
+
     private readonly Source source;
 
     public BattlefyJsonReader(string jsonFile)
     {
       this.jsonFile = jsonFile ?? throw new ArgumentNullException(nameof(jsonFile));
       this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
+    }
+
+    public static bool AcceptsInput(string input)
+    {
+      return Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
 
     public (Player[], Team[]) Load()
@@ -246,9 +134,119 @@ namespace SplatTagDatabase.Importers
       return (players.ToArray(), teams.ToArray());
     }
 
-    public static bool AcceptsInput(string input)
+    [Serializable]
+    internal class BattlefyJsonPlayer
     {
-      return Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
+      [JsonProperty("_id", Required = Required.Default)]
+      public string? BattlefyId { get; set; }
+
+      // [JsonProperty("onTeam", Required = Required.Default)]
+      // public bool OnTeam { get; set; }
+
+      // [JsonProperty("isFreeAgent", Required = Required.Default)]
+      // public bool IsFreeAgent { get; set; }
+
+      // [JsonProperty("beCaptain", Required = Required.Default)]
+      // public bool BeCaptain { get; set; }
+
+      [JsonProperty("username")]
+      public string? BattlefyName { get; set; }
+
+      [JsonProperty("userSlug", Required = Required.Default)]
+      public string? BattlefyUserSlug { get; set; }
+
+      [JsonProperty("inGameName")]
+      public string? Name { get; set; }
+    }
+
+    [Serializable]
+    internal class BattlefyJsonTeam
+    {
+      [JsonProperty("_id", Required = Required.Default)]
+      public string? BattlefyId { get; set; }
+
+      [JsonProperty("persistentTeamID", Required = Required.Default)]
+      public string? BattlefyPersistentTeamId { get; set; }
+
+      [JsonProperty("captain")]
+      public BattlefyJsonPlayer? Captain { get; set; }
+
+      public string? CaptainDiscordName
+      {
+        get
+        {
+          if (CustomFields?.Length > 0)
+          {
+            if (Discord.DISCORD_NAME_REGEX.IsMatch(CustomFields[0]["value"]))
+            {
+              return CustomFields[0]["value"];
+            }
+            else if (CustomFields.Length > 1)
+            {
+              if (Discord.DISCORD_NAME_REGEX.IsMatch(CustomFields[1]["value"]))
+              {
+                return CustomFields[1]["value"];
+              }
+            }
+          }
+          return null;
+        }
+      }
+
+      public FriendCode CaptainFriendCode
+      {
+        get
+        {
+          if (CustomFields?.Length > 0)
+          {
+            if (FriendCode.TryParse(CustomFields[0]["value"], out FriendCode fc))
+            {
+              return fc;
+            }
+            else if (CustomFields.Length > 1)
+            {
+              if (FriendCode.TryParse(CustomFields[1]["value"], out FriendCode fc1))
+              {
+                return fc1;
+              }
+            }
+          }
+          return FriendCode.NO_FRIEND_CODE;
+        }
+      }
+
+      [JsonProperty("customFields")]
+      public Dictionary<string, string>[]? CustomFields { get; set; }
+
+      // [JsonProperty("checkedInAt", Required = Required.Default)]
+      // public string CheckedInAt { get; set; }
+      [JsonProperty("players")]
+      public BattlefyJsonPlayer[]? Players { get; set; }
+
+      [JsonProperty("name")]
+      public string? TeamName { get; set; }
+
+      // [JsonProperty("pendingTeamID", Required = Required.Default)]
+      // public string BattlefyPendingTeamId { get; set; }
+      // [JsonProperty("tournamentID", Required = Required.Default)]
+      // public string BattlefyTournamentId { get; set; }
+
+      // [JsonProperty("userID", Required = Required.Default)]
+      // public string BattlefyUserId { get; set; }
+      // [JsonProperty("ownerID", Required = Required.Default)]
+      // public string BattlefyOwnerId { get; set; }
+
+      // [JsonProperty("createdAt", Required = Required.Default)]
+      // public string CreatedAt { get; set; }
+
+      // [JsonProperty("playerIDs", Required = Required.Default)]
+      // public string[] PlayerIDs { get; set; }
+
+      // [JsonProperty("captainID", Required = Required.Default)]
+      // public string CaptainId { get; set; }
+
+      // [JsonProperty("checkedInAt", Required = Required.Default)]
+      // public string CheckedInAt { get; set; }
     }
   }
 }

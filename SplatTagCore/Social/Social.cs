@@ -1,16 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore.Social
 {
-  public abstract class Social : Name
+  [Serializable]
+  public class Social : Name, ISerializable
   {
+    /// <summary>
+    /// URL of the website as a base to prepend the handle of the social.
+    /// </summary>
+    protected readonly string socialBaseAddress;
+
     /// <summary>
     /// Construct a Social account based on the name and the source
     /// </summary>
-    protected Social(string handle, Source source)
-      : base(handle, source)
+    public Social(string handle, Source source, string socialBaseAddress)
+      : base(source)
     {
+      this.socialBaseAddress = socialBaseAddress;
       base.Value = ProcessHandle(handle);
     }
 
@@ -20,9 +28,10 @@ namespace SplatTagCore.Social
     /// <remarks>
     /// This constructor is used by <see cref="Activator"/>.
     /// </remarks>
-    protected Social(string handle, IEnumerable<Source> sources)
-      : base(handle, sources)
+    public Social(string handle, IEnumerable<Source> sources, string socialBaseAddress)
+      : base(sources)
     {
+      this.socialBaseAddress = socialBaseAddress;
       base.Value = ProcessHandle(handle);
     }
 
@@ -44,16 +53,11 @@ namespace SplatTagCore.Social
         }
         else
         {
-          Uri.TryCreate($"https://{SocialBaseAddress}/{Handle}", UriKind.RelativeOrAbsolute, out Uri result);
+          Uri.TryCreate($"https://{socialBaseAddress}/{Handle}", UriKind.RelativeOrAbsolute, out Uri result);
           return result;
         }
       }
     }
-
-    /// <summary>
-    /// URL of the website as a base to prepend the handle of the social.
-    /// </summary>
-    protected abstract string SocialBaseAddress { get; }
 
     protected virtual string ProcessHandle(string value)
     {
@@ -63,13 +67,31 @@ namespace SplatTagCore.Social
       }
       else
       {
-        if (value.Contains(SocialBaseAddress))
+        if (value.Contains(socialBaseAddress))
         {
-          value = value.Substring(value.IndexOf(SocialBaseAddress) + SocialBaseAddress.Length);
+          value = value.Substring(value.IndexOf(socialBaseAddress) + socialBaseAddress.Length);
         }
 
         return value.TrimStart('/', '@');
       }
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Social(SerializationInfo info, StreamingContext context)
+      : base(info, context)
+    {
+      this.socialBaseAddress = (string)info.GetValue("SocialBaseAddress", typeof(string));
+    }
+
+    // Serialize
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      base.GetObjectData(info, context);
+      info.AddValue("SocialBaseAddress", this.socialBaseAddress);
+    }
+
+    #endregion Serialization
   }
 }

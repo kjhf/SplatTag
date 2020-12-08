@@ -66,16 +66,16 @@ namespace SplatTagConsole
             {
               SplatTagControllerFactory.GenerateNewDatabase();
               result.Message = "Database rebuilt!";
-              result.Players = new Player[0];
-              result.Teams = new Team[0];
+              result.Players = Array.Empty<Player>();
+              result.Teams = Array.Empty<Team>();
               result.AdditionalTeams = new Dictionary<Guid, Team>();
               result.PlayersForTeams = new Dictionary<Guid, (Player, bool)[]>();
             }
             else if (string.IsNullOrWhiteSpace(query))
             {
               result.Message = "Nothing to search!";
-              result.Players = new Player[0];
-              result.Teams = new Team[0];
+              result.Players = Array.Empty<Player>();
+              result.Teams = Array.Empty<Team>();
               result.AdditionalTeams = new Dictionary<Guid, Team>();
               result.PlayersForTeams = new Dictionary<Guid, (Player, bool)[]>();
             }

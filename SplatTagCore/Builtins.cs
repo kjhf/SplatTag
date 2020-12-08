@@ -1,4 +1,6 @@
-﻿namespace SplatTagCore
+﻿using System;
+
+namespace SplatTagCore
 {
   /// <summary>
   /// Built-in statics that <see cref="SplatTagCore"/> needs for error handling.
@@ -17,18 +19,18 @@
 
     public static readonly Source BuiltinSource = new Source("builtin")
     {
-      Brackets = new Bracket[0],
-      Placements = new Placements[0],
-      Players = new Player[0],
-      Teams = new Team[0]
+      Brackets = Array.Empty<Bracket>(),
+      Placements = Array.Empty<Placements>(),
+      Players = Array.Empty<Player>(),
+      Teams = Array.Empty<Team>()
     };
 
     public static readonly Source ManualSource = new Source("Manual Entry")
     {
-      Brackets = new Bracket[0],
-      Placements = new Placements[0],
-      Players = new Player[0],
-      Teams = new Team[0]
+      Brackets = Array.Empty<Bracket>(),
+      Placements = Array.Empty<Placements>(),
+      Players = Array.Empty<Player>(),
+      Teams = Array.Empty<Team>()
     };
 
     public static readonly Name UnknownPlayerName = new Name(UNKNOWN_PLAYER, BuiltinSource);

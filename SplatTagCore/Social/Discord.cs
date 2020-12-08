@@ -1,9 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
 
 namespace SplatTagCore.Social
 {
-  public class Discord
+  [Serializable]
+  public class Discord : ISerializable
   {
+    public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
     /// <summary>
     /// Back-store for the Discord ids
     /// </summary>
@@ -60,5 +66,23 @@ namespace SplatTagCore.Social
     {
       return Matcher.NamesMatch(this.ids, other.ids) > 0;
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Discord(SerializationInfo info, StreamingContext context)
+    {
+      this.ids = (List<Name>)info.GetValue("Ids", typeof(List<Name>));
+      this.usernames = (List<Name>)info.GetValue("Usernames", typeof(List<Name>));
+    }
+
+    // Serialize
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      info.AddValue("Ids", this.ids);
+      info.AddValue("Usernames", this.usernames);
+    }
+
+    #endregion Serialization
   }
 }

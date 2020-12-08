@@ -78,7 +78,7 @@ namespace SplatTagDatabase.Importers
         players.Add(player);
       }
 
-      return (players.ToArray(), new Team[0]);
+      return (players.ToArray(), Array.Empty<Team>());
     }
 
     public static bool AcceptsInput(string input)

@@ -117,9 +117,9 @@ namespace SplatTagCore
           {
             playerName = playerName.Substring(Value.Length).Trim();
           }
-          else if (playerName.StartsWith(TransformedName, StringComparison.OrdinalIgnoreCase))
+          else if (playerName.StartsWith(Transformed, StringComparison.OrdinalIgnoreCase))
           {
-            playerName = playerName.Substring(TransformedName.Length).Trim();
+            playerName = playerName.Substring(Transformed.Length).Trim();
           }
           break;
 
@@ -128,9 +128,9 @@ namespace SplatTagCore
           {
             playerName = playerName.Substring(0, playerName.Length - Value.Length).Trim();
           }
-          else if (playerName.EndsWith(TransformedName, StringComparison.OrdinalIgnoreCase))
+          else if (playerName.EndsWith(Transformed, StringComparison.OrdinalIgnoreCase))
           {
-            playerName = playerName.Substring(0, playerName.Length - TransformedName.Length).Trim();
+            playerName = playerName.Substring(0, playerName.Length - Transformed.Length).Trim();
           }
           break;
 
@@ -139,7 +139,7 @@ namespace SplatTagCore
           {
             playerName = playerName.Substring(1, playerName.Length - 2).Trim();
           }
-          else if (playerName.StartsWith(TransformedName[0].ToString(), StringComparison.OrdinalIgnoreCase) && playerName.EndsWith(TransformedName[1].ToString(), StringComparison.OrdinalIgnoreCase))
+          else if (playerName.StartsWith(Transformed[0].ToString(), StringComparison.OrdinalIgnoreCase) && playerName.EndsWith(Transformed[1].ToString(), StringComparison.OrdinalIgnoreCase))
           {
             playerName = playerName.Substring(1, playerName.Length - 2).Trim();
           }

@@ -21,7 +21,7 @@ namespace SplatTagCore
     public SplatTagController(ISplatTagDatabase database)
     {
       this.database = database;
-      this.players = new Player[0];
+      this.players = Array.Empty<Player>();
       this.teams = new Dictionary<Guid, Team>();
       this.playersForTeam = new Dictionary<Team, (Player, bool)[]>();
     }
@@ -138,21 +138,25 @@ namespace SplatTagCore
 
           func = (p) =>
           {
-            if ((filterOptions & FilterOptions.FriendCode) != 0 && p.FC != FriendCode.NO_FRIEND_CODE)
+            if ((filterOptions & FilterOptions.FriendCode) != 0)
             {
               // If FC matches, return top match.
-              if (regex.IsMatch(p.FC.ToString()))
+              foreach (FriendCode code in p.FriendCodes)
               {
-                return int.MaxValue;
+                string toMatch = code.ToString();
+                if (regex.IsMatch(toMatch))
+                {
+                  return int.MaxValue;
+                }
               }
             }
 
             if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
             {
               // If the battle slugs match, return top match.
-              foreach (Battlefy bf in p.Battlefy)
+              foreach (Name bf in p.Battlefy.Slugs)
               {
-                string toMatch = (matchOptions.NearCharacterRecognition) ? bf.TransformedName : bf.Value;
+                string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
                 if (regex.IsMatch(toMatch))
                 {
                   return int.MaxValue;
@@ -166,7 +170,7 @@ namespace SplatTagCore
             {
               foreach (Name name in p.Names)
               {
-                string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformedName : name.Value;
+                string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
                 if (regex.IsMatch(toMatch))
                 {
                   relevance++;
@@ -176,26 +180,38 @@ namespace SplatTagCore
 
             if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
             {
-              foreach (Battlefy bf in p.Battlefy)
+              // Look through the battlefy usernames.
+              foreach (Name bf in p.BattlefyUsernames)
               {
-                // Look through the battlefy usernames.
-                foreach (string username in bf.Usernames)
+                string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
+                if (regex.IsMatch(toMatch))
                 {
-                  string toMatch = (matchOptions.NearCharacterRecognition) ? username.TransformString() : username;
-                  if (regex.IsMatch(toMatch))
-                  {
-                    relevance += 5;
-                  }
+                  relevance += 5;
                 }
               }
             }
 
-            if ((filterOptions & FilterOptions.DiscordName) != 0 && p.DiscordName != null)
+            if ((filterOptions & FilterOptions.DiscordName) != 0)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? p.DiscordName.TransformString() : p.DiscordName;
-              if (regex.IsMatch(toMatch))
+              foreach (Name name in p.DiscordNames)
               {
-                relevance++;
+                string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
+                if (regex.IsMatch(toMatch))
+                {
+                  relevance++;
+                }
+              }
+            }
+
+            if ((filterOptions & FilterOptions.DiscordId) != 0)
+            {
+              foreach (Name name in p.DiscordIds)
+              {
+                string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
+                if (regex.IsMatch(toMatch))
+                {
+                  relevance++;
+                }
               }
             }
 
@@ -203,7 +219,7 @@ namespace SplatTagCore
             {
               foreach (Twitch twitch in p.Twitch)
               {
-                string toMatch = (matchOptions.NearCharacterRecognition) ? twitch.TransformedName : twitch.Value;
+                string toMatch = (matchOptions.NearCharacterRecognition) ? twitch.Transformed : twitch.Value;
                 if (regex.IsMatch(toMatch))
                 {
                   return int.MaxValue;
@@ -215,7 +231,7 @@ namespace SplatTagCore
             {
               foreach (Twitter twitter in p.Twitter)
               {
-                string toMatch = (matchOptions.NearCharacterRecognition) ? twitter.TransformedName : twitter.Value;
+                string toMatch = (matchOptions.NearCharacterRecognition) ? twitter.Transformed : twitter.Value;
                 if (regex.IsMatch(toMatch))
                 {
                   relevance += 20;
@@ -244,7 +260,7 @@ namespace SplatTagCore
         catch (ArgumentException)
         {
           // Regex parsing error
-          return new Player[0];
+          return Array.Empty<Player>();
         }
       }
       else
@@ -254,25 +270,29 @@ namespace SplatTagCore
         func = (p) =>
         {
           int relevance = 0;
-          if ((filterOptions & FilterOptions.FriendCode) != 0 && p.FC != FriendCode.NO_FRIEND_CODE)
+          if ((filterOptions & FilterOptions.FriendCode) != 0)
           {
             // If FC matches, return top match.
-            if (p.FC.ToString().Equals(query, comparison))
+            foreach (FriendCode code in p.FriendCodes)
             {
-              return int.MaxValue;
-            }
-            else if (p.FC.ToString().Contains(query, comparison))
-            {
-              relevance++;
+              string toMatch = code.ToString();
+              if (toMatch.Equals(query, comparison))
+              {
+                return int.MaxValue;
+              }
+              else if (toMatch.Contains(query, comparison))
+              {
+                relevance++;
+              }
             }
           }
 
           if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
           {
             // If the battle slugs match, return top match.
-            foreach (Battlefy bf in p.Battlefy)
+            foreach (Name bf in p.BattlefySlugs)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? bf.TransformedName : bf.Value;
+              string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
               if (toMatch.Equals(query, comparison))
               {
                 return int.MaxValue;
@@ -286,14 +306,11 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
           {
-            foreach (Battlefy bf in p.Battlefy)
+            // Look through the battlefy usernames.
+            foreach (Name bf in p.BattlefyUsernames)
             {
-              // Look through the battlefy usernames.
-              foreach (string username in bf.Usernames)
-              {
-                string toMatch = (matchOptions.NearCharacterRecognition) ? username.TransformString() : username;
-                AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
-              }
+              string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
+              AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
             }
           }
 
@@ -301,22 +318,34 @@ namespace SplatTagCore
           {
             foreach (Name name in p.Names)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformedName : name.Value;
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
               AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
             }
           }
 
-          if ((filterOptions & FilterOptions.DiscordName) != 0 && p.DiscordName != null)
+          if ((filterOptions & FilterOptions.DiscordName) != 0)
           {
-            string toMatch = (matchOptions.NearCharacterRecognition) ? p.DiscordName.TransformString() : p.DiscordName;
-            AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
+            foreach (Name name in p.DiscordNames)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
+              AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
+            }
+          }
+
+          if ((filterOptions & FilterOptions.DiscordId) != 0)
+          {
+            foreach (Name name in p.DiscordIds)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
+              AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
+            }
           }
 
           if ((filterOptions & FilterOptions.Twitch) != 0)
           {
             foreach (Name name in p.Twitch)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformedName : name.Value;
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
               AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
             }
           }
@@ -325,7 +354,7 @@ namespace SplatTagCore
           {
             foreach (Name name in p.Twitter)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformedName : name.Value;
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
               AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
             }
           }
@@ -349,7 +378,11 @@ namespace SplatTagCore
         };
       }
 
-      return playersToSearch.Select(p => (p, func(p))).Where(pair => pair.Item2 > 0).OrderByDescending(pair => pair.Item2).Select(pair => pair.p).ToArray();
+      return playersToSearch.Select(p => (p, func(p)))
+                            .Where(pair => pair.Item2 > 0)
+                            .OrderByDescending(pair => pair.Item2)
+                            .Select(pair => pair.p)
+                            .ToArray();
     }
 
     private static void AdjustRelevanceForStringComparison(ref int relevance, string toMatch, string query, StringComparison comparison)
@@ -425,7 +458,7 @@ namespace SplatTagCore
             {
               foreach (ClanTag tag in t.ClanTags)
               {
-                string toMatch = (matchOptions.NearCharacterRecognition) ? tag.TransformedName : tag.Value;
+                string toMatch = (matchOptions.NearCharacterRecognition) ? tag.Transformed : tag.Value;
                 if (regex.IsMatch(toMatch))
                 {
                   // Put Clan Tag matches first
@@ -436,7 +469,7 @@ namespace SplatTagCore
 
             if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.TransformedName : t.Name.Value;
+              string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.Transformed : t.Name.Value;
               if (regex.IsMatch(toMatch))
               {
                 relevance++;
@@ -463,7 +496,7 @@ namespace SplatTagCore
             {
               foreach (Twitter twitter in t.Twitter)
               {
-                string toMatch = (matchOptions.NearCharacterRecognition) ? twitter.TransformedName : twitter.Value;
+                string toMatch = (matchOptions.NearCharacterRecognition) ? twitter.Transformed : twitter.Value;
                 if (regex.IsMatch(toMatch))
                 {
                   relevance += 20;
@@ -477,7 +510,7 @@ namespace SplatTagCore
         catch (ArgumentException)
         {
           // Regex parsing error
-          return new Team[0];
+          return Array.Empty<Team>();
         }
       }
       else
@@ -491,7 +524,7 @@ namespace SplatTagCore
           {
             foreach (ClanTag tag in t.ClanTags)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? tag.TransformedName : tag.Value;
+              string toMatch = (matchOptions.NearCharacterRecognition) ? tag.Transformed : tag.Value;
               if (toMatch.Equals(query, comparison))
               {
                 return int.MaxValue; // Clan tag perfect match
@@ -505,7 +538,7 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
           {
-            string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.TransformedName : t.Name.Value;
+            string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.Transformed : t.Name.Value;
             AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
           }
 
@@ -533,7 +566,7 @@ namespace SplatTagCore
           {
             foreach (Name name in t.Twitter)
             {
-              string toMatch = (matchOptions.NearCharacterRecognition) ? name.TransformedName : name.Value;
+              string toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value;
               AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
             }
           }

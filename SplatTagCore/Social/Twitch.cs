@@ -3,17 +3,18 @@ using System.Collections.Generic;
 
 namespace SplatTagCore.Social
 {
+  [Serializable]
   public class Twitch : Social
   {
-    protected override string SocialBaseAddress => "twitch.tv";
+    private const string baseAddress = "twitch.tv";
 
     public Twitch(string handle, Source source)
-      : base(handle, source)
+      : base(handle, source, baseAddress)
     {
     }
 
     public Twitch(string handle, IEnumerable<Source> sources)
-      : base(handle, sources)
+      : base(handle, sources, baseAddress)
     {
     }
   }

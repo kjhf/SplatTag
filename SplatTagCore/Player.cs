@@ -1,18 +1,14 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore.Social;
+﻿using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Player
+  public class Player : ISerializable, ISourceable
   {
-    public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
-
-    [JsonProperty("Id", Required = Required.Always)]
     /// <summary>
     /// The database Id of the player.
     /// </summary>
@@ -21,7 +17,7 @@ namespace SplatTagCore
     /// <summary>
     /// Back-store for player's Battlefy information.
     /// </summary>
-    private readonly List<Battlefy> battlefy = new List<Battlefy>();
+    private readonly Battlefy battlefy = new Battlefy();
 
     /// <summary>
     /// Back-store for player's Discord information.
@@ -99,26 +95,27 @@ namespace SplatTagCore
       this.sources.Add(source);
     }
 
-    [JsonProperty("Battlefy", Required = Required.Default)]
     /// <summary>
     /// Get the player's Battlefy profile details. This iterates over Battlefy slugs if used as a <see cref="SplatTagCore.Name"/> class.
     /// </summary>
-    public IReadOnlyList<Battlefy> Battlefy => battlefy;
+    public Battlefy Battlefy => battlefy;
 
-    [JsonIgnore]
     /// <summary>
     /// Get the player's Battlefy Usernames.
     /// </summary>
-    public IReadOnlyList<string> BattlefyUsernames => battlefy.SelectMany(bf => bf.Usernames).Distinct().ToArray();
+    public IReadOnlyList<Social.Social> BattlefySlugs => battlefy.Slugs;
 
-    [JsonProperty("Country", Required = Required.Default)]
+    /// <summary>
+    /// Get the player's Battlefy Usernames.
+    /// </summary>
+    public IReadOnlyList<Name> BattlefyUsernames => battlefy.Usernames;
+
     /// <summary>
     /// Get or Set the Country.
     /// Null by default.
     /// </summary>
     public string? Country { get; set; }
 
-    [JsonIgnore]
     /// <summary>
     /// Get the emoji flag of the <see cref="Country"/> specified.
     /// </summary>
@@ -131,122 +128,114 @@ namespace SplatTagCore
       }
     }
 
-    [JsonIgnore]
     /// <summary>
     /// The current team id this player plays for, or <see cref="Team.NoTeam.Id"/> if not set.
     /// </summary>
     public Guid CurrentTeam => teams.Count > 0 ? teams[0] : Team.NoTeam.Id;
 
-    [JsonProperty("Discord", Required = Required.Default)]
     /// <summary>
     /// Get the player's Discord profile details.
     /// </summary>
     public Discord Discord => discord;
 
-    [JsonProperty("DiscordId", Required = Required.Default)]
     /// <summary>
-    /// The last known Discord Id of the player. Returns null if none.
+    /// The known Discord Ids of the player.
     /// </summary>
-    public string? DiscordId => Discord.Ids.FirstOrDefault()?.Value;
+    public IReadOnlyList<Name> DiscordIds => Discord.Ids;
 
-    [JsonProperty("DiscordName", Required = Required.Default)]
     /// <summary>
-    /// The last known Discord name of the player. Returns null if none.
+    /// The known Discord usernames of the player.
     /// </summary>
-    public string? DiscordName => Discord.Usernames.FirstOrDefault()?.Value;
+    public IReadOnlyList<Name> DiscordNames => Discord.Usernames;
 
-    [JsonProperty("FriendCode", Required = Required.Default)]
     /// <summary>
-    /// Get the Friend Code. Returns <see cref="FriendCode.NO_FRIEND_CODE"/> if none.
+    /// The known Friend Codes of the player.
     /// </summary>
-    public FriendCode FC => friendCodes.Count > 0 ? friendCodes[0] : FriendCode.NO_FRIEND_CODE;
+    public IReadOnlyList<FriendCode> FriendCodes => friendCodes;
 
-    [JsonIgnore]
     /// <summary>
     /// The last known used name for the player
     /// </summary>
     public Name Name => names.Count > 0 ? names[0] : Builtins.UnknownPlayerName;
 
-    [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
     /// The names this player is known by.
     /// </summary>
     public IReadOnlyList<Name> Names => names;
 
-    [JsonIgnore]
     /// <summary>
     /// The old teams this player has played for.
     /// </summary>
     public IReadOnlyList<Guid> OldTeams => teams.Skip(1).ToArray();
 
-    [JsonProperty("Sendou", Required = Required.Default)]
     /// <summary>
     /// Get the player's Sendou profile details.
     /// </summary>
     public IReadOnlyList<Sendou> SendouProfiles => sendouProfiles;
 
-    [JsonProperty("Sources", Required = Required.Default)]
     /// <summary>
     /// Get or Set the current sources that make up this Player instance.
     /// </summary>
-    public IReadOnlyList<Source> Sources => sources;
+    public IList<Source> Sources => sources;
 
-    [JsonProperty("SplatnetId", Required = Required.Default)]
     /// <summary>
     /// The Splatnet database Id of the player (a hex string).
     /// Null by default.
     /// </summary>
     public string? SplatnetId { get; set; }
 
-    [JsonProperty("Teams", Required = Required.Always)]
     /// <summary>
     /// The teams this player is played for.
     /// No Team represented by <see cref="Team.NoTeam.Id"/>
     /// </summary>
     public IReadOnlyList<Guid> Teams => teams.ToArray();
 
-    [JsonIgnore]
-    /// <summary>
-    /// The Names of this Player transformed.
-    /// </summary>
-    public IEnumerable<string> TransformedNames => Names.Select(n => n.TransformedName);
-
-    [JsonProperty("Top500", Required = Required.Default)]
     /// <summary>
     /// Get or Set Top 500 flag.
     /// False by default.
     /// </summary>
     public bool Top500 { get; set; }
 
-    [JsonProperty("Twitch", Required = Required.Default)]
+    /// <summary>
+    /// The Names of this Player transformed.
+    /// </summary>
+    public IEnumerable<string> TransformedNames => Names.Select(n => n.Transformed);
+
     /// <summary>
     /// Get the player's Twitch profile details.
     /// </summary>
     public IReadOnlyList<Twitch> Twitch => twitchProfiles;
 
-    [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
     /// Get the player's Twitter profile details.
     /// </summary>
     public IReadOnlyList<Twitter> Twitter => twitterProfiles;
 
-    [JsonProperty("Weapons", Required = Required.Default)]
     /// <summary>
     /// The weapons this player uses.
     /// </summary>
     public IReadOnlyList<string> Weapons => weapons;
 
-    public void AddBattlefyInformation(string slug, string username, Source source)
+    public void AddBattlefy(Battlefy value)
     {
-      SplatTagCommon.AddBattlefy(slug, username.AsEnumerable(), source.AsEnumerable(), battlefy);
+      Battlefy.AddSlugs(value.Slugs);
+      Battlefy.AddUsernames(value.Usernames);
     }
 
-    public void AddBattlefyInformation(IEnumerable<Battlefy> value)
+    public void AddBattlefyInformation(string slug, string username, Source source)
     {
-      foreach (var bf in value)
-      {
-        SplatTagCommon.AddBattlefy(bf.Value, bf.Usernames, bf.Sources, battlefy);
-      }
+      AddBattlefySlug(slug, source);
+      AddBattlefyUsername(username, source);
+    }
+
+    public void AddBattlefySlug(string slug, Source source)
+    {
+      Battlefy.AddSlug(slug, source);
+    }
+
+    public void AddBattlefyUsername(string username, Source source)
+    {
+      Battlefy.AddUsername(username, source);
     }
 
     public void AddDiscord(Discord value)
@@ -293,7 +282,7 @@ namespace SplatTagCore
 
     public void AddName(string name, Source source)
     {
-      SplatTagCommon.AddName(name, source, names);
+      SplatTagCommon.AddName(new Name(name, source), names);
     }
 
     public void AddNames(IEnumerable<Name> value)
@@ -303,7 +292,7 @@ namespace SplatTagCore
 
     public void AddSendou(string handle, Source source)
     {
-      SplatTagCommon.AddName(handle, source, sendouProfiles);
+      SplatTagCommon.AddName(new Sendou(handle, source), sendouProfiles);
     }
 
     public void AddSendou(IEnumerable<Sendou> value)
@@ -318,12 +307,12 @@ namespace SplatTagCore
 
     public void AddTeams(IEnumerable<Guid> value)
     {
-      SplatTagCommon.AddIds(value, teams);
+      SplatTagCommon.InsertFrontUnique(value, teams);
     }
 
     public void AddTwitch(string handle, Source source)
     {
-      SplatTagCommon.AddName(handle, source, twitchProfiles);
+      SplatTagCommon.AddName(new Twitch(handle, source), twitchProfiles);
     }
 
     public void AddTwitch(IEnumerable<Twitch> value)
@@ -333,7 +322,7 @@ namespace SplatTagCore
 
     public void AddTwitter(string handle, Source source)
     {
-      SplatTagCommon.AddName(handle, source, twitterProfiles);
+      SplatTagCommon.AddName(new Twitter(handle, source), twitterProfiles);
     }
 
     public void AddTwitter(IEnumerable<Twitter> value)
@@ -395,7 +384,7 @@ namespace SplatTagCore
       AddWeapons(newerPlayer.weapons);
 
       // Merge the Battlefy Slugs and usernames.
-      AddBattlefyInformation(newerPlayer.battlefy);
+      AddBattlefy(newerPlayer.battlefy);
 
       // Merge the Discord Slugs and usernames.
       AddDiscord(newerPlayer.discord);
@@ -427,5 +416,48 @@ namespace SplatTagCore
     {
       return Name.Value;
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Player(SerializationInfo info, StreamingContext context)
+    {
+      _ = info.GetInt32("Version");
+      this.battlefy = (Battlefy)info.GetValue("Battlefy", typeof(Battlefy));
+      this.discord = (Discord)info.GetValue("Discord", typeof(Discord));
+      this.friendCodes = (List<FriendCode>)info.GetValue("FriendCode", typeof(List<FriendCode>));
+      this.names = (List<Name>)info.GetValue("Names", typeof(List<Name>));
+      this.sendouProfiles = (List<Sendou>)info.GetValue("Sendou", typeof(List<Sendou>));
+      this.sources = (List<Source>)info.GetValue("Sources", typeof(List<Source>));
+      this.teams = (List<Guid>)info.GetValue("Teams", typeof(List<Guid>));
+      this.twitchProfiles = (List<Twitch>)info.GetValue("Twitch", typeof(List<Twitch>));
+      this.twitterProfiles = (List<Twitter>)info.GetValue("Twitter", typeof(List<Twitter>));
+      this.weapons = (List<string>)info.GetValue("Weapons", typeof(List<string>));
+    }
+
+    // Serialize
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      info.AddValue("Version", 1);
+      info.AddValue("Battlefy", this.battlefy);
+      info.AddValue("Discord", this.discord);
+      info.AddValue("FriendCode", this.friendCodes);
+      info.AddValue("Names", this.names);
+      info.AddValue("Sendou", this.sendouProfiles);
+      info.AddValue("Sources", this.sources);
+      info.AddValue("Teams", this.teams);
+      info.AddValue("Twitch", this.twitchProfiles);
+      info.AddValue("Twitter", this.twitterProfiles);
+      info.AddValue("Weapons", this.weapons);
+    }
+
+    [OnDeserialized]
+    private void OnDeserialization(StreamingContext context)
+    {
+      // Nothing to do yet - versioning information and compatibility may
+      // go here in the future.
+    }
+
+    #endregion Serialization
   }
 }
