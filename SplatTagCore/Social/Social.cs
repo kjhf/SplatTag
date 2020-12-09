@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore.Social
 {
   [Serializable]
-  public class Social : Name, ISerializable
+  public abstract class Social : Name, ISerializable
   {
     /// <summary>
     /// URL of the website as a base to prepend the handle of the social.
@@ -82,7 +82,7 @@ namespace SplatTagCore.Social
     protected Social(SerializationInfo info, StreamingContext context)
       : base(info, context)
     {
-      this.socialBaseAddress = (string)info.GetValue("SocialBaseAddress", typeof(string));
+      this.socialBaseAddress = info.GetString("SocialBaseAddress");
     }
 
     // Serialize

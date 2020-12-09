@@ -121,7 +121,7 @@ namespace SplatTagDatabase.Importers
 
             if (row.CaptainDiscordName != null)
             {
-              newPlayer.AddDiscordName(row.CaptainDiscordName, source);
+              newPlayer.AddDiscordUsername(row.CaptainDiscordName, source);
             }
           }
 

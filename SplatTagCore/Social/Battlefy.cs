@@ -7,12 +7,10 @@ namespace SplatTagCore.Social
   [Serializable]
   public class Battlefy : ISerializable
   {
-    private const string baseAddress = "battlefy.com/users";
-
     /// <summary>
     /// Back-store for the Battlefy slugs
     /// </summary>
-    private readonly List<Social> slugs = new List<Social>();
+    private readonly List<BattlefySocial> slugs = new List<BattlefySocial>();
 
     /// <summary>
     /// Back-store for the Battlefy usernames
@@ -26,7 +24,7 @@ namespace SplatTagCore.Social
     /// <summary>
     /// The persistent Battlefy slugs
     /// </summary>
-    public IReadOnlyList<Social> Slugs => slugs;
+    public IReadOnlyList<BattlefySocial> Slugs => slugs;
 
     /// <summary>
     /// The Battlefy usernames
@@ -39,14 +37,14 @@ namespace SplatTagCore.Social
     /// <param name="ids"></param>
     public void AddSlug(string slug, Source source)
     {
-      SplatTagCommon.InsertFrontUniqueSourced(new Social(slug, source, baseAddress), this.slugs);
+      SplatTagCommon.InsertFrontUniqueSourced(new BattlefySocial(slug, source), this.slugs);
     }
 
     /// <summary>
     /// Add new Battlefy slugs to the front of this Battlefy profile
     /// </summary>
     /// <param name="ids"></param>
-    public void AddSlugs(IEnumerable<Social> slugs)
+    public void AddSlugs(IEnumerable<BattlefySocial> slugs)
     {
       SplatTagCommon.AddNames(slugs, this.slugs);
     }
@@ -88,7 +86,7 @@ namespace SplatTagCore.Social
     // Deserialize
     protected Battlefy(SerializationInfo info, StreamingContext context)
     {
-      this.slugs = (List<Social>)info.GetValue("Slugs", typeof(List<Social>));
+      this.slugs = (List<BattlefySocial>)info.GetValue("Slugs", typeof(List<BattlefySocial>));
       this.usernames = (List<Name>)info.GetValue("Usernames", typeof(List<Name>));
     }
 

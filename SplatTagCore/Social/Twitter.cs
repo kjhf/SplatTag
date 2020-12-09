@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore.Social
 {
@@ -17,5 +18,15 @@ namespace SplatTagCore.Social
       : base(handle, sources, baseAddress)
     {
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Twitter(SerializationInfo info, StreamingContext context)
+      : base(info, context)
+    {
+    }
+
+    #endregion Serialization
   }
 }

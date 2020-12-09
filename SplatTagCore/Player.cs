@@ -246,12 +246,12 @@ namespace SplatTagCore
 
     public void AddDiscordId(string id, Source source)
     {
-      Discord.AddIds(new Name(id, source).AsEnumerable());
+      Discord.AddId(id, source);
     }
 
-    public void AddDiscordName(string username, Source source)
+    public void AddDiscordUsername(string username, Source source)
     {
-      Discord.AddUsernames(new Name(username, source).AsEnumerable());
+      Discord.AddUsername(username, source);
     }
 
     public void AddFCs(IEnumerable<FriendCode> value)

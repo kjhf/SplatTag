@@ -274,7 +274,7 @@ namespace SplatTagDatabase.Importers
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               if (Discord.DISCORD_NAME_REGEX.IsMatch(value))
               {
-                p.AddDiscordName(value, source);
+                p.AddDiscordUsername(value, source);
               }
               else if (FriendCode.TryParse(value, out FriendCode friendCode))
               {

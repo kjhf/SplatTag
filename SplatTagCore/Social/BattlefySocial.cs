@@ -5,16 +5,16 @@ using System.Runtime.Serialization;
 namespace SplatTagCore.Social
 {
   [Serializable]
-  public class Twitch : Social
+  public class BattlefySocial : Social
   {
-    private const string baseAddress = "twitch.tv";
+    private const string baseAddress = "battlefy.com/users";
 
-    public Twitch(string handle, Source source)
+    public BattlefySocial(string handle, Source source)
       : base(handle, source, baseAddress)
     {
     }
 
-    public Twitch(string handle, IEnumerable<Source> sources)
+    public BattlefySocial(string handle, IEnumerable<Source> sources)
       : base(handle, sources, baseAddress)
     {
     }
@@ -22,7 +22,7 @@ namespace SplatTagCore.Social
     #region Serialization
 
     // Deserialize
-    protected Twitch(SerializationInfo info, StreamingContext context)
+    protected BattlefySocial(SerializationInfo info, StreamingContext context)
       : base(info, context)
     {
     }

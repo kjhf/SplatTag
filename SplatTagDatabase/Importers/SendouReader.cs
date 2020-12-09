@@ -66,7 +66,7 @@ namespace SplatTagDatabase.Importers
         JToken discord = userToken["discord"];
         if (discord != null)
         {
-          player.AddDiscordName($"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}", source);
+          player.AddDiscordUsername($"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}", source);
           var discordId = discord["id"].Value<string>();
           if (discordId != null)
           {

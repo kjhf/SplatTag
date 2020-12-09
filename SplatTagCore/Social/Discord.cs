@@ -35,12 +35,30 @@ namespace SplatTagCore.Social
     public IReadOnlyList<Name> Usernames => usernames;
 
     /// <summary>
+    /// Add a new Discord id to the front of this profile
+    /// </summary>
+    /// <param name="ids"></param>
+    public void AddId(string slug, Source source)
+    {
+      SplatTagCommon.AddName(new Name(slug, source), this.ids);
+    }
+
+    /// <summary>
     /// Add Discord ids to this Discord profile
     /// </summary>
     /// <param name="ids"></param>
     public void AddIds(IEnumerable<Name> ids)
     {
       SplatTagCommon.AddNames(ids, this.ids);
+    }
+
+    /// <summary>
+    /// Add a new Discord name to the front of this profile
+    /// </summary>
+    /// <param name="ids"></param>
+    public void AddUsername(string username, Source source)
+    {
+      SplatTagCommon.AddName(new Name(username, source), this.usernames);
     }
 
     /// <summary>
