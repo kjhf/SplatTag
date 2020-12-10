@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
-  public class ClanTag : Name
+  [Serializable]
+  public class ClanTag : Name, ISerializable
   {
     /// <summary>
     /// Construct a ClanTag based on the tag and the source
@@ -156,5 +158,23 @@ namespace SplatTagCore
     {
       return Value;
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected ClanTag(SerializationInfo info, StreamingContext context)
+      : base(info, context)
+    {
+      this.LayoutOption = info.GetEnumOrDefault("LayoutOption", TagOption.Unknown);
+    }
+
+    // Serialize
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      base.GetObjectData(info, context);
+      info.AddValue("LayoutOption", this.LayoutOption.ToString());
+    }
+
+    #endregion Serialization
   }
 }

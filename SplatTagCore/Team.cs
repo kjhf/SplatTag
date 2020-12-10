@@ -1,18 +1,17 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore.Social;
+﻿using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Team : ISourceable
+  public class Team : ISerializable, ISourceable
   {
     public static readonly Team NoTeam = new Team("(Free Agent)", Builtins.BuiltinSource);
     public static readonly Team UnlinkedTeam = new Team("(UNLINKED TEAM)", Builtins.BuiltinSource);
 
-    [JsonProperty("Id", Required = Required.Always)]
     /// <summary>
     /// The GUID of the team.
     /// </summary>
@@ -26,7 +25,7 @@ namespace SplatTagCore
     /// <summary>
     /// The division(s) of the team, first is the current.
     /// </summary>
-    private readonly Stack<Division> divisions = new Stack<Division>();
+    private readonly List<Division> divisions = new List<Division>();
 
     /// <summary>
     /// Back-store for the sources of this team.
@@ -72,43 +71,41 @@ namespace SplatTagCore
       this.sources.Add(source);
     }
 
-    [JsonIgnore]
     /// <summary>
     /// The last known Battlefy Persistent Ids of the team.
     /// </summary>
     public Name? BattlefyPersistentTeamId => battlefyPersistentTeamIds.Count > 0 ? battlefyPersistentTeamIds[0] : null;
 
-    [JsonProperty("BattlefyPersistentTeamIds", Required = Required.Default)]
     /// <summary>
     /// The known Battlefy Persistent Ids of the team.
     /// </summary>
     public IReadOnlyList<Name> BattlefyPersistentTeamIds => battlefyPersistentTeamIds;
 
-    [JsonIgnore]
     /// <summary>
     /// The placement of the current tag (null if the team does not have a tag)
     /// </summary>
     public TagOption? ClanTagOption => Tag?.LayoutOption;
 
-    [JsonProperty("ClanTags", Required = Required.Always)]
     /// <summary>
     /// The tag(s) of the team
     /// </summary>
     public IReadOnlyList<ClanTag> ClanTags => clanTags;
 
-    [JsonProperty("Div", Required = Required.Always)]
     /// <summary>
     /// The current division of the team
     /// </summary>
-    public Division CurrentDiv => divisions.Any() ? divisions.Peek() : Division.Unknown;
+    public Division CurrentDiv => divisions.Any() ? divisions[0] : Division.Unknown;
 
-    [JsonIgnore]
+    /// <summary>
+    /// The divisions of the team
+    /// </summary>
+    public IList<Division> Divisions => divisions;
+
     /// <summary>
     /// The last known used name for the Team
     /// </summary>
     public Name Name => names.Count > 0 ? names[0] : Builtins.UnknownTeamName;
 
-    [JsonProperty("Names", Required = Required.Always)]
     /// <summary>
     /// The names this player is known by.
     /// </summary>
@@ -119,19 +116,16 @@ namespace SplatTagCore
     /// </summary>
     public IList<Source> Sources => sources;
 
-    [JsonIgnore]
     /// <summary>
     /// The most recent tag of the team
     /// </summary>
     public ClanTag? Tag => ClanTags.Count > 0 ? ClanTags[0] : null;
 
-    [JsonIgnore]
     /// <summary>
     /// The names this player is known by transformed into searchable query.
     /// </summary>
     public IReadOnlyList<string> TransformedNames => Names.Select(n => n.Transformed).ToArray();
 
-    [JsonProperty("Twitter", Required = Required.Default)]
     /// <summary>
     /// Get the team's Twitter profile details.
     /// </summary>
@@ -161,7 +155,7 @@ namespace SplatTagCore
     {
       if (division != Division.Unknown && (division != CurrentDiv || !division.Season.Equals(CurrentDiv.Season)))
       {
-        this.divisions.Push(division);
+        SplatTagCommon.InsertFrontUnique(division, this.divisions);
       }
     }
 
@@ -231,5 +225,33 @@ namespace SplatTagCore
     {
       return $"{Tag} {Name} ({CurrentDiv})";
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Team(SerializationInfo info, StreamingContext context)
+    {
+      this.battlefyPersistentTeamIds = (List<Name>)info.GetValue("BattlefyPersistentTeamIds", typeof(List<Name>));
+      this.clanTags = (List<ClanTag>)info.GetValue("ClanTags", typeof(List<ClanTag>));
+      this.divisions = (List<Division>)info.GetValue("Divisions", typeof(List<Division>));
+      this.Id = (Guid)info.GetValue("Id", typeof(Guid));
+      this.names = (List<Name>)info.GetValue("Names", typeof(List<Name>));
+      this.sources = (List<Source>)info.GetValue("Sources", typeof(List<Source>));
+      this.twitterProfiles = (List<Twitter>)info.GetValue("Twitter", typeof(List<Twitter>));
+    }
+
+    // Serialize
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      info.AddValue("BattlefyPersistentTeamIds", this.battlefyPersistentTeamIds);
+      info.AddValue("ClanTags", this.clanTags);
+      info.AddValue("Divisions", this.divisions);
+      info.AddValue("Id", this.Id);
+      info.AddValue("Names", this.names);
+      info.AddValue("Sources", this.sources);
+      info.AddValue("Twitter", this.twitterProfiles);
+    }
+
+    #endregion Serialization
   }
 }

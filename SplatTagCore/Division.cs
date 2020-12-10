@@ -1,6 +1,5 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace SplatTagCore
@@ -11,61 +10,17 @@ namespace SplatTagCore
   /// For LUTI, X is div 0. X+ is div -1.
   /// Higher divs are LOWER in number.
   /// </summary>
-  public class Division : IComparable<Division>
+  public class Division : ISerializable, IComparable<Division>
   {
     public const int UNKNOWN = int.MaxValue;
     public const int X = 0;
     public const int X_PLUS = -1;
     public static readonly Division Unknown = new Division();
 
-    [JsonProperty("DivType", Required = Required.Always)]
     public readonly DivType DivType = DivType.Unknown;
-
-    [JsonProperty("Value", Required = Required.Always)]
+    public readonly string Season = "";
     public readonly int Value = UNKNOWN;
 
-    [JsonProperty("Value", Required = Required.Always)]
-    public readonly string Season = "";
-
-    /// <summary>
-    /// Get a LUTI-equivalent value representing <see cref="Value"/>.
-    /// </summary>
-    public int NormalisedValue
-    {
-      get
-      {
-        switch (DivType)
-        {
-          case DivType.DSB:
-          {
-            /*
-             *  DSB | LUTI
-                ----------
-                D1  | D1-D3
-                D2  | D4-D7
-                D3-8| D8
-             */
-            switch (Value)
-            {
-              case 1: return 2;
-              case 2: return 5;
-              default: return 8;
-            }
-          }
-
-          case DivType.EBTV:
-            return Value + 2;
-
-          case DivType.LUTI:
-            return Value;
-
-          default:
-            return UNKNOWN;
-        }
-      }
-    }
-
-    [JsonConstructor]
     public Division(int value = UNKNOWN, DivType divType = DivType.Unknown, string season = "")
     {
       this.Value = value;
@@ -128,23 +83,44 @@ namespace SplatTagCore
       }
     }
 
-    [JsonIgnore]
     public string Name => ToString();
 
     /// <summary>
-    /// Compare one Div to another. Remember, lower is better!
+    /// Get a LUTI-equivalent value representing <see cref="Value"/>.
     /// </summary>
-    public int CompareTo(Division other)
+    public int NormalisedValue
     {
-      return NormalisedValue.CompareTo(other.NormalisedValue);
-    }
+      get
+      {
+        switch (DivType)
+        {
+          case DivType.DSB:
+          {
+            /*
+             *  DSB | LUTI
+                ----------
+                D1  | D1-D3
+                D2  | D4-D7
+                D3-8| D8
+             */
+            switch (Value)
+            {
+              case 1: return 2;
+              case 2: return 5;
+              default: return 8;
+            }
+          }
 
-    /// <summary>
-    /// Compare left is higher (worse) than right.
-    /// </summary>
-    public static bool operator >(Division left, Division right)
-    {
-      return left.CompareTo(right) == 1;
+          case DivType.EBTV:
+            return Value + 2;
+
+          case DivType.LUTI:
+            return Value;
+
+          default:
+            return UNKNOWN;
+        }
+      }
     }
 
     /// <summary>
@@ -155,14 +131,30 @@ namespace SplatTagCore
       return left.CompareTo(right) == -1;
     }
 
+    public static bool operator <=(Division left, Division right)
+    {
+      return left.CompareTo(right) <= 0;
+    }
+
+    /// <summary>
+    /// Compare left is higher (worse) than right.
+    /// </summary>
+    public static bool operator >(Division left, Division right)
+    {
+      return left.CompareTo(right) == 1;
+    }
+
     public static bool operator >=(Division left, Division right)
     {
       return left.CompareTo(right) >= 0;
     }
 
-    public static bool operator <=(Division left, Division right)
+    /// <summary>
+    /// Compare one Div to another. Remember, lower is better!
+    /// </summary>
+    public int CompareTo(Division other)
     {
-      return left.CompareTo(right) <= 0;
+      return NormalisedValue.CompareTo(other.NormalisedValue);
     }
 
     public override string ToString()
@@ -187,5 +179,25 @@ namespace SplatTagCore
         return sb.ToString();
       }
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Division(SerializationInfo info, StreamingContext context)
+    {
+      this.Value = info.GetInt32("Value");
+      this.DivType = info.GetEnumOrDefault("DivType", DivType.Unknown);
+      this.Season = info.GetValueOrDefault("Season", "");
+    }
+
+    // Serialize
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      info.AddValue("Value", this.Value);
+      info.AddValue("DivType", this.DivType.ToString());
+      info.AddValue("Season", this.Season);
+    }
+
+    #endregion Serialization
   }
 }

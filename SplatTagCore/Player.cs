@@ -422,10 +422,10 @@ namespace SplatTagCore
     // Deserialize
     protected Player(SerializationInfo info, StreamingContext context)
     {
-      _ = info.GetInt32("Version");
       this.battlefy = (Battlefy)info.GetValue("Battlefy", typeof(Battlefy));
       this.discord = (Discord)info.GetValue("Discord", typeof(Discord));
       this.friendCodes = (List<FriendCode>)info.GetValue("FriendCode", typeof(List<FriendCode>));
+      this.Id = (Guid)info.GetValue("Id", typeof(Guid));
       this.names = (List<Name>)info.GetValue("Names", typeof(List<Name>));
       this.sendouProfiles = (List<Sendou>)info.GetValue("Sendou", typeof(List<Sendou>));
       this.sources = (List<Source>)info.GetValue("Sources", typeof(List<Source>));
@@ -438,10 +438,10 @@ namespace SplatTagCore
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      info.AddValue("Version", 1);
       info.AddValue("Battlefy", this.battlefy);
       info.AddValue("Discord", this.discord);
       info.AddValue("FriendCode", this.friendCodes);
+      info.AddValue("Id", this.Id);
       info.AddValue("Names", this.names);
       info.AddValue("Sendou", this.sendouProfiles);
       info.AddValue("Sources", this.sources);
