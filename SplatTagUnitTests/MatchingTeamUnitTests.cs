@@ -11,21 +11,6 @@ namespace SplatTagUnitTests
   public class MatchingTeamUnitTests
   {
     /// <summary>
-    /// Test match a team by (no match).
-    /// </summary>
-    [TestMethod]
-    public void MatchTeamNoMatchTest()
-    {
-      UnitTestDatabase database = new UnitTestDatabase();
-      SplatTagController controller = new SplatTagController(database);
-      controller.Initialise();
-
-      Team[] matched = controller.MatchTeam("WO");
-      Assert.IsNotNull(matched);
-      Assert.IsTrue(matched.Length == 0);
-    }
-
-    /// <summary>
     /// Test match two teams by an ambiguous query.
     /// </summary>
     [TestMethod]
@@ -34,15 +19,11 @@ namespace SplatTagUnitTests
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
 
-      Team t1 = controller.CreateTeam();
-      t1.Name = "Team 17";
-      t1.ClanTags = new string[] { "x" };
-      t1.ClanTagOption = TagOption.Front;
+      Team t1 = controller.CreateTeam("Team 17");
+      t1.AddClanTag("x", Builtins.ManualSource, TagOption.Front);
 
-      Team t2 = controller.CreateTeam();
-      t2.Name = "Example 18";
-      t2.ClanTags = new string[] { "e" };
-      t2.ClanTagOption = TagOption.Front;
+      Team t2 = controller.CreateTeam("Example 18");
+      t2.AddClanTag("e", Builtins.ManualSource, TagOption.Front);
 
       database.expectedTeams = new List<Team> { t1, t2 };
       controller.Initialise();
@@ -67,10 +48,8 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam();
-      t.Name = "Team 17"; // Purposefully mixed case
-      t.ClanTags = new string[] { "WO" };
-      t.ClanTagOption = TagOption.Front;
+      Team t = controller.CreateTeam("Team 17"); // Purposefully mixed case
+      t.AddClanTag("WO", Builtins.ManualSource, TagOption.Front); // Purposefully upper-case
       database.expectedTeams = new List<Team> { t };
 
       controller.LoadDatabase();
@@ -80,25 +59,55 @@ namespace SplatTagUnitTests
     }
 
     /// <summary>
-    /// Test match a team by its tag.
+    /// Test invalid Regex
     /// </summary>
     [TestMethod]
-    public void MatchTeamByTagTest_Standard()
+    public void MatchTeamByRegex_InvalidRegex()
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam();
-      t.Name = "Team 17";
-      t.ClanTags = new string[] { "WO" }; // Purposefully upper-case
-      t.ClanTagOption = TagOption.Front;
-      database.expectedTeams = new List<Team> { t };
+      Team t1 = controller.CreateTeam("Inkology");
+      t1.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
+
+      Team t2 = controller.CreateTeam("Inkfected");
+      t2.AddClanTag("τイ", Builtins.ManualSource, TagOption.Front);
+
+      database.expectedTeams = new List<Team> { t1, t2 };
 
       controller.LoadDatabase();
-      Team[] matched = controller.MatchTeam("wo"); // Purposefully lower-case
+      Team[] matched = controller.MatchTeam("[", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
       Assert.IsNotNull(matched);
-      Assert.IsTrue(matched.Length == 1);
+      Assert.AreEqual(0, matched.Length);
+    }
+
+    /// <summary>
+    /// Test match a team by its name in Regex.
+    /// </summary>
+    [TestMethod]
+    public void MatchTeamByRegex_Matched()
+    {
+      UnitTestDatabase database = new UnitTestDatabase();
+      SplatTagController controller = new SplatTagController(database);
+      controller.Initialise();
+
+      Team t1 = controller.CreateTeam("Inkology");
+      t1.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
+
+      Team t2 = controller.CreateTeam("Inkfected");
+      t2.AddClanTag("τイ", Builtins.ManualSource, TagOption.Front);
+
+      Team t3 = controller.CreateTeam("Inky Sirens");
+      t3.AddClanTag("InkS", Builtins.ManualSource, TagOption.Front);
+
+      database.expectedTeams = new List<Team> { t1, t2, t3 };
+
+      controller.LoadDatabase();
+      Team[] matched = controller.MatchTeam(@"ink\S+y$", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
+      Assert.IsNotNull(matched);
+      Assert.AreEqual(1, matched.Length);
+      Assert.IsTrue(matched[0] == t1);
     }
 
     /// <summary>
@@ -111,10 +120,8 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam();
-      t.Name = "Inkology";
-      t.ClanTags = new string[] { "¡g" };
-      t.ClanTagOption = TagOption.Front;
+      Team t = controller.CreateTeam("Inkology");
+      t.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
       database.expectedTeams = new List<Team> { t };
 
       controller.LoadDatabase();
@@ -133,10 +140,8 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam();
-      t.Name = "Inkology";
-      t.ClanTags = new string[] { "¡g" };
-      t.ClanTagOption = TagOption.Front;
+      Team t = controller.CreateTeam("Inkology");
+      t.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
       database.expectedTeams = new List<Team> { t };
 
       controller.LoadDatabase();
@@ -155,10 +160,8 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam();
-      t.Name = "Inkology";
-      t.ClanTags = new string[] { "¡g" };
-      t.ClanTagOption = TagOption.Front;
+      Team t = controller.CreateTeam("Inkology");
+      t.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
       database.expectedTeams = new List<Team> { t };
 
       controller.LoadDatabase();
@@ -168,65 +171,38 @@ namespace SplatTagUnitTests
     }
 
     /// <summary>
-    /// Test match a team by its name in Regex.
+    /// Test match a team by its tag.
     /// </summary>
     [TestMethod]
-    public void MatchTeamByRegex_Matched()
+    public void MatchTeamByTagTest_Standard()
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t1 = controller.CreateTeam();
-      t1.Name = "Inkology";
-      t1.ClanTags = new string[] { "¡g" };
-      t1.ClanTagOption = TagOption.Front;
-
-      Team t2 = controller.CreateTeam();
-      t2.Name = "Inkfected";
-      t2.ClanTags = new string[] { "τイ" };
-      t2.ClanTagOption = TagOption.Front;
-
-      Team t3 = controller.CreateTeam();
-      t3.Name = "Inky Sirens";
-      t3.ClanTags = new string[] { "InkS" };
-      t3.ClanTagOption = TagOption.Front;
-
-      database.expectedTeams = new List<Team> { t1, t2, t3 };
+      Team t = controller.CreateTeam("Team 17");
+      t.AddClanTag("WO", Builtins.ManualSource, TagOption.Front); // Purposefully upper-case
+      database.expectedTeams = new List<Team> { t };
 
       controller.LoadDatabase();
-      Team[] matched = controller.MatchTeam(@"ink\S+y$", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
+      Team[] matched = controller.MatchTeam("wo"); // Purposefully lower-case
       Assert.IsNotNull(matched);
-      Assert.AreEqual(1, matched.Length);
-      Assert.IsTrue(matched[0] == t1);
+      Assert.IsTrue(matched.Length == 1);
     }
 
     /// <summary>
-    /// Test invalid Regex
+    /// Test match a team by (no match).
     /// </summary>
     [TestMethod]
-    public void MatchTeamByRegex_InvalidRegex()
+    public void MatchTeamNoMatchTest()
     {
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t1 = controller.CreateTeam();
-      t1.Name = "Inkology";
-      t1.ClanTags = new string[] { "¡g" };
-      t1.ClanTagOption = TagOption.Front;
-
-      Team t2 = controller.CreateTeam();
-      t2.Name = "Inkfected";
-      t2.ClanTags = new string[] { "τイ" };
-      t2.ClanTagOption = TagOption.Front;
-
-      database.expectedTeams = new List<Team> { t1, t2 };
-
-      controller.LoadDatabase();
-      Team[] matched = controller.MatchTeam("[", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
+      Team[] matched = controller.MatchTeam("WO");
       Assert.IsNotNull(matched);
-      Assert.AreEqual(0, matched.Length);
+      Assert.IsTrue(matched.Length == 0);
     }
   }
 }

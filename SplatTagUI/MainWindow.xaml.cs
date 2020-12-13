@@ -1,8 +1,10 @@
 ﻿#nullable enable
 
 using SplatTagCore;
+using SplatTagCore.Social;
 using SplatTagDatabase;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -35,12 +37,13 @@ namespace SplatTagUI
     /// <summary>
     /// Version string to display.
     /// </summary>
-    public string Version => "Version 0.0.22";
+    public string Version => "Version 0.1.0";
 
     /// <summary>
     /// Version tooltip string to display.
     /// </summary>
     public string VersionToolTip =>
+      "v0.1.0: Major restructure to include sourcing every detail.\n" +
       "v0.0.22: More merging bug fixes. UI now has Battlefy buttons if the slug(s) are known. DSB compatibility.\n" +
       "v0.0.21: Stability, merging, and other bug fixes.\n" +
       "v0.0.20: Reworked matching to show higher relevance results first.\n" +
@@ -57,6 +60,7 @@ namespace SplatTagUI
 
     static MainWindow()
     {
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] MainWindow Constructor... ");
       (splatTagController, sourcesImporter) = SplatTagControllerFactory.CreateController();
     }
 
@@ -78,6 +82,9 @@ namespace SplatTagUI
       {
         otherFunctionsGrid.Visibility = Visibility.Collapsed;
       }
+
+      // Re-save if needed
+      // SplatTagControllerFactory.SaveDatabase(splatTagController);
 
       // Now we've initialised, hook up the check changed.
       ignoreCaseCheckbox.Checked += CheckedChanged;
@@ -184,15 +191,40 @@ namespace SplatTagUI
       }
       else if (b.DataContext is Team t)
       {
-        splatTagController.TryLaunchTwitter(t);
+        splatTagController.TryLaunchAddress(t.Twitter.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchTwitter(p);
+        splatTagController.TryLaunchAddress(p.Twitter.FirstOrDefault()?.Uri?.AbsoluteUri);
+      }
+      else if (b.DataContext is Social s)
+      {
+        splatTagController.TryLaunchAddress(s.Uri?.AbsoluteUri);
       }
       else
       {
         throw new ArgumentException("Unknown Twitter Button DataContext binding: " + b.DataContext);
+      }
+    }
+
+    private void TwitchButton_Click(object sender, RoutedEventArgs e)
+    {
+      FrameworkElement b = (FrameworkElement)sender;
+      if (b?.DataContext == null)
+      {
+        throw new ArgumentException("Unknown Twitch Button DataContext binding, it is not bound (null).");
+      }
+      else if (b.DataContext is Player p)
+      {
+        splatTagController.TryLaunchAddress(p.Twitch.FirstOrDefault()?.Uri?.AbsoluteUri);
+      }
+      else if (b.DataContext is Social s)
+      {
+        splatTagController.TryLaunchAddress(s.Uri?.AbsoluteUri);
+      }
+      else
+      {
+        throw new ArgumentException("Unknown Twitch Button DataContext binding: " + b.DataContext);
       }
     }
 
@@ -201,15 +233,19 @@ namespace SplatTagUI
       FrameworkElement b = (FrameworkElement)sender;
       if (b?.DataContext == null)
       {
-        throw new ArgumentException("Unknown Twitter Button DataContext binding, it is not bound (null).");
+        throw new ArgumentException("Unknown Battlefy Button DataContext binding, it is not bound (null).");
       }
-      else if (b.DataContext is string slug)
+      else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchAddress("https://battlefy.com/users/" + slug);
+        splatTagController.TryLaunchAddress(p.BattlefySlugs.FirstOrDefault()?.Uri?.AbsoluteUri);
+      }
+      else if (b.DataContext is Social s)
+      {
+        splatTagController.TryLaunchAddress(s.Uri?.AbsoluteUri);
       }
       else
       {
-        throw new ArgumentException("Unknown Twitter Button DataContext binding: " + b.DataContext);
+        throw new ArgumentException("Unknown Battlefy Button DataContext binding: " + b.DataContext);
       }
     }
 
@@ -246,11 +282,11 @@ namespace SplatTagUI
       }
       else if (value is Player p)
       {
-        sources = p.Sources;
+        sources = p.Sources.Select(s => s.Name ?? s.Id.ToString());
       }
       else if (value is Team t)
       {
-        sources = t.Sources;
+        sources = t.Sources.Select(s => s.Name ?? s.Id.ToString());
       }
       else
       {
@@ -412,61 +448,51 @@ namespace SplatTagUI
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
-  public class PlayerContextMenuConverter : IValueConverter
+  public class ContextMenuConverter : IValueConverter
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
       const int MAX_ELEMENTS_UNTIL_LINE_BREAKS = 2;
-      if (value is Player p)
+      var tuples = new List<Tuple<string, string>>();
+      if (value == null) return tuples;
+
+      foreach (PropertyInfo prop in value.GetType().GetProperties())
       {
-        var tuples = new List<Tuple<string, string>>();
-        foreach (PropertyInfo prop in typeof(Player).GetProperties())
+        var fieldName = prop.Name;
+        var fieldVal = prop.GetValue(value, null);
+        if (fieldVal is null || fieldName == nameof(Player.OldTeams) || fieldName == nameof(Player.Name) || fieldName == nameof(Player.CurrentTeam))
         {
-          var fieldName = prop.Name;
-          var fieldVal = prop.GetValue(p, null);
-          if (fieldVal is null || fieldName == nameof(Player.OldTeams) || fieldName == nameof(Player.Name) || fieldName == nameof(Player.CurrentTeam))
+          // Don't bother listing values that are not set (or provided by other values)
+          continue;
+        }
+        else if (fieldVal is bool b)
+        {
+          fieldVal = b ? "✔" : "❌";
+        }
+        else if (fieldVal is IEnumerable<Guid> ids)
+        {
+          int count = ids.Count();
+          if (count == 0)
           {
-            // Don't bother listing values that are not set (or provided by other values)
             continue;
           }
-          else if (fieldVal is bool b)
-          {
-            fieldVal = b ? "✔" : "❌";
-          }
-          else if (fieldVal is IEnumerable<Guid> ids)
-          {
-            int count = ids.Count();
-            if (count == 0)
-            {
-              continue;
-            }
-            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+          string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
 
-            var oldTeams = ids.Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
+          if (fieldName == nameof(Player.Teams))
+          {
+            var oldTeams = ids.Select(id => MainWindow.splatTagController?.GetTeamById(id));
             fieldVal = string.Join(separator, oldTeams);
           }
-          else if (fieldVal is IEnumerable<long> longs)
+          else
           {
-            int count = longs.Count();
-            if (count == 0)
-            {
-              continue;
-            }
-            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
-            fieldVal = string.Join(separator, longs);
+            fieldVal = string.Join(separator, ids);
           }
-          else if (fieldVal is IEnumerable<string> strings)
+        }
+        else
+        {
+          if (fieldVal is IEnumerable generic)
           {
-            int count = strings.Count();
-            if (count == 0)
-            {
-              continue;
-            }
-            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
-            fieldVal = string.Join(separator, strings);
-          }
-          else if (fieldVal is IEnumerable<object> objects)
-          {
+            var objects = generic.OfType<object>();
             int count = objects.Count();
             if (count == 0)
             {
@@ -475,11 +501,10 @@ namespace SplatTagUI
             string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
             fieldVal = string.Join(separator, objects);
           }
-          tuples.Add(new Tuple<string, string>(fieldName, fieldVal.ToString()));
         }
-        return tuples;
+        tuples.Add(new Tuple<string, string>(fieldName, fieldVal.ToString()));
       }
-      return new Tuple<string, string>[0];
+      return tuples;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();

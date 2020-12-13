@@ -63,10 +63,15 @@ namespace SplatTagDatabase
 
     private static (Player[], Team[]) Load(string? playersSnapshotFile, string? teamsSnapshotFile)
     {
-      if (playersSnapshotFile == null || teamsSnapshotFile == null) return (new Player[0], new Team[0]);
+      if (playersSnapshotFile == null || teamsSnapshotFile == null) return (Array.Empty<Player>(), Array.Empty<Team>());
 
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile... ");
       var players = JsonConvert.DeserializeObject<Player[]>(File.ReadAllText(playersSnapshotFile));
+
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load teamsSnapshotFile... ");
       var teams = JsonConvert.DeserializeObject<Team[]>(File.ReadAllText(teamsSnapshotFile));
+
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
       return (players, teams);
     }
 

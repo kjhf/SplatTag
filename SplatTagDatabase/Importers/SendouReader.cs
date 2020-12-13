@@ -11,18 +11,16 @@ namespace SplatTagDatabase.Importers
   internal class SendouReader : IImporter
   {
     private readonly string jsonFile;
+    private readonly Source source;
 
     public SendouReader(string jsonFile)
     {
       this.jsonFile = jsonFile ?? throw new ArgumentNullException(nameof(jsonFile));
+      this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
     }
 
     public (Player[], Team[]) Load()
     {
-      if (jsonFile == null)
-      {
-        throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
-      }
       Debug.WriteLine("Loading " + jsonFile);
       JObject json = JObject.Parse(File.ReadAllText(jsonFile));
 
@@ -30,27 +28,25 @@ namespace SplatTagDatabase.Importers
       foreach (JToken userToken in json["users"])
       {
         Player player = new Player();
-        var name = userToken["twitch_name"].Value<string>();
+        var name = userToken["username"].Value<string>();
         if (name != null)
         {
-          player.Name = name;
-          player.Twitch = name;
+          player.AddName(name, source);
+        }
+        name = userToken["twitch_name"].Value<string>();
+        if (name != null)
+        {
+          player.AddTwitch(name, source);
         }
         name = userToken["twitter_name"].Value<string>();
         if (name != null)
         {
-          player.Name = name;
-          player.Twitter = name;
-        }
-        name = userToken["username"].Value<string>();
-        if (name != null)
-        {
-          player.Name = name;
+          player.AddTwitter(name, source);
         }
         var sendouId = userToken["id"].Value<string>();
-        if (sendouId != null && Guid.TryParse(sendouId, out Guid guid))
+        if (sendouId != null)
         {
-          player.SendouId = guid;
+          player.AddSendou(sendouId, source);
         }
         var country = userToken["country"].Value<string>();
         if (name != null)
@@ -60,7 +56,7 @@ namespace SplatTagDatabase.Importers
         var weapons = userToken["weapons"].HasValues ? userToken["weapons"].Values<string>() : null;
         if (weapons != null)
         {
-          player.Weapons = weapons.ToArray();
+          player.AddWeapons(weapons);
         }
         var top500 = userToken["top500"].Value<bool?>();
         if (top500 != null)
@@ -70,19 +66,19 @@ namespace SplatTagDatabase.Importers
         JToken discord = userToken["discord"];
         if (discord != null)
         {
-          player.DiscordName = $"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}";
+          player.AddDiscordUsername($"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}", source);
           var discordId = discord["id"].Value<string>();
-          if (discordId != null && ulong.TryParse(discordId, out ulong parsedId))
+          if (discordId != null)
           {
-            player.DiscordId = parsedId;
+            player.AddDiscordId(discordId, source);
           }
         }
 
-        player.Sources = new string[] { Path.GetFileNameWithoutExtension(jsonFile) };
+        player.AddSources(source.AsEnumerable());
         players.Add(player);
       }
 
-      return (players.ToArray(), new Team[0]);
+      return (players.ToArray(), Array.Empty<Team>());
     }
 
     public static bool AcceptsInput(string input)

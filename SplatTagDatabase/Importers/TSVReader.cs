@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore;
+﻿using SplatTagCore;
+using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,41 +7,11 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace SplatTagDatabase.Importers
 {
   internal class TSVReader : IImporter
   {
-    private enum PropertyEnum
-    {
-      UNKNOWN = -1,
-      Team_Offset = 0,
-      TeamName = 1,
-      Tag = 2,
-      Div = 3,
-      LUTIDiv = 4,
-      EBTVDiv = 5,
-      DSBDiv = 6,
-
-      UnspecifiedPlayer_Offset = 10,
-      Name,
-      FC,
-      DiscordName,
-      DiscordId,
-      Twitch,
-      Twitter,
-      Country,
-      Role,
-
-      /// <summary>
-      /// Player N offset, where N = 1, 2, 3... to give 100, 200, 300 ...
-      /// </summary>
-      PlayerN_Offset = 100,
-    }
-
-    private readonly string tsvFile;
-
     private static readonly ReadOnlyDictionary<string, PropertyEnum> propertyValueStringMap = new ReadOnlyDictionary<string, PropertyEnum>(new Dictionary<string, PropertyEnum>()
     {
       { "team", PropertyEnum.TeamName },
@@ -100,18 +70,68 @@ namespace SplatTagDatabase.Importers
       { "captain", (int)PropertyEnum.PlayerN_Offset + PropertyEnum.Name }
     });
 
+    private readonly DivType divType;
+
+    private readonly string season;
+
+    private readonly Source source;
+
+    private readonly string tsvFile;
+
     public TSVReader(string tsvFile)
     {
       this.tsvFile = tsvFile ?? throw new ArgumentNullException(nameof(tsvFile));
+      string fileName = Path.GetFileNameWithoutExtension(tsvFile);
+      this.source = new Source(fileName);
+      this.season = fileName;
+      this.divType = DivType.Unknown;
+
+      // Try and calculate Div Type and season
+      foreach (DivType type in Enum.GetValues(typeof(DivType)))
+      {
+        if (fileName.Contains(type.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+          divType = type;
+          season = fileName.Substring(fileName.IndexOf(type.ToString()) + type.ToString().Length).Trim('-');
+          break;
+        }
+      }
+    }
+
+    private enum PropertyEnum
+    {
+      UNKNOWN = -1,
+      Team_Offset = 0,
+      TeamName = 1,
+      Tag = 2,
+      Div = 3,
+      LUTIDiv = 4,
+      EBTVDiv = 5,
+      DSBDiv = 6,
+
+      UnspecifiedPlayer_Offset = 10,
+      Name,
+      FC,
+      DiscordName,
+      DiscordId,
+      Twitch,
+      Twitter,
+      Country,
+      Role,
+
+      /// <summary>
+      /// Player N offset, where N = 1, 2, 3... to give 100, 200, 300 ...
+      /// </summary>
+      PlayerN_Offset = 100,
+    }
+
+    public static bool AcceptsInput(string input)
+    {
+      return Path.GetExtension(input).Equals(".tsv", StringComparison.OrdinalIgnoreCase);
     }
 
     public (Player[], Team[]) Load()
     {
-      if (tsvFile == null)
-      {
-        throw new InvalidOperationException(nameof(tsvFile) + " is not set.");
-      }
-
       Debug.WriteLine("Loading " + tsvFile);
       string[] text = File.ReadAllLines(tsvFile);
       if (text.Length < 1)
@@ -202,12 +222,7 @@ namespace SplatTagDatabase.Importers
         }
 
         SortedDictionary<int, Player> rowPlayers = new SortedDictionary<int, Player>();
-        Team t = new Team
-        {
-          ClanTagOption = TagOption.Unknown,
-          Div = new Division(),
-          Sources = new string[] { Path.GetFileNameWithoutExtension(tsvFile) }
-        };
+        Team t = new Team();
 
         for (int i = 0; i < cells.Length && i < numberOfHeaders; ++i)
         {
@@ -244,7 +259,7 @@ namespace SplatTagDatabase.Importers
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out ulong parsedId))
               {
-                p.DiscordId = parsedId;
+                p.AddDiscordId(value, source);
               }
               else
               {
@@ -257,13 +272,13 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.DiscordName:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              if (Player.DISCORD_NAME_REGEX.IsMatch(value))
+              if (Discord.DISCORD_NAME_REGEX.IsMatch(value))
               {
-                p.DiscordName = value;
+                p.AddDiscordUsername(value, source);
               }
-              else if (FriendCode.TryParse(value, out FriendCode? friendCode))
+              else if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
-                p.FriendCode = friendCode?.ToString();
+                p.AddFCs(friendCode.AsEnumerable());
                 Trace.WriteLine($"Warning: This value was declared as a Discord name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
               }
               else
@@ -277,9 +292,9 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.FC:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              if (FriendCode.TryParse(value, out FriendCode? friendCode))
+              if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
-                p.FriendCode = friendCode?.ToString();
+                p.AddFCs(friendCode.AsEnumerable());
               }
               else
               {
@@ -291,47 +306,37 @@ namespace SplatTagDatabase.Importers
 
             case PropertyEnum.Div:
             {
-              bool found = false;
-              foreach (DivType type in Enum.GetValues(typeof(DivType)))
-              {
-                if (tsvFile.Contains(type.ToString(), StringComparison.OrdinalIgnoreCase))
-                {
-                  t.Div = new Division(value, type);
-                  found = true;
-                  break;
-                }
-              }
+              t.AddDivision(new Division(value, divType, season));
 
-              if (!found)
+              if (divType == DivType.Unknown)
               {
-                t.Div = new Division(value, DivType.Unknown);
                 Trace.WriteLine($"Warning: Div was specified ({lineIndex},{i}), but I don't know what type of division this file represents.");
               }
               break;
             }
             case PropertyEnum.LUTIDiv:
             {
-              t.Div = new Division(value, DivType.LUTI);
+              t.AddDivision(new Division(value, DivType.LUTI, season));
               break;
             }
             case PropertyEnum.EBTVDiv:
             {
-              t.Div = new Division(value, DivType.EBTV);
+              t.AddDivision(new Division(value, DivType.EBTV, season));
               break;
             }
             case PropertyEnum.DSBDiv:
             {
-              t.Div = new Division(value, DivType.DSB);
+              t.AddDivision(new Division(value, DivType.DSB, season));
               break;
             }
 
             case PropertyEnum.Name:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Name = value;
-              if (FriendCode.TryParse(value, out FriendCode? friendCode))
+              p.AddName(value, source);
+              if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
-                p.FriendCode = friendCode?.ToString();
+                p.AddFCs(friendCode.AsEnumerable());
                 Trace.WriteLine($"Warning: This value was declared as a name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
                 Debug.WriteLine(line);
               }
@@ -341,35 +346,33 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.Role:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Weapons = value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
+              p.AddWeapons(value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)));
               break;
             }
 
             case PropertyEnum.Tag:
             {
-              t.ClanTags = new string[] { value };
+              t.AddClanTag(value, source);
               break;
             }
 
             case PropertyEnum.TeamName:
             {
-              t.Name = value;
+              t.AddName(value, source);
               break;
             }
 
             case PropertyEnum.Twitter:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Names = p.Names.Concat(new[] { value });
-              p.Twitter = value;
+              p.AddTwitter(value, source);
               break;
             }
 
             case PropertyEnum.Twitch:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.Names = p.Names.Concat(new[] { value });
-              p.Twitch = value;
+              p.AddTwitch(value, source);
               break;
             }
 
@@ -389,12 +392,21 @@ namespace SplatTagDatabase.Importers
         foreach (var pair in rowPlayers)
         {
           Player p = pair.Value;
-          if (p.Name.Equals(Player.UNKNOWN_PLAYER))
+          if (p.Name.Equals(Builtins.UNKNOWN_PLAYER))
           {
             continue;
           }
-          p.CurrentTeam = t.Id;
+          p.AddTeams(t.Id.AsEnumerable());
           players.Add(p);
+        }
+
+        // Add the source.
+        t.AddSources(source.AsEnumerable());
+
+        // Recalculate the ClanTag layout
+        if (t.Tag != null && players.Any())
+        {
+          t.Tag.CalculateTagOption(players.First().Name.Value);
         }
         teams.Add(t);
       }
@@ -410,18 +422,11 @@ namespace SplatTagDatabase.Importers
       }
       else
       {
-        Player p = new Player
-        {
-          Sources = new string[] { Path.GetFileNameWithoutExtension(tsvFile) }
-        };
+        Player p = new Player();
+        p.AddSources(source.AsEnumerable());
         rowPlayers.Add(playerNum, p);
         return p;
       }
-    }
-
-    public static bool AcceptsInput(string input)
-    {
-      return Path.GetExtension(input).Equals(".tsv", StringComparison.OrdinalIgnoreCase);
     }
   }
 }

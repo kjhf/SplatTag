@@ -36,24 +36,15 @@ namespace SplatTagUnitTests
       Assert.IsTrue(database.loadCalled);
 
       database.loadCalled = false;
-
-      Team exampleTeam =
-        new Team
-        {
-          Name = "Example Team",
-          ClanTags = new string[] { "e.g" },
-          Div = new Division(1)
-        };
+      Team exampleTeam = controller.CreateTeam("Example Team");
+      exampleTeam.AddClanTag("e.g", Builtins.ManualSource, TagOption.Front);
+      exampleTeam.AddDivision(new Division(1, DivType.DSB));
       var TEAM_ID = exampleTeam.Id;
 
       database.expectedTeams = new List<Team> { exampleTeam };
       database.expectedPlayers = new List<Player>
       {
-        new Player
-        {
-          Names = new string[] { "Example Name" },
-          Teams = new Guid[] { TEAM_ID }
-        }
+        new Player("Example Name", new Guid[] { TEAM_ID }, Builtins.ManualSource)
       };
       var PLAYER_ID = database.expectedPlayers[0].Id;
 
@@ -71,12 +62,13 @@ namespace SplatTagUnitTests
 
       object? teamsDict = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teamsDict);
-      var teams = (IList<Team>)teamsDict!;
+      var teams = (IDictionary<Guid, Team>)teamsDict!;
       Assert.IsNotNull(teams);
-      Team? team1 = teams.FirstOrDefault(t => t.Id == TEAM_ID);
+      Team? team1 = teams[TEAM_ID];
       Assert.IsNotNull(team1);
       Assert.IsTrue(team1!.Id == TEAM_ID);
-      Assert.IsTrue(team1.Div.Value == 1);
+      Assert.IsTrue(team1.CurrentDiv.Value == 1);
+      Assert.IsTrue(team1.CurrentDiv.DivType == DivType.DSB);
 
       // Verify getting the players for that team returns our player
       (Player, bool)[] playersForExampleTeam = controller.GetPlayersForTeam(exampleTeam);
@@ -95,7 +87,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Player p = controller.CreatePlayer();
+      Player p = controller.CreatePlayer("");
       Assert.IsNotNull(p);
       object? players = Util.GetPrivateMember(controller, "players");
       Assert.IsNotNull(players);
@@ -111,7 +103,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam();
+      Team t = controller.CreateTeam("");
       Assert.IsNotNull(t);
       object? teams = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teams);

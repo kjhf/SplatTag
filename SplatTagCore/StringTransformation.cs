@@ -10,6 +10,7 @@
 //
 // Please see relevant copyright notices at sites above and published GitHub page.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -2432,7 +2433,7 @@ namespace SplatTagCore
       // If nothing to do
       if (inputNames == null || !inputNames.Any())
       {
-        return new string[0];
+        return Array.Empty<string>();
       }
 
       List<string> result = new List<string>();

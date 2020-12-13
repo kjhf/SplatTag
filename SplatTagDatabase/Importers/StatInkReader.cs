@@ -644,11 +644,6 @@ namespace SplatTagDatabase.Importers
 
     public (Player[], Team[]) Load()
     {
-      if (jsonFile == null)
-      {
-        throw new InvalidOperationException(nameof(jsonFile) + " is not set.");
-      }
-
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
       StatInkRoot root = JsonConvert.DeserializeObject<StatInkRoot>(json);
@@ -658,24 +653,42 @@ namespace SplatTagDatabase.Importers
       // Don't load the details if they are manual entries.
       if (!root.Automated || root.Players == null)
       {
-        return (players.ToArray(), new Team[0]);
+        return (players.ToArray(), Array.Empty<Team>());
       }
 
       foreach (var p in root.Players)
       {
-        players.Add(new Player
+        Source source = new Source(Path.GetFileNameWithoutExtension(jsonFile))
         {
-          Names = new string[] { p.Name ?? Player.UNKNOWN_PLAYER },
-          Sources = new string[] { root.Url == null ? Path.GetFileNameWithoutExtension(jsonFile) : root.Url.AbsoluteUri },
-          FriendCode = p.IsMe ? root.User?.Profile?.FriendCode : null,
+          Uri = root.Url
+        };
+        var newPlayer = new Player(p.Name ?? Builtins.UNKNOWN_PLAYER, source)
+        {
           SplatnetId = p.SplatnetId,
           Top500 = p.Top500 == true,
-          Twitter = p.IsMe ? root.User?.Profile?.Twitter : null,
-          Weapons = new string[] { p.Weapon?.MainRef ?? "" }
-        });
+        };
+        if (p.IsMe)
+        {
+          if (root.User?.Profile?.Twitter != null)
+          {
+            newPlayer.AddTwitter(root.User.Profile.Twitter, source);
+          }
+          if (root.User?.Profile?.FriendCode != null)
+          {
+            if (FriendCode.TryParse(root.User.Profile.FriendCode, out FriendCode friendCode))
+            {
+              newPlayer.AddFCs(friendCode.AsEnumerable());
+            }
+          }
+        }
+        if (p.Weapon?.MainRef != null)
+        {
+          newPlayer.AddWeapons(new string[] { p.Weapon.MainRef });
+        }
+        players.Add(newPlayer);
       }
 
-      return (players.ToArray(), new Team[0]);
+      return (players.ToArray(), Array.Empty<Team>());
     }
 
     public static bool AcceptsInput(string input)

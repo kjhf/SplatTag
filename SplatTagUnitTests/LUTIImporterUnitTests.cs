@@ -76,35 +76,35 @@ namespace SplatTagUnitTests
         Assert.AreEqual(3, loadedTeams.Length);
         Assert.AreEqual(18, loadedPlayers.Length);
 
-        Assert.AreEqual("Example Team", loadedTeams[0].Name);
-        Assert.AreEqual("ex", loadedTeams[0].ClanTags[0]);
-        Assert.AreEqual("Another Team", loadedTeams[1].Name);
-        Assert.AreEqual("AT", loadedTeams[1].ClanTags[0]);
-        Assert.AreEqual("Oh No", loadedTeams[2].Name);
-        Assert.AreEqual("//", loadedTeams[2].ClanTags[0]);
+        Assert.AreEqual<string>("Example Team", loadedTeams[0].Name.Value);
+        Assert.AreEqual<string>("ex", loadedTeams[0].ClanTags[0].Value);
+        Assert.AreEqual<string>("Another Team", loadedTeams[1].Name.Value);
+        Assert.AreEqual<string>("AT", loadedTeams[1].ClanTags[0].Value);
+        Assert.AreEqual<string>("Oh No", loadedTeams[2].Name.Value);
+        Assert.AreEqual<string>("//", loadedTeams[2].ClanTags[0].Value);
 
         Assert.AreEqual(TagOption.Back, loadedTeams[0].ClanTagOption);
         Assert.AreEqual(TagOption.Front, loadedTeams[1].ClanTagOption);
         Assert.AreEqual(TagOption.Surrounding, loadedTeams[2].ClanTagOption);
 
-        Assert.AreEqual("Cap 1", loadedPlayers[0].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("P2", loadedPlayers[1].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("TagAgainstName", loadedPlayers[2].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("P4", loadedPlayers[3].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("SubNoTag", loadedPlayers[4].Name); // Assert name was loaded.
-        Assert.AreEqual("CAP", loadedPlayers[5].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("A2", loadedPlayers[6].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("A3", loadedPlayers[7].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("A4", loadedPlayers[8].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("Alpha", loadedPlayers[9].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("Bravo", loadedPlayers[10].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("Charlie", loadedPlayers[11].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("Delta", loadedPlayers[12].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("Echo", loadedPlayers[13].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("Foxtrot", loadedPlayers[14].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("Oops", loadedPlayers[15].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("We", loadedPlayers[16].Name); // Assert name was loaded without the tag.
-        Assert.AreEqual("Dropped", loadedPlayers[17].Name); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Cap 1", loadedPlayers[0].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("P2", loadedPlayers[1].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("TagAgainstName", loadedPlayers[2].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("P4", loadedPlayers[3].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("SubNoTag", loadedPlayers[4].Name.Value); // Assert name was loaded.
+        Assert.AreEqual<string>("CAP", loadedPlayers[5].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("A2", loadedPlayers[6].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("A3", loadedPlayers[7].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("A4", loadedPlayers[8].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Alpha", loadedPlayers[9].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Bravo", loadedPlayers[10].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Charlie", loadedPlayers[11].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Delta", loadedPlayers[12].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Echo", loadedPlayers[13].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Foxtrot", loadedPlayers[14].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Oops", loadedPlayers[15].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("We", loadedPlayers[16].Name.Value); // Assert name was loaded without the tag.
+        Assert.AreEqual<string>("Dropped", loadedPlayers[17].Name.Value); // Assert name was loaded without the tag.
 
         for (int i = 0; i < loadedPlayers.Length; i++)
         {

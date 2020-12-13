@@ -110,11 +110,10 @@ namespace SplatTagAndroid
             foreach (var p in players)
             {
               // Use URLEncoder to unmangle any special characters
-              string name = URLDecoder.Decode(URLEncoder.Encode(p.Name, "UTF-8"), "UTF-8");
               string currentTeam = splatTagController.GetTeamById(p.CurrentTeam).ToString();
               string oldTeams = string.Join(", ", p.OldTeams.Select(t => splatTagController.GetTeamById(t)));
               playerStrings
-                .Append(name)
+                .Append(p.Name.Value)
                 .Append(" (Plays for ")
                 .Append(currentTeam)
                 .Append(") Old Teams: ")
@@ -143,16 +142,13 @@ namespace SplatTagAndroid
             StringBuilder teamStrings = new StringBuilder();
             foreach (var t in teams)
             {
-              // Use URLEncoder to unmangle any special characters
-              string tag = URLDecoder.Decode(URLEncoder.Encode(t.Tag, "UTF-8"), "UTF-8");
-              string name = URLDecoder.Decode(URLEncoder.Encode(t.Name, "UTF-8"), "UTF-8");
-              string div = t.Div.Name;
+              string div = t.CurrentDiv.Name;
               string bestPlayer = t.GetBestTeamPlayerDivString(splatTagController);
               string[] teamPlayers = t.GetTeamPlayersStrings(splatTagController);
               teamStrings
-                .Append(tag)
+                .Append(t.Tag?.Value ?? "")
                 .Append(" ")
-                .Append(name)
+                .Append(t.Name.Value)
                 .Append(" (")
                 .Append(div)
                 .Append("). ")

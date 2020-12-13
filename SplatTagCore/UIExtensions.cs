@@ -18,7 +18,7 @@ namespace SplatTagCore
     public static string GetBestTeamPlayerDivString(this Team t, SplatTagController splatTagController)
     {
       (Player, bool)[] playersForTeam = splatTagController.GetPlayersForTeam(t);
-      Division highestDiv = t.Div;
+      Division highestDiv = t.CurrentDiv;
       Player? bestPlayer = null;
       foreach ((Player, bool) pair in playersForTeam)
       {
@@ -26,9 +26,9 @@ namespace SplatTagCore
         {
           foreach (Team playerTeam in pair.Item1.Teams.Select(id => splatTagController.GetTeamById(id)))
           {
-            if (playerTeam.Div < highestDiv)
+            if (playerTeam.CurrentDiv < highestDiv)
             {
-              highestDiv = playerTeam.Div;
+              highestDiv = playerTeam.CurrentDiv;
               bestPlayer = pair.Item1;
             }
           }
@@ -37,9 +37,10 @@ namespace SplatTagCore
 
       if (bestPlayer == null || highestDiv == Division.Unknown)
       {
-        return "Their div is unknown.";
+        // Don't show anything it's pointless.
+        return "";
       }
-      else if (highestDiv.Value == t.Div.Value)
+      else if (highestDiv.Value == t.CurrentDiv.Value)
       {
         return "No higher div players.";
       }
