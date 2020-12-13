@@ -148,12 +148,12 @@ namespace SplatTagCore
 
     public bool Equals(FriendCode other)
     {
-      return EqualityComparer<short[]>.Default.Equals(FC, other.FC);
+      return FC.SequenceEqual(other.FC);
     }
 
     public override int GetHashCode()
     {
-      return -2006814914 + EqualityComparer<short[]>.Default.GetHashCode(FC);
+      return FC[0].GetHashCode() + FC[1].GetHashCode() + FC[2].GetHashCode();
     }
 
     public static bool operator ==(FriendCode left, FriendCode right)

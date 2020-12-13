@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
@@ -85,20 +86,28 @@ namespace SplatTagCore.Social
       return Matcher.NamesMatch(this.ids, other.ids) > 0;
     }
 
+    public override string ToString()
+    {
+      return $"Ids: [{string.Join(", ", ids)}], Usernames: [{string.Join(", ", usernames)}]";
+    }
+
     #region Serialization
 
     // Deserialize
     protected Discord(SerializationInfo info, StreamingContext context)
     {
-      this.ids = (List<Name>)info.GetValue("Ids", typeof(List<Name>));
-      this.usernames = (List<Name>)info.GetValue("Usernames", typeof(List<Name>));
+      AddIds(info.GetValueOrDefault("Ids", Array.Empty<Name>()));
+      AddUsernames(info.GetValueOrDefault("Usernames", Array.Empty<Name>()));
     }
 
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      info.AddValue("Ids", this.ids);
-      info.AddValue("Usernames", this.usernames);
+      if (this.Ids.Any())
+        info.AddValue("Ids", this.ids);
+
+      if (this.Usernames.Any())
+        info.AddValue("Usernames", this.usernames);
     }
 
     #endregion Serialization

@@ -258,25 +258,8 @@ namespace SplatTagCore
     {
       if (value != null)
       {
-        foreach (FriendCode fc in value)
-        {
-          if (fc != FriendCode.NO_FRIEND_CODE)
-          {
-            if (friendCodes.Count == 0)
-            {
-              friendCodes.Add(fc);
-            }
-            else if (friendCodes[0].Equals(value))
-            {
-              // Nothing to do.
-            }
-            else
-            {
-              friendCodes.Remove(fc);
-              friendCodes.Insert(0, fc);
-            }
-          }
-        }
+        value = value.Where(fc => fc != FriendCode.NO_FRIEND_CODE);
+        SplatTagCommon.InsertFrontUnique(value, friendCodes);
       }
     }
 
@@ -422,33 +405,53 @@ namespace SplatTagCore
     // Deserialize
     protected Player(SerializationInfo info, StreamingContext context)
     {
-      this.battlefy = (Battlefy)info.GetValue("Battlefy", typeof(Battlefy));
-      this.discord = (Discord)info.GetValue("Discord", typeof(Discord));
-      this.friendCodes = (List<FriendCode>)info.GetValue("FriendCode", typeof(List<FriendCode>));
+      AddBattlefy(info.GetValueOrDefault("Battlefy", new Battlefy()));
+      AddDiscord(info.GetValueOrDefault("Discord", new Discord()));
+      AddFCs(info.GetValueOrDefault("FriendCode", Array.Empty<FriendCode>()));
       this.Id = (Guid)info.GetValue("Id", typeof(Guid));
-      this.names = (List<Name>)info.GetValue("Names", typeof(List<Name>));
-      this.sendouProfiles = (List<Sendou>)info.GetValue("Sendou", typeof(List<Sendou>));
-      this.sources = (List<Source>)info.GetValue("Sources", typeof(List<Source>));
-      this.teams = (List<Guid>)info.GetValue("Teams", typeof(List<Guid>));
-      this.twitchProfiles = (List<Twitch>)info.GetValue("Twitch", typeof(List<Twitch>));
-      this.twitterProfiles = (List<Twitter>)info.GetValue("Twitter", typeof(List<Twitter>));
-      this.weapons = (List<string>)info.GetValue("Weapons", typeof(List<string>));
+      AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
+      AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
+      AddSources(info.GetValueOrDefault("Sources", Array.Empty<Source>()));
+      AddTeams(info.GetValueOrDefault("Teams", Array.Empty<Guid>()));
+      AddTwitch(info.GetValueOrDefault("Twitch", Array.Empty<Twitch>()));
+      AddTwitter(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
+      AddWeapons(info.GetValueOrDefault("Weapons", Array.Empty<string>()));
     }
 
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      info.AddValue("Battlefy", this.battlefy);
-      info.AddValue("Discord", this.discord);
-      info.AddValue("FriendCode", this.friendCodes);
+      if (this.BattlefySlugs.Any() || this.BattlefyUsernames.Any())
+        info.AddValue("Battlefy", this.battlefy);
+
+      if (this.DiscordIds.Any() || this.DiscordNames.Any())
+        info.AddValue("Discord", this.discord);
+
+      if (this.friendCodes.Any())
+        info.AddValue("FriendCode", this.friendCodes);
+
       info.AddValue("Id", this.Id);
-      info.AddValue("Names", this.names);
-      info.AddValue("Sendou", this.sendouProfiles);
-      info.AddValue("Sources", this.sources);
-      info.AddValue("Teams", this.teams);
-      info.AddValue("Twitch", this.twitchProfiles);
-      info.AddValue("Twitter", this.twitterProfiles);
-      info.AddValue("Weapons", this.weapons);
+
+      if (this.names.Any())
+        info.AddValue("Names", this.names);
+
+      if (this.sendouProfiles.Any())
+        info.AddValue("Sendou", this.sendouProfiles);
+
+      if (this.sources.Any())
+        info.AddValue("Sources", this.sources);
+
+      if (this.teams.Any())
+        info.AddValue("Teams", this.teams);
+
+      if (this.twitchProfiles.Any())
+        info.AddValue("Twitch", this.twitchProfiles);
+
+      if (this.twitterProfiles.Any())
+        info.AddValue("Twitter", this.twitterProfiles);
+
+      if (this.weapons.Any())
+        info.AddValue("Weapons", this.weapons);
     }
 
     [OnDeserialized]

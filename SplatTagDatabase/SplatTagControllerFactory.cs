@@ -78,9 +78,30 @@ namespace SplatTagDatabase
       splatTagController.Initialise();
 
       // Now that we've initialised, take a snapshot of everything.
-      (snapshotDatabase ?? (new SplatTagJsonSnapshotDatabase(saveFolder)))
-        .Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
+      if (snapshotDatabase == null)
+      {
+        SaveDatabase(splatTagController, saveFolder);
+      }
+      else
+      {
+        SaveDatabase(splatTagController, snapshotDatabase);
+      }
+
       return (sourcesImporter, splatTagController);
+    }
+
+    public static void SaveDatabase(SplatTagController splatTagController, SplatTagJsonSnapshotDatabase snapshotDatabase)
+    {
+      snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
+    }
+
+    public static void SaveDatabase(SplatTagController splatTagController, string? saveFolder = null)
+    {
+      if (saveFolder == null)
+      {
+        saveFolder = GetDefaultPath();
+      }
+      new SplatTagJsonSnapshotDatabase(saveFolder).Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
     }
   }
 }

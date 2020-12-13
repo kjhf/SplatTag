@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace SplatTagCore.Social
@@ -81,20 +82,28 @@ namespace SplatTagCore.Social
       return Matcher.NamesMatch(this.slugs, other.slugs) > 0;
     }
 
+    public override string ToString()
+    {
+      return $"Slugs: [{string.Join(", ", slugs)}], Usernames: [{string.Join(", ", usernames)}]";
+    }
+
     #region Serialization
 
     // Deserialize
     protected Battlefy(SerializationInfo info, StreamingContext context)
     {
-      this.slugs = (List<BattlefySocial>)info.GetValue("Slugs", typeof(List<BattlefySocial>));
-      this.usernames = (List<Name>)info.GetValue("Usernames", typeof(List<Name>));
+      AddSlugs(info.GetValueOrDefault("Slugs", Array.Empty<BattlefySocial>()));
+      AddUsernames(info.GetValueOrDefault("Usernames", Array.Empty<Name>()));
     }
 
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      info.AddValue("Slugs", this.slugs);
-      info.AddValue("Usernames", this.usernames);
+      if (this.Slugs.Any())
+        info.AddValue("Slugs", this.slugs);
+
+      if (this.Usernames.Any())
+        info.AddValue("Usernames", this.usernames);
     }
 
     #endregion Serialization

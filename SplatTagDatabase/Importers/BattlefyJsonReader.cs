@@ -91,9 +91,9 @@ namespace SplatTagDatabase.Importers
 
         foreach (BattlefyJsonPlayer p in row.Players)
         {
-          if (p.Name == null || p.BattlefyName == null || p.BattlefyUserSlug == null)
+          if (p.Name == null)
           {
-            Console.Error.WriteLine($"ERROR: Player's Name, BattlefyName, or BattlefyUserSlug not populated. Ignoring this player entry. File: " + jsonFile);
+            Console.Error.WriteLine($"ERROR: Player's Name ({p.Name}) not populated. Ignoring this player entry. File: " + jsonFile);
             continue;
           }
 
@@ -112,7 +112,7 @@ namespace SplatTagDatabase.Importers
 
           var newPlayer = new Player(p.Name, new[] { newTeam.Id }, source);
 
-          if (p.BattlefyName == row.Captain.BattlefyName)
+          if (p.BattlefyName != null && p.BattlefyName == row.Captain.BattlefyName)
           {
             if (parsedFriendCode == FriendCode.NO_FRIEND_CODE && row.CaptainFriendCode != FriendCode.NO_FRIEND_CODE)
             {
@@ -125,7 +125,10 @@ namespace SplatTagDatabase.Importers
             }
           }
 
-          newPlayer.AddBattlefyInformation(p.BattlefyUserSlug, p.BattlefyName, source);
+          if (p.BattlefyName != null && p.BattlefyUserSlug != null)
+          {
+            newPlayer.AddBattlefyInformation(p.BattlefyUserSlug, p.BattlefyName, source);
+          }
           newPlayer.AddFCs(parsedFriendCode.AsEnumerable());
           players.Add(newPlayer);
         }

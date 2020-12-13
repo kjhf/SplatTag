@@ -159,6 +159,14 @@ namespace SplatTagCore
       }
     }
 
+    public void AddDivisions(IEnumerable<Division> value)
+    {
+      foreach (var div in value.Reverse())
+      {
+        AddDivision(div);
+      }
+    }
+
     public void AddName(string name, Source source)
     {
       SplatTagCommon.AddName(new Name(name, source), names);
@@ -204,8 +212,8 @@ namespace SplatTagCore
       // Merge Twitter
       AddTwitterProfiles(newerTeam.twitterProfiles);
 
-      // Update the div if the other div is known.
-      AddDivision(newerTeam.CurrentDiv);
+      // Merge divisions
+      AddDivisions(newerTeam.Divisions);
 
       // Merge the team's name(s).
       AddNames(newerTeam.names);
@@ -231,25 +239,37 @@ namespace SplatTagCore
     // Deserialize
     protected Team(SerializationInfo info, StreamingContext context)
     {
-      this.battlefyPersistentTeamIds = (List<Name>)info.GetValue("BattlefyPersistentTeamIds", typeof(List<Name>));
-      this.clanTags = (List<ClanTag>)info.GetValue("ClanTags", typeof(List<ClanTag>));
-      this.divisions = (List<Division>)info.GetValue("Divisions", typeof(List<Division>));
+      AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<Name>()));
+      AddClanTags(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
+      AddDivisions(info.GetValueOrDefault("Divisions", Array.Empty<Division>()));
       this.Id = (Guid)info.GetValue("Id", typeof(Guid));
-      this.names = (List<Name>)info.GetValue("Names", typeof(List<Name>));
-      this.sources = (List<Source>)info.GetValue("Sources", typeof(List<Source>));
-      this.twitterProfiles = (List<Twitter>)info.GetValue("Twitter", typeof(List<Twitter>));
+      AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
+      AddSources(info.GetValueOrDefault("Sources", Array.Empty<Source>()));
+      AddTwitterProfiles(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
     }
 
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      info.AddValue("BattlefyPersistentTeamIds", this.battlefyPersistentTeamIds);
-      info.AddValue("ClanTags", this.clanTags);
-      info.AddValue("Divisions", this.divisions);
+      if (battlefyPersistentTeamIds.Any())
+        info.AddValue("BattlefyPersistentTeamIds", this.battlefyPersistentTeamIds);
+
+      if (clanTags.Any())
+        info.AddValue("ClanTags", this.clanTags);
+
+      if (divisions.Any())
+        info.AddValue("Divisions", this.divisions);
+
       info.AddValue("Id", this.Id);
-      info.AddValue("Names", this.names);
-      info.AddValue("Sources", this.sources);
-      info.AddValue("Twitter", this.twitterProfiles);
+
+      if (names.Any())
+        info.AddValue("Names", this.names);
+
+      if (sources.Any())
+        info.AddValue("Sources", this.sources);
+
+      if (twitterProfiles.Any())
+        info.AddValue("Twitter", this.twitterProfiles);
     }
 
     #endregion Serialization

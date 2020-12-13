@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Source
+  public class Source : ISerializable
   {
     /// <summary>
     /// The brackets that make up the source.
@@ -63,5 +65,45 @@ namespace SplatTagCore
     {
       return Name ?? base.ToString();
     }
+
+    #region Serialization
+
+    // Deserialize
+    protected Source(SerializationInfo info, StreamingContext context)
+    {
+      this.Brackets = info.GetValueOrDefault("Brackets", Array.Empty<Bracket>());
+      this.Id = (Guid)info.GetValue("Id", typeof(Guid));
+      this.Name = info.GetValueOrDefault("Name", default(string?));
+      this.Placements = info.GetValueOrDefault("Placements", Array.Empty<Placements>());
+      this.Players = info.GetValueOrDefault("Players", Array.Empty<Player>());
+      this.Teams = info.GetValueOrDefault("Teams", Array.Empty<Team>());
+      this.Uri = info.GetValueOrDefault("Uri", default(Uri?));
+    }
+
+    // Serialize
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      if (this.Brackets != null && this.Brackets.Any())
+        info.AddValue("Brackets", this.Brackets);
+
+      info.AddValue("Id", this.Id);
+
+      if (this.Name != null)
+        info.AddValue("Name", this.Name);
+
+      if (this.Placements != null && this.Placements.Any())
+        info.AddValue("Placements", this.Placements);
+
+      if (this.Players != null && this.Players.Any())
+        info.AddValue("Players", this.Players);
+
+      if (this.Teams != null && this.Teams.Any())
+        info.AddValue("Teams", this.Teams);
+
+      if (this.Uri != null)
+        info.AddValue("Uri", this.Uri);
+    }
+
+    #endregion Serialization
   }
 }

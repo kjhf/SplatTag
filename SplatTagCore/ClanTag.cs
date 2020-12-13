@@ -156,7 +156,7 @@ namespace SplatTagCore
     /// <returns></returns>
     public override string ToString()
     {
-      return Value;
+      return Value ?? base.ToString();
     }
 
     #region Serialization

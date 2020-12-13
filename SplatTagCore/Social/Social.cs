@@ -4,8 +4,7 @@ using System.Runtime.Serialization;
 
 namespace SplatTagCore.Social
 {
-  [Serializable]
-  public abstract class Social : Name, ISerializable
+  public abstract class Social : Name
   {
     /// <summary>
     /// URL of the website as a base to prepend the handle of the social.
@@ -15,7 +14,7 @@ namespace SplatTagCore.Social
     /// <summary>
     /// Construct a Social account based on the name and the source
     /// </summary>
-    public Social(string handle, Source source, string socialBaseAddress)
+    protected Social(string handle, Source source, string socialBaseAddress)
       : base(source)
     {
       this.socialBaseAddress = socialBaseAddress;
@@ -28,7 +27,7 @@ namespace SplatTagCore.Social
     /// <remarks>
     /// This constructor is used by <see cref="Activator"/>.
     /// </remarks>
-    public Social(string handle, IEnumerable<Source> sources, string socialBaseAddress)
+    protected Social(string handle, IEnumerable<Source> sources, string socialBaseAddress)
       : base(sources)
     {
       this.socialBaseAddress = socialBaseAddress;
@@ -76,20 +75,18 @@ namespace SplatTagCore.Social
       }
     }
 
-    #region Serialization
-
-    // Deserialize
-    protected Social(SerializationInfo info, StreamingContext context)
-      : base(info, context)
+    public override string ToString()
     {
-      this.socialBaseAddress = info.GetString("SocialBaseAddress");
+      return Uri?.AbsoluteUri ?? Value ?? base.ToString();
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
+    #region Serialization
+
+    // Deserialized constructor
+    protected Social(SerializationInfo info, StreamingContext context, string socialBaseAddress)
+      : base(info, context)
     {
-      base.GetObjectData(info, context);
-      info.AddValue("SocialBaseAddress", this.socialBaseAddress);
+      this.socialBaseAddress = socialBaseAddress;
     }
 
     #endregion Serialization

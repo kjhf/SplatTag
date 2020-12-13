@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using SplatTagCore;
 using SplatTagCore.Social;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -205,6 +206,17 @@ namespace SplatTagUnitTests
       Assert.AreEqual("team2", names[1].Value, "Names [1] unexpected handle");
       Assert.AreEqual("t1", names[0].Sources.First().Name, "Names [0] unexpected source");
       Assert.AreEqual("t2", names[1].Sources.First().Name, "Names [1] unexpected source");
+    }
+
+    [TestMethod]
+    public void DeserializeFriendCodes()
+    {
+      string json = @"[{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]}]";
+      List<FriendCode> fcs = Deserialize<List<FriendCode>>(json);
+
+      Player player = new Player();
+      player.AddFCs(fcs);
+      Assert.AreEqual(1, player.FriendCodes.Count, "Expected only 1 FC as the values are equal.");
     }
   }
 }

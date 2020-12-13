@@ -86,7 +86,7 @@ namespace SplatTagCore
     public static List<Name> FromStrings(IEnumerable<string> strings, Source source)
     {
       List<Name> names = new List<Name>();
-      foreach (var s in strings.Distinct())
+      foreach (var s in strings.Distinct().Reverse())
       {
         names.Add(new Name(s, source));
       }
@@ -98,7 +98,7 @@ namespace SplatTagCore
     /// </summary>
     public override string ToString()
     {
-      return Value;
+      return Value ?? base.ToString();
     }
 
     #region Serialization
@@ -106,15 +106,17 @@ namespace SplatTagCore
     // Deserialize
     protected Name(SerializationInfo info, StreamingContext context)
     {
-      this.Value = (string)info.GetValue("Value", typeof(string));
-      this.sources = (List<Source>)info.GetValue("Sources", typeof(List<Source>));
+      this.Value = info.GetString("Value");
+      AddSources(info.GetValueOrDefault("Sources", Array.Empty<Source>()));
     }
 
     // Serialize
     public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
     {
       info.AddValue("Value", this.Value);
-      info.AddValue("Sources", this.sources);
+
+      if (this.Sources.Any())
+        info.AddValue("Sources", this.sources);
     }
 
     public override bool Equals(object? obj)
@@ -130,7 +132,7 @@ namespace SplatTagCore
 
     public override int GetHashCode()
     {
-      return -1937169414 + EqualityComparer<string>.Default.GetHashCode(Value);
+      return -1937169414 + Value.GetHashCode();
     }
 
     #endregion Serialization

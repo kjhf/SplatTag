@@ -51,7 +51,8 @@ namespace SplatTagCore
         if (privateList.Count == 0)
         {
           // Shortcut, just set the values.
-          privateList.AddRange(value.Distinct());
+          value = value.Distinct();
+          privateList.AddRange(value);
         }
         else
         {
@@ -130,7 +131,7 @@ namespace SplatTagCore
     {
       if (value != null)
       {
-        foreach (T name in value)
+        foreach (T name in value.Reverse())
         {
           InsertFrontUniqueSourced(name, privateList);
         }
@@ -175,7 +176,7 @@ namespace SplatTagCore
     {
       if (value != null)
       {
-        foreach (string w in value)
+        foreach (string w in value.Reverse())
         {
           if (!string.IsNullOrWhiteSpace(w))
           {

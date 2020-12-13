@@ -167,6 +167,7 @@ namespace SplatTagCore
       {
         StringBuilder sb = new StringBuilder();
         sb.Append(DivType);
+        sb.Append(" ");
         sb.Append(Season);
         sb.Append(" Div ");
         switch (Value)

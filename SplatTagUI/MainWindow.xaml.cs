@@ -4,6 +4,7 @@ using SplatTagCore;
 using SplatTagCore.Social;
 using SplatTagDatabase;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -59,6 +60,7 @@ namespace SplatTagUI
 
     static MainWindow()
     {
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] MainWindow Constructor... ");
       (splatTagController, sourcesImporter) = SplatTagControllerFactory.CreateController();
     }
 
@@ -80,6 +82,9 @@ namespace SplatTagUI
       {
         otherFunctionsGrid.Visibility = Visibility.Collapsed;
       }
+
+      // Re-save if needed
+      // SplatTagControllerFactory.SaveDatabase(splatTagController);
 
       // Now we've initialised, hook up the check changed.
       ignoreCaseCheckbox.Checked += CheckedChanged;
@@ -443,61 +448,51 @@ namespace SplatTagUI
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();
   }
 
-  public class PlayerContextMenuConverter : IValueConverter
+  public class ContextMenuConverter : IValueConverter
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
       const int MAX_ELEMENTS_UNTIL_LINE_BREAKS = 2;
-      if (value is Player p)
+      var tuples = new List<Tuple<string, string>>();
+      if (value == null) return tuples;
+
+      foreach (PropertyInfo prop in value.GetType().GetProperties())
       {
-        var tuples = new List<Tuple<string, string>>();
-        foreach (PropertyInfo prop in typeof(Player).GetProperties())
+        var fieldName = prop.Name;
+        var fieldVal = prop.GetValue(value, null);
+        if (fieldVal is null || fieldName == nameof(Player.OldTeams) || fieldName == nameof(Player.Name) || fieldName == nameof(Player.CurrentTeam))
         {
-          var fieldName = prop.Name;
-          var fieldVal = prop.GetValue(p, null);
-          if (fieldVal is null || fieldName == nameof(Player.OldTeams) || fieldName == nameof(Player.Name) || fieldName == nameof(Player.CurrentTeam))
+          // Don't bother listing values that are not set (or provided by other values)
+          continue;
+        }
+        else if (fieldVal is bool b)
+        {
+          fieldVal = b ? "✔" : "❌";
+        }
+        else if (fieldVal is IEnumerable<Guid> ids)
+        {
+          int count = ids.Count();
+          if (count == 0)
           {
-            // Don't bother listing values that are not set (or provided by other values)
             continue;
           }
-          else if (fieldVal is bool b)
-          {
-            fieldVal = b ? "✔" : "❌";
-          }
-          else if (fieldVal is IEnumerable<Guid> ids)
-          {
-            int count = ids.Count();
-            if (count == 0)
-            {
-              continue;
-            }
-            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+          string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
 
-            var oldTeams = ids.Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
+          if (fieldName == nameof(Player.Teams))
+          {
+            var oldTeams = ids.Select(id => MainWindow.splatTagController?.GetTeamById(id));
             fieldVal = string.Join(separator, oldTeams);
           }
-          else if (fieldVal is IEnumerable<long> longs)
+          else
           {
-            int count = longs.Count();
-            if (count == 0)
-            {
-              continue;
-            }
-            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
-            fieldVal = string.Join(separator, longs);
+            fieldVal = string.Join(separator, ids);
           }
-          else if (fieldVal is IEnumerable<string> strings)
+        }
+        else
+        {
+          if (fieldVal is IEnumerable generic)
           {
-            int count = strings.Count();
-            if (count == 0)
-            {
-              continue;
-            }
-            string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
-            fieldVal = string.Join(separator, strings);
-          }
-          else if (fieldVal is IEnumerable<object> objects)
-          {
+            var objects = generic.OfType<object>();
             int count = objects.Count();
             if (count == 0)
             {
@@ -506,11 +501,10 @@ namespace SplatTagUI
             string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
             fieldVal = string.Join(separator, objects);
           }
-          tuples.Add(new Tuple<string, string>(fieldName, fieldVal.ToString()));
         }
-        return tuples;
+        tuples.Add(new Tuple<string, string>(fieldName, fieldVal.ToString()));
       }
-      return Array.Empty<Tuple<string, string>>();
+      return tuples;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new InvalidOperationException();

@@ -37,7 +37,8 @@ namespace SplatTagCore
 
       if (bestPlayer == null || highestDiv == Division.Unknown)
       {
-        return "Their div is unknown.";
+        // Don't show anything it's pointless.
+        return "";
       }
       else if (highestDiv.Value == t.CurrentDiv.Value)
       {

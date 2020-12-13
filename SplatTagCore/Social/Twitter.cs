@@ -23,7 +23,7 @@ namespace SplatTagCore.Social
 
     // Deserialize
     protected Twitter(SerializationInfo info, StreamingContext context)
-      : base(info, context)
+      : base(info, context, baseAddress)
     {
     }
 

@@ -19,7 +19,7 @@
     <local:TeamIdToString x:Key="teamIdToString" />
     <local:JoinStringsConverter x:Key="joinStringsConverter" />
     <local:ValidStringToVisibleConverter x:Key="validStringToVisibleConverter" />
-    <local:PlayerContextMenuConverter x:Key="playerContextMenuConverter" />
+    <local:ContextMenuConverter x:Key="contextMenuConverter" />
 
     <Style x:Key="hintTextBlockStyle" TargetType="TextBlock">
       <Setter Property="Background" Value="Honeydew" />
@@ -109,7 +109,7 @@
                       </TextBlock.Text>
                       <TextBlock.ContextMenu>
                         <ContextMenu>
-                          <ItemsControl ItemsSource="{Binding ., Converter={StaticResource playerContextMenuConverter}}">
+                          <ItemsControl ItemsSource="{Binding ., Converter={StaticResource contextMenuConverter}}">
                             <ItemsControl.ItemTemplate>
                               <DataTemplate>
                                 <MenuItem Click="MenuItemCopyOnClick">
@@ -131,7 +131,7 @@
                       </TextBlock.ContextMenu>
                     </TextBlock>
                     <StackPanel Orientation="Horizontal"  Grid.Column="1">
-                      <ItemsControl ItemsSource="{Binding Battlefy}">
+                      <ItemsControl ItemsSource="{Binding BattlefySlugs}">
                         <ItemsControl.ItemsPanel>
                           <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" />
@@ -208,21 +208,30 @@
                             <MultiBinding StringFormat="{}{0} {1} ({2}). {3}">
                               <Binding Path="Tag" />
                               <Binding Path="Name" />
-                              <Binding Path="Div" />
+                              <Binding Path="CurrentDiv" />
                               <Binding Path="." Converter="{StaticResource getTeamBestPlayerDivConverter}" />
                             </MultiBinding>
                           </TextBlock.Text>
                           <TextBlock.ContextMenu>
                             <ContextMenu>
-                              <MenuItem Click="MenuItemCopyOnClick">
-                                <MenuItem.Header>
-                                  <TextBlock Style="{StaticResource invertTextBlockStyle}">
-                                    <TextBlock.Text>
-                                      <Binding Path="Sources" Converter="{StaticResource sourcesToStringConverter}" ConverterParameter="&#x0a;" />
-                                    </TextBlock.Text>
-                                  </TextBlock>
-                                </MenuItem.Header>
-                              </MenuItem>
+                              <ItemsControl ItemsSource="{Binding ., Converter={StaticResource contextMenuConverter}}">
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate>
+                                    <MenuItem Click="MenuItemCopyOnClick">
+                                      <MenuItem.Header>
+                                        <TextBlock Style="{StaticResource invertTextBlockStyle}">
+                                          <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}: {1}">
+                                              <Binding Path="Item1" />
+                                              <Binding Path="Item2" TargetNullValue="(not set)" />
+                                            </MultiBinding>
+                                          </TextBlock.Text>
+                                        </TextBlock>
+                                      </MenuItem.Header>
+                                    </MenuItem>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
                             </ContextMenu>
                           </TextBlock.ContextMenu>
                         </TextBlock>

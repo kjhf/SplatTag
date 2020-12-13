@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagConsole;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -79,17 +80,20 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleCaseSensitiveQuery()
     {
-      const int millisecondsDelay = 5000;
+      const int millisecondsDelay = 10000;
+      Stopwatch stopwatch = new Stopwatch();
       using (StringWriter sw = new StringWriter())
       {
         Console.SetOut(sw);
 
+        stopwatch.Start();
         var timeoutTask = Task.Delay(millisecondsDelay);
         var mainTask = Task.Run(() =>
         {
           return ConsoleMain.Main("slAte --exactCase".Split(" "));
         });
         Task.WaitAny(timeoutTask, mainTask);
+        stopwatch.Stop();
         Console.SetOut(consoleOut);
         string actual = sw.ToString();
         Console.WriteLine(actual);
@@ -97,6 +101,11 @@ namespace SplatTagUnitTests
         // Should NOT contain the result because the name is "Slate"
         Assert.IsFalse(actual.Contains("kjhf1273"));
         Assert.IsTrue(actual.Contains("OK"));
+
+        if (stopwatch.ElapsedMilliseconds > 3000)
+        {
+          Assert.Inconclusive($"Test passed but it took {stopwatch.ElapsedMilliseconds}ms which is unacceptable for a Console query. Aim for < 3 seconds.");
+        }
       }
     }
 

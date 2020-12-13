@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -120,6 +121,7 @@ namespace SplatTagDatabase
         if (!progressBar.Equals(lastProgressBar))
         {
           logger?.WriteLine(progressBar);
+          Trace.WriteLine(progressBar);
           lastProgressBar = progressBar;
         }
       }
@@ -168,6 +170,7 @@ namespace SplatTagDatabase
         if (!progressBar.Equals(lastProgressBar))
         {
           logger?.WriteLine(progressBar);
+          Trace.WriteLine(progressBar);
           lastProgressBar = progressBar;
         }
       }

@@ -60,6 +60,7 @@ namespace SplatTagCore
               .ToArray();
             playersForTeam.Add(t, teamPlayers);
           }
+          Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Caching task done.");
         });
 
         var diff = DateTime.Now - start;
@@ -79,11 +80,16 @@ namespace SplatTagCore
     /// </summary>
     public (Player, bool)[] GetPlayersForTeam(Team t)
     {
-      if (cachingTask != null && !cachingTask.IsCompleted)
+      if (cachingTask == null || !cachingTask.IsCompleted)
       {
-        cachingTask.Wait();
+        return t.GetPlayers(players)
+          .Select(p => (p, p.CurrentTeam == t.Id))
+          .ToArray();
       }
-      return playersForTeam[t];
+      else
+      {
+        return playersForTeam[t];
+      }
     }
 
     /// <summary>
