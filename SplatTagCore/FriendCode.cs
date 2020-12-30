@@ -130,7 +130,7 @@ namespace SplatTagCore
     public string ToString(string separator)
     {
       return FC.SequenceEqual(NO_FRIEND_CODE_SHORTS) ? ("(not set)") :
-        $"{FC[0].ToString().PadLeft(4, '0')}{separator}{FC[1].ToString().PadLeft(4, '0')}{separator}{FC[2].ToString().PadLeft(4, '0')}";
+        $"{FC[0]:0000}{separator}{FC[1]:0000}{separator}{FC[2]:0000}";
     }
 
     /// <summary>

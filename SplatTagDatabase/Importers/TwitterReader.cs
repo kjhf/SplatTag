@@ -18,7 +18,7 @@ namespace SplatTagDatabase.Importers
       this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
     }
 
-    public (Player[], Team[]) Load()
+    public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
@@ -31,7 +31,8 @@ namespace SplatTagDatabase.Importers
         teams.Add(newTeam);
       }
 
-      return (Array.Empty<Player>(), teams.ToArray());
+      source.Teams = teams.ToArray();
+      return source;
     }
 
     public static bool AcceptsInput(string input)

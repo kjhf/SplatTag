@@ -89,7 +89,7 @@ namespace SplatTagDatabase.Importers
       }
     }
 
-    public (Player[], Team[]) Load()
+    public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile); // N.B. by default this reads UTF-8.
@@ -126,7 +126,9 @@ namespace SplatTagDatabase.Importers
         Merger.AddPlayerFromTag(row.Player10, newTeam, players, source);
       }
 
-      return (players.ToArray(), teams.ToArray());
+      source.Players = players.ToArray();
+      source.Teams = teams.ToArray();
+      return source;
     }
 
     public static bool AcceptsInput(string input)

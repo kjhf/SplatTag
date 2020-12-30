@@ -17,23 +17,34 @@ namespace SplatTagCore
     /// </summary>
     public const string UNKNOWN_TEAM = "(Unnamed Team)";
 
-    public static readonly Source BuiltinSource = new Source("builtin")
-    {
-      Brackets = Array.Empty<Bracket>(),
-      Placements = Array.Empty<Placements>(),
-      Players = Array.Empty<Player>(),
-      Teams = Array.Empty<Team>()
-    };
+    /// <summary>
+    /// Displayed string for an unknown source.
+    /// </summary>
+    public const string UNKNOWN_SOURCE = "(Unnamed Source)";
 
-    public static readonly Source ManualSource = new Source("Manual Entry")
-    {
-      Brackets = Array.Empty<Bracket>(),
-      Placements = Array.Empty<Placements>(),
-      Players = Array.Empty<Player>(),
-      Teams = Array.Empty<Team>()
-    };
+    /// <summary>
+    /// Displayed string for an unknown bracket.
+    /// </summary>
+    public const string UNKNOWN_BRACKET = "(Unnamed Bracket)";
 
+    /// <summary>
+    /// The built-in source, for use in objects that are pre-defined by the program code.
+    /// </summary>
+    public static readonly Source BuiltinSource = new Source("builtin");
+
+    /// <summary>
+    /// The manual entry source, for use in objects that are defined by manual user entry.
+    /// </summary>
+    public static readonly Source ManualSource = new Source("Manual Entry");
+
+    /// <summary>
+    /// The <see cref="Name"/> object for an <see cref="UNKNOWN_PLAYER"/>.
+    /// </summary>
     public static readonly Name UnknownPlayerName = new Name(UNKNOWN_PLAYER, BuiltinSource);
+
+    /// <summary>
+    /// The <see cref="Name"/> object for an <see cref="UNKNOWN_TEAM"/>.
+    /// </summary>
     public static readonly Name UnknownTeamName = new Name(UNKNOWN_TEAM, BuiltinSource);
   }
 }

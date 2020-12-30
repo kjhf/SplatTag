@@ -73,7 +73,7 @@ namespace SplatTagUI
           {
             foreach (var file in Directory.EnumerateFiles(path))
             {
-              if (!filesSource.Contains(file) && !file.Contains(SplatTagDatabase.GenericFilesImporter.SourcesFileName))
+              if (!filesSource.Contains(file) && !file.Contains(SplatTagDatabase.GenericFilesToIImporters.SourcesFileName))
               {
                 filesSource.Add(file);
               }
@@ -95,15 +95,6 @@ namespace SplatTagUI
       if (File.Exists(path)) return false;
       if (Directory.Exists(path)) return true;
       return null;
-    }
-
-    private void SaveButton_Click(object sender, RoutedEventArgs e)
-    {
-      if (splatTagController != null)
-      {
-        splatTagController.SaveDatabase();
-        MessageBox.Show("Saved successfully.");
-      }
     }
 
     private void RemoveButton_Click(object sender, RoutedEventArgs e)

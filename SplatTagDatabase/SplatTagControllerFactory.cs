@@ -14,12 +14,12 @@ namespace SplatTagDatabase
     public static string GetDefaultPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
 
     /// <summary>
-    /// Create the <see cref="SplatTagController"/> and an optional <see cref="GenericFilesImporter"/>.
+    /// Create the <see cref="SplatTagController"/> and an optional <see cref="GenericFilesToIImporters"/>.
     /// </summary>
     /// <param name="forceLoad">Force generating a GenericFilesImporter and subsequent source loading.</param>
     /// <param name="saveFolder">Optional save folder. If null, defaults to %appdata%/SplatTag.</param>
     /// <returns>SplatTagController and GenericFilesImporter if one was created.</returns>
-    public static (SplatTagController, GenericFilesImporter?) CreateController(bool forceLoad = false, string? saveFolder = null)
+    public static (SplatTagController, GenericFilesToIImporters?) CreateController(bool forceLoad = false, string? saveFolder = null)
     {
       if (saveFolder == null)
       {
@@ -27,7 +27,7 @@ namespace SplatTagDatabase
       }
       Directory.CreateDirectory(saveFolder);
 
-      GenericFilesImporter? sourcesImporter = null;
+      GenericFilesToIImporters? sourcesImporter = null;
       SplatTagJsonSnapshotDatabase snapshotDatabase = new SplatTagJsonSnapshotDatabase(saveFolder);
       SplatTagController splatTagController = new SplatTagController(snapshotDatabase);
 
@@ -50,7 +50,7 @@ namespace SplatTagDatabase
       {
         string error = $"Unable to initialise the {nameof(SplatTagController)} because of an exception:\n {ex} \n";
         Console.Error.WriteLine(error);
-        Trace.WriteLine(error);
+        Console.WriteLine(error);
       }
 
       return (splatTagController, sourcesImporter);
@@ -63,7 +63,7 @@ namespace SplatTagDatabase
     /// <param name="snapshotDatabase">The Snapshot Database. Set to null for default handling.</param>
     /// <returns>The Generic Importer and the Controller.</returns>
     /// <exception cref="Exception">This method may throw based on the Initialisation method.</exception>
-    public static (GenericFilesImporter, SplatTagController) GenerateNewDatabase(string? saveFolder = null, SplatTagJsonSnapshotDatabase? snapshotDatabase = null)
+    public static (GenericFilesToIImporters, SplatTagController) GenerateNewDatabase(string? saveFolder = null, SplatTagJsonSnapshotDatabase? snapshotDatabase = null)
     {
       if (saveFolder == null)
       {
@@ -71,10 +71,10 @@ namespace SplatTagDatabase
       }
       Directory.CreateDirectory(saveFolder);
 
-      GenericFilesImporter sourcesImporter = new GenericFilesImporter(saveFolder);
+      GenericFilesToIImporters sourcesImporter = new GenericFilesToIImporters(saveFolder);
       MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
       SplatTagController splatTagController = new SplatTagController(splatTagDatabase);
-      Trace.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
+      Console.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
       splatTagController.Initialise();
 
       // Now that we've initialised, take a snapshot of everything.
@@ -92,7 +92,7 @@ namespace SplatTagDatabase
 
     public static void SaveDatabase(SplatTagController splatTagController, SplatTagJsonSnapshotDatabase snapshotDatabase)
     {
-      snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
+      snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null), splatTagController.GetSources());
     }
 
     public static void SaveDatabase(SplatTagController splatTagController, string? saveFolder = null)
@@ -101,7 +101,7 @@ namespace SplatTagDatabase
       {
         saveFolder = GetDefaultPath();
       }
-      new SplatTagJsonSnapshotDatabase(saveFolder).Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null));
+      new SplatTagJsonSnapshotDatabase(saveFolder).Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null), splatTagController.GetSources());
     }
   }
 }

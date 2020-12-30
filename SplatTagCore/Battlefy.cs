@@ -1,9 +1,9 @@
-﻿using System;
+﻿using SplatTagCore.Social;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
 
-namespace SplatTagCore.Social
+namespace SplatTagCore
 {
   [Serializable]
   public class Battlefy : ISerializable
@@ -38,7 +38,7 @@ namespace SplatTagCore.Social
     /// <param name="ids"></param>
     public void AddSlug(string slug, Source source)
     {
-      SplatTagCommon.InsertFrontUniqueSourced(new BattlefySocial(slug, source), this.slugs);
+      SplatTagCommon.InsertFrontUniqueSourced(new BattlefySocial(slug, source), slugs);
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ namespace SplatTagCore.Social
     /// </summary>
     public void AddUsername(string username, Source source)
     {
-      SplatTagCommon.AddName(new Name(username, source), this.usernames);
+      SplatTagCommon.AddName(new Name(username, source), usernames);
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ namespace SplatTagCore.Social
     /// </summary>
     public bool MatchAny(Battlefy other)
     {
-      return MatchPersistent(other) || Matcher.NamesMatch(this.usernames, other.usernames) > 0;
+      return MatchPersistent(other) || Matcher.NamesMatch(usernames, other.usernames) > 0;
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ namespace SplatTagCore.Social
     /// </summary>
     public bool MatchPersistent(Battlefy other)
     {
-      return Matcher.NamesMatch(this.slugs, other.slugs) > 0;
+      return Matcher.NamesMatch(slugs, other.slugs) > 0;
     }
 
     public override string ToString()
@@ -99,11 +99,11 @@ namespace SplatTagCore.Social
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (this.Slugs.Any())
-        info.AddValue("Slugs", this.slugs);
+      if (Slugs.Count > 0)
+        info.AddValue("Slugs", slugs);
 
-      if (this.Usernames.Any())
-        info.AddValue("Usernames", this.usernames);
+      if (Usernames.Count > 0)
+        info.AddValue("Usernames", usernames);
     }
 
     #endregion Serialization

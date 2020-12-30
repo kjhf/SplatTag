@@ -52,7 +52,7 @@ namespace SplatTagUnitTests
       DumpPlayers("Players after merge:", players);
 
       // Transform into a dictionary...
-      var dict = players.ToDictionary(p => p.Id, p => p);
+      var dict = players.AsParallel().ToDictionary(p => p.Id, p => p);
 
       // ...now check the dictionary.
       Assert.AreEqual(2, dict.Count,

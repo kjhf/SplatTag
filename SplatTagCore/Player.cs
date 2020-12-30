@@ -103,7 +103,7 @@ namespace SplatTagCore
     /// <summary>
     /// Get the player's Battlefy Usernames.
     /// </summary>
-    public IReadOnlyList<Social.Social> BattlefySlugs => battlefy.Slugs;
+    public IReadOnlyList<BattlefySocial> BattlefySlugs => battlefy.Slugs;
 
     /// <summary>
     /// Get the player's Battlefy Usernames.
@@ -406,13 +406,25 @@ namespace SplatTagCore
     protected Player(SerializationInfo info, StreamingContext context)
     {
       AddBattlefy(info.GetValueOrDefault("Battlefy", new Battlefy()));
+      this.Country = info.GetValueOrDefault("Country", default(string));
       AddDiscord(info.GetValueOrDefault("Discord", new Discord()));
       AddFCs(info.GetValueOrDefault("FriendCode", Array.Empty<FriendCode>()));
       this.Id = (Guid)info.GetValue("Id", typeof(Guid));
       AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
       AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
-      AddSources(info.GetValueOrDefault("Sources", Array.Empty<Source>()));
+      if (context.Context is Source.GuidToSourceConverter converter)
+      {
+        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+        AddSources(converter.Convert(sourceIds));
+      }
+      else
+      {
+        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+        AddSources(sourceIds.Select(s => new Source(s)));
+      }
+
       AddTeams(info.GetValueOrDefault("Teams", Array.Empty<Guid>()));
+      this.Top500 = info.GetValueOrDefault("Top500", false);
       AddTwitch(info.GetValueOrDefault("Twitch", Array.Empty<Twitch>()));
       AddTwitter(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
       AddWeapons(info.GetValueOrDefault("Weapons", Array.Empty<string>()));
@@ -421,36 +433,42 @@ namespace SplatTagCore
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (this.BattlefySlugs.Any() || this.BattlefyUsernames.Any())
+      if (this.BattlefySlugs.Count > 0 || this.BattlefyUsernames.Count > 0)
         info.AddValue("Battlefy", this.battlefy);
 
-      if (this.DiscordIds.Any() || this.DiscordNames.Any())
+      if (this.Country != null)
+        info.AddValue("Country", this.Country);
+
+      if (this.DiscordIds.Count > 0 || this.DiscordNames.Count > 0)
         info.AddValue("Discord", this.discord);
 
-      if (this.friendCodes.Any())
+      if (this.friendCodes.Count > 0)
         info.AddValue("FriendCode", this.friendCodes);
 
       info.AddValue("Id", this.Id);
 
-      if (this.names.Any())
+      if (this.names.Count > 0)
         info.AddValue("Names", this.names);
 
-      if (this.sendouProfiles.Any())
+      if (this.sendouProfiles.Count > 0)
         info.AddValue("Sendou", this.sendouProfiles);
 
-      if (this.sources.Any())
-        info.AddValue("Sources", this.sources);
+      if (sources.Count > 0)
+        info.AddValue("S", this.sources.Select(s => s.Id));
 
-      if (this.teams.Any())
+      if (this.teams.Count > 0)
         info.AddValue("Teams", this.teams);
 
-      if (this.twitchProfiles.Any())
+      if (this.Top500)
+        info.AddValue("Top500", this.Top500);
+
+      if (this.twitchProfiles.Count > 0)
         info.AddValue("Twitch", this.twitchProfiles);
 
-      if (this.twitterProfiles.Any())
+      if (this.twitterProfiles.Count > 0)
         info.AddValue("Twitter", this.twitterProfiles);
 
-      if (this.weapons.Any())
+      if (this.weapons.Count > 0)
         info.AddValue("Weapons", this.weapons);
     }
 

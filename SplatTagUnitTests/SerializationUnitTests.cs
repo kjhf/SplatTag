@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace SplatTagUnitTests
 {
@@ -29,25 +30,41 @@ namespace SplatTagUnitTests
       return sw.ToString();
     }
 
-    private static T Deserialize<T>(string json)
+    private static T Deserialize<T>(string json, Dictionary<Guid, Source> lookup)
     {
-      return JsonConvert.DeserializeObject<T>(json);
+      var settings = new JsonSerializerSettings
+      {
+        DefaultValueHandling = DefaultValueHandling.Ignore
+      };
+      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
+
+      return JsonConvert.DeserializeObject<T>(json, settings);
     }
 
     [TestMethod]
     public void SerializeBattlefy()
     {
+      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var h2 = new Source("h2");
+      var u2 = new Source("u2");
+      var h1 = new Source("h1");
+      var u1 = new Source("u1");
+      sources.Add(h2.Id, h2);
+      sources.Add(u2.Id, u2);
+      sources.Add(h1.Id, h1);
+      sources.Add(u1.Id, u1);
+
       Battlefy battlefy = new Battlefy();
       // Remember adding first = back of the list
-      battlefy.AddSlug("kjhf", new Source("h2"));
-      battlefy.AddUsername("username2", new Source("u2"));
-      battlefy.AddSlug("handle1", new Source("h1"));
-      battlefy.AddUsername("username1", new Source("u1"));
+      battlefy.AddSlug("kjhf", h2);
+      battlefy.AddUsername("username2", u2);
+      battlefy.AddSlug("handle1", h1);
+      battlefy.AddUsername("username1", u1);
 
       string json = Serialize(battlefy);
       Console.WriteLine(nameof(SerializeBattlefy) + ": ");
       Console.WriteLine(json);
-      Battlefy deserialized = Deserialize<Battlefy>(json);
+      Battlefy deserialized = Deserialize<Battlefy>(json, sources);
 
       Assert.AreEqual(2, deserialized.Slugs.Count, "Unexpected number of slugs");
       Assert.AreEqual(2, deserialized.Usernames.Count, "Unexpected number of usernames");
@@ -65,17 +82,27 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializeDiscord()
     {
+      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var source2 = new Source("source2");
+      var u2 = new Source("u2");
+      var source1 = new Source("source1");
+      var u1 = new Source("u1");
+      sources.Add(source2.Id, source2);
+      sources.Add(u2.Id, u2);
+      sources.Add(source1.Id, source1);
+      sources.Add(u1.Id, u1);
+
       Discord discord = new Discord();
       // Remember adding first = back of the list
-      discord.AddId("123456789", new Source("source2"));
-      discord.AddUsername("username2", new Source("u2"));
-      discord.AddId("4444", new Source("source1"));
-      discord.AddUsername("username1", new Source("u1"));
+      discord.AddId("123456789", source2);
+      discord.AddUsername("username2", u2);
+      discord.AddId("4444", source1);
+      discord.AddUsername("username1", u1);
 
       string json = Serialize(discord);
       Console.WriteLine(nameof(SerializeDiscord) + ": ");
       Console.WriteLine(json);
-      Discord deserialized = Deserialize<Discord>(json);
+      Discord deserialized = Deserialize<Discord>(json, sources);
 
       Assert.AreEqual(2, deserialized.Ids.Count, "Unexpected number of ids");
       Assert.AreEqual(2, deserialized.Usernames.Count, "Unexpected number of usernames");
@@ -92,14 +119,23 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializeSendou()
     {
+      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var source2 = new Source("source2");
+      var u2 = new Source("u2");
+      var source1 = new Source("source1");
+      var u1 = new Source("u1");
+      sources.Add(source2.Id, source2);
+      sources.Add(u2.Id, u2);
+      sources.Add(source1.Id, source1);
+      sources.Add(u1.Id, u1);
+
       const string handle = "slate";
-      var source = new Source("s1");
-      Sendou sendou = new Sendou(handle, source);
+      Sendou sendou = new Sendou(handle, source1);
 
       string json = Serialize(sendou);
       Console.WriteLine(nameof(SerializeSendou) + ": ");
       Console.WriteLine(json);
-      Sendou deserialized = Deserialize<Sendou>(json);
+      Sendou deserialized = Deserialize<Sendou>(json, sources);
 
       Assert.AreEqual("https://sendou.ink/u/slate", deserialized.Uri?.AbsoluteUri, "Unexpected Uri");
     }
@@ -107,24 +143,40 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializePlayer()
     {
+      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var source2 = new Source("source2");
+      var u2 = new Source("u2");
+      var source1 = new Source("source1");
+      var u1 = new Source("u1");
+      var h2 = new Source("h2");
+      var h1 = new Source("h1");
+      var s1 = new Source("s1");
+      sources.Add(h2.Id, h2);
+      sources.Add(h1.Id, h1);
+      sources.Add(source2.Id, source2);
+      sources.Add(u2.Id, u2);
+      sources.Add(source1.Id, source1);
+      sources.Add(u1.Id, u1);
+      sources.Add(s1.Id, s1);
+
       Player player = new Player();
       // Remember adding first = back of the list
-      player.AddBattlefySlug("kjhf", new Source("h2"));
-      player.AddBattlefyUsername("username2", new Source("u2"));
-      player.AddBattlefySlug("handle1", new Source("h1"));
-      player.AddBattlefyUsername("username1", new Source("u1"));
+      player.AddBattlefySlug("kjhf", h2);
+      player.AddBattlefyUsername("username2", u2);
+      player.AddBattlefySlug("handle1", h1);
+      player.AddBattlefyUsername("username1", u1);
 
-      player.AddDiscordId("123456789", new Source("source2"));
-      player.AddDiscordUsername("username2", new Source("u2"));
-      player.AddDiscordId("4444", new Source("source1"));
-      player.AddDiscordUsername("username1", new Source("u1"));
+      player.AddDiscordId("123456789", source2);
+      player.AddDiscordUsername("username2", u2);
+      player.AddDiscordId("4444", source1);
+      player.AddDiscordUsername("username1", u1);
 
-      player.AddSendou("slate", new Source("s1"));
+      player.AddSendou("slate", s1);
 
       string json = Serialize(player);
       Console.WriteLine(nameof(SerializePlayer) + ": ");
       Console.WriteLine(json);
-      Player deserialized = Deserialize<Player>(json);
+      Player deserialized = Deserialize<Player>(json, sources);
 
       var battlefy = deserialized.Battlefy;
       Assert.AreEqual(2, battlefy.Slugs.Count, "Unexpected number of slugs");
@@ -158,24 +210,40 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializeTeam()
     {
+      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var source3 = new Source("source3");
+      var source2 = new Source("source2");
+      var u2 = new Source("u2");
+      var source1 = new Source("source1");
+      var u1 = new Source("u1");
+      var t2 = new Source("t2");
+      var t1 = new Source("t1");
+      sources.Add(t2.Id, t2);
+      sources.Add(t1.Id, t1);
+      sources.Add(source3.Id, source3);
+      sources.Add(source2.Id, source2);
+      sources.Add(u2.Id, u2);
+      sources.Add(source1.Id, source1);
+      sources.Add(u1.Id, u1);
+
       Team team = new Team();
       // Remember adding first = back of the list
-      team.AddBattlefyId("2teamid2", new Source("u2"));
-      team.AddBattlefyId("1teamid1", new Source("u1"));
+      team.AddBattlefyId("2teamid2", u2);
+      team.AddBattlefyId("1teamid1", u1);
 
-      team.AddClanTag("old", new Source("source2"));
-      team.AddClanTag("new", new Source("source3"));
+      team.AddClanTag("old", source2);
+      team.AddClanTag("new", source3);
 
       team.AddDivision(new Division(10, DivType.LUTI, "S9"));
       team.AddDivision(new Division(8, DivType.LUTI, "SX"));
 
-      team.AddName("team2", new Source("t2"));
-      team.AddName("team1", new Source("t1"));
+      team.AddName("team2", t2);
+      team.AddName("team1", t1);
 
       string json = Serialize(team);
       Console.WriteLine(nameof(SerializeTeam) + ": ");
       Console.WriteLine(json);
-      Team deserialized = Deserialize<Team>(json);
+      Team deserialized = Deserialize<Team>(json, sources);
 
       var battlefy = deserialized.BattlefyPersistentTeamIds;
       Assert.AreEqual(2, battlefy.Count, "Unexpected number of team battlefy slugs");
@@ -212,7 +280,7 @@ namespace SplatTagUnitTests
     public void DeserializeFriendCodes()
     {
       string json = @"[{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]}]";
-      List<FriendCode> fcs = Deserialize<List<FriendCode>>(json);
+      List<FriendCode> fcs = Deserialize<List<FriendCode>>(json, new Dictionary<Guid, Source>());
 
       Player player = new Player();
       player.AddFCs(fcs);

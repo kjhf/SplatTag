@@ -2,51 +2,83 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SplatTagDatabase
 {
   public class MultiDatabase : ISplatTagDatabase
   {
-    private readonly List<IImporter> importers;
     private readonly string saveDirectory;
+    private IImporter[] importers;
+    private readonly GenericFilesToIImporters? converter;
+
+    public MultiDatabase(string saveDirectory, GenericFilesToIImporters converter)
+    {
+      this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
+      this.converter = converter;
+      this.importers = Array.Empty<IImporter>();
+    }
 
     public MultiDatabase(string saveDirectory, params IImporter[] importers)
     {
-      this.importers = new List<IImporter>(importers ?? throw new ArgumentNullException(nameof(importers)));
+      this.importers = (importers ?? throw new ArgumentNullException(nameof(importers)));
       this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
     }
 
-    public (Player[], Team[]) Load()
+    public (Player[], Team[], Dictionary<Guid, Source>) Load()
     {
-      List<Player> players = new List<Player>();
-      List<Team> teams = new List<Team>();
-      foreach (var db in importers)
+      // If we need to do our conversion first, do so now.
+      if (converter != null)
       {
-        Player[] loadedPlayers;
-        Team[] loadedTeams;
+        importers = converter.Load();
+      }
+
+      // Load each importer into a Source
+      Console.WriteLine($"Reading {importers.Length} sources...");
+      Source[] sources = new Source[importers.Length];
+      Parallel.For(0, importers.Length, i =>
+      {
         try
         {
-          (loadedPlayers, loadedTeams) = db.Load();
+          sources[i] = importers[i].Load();
         }
         catch (Exception ex)
         {
-          Trace.WriteLine($"ERROR: Importer {db} failed. Discarding result and continuing. {ex}");
-          continue;
+          Console.WriteLine($"ERROR: Importer {importers[i]} failed. Discarding result and continuing. {ex}");
         }
+      });
 
+      // Merge each Source into our global Players and Teams list.
+      Console.WriteLine($"Merging {sources.Length} sources...");
+      List<Player> players = new List<Player>();
+      List<Team> teams = new List<Team>();
+
+      string lastProgressBar = "";
+      for (int i = 0; i < sources.Length; i++)
+      {
+        Source source = sources[i];
         try
         {
-          var mergeResult = Merger.MergeTeamsByPersistentIds(teams, loadedTeams);
-          Merger.MergePlayers(players, loadedPlayers);
+          var mergeResult = Merger.MergeTeamsByPersistentIds(teams, source.Teams);
+          Merger.MergePlayers(players, source.Players);
           Merger.CorrectTeamIdsForPlayers(players, mergeResult);
         }
         catch (Exception ex)
         {
-          Trace.WriteLine($"ERROR: Failed to merge during import of {db}. Discarding result and continuing. {ex}");
+          Console.WriteLine($"ERROR: Failed to merge during import of {source}. Discarding result and continuing. {ex}");
+        }
+
+        string progressBar = Util.GetProgressBar(sources.Length - i, sources.Length, 100);
+        if (!progressBar.Equals(lastProgressBar))
+        {
+          Console.WriteLine(progressBar);
+          lastProgressBar = progressBar;
         }
       }
 
       // Perform a final merge.
+      Console.WriteLine($"Performing final merge...");
       try
       {
         Merger.FinalisePlayers(players);
@@ -55,18 +87,10 @@ namespace SplatTagDatabase
       }
       catch (Exception ex)
       {
-        Trace.WriteLine($"Warning: Failed {nameof(Merger.FinalisePlayers)}. Continuing anyway. {ex}");
+        Console.WriteLine($"ERROR: Failed {nameof(Merger.FinalisePlayers)}. Continuing anyway. {ex}");
       }
-      return (players.ToArray(), teams.ToArray());
-    }
 
-    public void Save(IEnumerable<Player> players, IEnumerable<Team> teams)
-    {
-      // Offload to a Json database instead.
-      SplatTagJsonSnapshotDatabase jsonDb = new SplatTagJsonSnapshotDatabase(saveDirectory);
-      jsonDb.Save(players, teams);
-      importers.Clear();
-      importers.Add(jsonDb);
+      return (players.ToArray(), teams.ToArray(), sources.AsParallel().ToDictionary(s => s.Id, s => s));
     }
   }
 }

@@ -8,6 +8,11 @@ namespace SplatTagCore
   [Serializable]
   public class Score
   {
+    public Score(IList<int>? points = null)
+    {
+      this.Points = points ?? Array.Empty<int>();
+    }
+
     [JsonIgnore]
     /// <summary>
     /// Displayable description of the score, e.g. 3-2
@@ -24,6 +29,6 @@ namespace SplatTagCore
     /// <summary>
     /// Score points, indexed by team.
     /// </summary>
-    public IList<int>? Points { get; set; }
+    public IList<int> Points { get; }
   }
 }

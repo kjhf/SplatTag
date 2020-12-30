@@ -30,7 +30,7 @@ namespace SplatTagUI
     private readonly string titleLead;
 
     internal static readonly SplatTagController splatTagController;
-    private static readonly GenericFilesImporter? sourcesImporter;
+    private static readonly GenericFilesToIImporters? sourcesImporter;
     private readonly Timer? smoothSearchDelayTimer;
     private readonly SynchronizationContext? context;
 

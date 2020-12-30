@@ -1,5 +1,6 @@
 ﻿using SplatTagCore.Social;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,20 +11,22 @@ using System.Threading.Tasks;
 
 namespace SplatTagCore
 {
-  public class SplatTagController
+  public class SplatTagController : ITeamResolver
   {
     private readonly ISplatTagDatabase database;
     private Player[] players;
     private Dictionary<Guid, Team> teams;
+    private Dictionary<Guid, Source> sources;
     private Task? cachingTask;
-    private readonly Dictionary<Team, (Player, bool)[]> playersForTeam;
+    private readonly ConcurrentDictionary<Team, (Player, bool)[]> playersForTeam;
 
     public SplatTagController(ISplatTagDatabase database)
     {
       this.database = database;
       this.players = Array.Empty<Player>();
       this.teams = new Dictionary<Guid, Team>();
-      this.playersForTeam = new Dictionary<Team, (Player, bool)[]>();
+      this.sources = new Dictionary<Guid, Source>();
+      this.playersForTeam = new ConcurrentDictionary<Team, (Player, bool)[]>();
     }
 
     public void Initialise()
@@ -35,7 +38,7 @@ namespace SplatTagCore
     {
       Console.WriteLine("Loading Database... ");
       var start = DateTime.Now;
-      var (loadedPlayers, loadedTeams) = database.Load();
+      var (loadedPlayers, loadedTeams, loadedSources) = database.Load();
       if (loadedPlayers == null || loadedTeams == null)
       {
         Console.Error.WriteLine("ERROR: Failed to load.");
@@ -47,19 +50,20 @@ namespace SplatTagCore
       else
       {
         players = loadedPlayers;
-        teams = loadedTeams.ToDictionary(t => t.Id, t => t);
+        teams = loadedTeams.AsParallel().ToDictionary(t => t.Id, t => t);
+        sources = loadedSources;
 
         cachingTask = Task.Run(() =>
         {
           // Cache the players and their teams.
-          foreach (var t in teams.Values)
+          Parallel.ForEach(teams.Values, t =>
           {
             var teamPlayers =
               t.GetPlayers(players)
               .Select(p => (p, p.CurrentTeam == t.Id))
               .ToArray();
-            playersForTeam.Add(t, teamPlayers);
-          }
+            playersForTeam.TryAdd(t, teamPlayers);
+          });
           Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Caching task done.");
         });
 
@@ -67,11 +71,6 @@ namespace SplatTagCore
         Console.WriteLine("Database loaded successfully.");
         Console.WriteLine($"...Done in {diff.TotalSeconds} seconds.");
       }
-    }
-
-    public void SaveDatabase()
-    {
-      database.Save(players, teams.Values);
     }
 
     /// <summary>
@@ -384,11 +383,13 @@ namespace SplatTagCore
         };
       }
 
-      return playersToSearch.Select(p => (p, func(p)))
-                            .Where(pair => pair.Item2 > 0)
-                            .OrderByDescending(pair => pair.Item2)
-                            .Select(pair => pair.p)
-                            .ToArray();
+      return playersToSearch
+        .AsParallel()
+        .Select(p => (p, func(p)))
+        .Where(pair => pair.Item2 > 0)
+        .OrderByDescending(pair => pair.Item2)
+        .Select(pair => pair.p)
+        .ToArray();
     }
 
     private static void AdjustRelevanceForStringComparison(ref int relevance, string toMatch, string query, StringComparison comparison)
@@ -580,7 +581,18 @@ namespace SplatTagCore
         };
       }
 
-      return teamsToSearch.Select(t => (t, func(t))).Where(pair => pair.Item2 > 0).OrderByDescending(pair => pair.Item2).Select(pair => pair.t).ToArray();
+      return teamsToSearch
+        .AsParallel()
+        .Select(t => (t, func(t)))
+        .Where(pair => pair.Item2 > 0)
+        .OrderByDescending(pair => pair.Item2)
+        .Select(pair => pair.t)
+        .ToArray();
+    }
+
+    public Source[] GetSources()
+    {
+      return sources.Values.ToArray();
     }
 
     /// <summary>
@@ -606,8 +618,8 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Match a Team by its id.
-    /// Never returns null.
+    /// Match a <see cref="Team"/> by its id.
+    /// Returns <see cref="Team.UnlinkedTeam"/> if not found.
     /// </summary>
     public Team GetTeamById(Guid id)
     {
@@ -616,6 +628,19 @@ namespace SplatTagCore
         return Team.NoTeam;
       }
       return teams.ContainsKey(id) ? teams[id] : Team.UnlinkedTeam;
+    }
+
+    /// <summary>
+    /// Match a <see cref="Source"/> by its id.
+    /// Returns <see cref="Builtins.BuiltinSource"/> if not found.
+    /// </summary>
+    public Source GetSourceById(Guid id)
+    {
+      if (id == Guid.Empty)
+      {
+        return Builtins.BuiltinSource;
+      }
+      return sources.ContainsKey(id) ? sources[id] : Builtins.BuiltinSource;
     }
 
     /// <summary> Launch an address in a separate internet browser. </summary>

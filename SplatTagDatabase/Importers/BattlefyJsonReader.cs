@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using SplatTagCore;
-using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,7 +25,7 @@ namespace SplatTagDatabase.Importers
       return Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
 
-    public (Player[], Team[]) Load()
+    public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
@@ -134,7 +133,9 @@ namespace SplatTagDatabase.Importers
         }
       }
 
-      return (players.ToArray(), teams.ToArray());
+      source.Players = players.ToArray();
+      source.Teams = teams.ToArray();
+      return source;
     }
 
     [Serializable]

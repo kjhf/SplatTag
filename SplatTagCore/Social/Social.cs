@@ -46,7 +46,7 @@ namespace SplatTagCore.Social
     {
       get
       {
-        if (Handle == null)
+        if (Value == null || socialBaseAddress == null)
         {
           return null;
         }
@@ -58,20 +58,20 @@ namespace SplatTagCore.Social
       }
     }
 
-    protected virtual string ProcessHandle(string value)
+    protected virtual string ProcessHandle(string newHandle)
     {
-      if (string.IsNullOrWhiteSpace(value))
+      if (string.IsNullOrWhiteSpace(newHandle))
       {
-        return value;
+        return newHandle;
       }
       else
       {
-        if (value.Contains(socialBaseAddress))
+        if (newHandle.Contains(socialBaseAddress))
         {
-          value = value.Substring(value.IndexOf(socialBaseAddress) + socialBaseAddress.Length);
+          newHandle = newHandle.Substring(newHandle.IndexOf(socialBaseAddress) + socialBaseAddress.Length);
         }
 
-        return value.TrimStart('/', '@');
+        return newHandle.TrimStart('/', '@');
       }
     }
 

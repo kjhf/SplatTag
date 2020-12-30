@@ -71,7 +71,9 @@ namespace SplatTagUnitTests
       {
         File.WriteAllText(filePath, JSON);
         LUTIJsonReader reader = new LUTIJsonReader(filePath);
-        var (loadedPlayers, loadedTeams) = reader.Load();
+        Source s = reader.Load();
+        var loadedTeams = s.Teams;
+        var loadedPlayers = s.Players;
 
         Assert.AreEqual(3, loadedTeams.Length);
         Assert.AreEqual(18, loadedPlayers.Length);

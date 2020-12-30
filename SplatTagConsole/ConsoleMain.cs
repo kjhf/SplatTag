@@ -15,7 +15,7 @@ namespace SplatTagConsole
   public static class ConsoleMain
   {
     private static readonly SplatTagController splatTagController;
-    private static readonly GenericFilesImporter? importer;
+    private static readonly GenericFilesToIImporters? importer;
 
     static ConsoleMain()
     {
@@ -102,12 +102,18 @@ namespace SplatTagConsole
                 );
 
               result.AdditionalTeams =
-                result.Players.SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
+                result.Players
+                .AsParallel()
+                .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
                 .Distinct()
                 .ToDictionary(t => t.Id, t => t);
+              result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
+              result.AdditionalTeams[Team.UnlinkedTeam.Id] = Team.UnlinkedTeam;
 
               result.PlayersForTeams =
-                result.Teams.ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
+                result.Teams
+                .AsParallel()
+                .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
 
               foreach (var pair in result.PlayersForTeams)
               {
@@ -119,6 +125,14 @@ namespace SplatTagConsole
                   }
                 }
               }
+
+              result.Sources =
+                result.Players.AsParallel().SelectMany(p => p.Sources)
+                .Concat(result.Teams.AsParallel().SelectMany(t => t.Sources))
+                //.Concat(result.AdditionalTeams.Values.AsParallel().SelectMany(t => t.Sources))
+                //.Concat(result.PlayersForTeams.Values.AsParallel().SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
+                .Distinct()
+                .ToDictionary(s => s.Id, s => s.Name);
             }
 
             StringWriter sw = new StringWriter();
@@ -171,9 +185,7 @@ namespace SplatTagConsole
       StringBuilder sb = new StringBuilder();
       sb.AppendLine("F: Fetch data from site or file");
       sb.AppendLine("L: (Re)load local database");
-      sb.AppendLine("M: Manual entry");
       sb.AppendLine("P: Match a player");
-      sb.AppendLine("S: Save/overwrite local database");
       sb.AppendLine("T: Match a team");
 
       return sb.ToString();
@@ -185,78 +197,6 @@ namespace SplatTagConsole
       {
         case 'f': BeginFetch(); break;
         case 'l': splatTagController.LoadDatabase(); break;
-        case 's': splatTagController.SaveDatabase(); break;
-
-        case 'm':
-        {
-          Console.WriteLine("Team or player? [t/p]");
-          char tp = char.ToLowerInvariant(Console.ReadKey().KeyChar);
-          Console.WriteLine();
-          if (tp == 't')
-          {
-            Console.WriteLine("Name of team?");
-
-            // Manual entry for Team
-            Team t = splatTagController.CreateTeam(Console.ReadLine() ?? "");
-
-            Console.WriteLine("Clan tag?");
-            string tag = Console.ReadLine() ?? "";
-
-            Console.WriteLine("Where does the clan tag go?");
-            foreach (TagOption option in Enum.GetValues(typeof(TagOption)))
-            {
-              Console.WriteLine($"{(int)option}. {option}");
-            }
-            _ = Enum.TryParse(Console.ReadLine(), out TagOption to);
-            t.AddClanTag(tag, Builtins.ManualSource, to);
-
-            Console.WriteLine("Div?");
-            t.AddDivision(new Division(Console.ReadLine() ?? "", DivType.LUTI, ""));
-
-            splatTagController.SaveDatabase();
-          }
-          else if (tp == 'p')
-          {
-            Console.WriteLine("Name of player?");
-
-            // Manual entry for Player
-            Player p = splatTagController.CreatePlayer(Console.ReadLine() ?? "");
-
-            Console.WriteLine("Player's current team? (Or leave blank)");
-            string? input = Console.ReadLine();
-            if (!string.IsNullOrWhiteSpace(input))
-            {
-              Team[] matchedTeams = splatTagController.MatchTeam(input);
-              switch (matchedTeams.Length)
-              {
-                case 0:
-                {
-                  Console.WriteLine("Team not found with that name or tag. Create the team first.");
-                  break;
-                }
-
-                case 1:
-                {
-                  p.AddTeams(matchedTeams[0].Id.AsEnumerable());
-                  Console.WriteLine("Successfully matched.");
-                  break;
-                }
-
-                default:
-                {
-                  Console.WriteLine($"More than one team matched. Assuming the first one ({matchedTeams[0].Name}).");
-                  p.AddTeams(matchedTeams[0].Id.AsEnumerable());
-                  break;
-                }
-              }
-            }
-            splatTagController.SaveDatabase();
-          }
-          // else do nothing
-
-          break;
-        }
-
         case 'p':
         {
           Console.WriteLine("Player name?");
