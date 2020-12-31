@@ -1,7 +1,15 @@
-﻿namespace SplatTagCore
+﻿using System;
+using System.Runtime.Serialization;
+
+namespace SplatTagCore
 {
-  public class MatchOptions
+  [Serializable]
+  public class MatchOptions : ISerializable
   {
+    public MatchOptions()
+    {
+    }
+
     /// <summary>
     /// Get or set if the query should ignore the input case. Defaults to true.
     /// </summary>
@@ -21,5 +29,31 @@
     /// Get or set how the query should match players and teams.
     /// </summary>
     public FilterOptions FilterOptions { get; set; } = FilterOptions.Default;
+
+    #region Serialization
+
+    // Deserialize
+    protected MatchOptions(SerializationInfo info, StreamingContext context)
+    {
+      this.IgnoreCase = info.GetBoolean("IgnoreCase");
+      this.QueryIsRegex = info.GetBoolean("QueryIsRegex");
+      this.NearCharacterRecognition = info.GetBoolean("NearCharacterRecognition");
+      this.FilterOptions = info.GetEnumOrDefault("FilterOptions", FilterOptions.Default);
+    }
+
+    // Serialize
+    public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      info.AddValue("IgnoreCase", this.IgnoreCase);
+      info.AddValue("QueryIsRegex", this.QueryIsRegex);
+      info.AddValue("NearCharacterRecognition", this.NearCharacterRecognition);
+
+      if (this.FilterOptions != FilterOptions.Default)
+      {
+        info.AddValue("FilterOptions", this.FilterOptions);
+      }
+    }
+
+    #endregion Serialization
   }
 }

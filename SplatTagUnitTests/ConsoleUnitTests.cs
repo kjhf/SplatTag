@@ -3,6 +3,7 @@ using SplatTagConsole;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SplatTagUnitTests
@@ -13,7 +14,9 @@ namespace SplatTagUnitTests
   [TestClass]
   public class ConsoleUnitTests
   {
+    private const int MAX_WAIT_TIME = 20000;
     private readonly TextWriter consoleOut = Console.Out;
+    private readonly TextWriter consoleError = Console.Error;
 
     /// <summary>
     /// Verify that the console starts.
@@ -21,22 +24,34 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleNoArguments()
     {
-      const int millisecondsDelay = 5000;
+      using StringWriter sw = new StringWriter();
+      Console.SetOut(sw);
+      Console.SetError(sw);
 
-      using (StringWriter sw = new StringWriter())
+      var timeoutTask = Task.Delay(MAX_WAIT_TIME);
+      var mainTask = Task.Run(() => ConsoleMain.Main(null));
+      var successfulCheck = Task.Run(() =>
       {
-        Console.SetOut(sw);
+        for (; ; )
+        {
+          string actual = sw.ToString();
+          if (actual.Contains("Choose a function:"))
+          {
+            break;
+          }
+          Thread.Sleep(250);
+        }
+      });
+      Task.WaitAny(timeoutTask, mainTask, successfulCheck);
+      Console.SetOut(consoleOut);
+      Console.SetError(consoleError);
+      string actual = sw.ToString();
+      Console.WriteLine("==================================================");
+      Console.WriteLine(actual);
+      Console.WriteLine("==================================================");
 
-        var timeoutTask = Task.Delay(millisecondsDelay);
-        var mainTask = Task.Run(() => ConsoleMain.Main(null));
-        Task.WaitAny(timeoutTask, mainTask);
-        Console.SetOut(consoleOut);
-        string actual = sw.ToString();
-        Console.WriteLine(actual);
-
-        string expected = string.Format("Choose a function:{0}", Environment.NewLine);
-        Assert.IsTrue(actual.Contains(expected));
-      }
+      string expected = string.Format("Choose a function:{0}", Environment.NewLine);
+      Assert.IsTrue(actual.Contains(expected));
     }
 
     /// <summary>
@@ -45,32 +60,34 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleSingleQuery()
     {
-      const int millisecondsDelay = 5000;
-      using (StringWriter sw = new StringWriter())
+      using StringWriter sw = new StringWriter();
+      Console.SetOut(sw);
+      Console.SetError(sw);
+
+      var timeoutTask = Task.Delay(MAX_WAIT_TIME);
+      // This task will end once Slapp completes as --keepOpen is not specified
+      var mainTask = Task.Run(() =>
       {
-        Console.SetOut(sw);
+        return ConsoleMain.Main("Slate".Split(" "));
+      });
+      Task.WaitAny(timeoutTask, mainTask);
+      Console.SetOut(consoleOut);
+      Console.SetError(consoleError);
+      string actual = sw.ToString();
+      Console.WriteLine("==================================================");
+      Console.WriteLine(actual);
+      Console.WriteLine("==================================================");
 
-        var timeoutTask = Task.Delay(millisecondsDelay);
-        var mainTask = Task.Run(() =>
-        {
-          return ConsoleMain.Main("Slate".Split(" "));
-        });
-        Task.WaitAny(timeoutTask, mainTask);
-        Console.SetOut(consoleOut);
-        string actual = sw.ToString();
-        Console.WriteLine(actual);
-
-        Assert.IsTrue(actual.Contains("\"Message\":\"OK\""));
-        if (actual.Contains("\"Players\":[]"))
-        {
-          Assert.Inconclusive("The test returned an empty players list. This may be because the database has not been populated. Do so and re-run the test.");
-        }
-        else
-        {
-          Assert.IsTrue(actual.Contains("kjhf1273"));
-          Assert.IsTrue(actual.Contains("Inkology"));
-          Assert.IsTrue(actual.Contains("Revitalize"));
-        }
+      Assert.IsTrue(actual.Contains("\"Message\":\"OK\""));
+      if (actual.Contains("\"Players\":[]"))
+      {
+        Assert.Inconclusive("The test returned an empty players list. This may be because the database has not been populated. Do so and re-run the test.");
+      }
+      else
+      {
+        Assert.IsTrue(actual.Contains("kjhf1273"));
+        Assert.IsTrue(actual.Contains("Inkology"));
+        Assert.IsTrue(actual.Contains("Revitalize"));
       }
     }
 
@@ -80,60 +97,75 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleCaseSensitiveQuery()
     {
-      const int millisecondsDelay = 10000;
       Stopwatch stopwatch = new Stopwatch();
-      using (StringWriter sw = new StringWriter())
+      using StringWriter sw = new StringWriter();
+      Console.SetOut(sw);
+      Console.SetError(sw);
+
+      stopwatch.Start();
+      var timeoutTask = Task.Delay(MAX_WAIT_TIME);
+      // This task will end once Slapp completes as --keepOpen is not specified
+      var mainTask = Task.Run(() =>
       {
-        Console.SetOut(sw);
+        return ConsoleMain.Main("slAte --exactCase".Split(" "));
+      });
+      Task.WaitAny(timeoutTask, mainTask);
+      stopwatch.Stop();
+      Console.SetOut(consoleOut);
+      Console.SetError(consoleError);
+      string actual = sw.ToString();
+      Console.WriteLine("==================================================");
+      Console.WriteLine(actual);
+      Console.WriteLine("==================================================");
 
-        stopwatch.Start();
-        var timeoutTask = Task.Delay(millisecondsDelay);
-        var mainTask = Task.Run(() =>
-        {
-          return ConsoleMain.Main("slAte --exactCase".Split(" "));
-        });
-        Task.WaitAny(timeoutTask, mainTask);
-        stopwatch.Stop();
-        Console.SetOut(consoleOut);
-        string actual = sw.ToString();
-        Console.WriteLine(actual);
+      // Should NOT contain the result because the name is "Slate"
+      Assert.IsFalse(actual.Contains("kjhf1273"));
+      Assert.IsTrue(actual.Contains("OK"));
 
-        // Should NOT contain the result because the name is "Slate"
-        Assert.IsFalse(actual.Contains("kjhf1273"));
-        Assert.IsTrue(actual.Contains("OK"));
-
-        if (stopwatch.ElapsedMilliseconds > 3000)
-        {
-          Assert.Inconclusive($"Test passed but it took {stopwatch.ElapsedMilliseconds}ms which is unacceptable for a Console query. Aim for < 3 seconds.");
-        }
+      if (stopwatch.ElapsedMilliseconds > 3000)
+      {
+        Assert.Inconclusive($"Test passed but it took {stopwatch.ElapsedMilliseconds}ms which is unacceptable for a Console query. Aim for < 3 seconds.");
       }
     }
 
     /// <summary>
     /// Verify that the console remains open with the keep open option.
     /// </summary>
-    //[TestMethod] // Skip this failing test -- re-enable when we can get keepOpen working again...
+    [TestMethod]
     public void ConsolePerist()
     {
-      const int millisecondsDelay = 4000;
       using (StringWriter sw = new StringWriter())
       {
         Console.SetOut(sw);
+        Console.SetError(sw);
 
-        var timeoutTask = Task.Delay(millisecondsDelay);
+        var timeoutTask = Task.Delay(MAX_WAIT_TIME);
         var mainTask = Task.Run(() =>
         {
-          using (TextReader tr = new StringReader("Sendou"))
+          using TextReader tr = new StringReader("Sendou");
+          Console.SetIn(tr);
+          return ConsoleMain.Main("Slate --keepOpen".Split(" "));
+        });
+        var successfulCheck = Task.Run(() =>
+        {
+          for (; ; )
           {
-            Console.SetIn(tr);
-            return ConsoleMain.Main("Slate --keepOpen".Split(" "));
+            string actual = sw.ToString();
+            if (actual.Contains("Slate") && actual.Contains("Sendou"))
+            {
+              break;
+            }
+            Thread.Sleep(250);
           }
         });
-        Task.WaitAny(timeoutTask, mainTask);
+        Task.WaitAny(timeoutTask, mainTask, successfulCheck);
 
         Console.SetOut(consoleOut);
+        Console.SetError(consoleError);
         string actual = sw.ToString();
+        Console.WriteLine("==================================================");
         Console.WriteLine(actual);
+        Console.WriteLine("==================================================");
 
         Assert.IsTrue(actual.Contains("\"Message\":\"OK\""), "Unexpected message result");
         if (actual.Contains("\"Players\":[]"))

@@ -128,6 +128,8 @@ namespace SplatTagCore
         info.AddValue("S", this.sources.Select(s => s.Id));
     }
 
+    #endregion Serialization
+
     public override bool Equals(object? obj)
     {
       return Equals(obj as Name);
@@ -143,7 +145,5 @@ namespace SplatTagCore
     {
       return -1937169414 + Value.GetHashCode();
     }
-
-    #endregion Serialization
   }
 }

@@ -2,7 +2,6 @@
 using SplatTagCore;
 using SplatTagDatabase;
 using System;
-using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
@@ -24,9 +23,15 @@ namespace SplatTagConsole
       (splatTagController, importer) = SplatTagControllerFactory.CreateController();
     }
 
-    public static int Main(string[]? args)
+    public static int Main(string[]? args = null)
     {
-      if (args?.Length > 0)
+      if (args == null)
+      {
+        args = Array.Empty<string>();
+      }
+      Console.WriteLine($"Slapp called with: [{string.Join(", ", args)}]");
+
+      if (args.Length > 0)
       {
         // Invoked from command line
         if (JsonConvert.DefaultSettings == null)
@@ -57,87 +62,85 @@ namespace SplatTagConsole
           // Note that the parameter names must match the --option name
           (string query, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, bool rebuild, bool _) =>
           {
+            var options = new MatchOptions
+            {
+              IgnoreCase = !exactCase,
+              NearCharacterRecognition = !exactCharacterRecognition,
+              QueryIsRegex = queryIsRegex
+            };
+
             CommandLineResult result = new CommandLineResult
             {
-              Message = "OK"
+              Message = "OK",
+              Query = query,
+              Options = options
             };
 
             if (rebuild)
             {
               SplatTagControllerFactory.GenerateNewDatabase();
               result.Message = "Database rebuilt!";
-              result.Players = Array.Empty<Player>();
-              result.Teams = Array.Empty<Team>();
-              result.AdditionalTeams = new Dictionary<Guid, Team>();
-              result.PlayersForTeams = new Dictionary<Guid, (Player, bool)[]>();
             }
             else if (string.IsNullOrWhiteSpace(query))
             {
               result.Message = "Nothing to search!";
-              result.Players = Array.Empty<Player>();
-              result.Teams = Array.Empty<Team>();
-              result.AdditionalTeams = new Dictionary<Guid, Team>();
-              result.PlayersForTeams = new Dictionary<Guid, (Player, bool)[]>();
             }
             else
             {
-              result.Players =
-                splatTagController.MatchPlayer(query,
-                  new MatchOptions
-                  {
-                    IgnoreCase = !exactCase,
-                    NearCharacterRecognition = !exactCharacterRecognition,
-                    QueryIsRegex = queryIsRegex
-                  }
-                );
-
-              result.Teams =
-                splatTagController.MatchTeam(query,
-                  new MatchOptions
-                  {
-                    IgnoreCase = !exactCase,
-                    NearCharacterRecognition = !exactCharacterRecognition,
-                    QueryIsRegex = queryIsRegex
-                  }
-                );
-
-              result.AdditionalTeams =
-                result.Players
-                .AsParallel()
-                .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
-                .Distinct()
-                .ToDictionary(t => t.Id, t => t);
-              result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
-              result.AdditionalTeams[Team.UnlinkedTeam.Id] = Team.UnlinkedTeam;
-
-              result.PlayersForTeams =
-                result.Teams
-                .AsParallel()
-                .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
-
-              foreach (var pair in result.PlayersForTeams)
+              try
               {
-                foreach ((Player, bool) tuple in pair.Value)
+                result.Players = splatTagController.MatchPlayer(query, options);
+                result.Teams = splatTagController.MatchTeam(query, options);
+
+                result.AdditionalTeams =
+                  result.Players
+                  .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
+                  .Distinct()
+                  .ToDictionary(t => t.Id, t => t);
+                result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
+                result.AdditionalTeams[Team.UnlinkedTeam.Id] = Team.UnlinkedTeam;
+
+                result.PlayersForTeams =
+                  result.Teams
+                  .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
+
+                foreach (var pair in result.PlayersForTeams)
                 {
-                  foreach (Guid t in tuple.Item1.Teams)
+                  foreach ((Player, bool) tuple in pair.Value)
                   {
-                    result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
+                    foreach (Guid t in tuple.Item1.Teams)
+                    {
+                      result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
+                    }
                   }
                 }
+
+                result.Sources =
+                  result.Players.SelectMany(p => p.Sources)
+                  .Concat(result.Teams.SelectMany(t => t.Sources))
+                  //.Concat(result.AdditionalTeams.Values.AsParallel().SelectMany(t => t.Sources))
+                  //.Concat(result.PlayersForTeams.Values.AsParallel().SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
+                  .Distinct()
+                  .ToDictionary(s => s.Id, s => s.Name);
+              }
+              catch (Exception ex)
+              {
+                Console.Error.WriteLine("Exception while compiling data for serialization...");
+                Console.Error.WriteLine(ex.ToString());
               }
 
-              result.Sources =
-                result.Players.AsParallel().SelectMany(p => p.Sources)
-                .Concat(result.Teams.AsParallel().SelectMany(t => t.Sources))
-                //.Concat(result.AdditionalTeams.Values.AsParallel().SelectMany(t => t.Sources))
-                //.Concat(result.PlayersForTeams.Values.AsParallel().SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
-                .Distinct()
-                .ToDictionary(s => s.Id, s => s.Name);
+              try
+              {
+                StringWriter sw = new StringWriter();
+                serializer.Serialize(sw, result);
+                Console.WriteLine(sw.ToString());
+              }
+              catch (Exception ex)
+              {
+                Console.Error.WriteLine("Exception while Serializing result...");
+                Console.Error.WriteLine(ex.ToString());
+              }
             }
-
-            StringWriter sw = new StringWriter();
-            serializer.Serialize(sw, result);
-            Console.WriteLine(sw.ToString());
           }
         );
 
@@ -157,6 +160,10 @@ namespace SplatTagConsole
               // Exited.
               break;
             }
+            else if (string.IsNullOrWhiteSpace(line))
+            {
+              continue;
+            }
             else
             {
               parsed = rootCommand.Parse(line);
@@ -164,6 +171,8 @@ namespace SplatTagConsole
           }
         }
         while (keepOpen);
+
+        Console.WriteLine($"Returning from args: [{string.Join(", ", args)}]");
         return mainResult;
       }
       else
