@@ -8,6 +8,7 @@ using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace SplatTagConsole
 {
@@ -62,71 +63,75 @@ namespace SplatTagConsole
           // Note that the parameter names must match the --option name
           (string query, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, bool rebuild, bool _) =>
           {
-            var options = new MatchOptions
+            try
             {
-              IgnoreCase = !exactCase,
-              NearCharacterRecognition = !exactCharacterRecognition,
-              QueryIsRegex = queryIsRegex
-            };
-
-            CommandLineResult result = new CommandLineResult
-            {
-              Message = "OK",
-              Query = query,
-              Options = options
-            };
-
-            if (rebuild)
-            {
-              SplatTagControllerFactory.GenerateNewDatabase();
-              result.Message = "Database rebuilt!";
-            }
-            else if (string.IsNullOrWhiteSpace(query))
-            {
-              result.Message = "Nothing to search!";
-            }
-            else
-            {
-              try
+              var options = new MatchOptions
               {
-                result.Players = splatTagController.MatchPlayer(query, options);
-                result.Teams = splatTagController.MatchTeam(query, options);
+                IgnoreCase = !exactCase,
+                NearCharacterRecognition = !exactCharacterRecognition,
+                QueryIsRegex = queryIsRegex
+              };
 
-                result.AdditionalTeams =
-                  result.Players
-                  .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
-                  .Distinct()
-                  .ToDictionary(t => t.Id, t => t);
-                result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
-                result.AdditionalTeams[Team.UnlinkedTeam.Id] = Team.UnlinkedTeam;
+              CommandLineResult result = new CommandLineResult
+              {
+                Message = "OK",
+                Query = query,
+                Options = options
+              };
 
-                result.PlayersForTeams =
-                  result.Teams
-                  .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
-
-                foreach (var pair in result.PlayersForTeams)
+              if (rebuild)
+              {
+                SplatTagControllerFactory.GenerateNewDatabase();
+                result.Message = "Database rebuilt!";
+              }
+              else if (string.IsNullOrWhiteSpace(query))
+              {
+                result.Message = "Nothing to search!";
+              }
+              else
+              {
+                try
                 {
-                  foreach ((Player, bool) tuple in pair.Value)
+                  Console.WriteLine("Building result...");
+                  result.Players = splatTagController.MatchPlayer(query, options);
+                  result.Teams = splatTagController.MatchTeam(query, options);
+
+                  result.AdditionalTeams =
+                    result.Players
+                    .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
+                    .Distinct()
+                    .ToDictionary(t => t.Id, t => t);
+                  result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
+                  result.AdditionalTeams[Team.UnlinkedTeam.Id] = Team.UnlinkedTeam;
+
+                  result.PlayersForTeams =
+                    result.Teams
+                    .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
+
+                  foreach (var pair in result.PlayersForTeams)
                   {
-                    foreach (Guid t in tuple.Item1.Teams)
+                    foreach ((Player, bool) tuple in pair.Value)
                     {
-                      result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
+                      foreach (Guid t in tuple.Item1.Teams)
+                      {
+                        result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
+                      }
                     }
                   }
-                }
 
-                result.Sources =
-                  result.Players.SelectMany(p => p.Sources)
-                  .Concat(result.Teams.SelectMany(t => t.Sources))
-                  //.Concat(result.AdditionalTeams.Values.AsParallel().SelectMany(t => t.Sources))
-                  //.Concat(result.PlayersForTeams.Values.AsParallel().SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
-                  .Distinct()
-                  .ToDictionary(s => s.Id, s => s.Name);
-              }
-              catch (Exception ex)
-              {
-                Console.Error.WriteLine("Exception while compiling data for serialization...");
-                Console.Error.WriteLine(ex.ToString());
+                  result.Sources =
+                    result.Players.SelectMany(p => p.Sources)
+                    .Concat(result.Teams.SelectMany(t => t.Sources))
+                    //.Concat(result.AdditionalTeams.Values.AsParallel().SelectMany(t => t.Sources))
+                    //.Concat(result.PlayersForTeams.Values.AsParallel().SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
+                    .Distinct()
+                    .ToDictionary(s => s.Id, s => s.Name);
+                }
+                catch (Exception ex)
+                {
+                  Console.WriteLine("ERROR: Exception while compiling data for serialization...");
+                  Console.WriteLine(ex.ToString());
+                }
               }
 
               try
@@ -137,9 +142,14 @@ namespace SplatTagConsole
               }
               catch (Exception ex)
               {
-                Console.Error.WriteLine("Exception while Serializing result...");
-                Console.Error.WriteLine(ex.ToString());
+                Console.WriteLine("ERROR: Exception while Serializing result...");
+                Console.WriteLine(ex.ToString());
               }
+            }
+            catch (Exception ex)
+            {
+              Console.WriteLine("ERROR: Outer Exception handler...");
+              Console.WriteLine(ex.ToString());
             }
           }
         );
@@ -154,20 +164,31 @@ namespace SplatTagConsole
 
           if (keepOpen)
           {
-            string? line = Console.ReadLine();
-            if (line == null)
+            try
             {
-              // Exited.
-              break;
+              string? line = Console.ReadLine();
+              if (!string.IsNullOrWhiteSpace(line))
+              {
+                parsed = rootCommand.Parse(line);
+                continue;
+              }
+              else
+              {
+                Console.WriteLine("Warning: line is null or spaces only.");
+              }
+
+              Console.WriteLine("Looping until input can be seeked.");
+              SpinWait.SpinUntil(() => Console.OpenStandardInput().CanSeek);
             }
-            else if (string.IsNullOrWhiteSpace(line))
+            catch (ObjectDisposedException odex)
             {
-              continue;
+              Console.WriteLine($"Sleeping (input was disposed - {odex.Message}).");
             }
-            else
+            catch (Exception ex)
             {
-              parsed = rootCommand.Parse(line);
+              Console.WriteLine($"Exception in keepOpen: {ex.Message}");
             }
+            // Loop
           }
         }
         while (keepOpen);

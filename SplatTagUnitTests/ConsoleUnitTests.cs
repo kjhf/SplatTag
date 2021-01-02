@@ -139,26 +139,53 @@ namespace SplatTagUnitTests
         Console.SetOut(sw);
         Console.SetError(sw);
 
-        var timeoutTask = Task.Delay(MAX_WAIT_TIME);
+        using StringReader tr = new StringReader("sendou\r\nSlate\r\n"); // a TextReader
+        using StringReader tr2 = new StringReader("thatsrb2dude\r\n");
+        var timeoutTask = Task.Delay(25000);
         var mainTask = Task.Run(() =>
         {
-          using TextReader tr = new StringReader("Sendou");
-          Console.SetIn(tr);
-          return ConsoleMain.Main("Slate --keepOpen".Split(" "));
+          Console.WriteLine("mainTask: Beginning.");
+          ConsoleMain.Main(" --keepOpen".Split(" "));
+          Console.WriteLine("mainTask: Finishing.");
         });
-        var successfulCheck = Task.Run(() =>
+        var externalInputTask = Task.Run(async () =>
+        {
+          await Task.Delay(3000).ConfigureAwait(false);
+          Console.WriteLine("externalInputTask: Setting first input.");
+          Console.SetIn(tr);
+
+          // Only move on when the input stream has been consumed.
+          while (tr.Peek() != -1)
+          {
+            await Task.Delay(250).ConfigureAwait(false);
+          }
+
+          Console.WriteLine("externalInputTask: Setting second input in 2 seconds.");
+          await Task.Delay(2000).ConfigureAwait(false);
+          Console.SetIn(tr2);
+          Console.WriteLine("externalInputTask: Finishing.");
+        });
+        var successfulCheck = Task.Run(async () =>
         {
           for (; ; )
           {
             string actual = sw.ToString();
-            if (actual.Contains("Slate") && actual.Contains("Sendou"))
+            if (actual.Contains("Slate") && actual.Contains("sendou") && actual.Contains("thatsrb2dude"))
             {
+              Console.WriteLine("successfulCheck: Passed.");
               break;
             }
-            Thread.Sleep(250);
+            await Task.Delay(250).ConfigureAwait(false);
           }
+
+          Console.WriteLine("successfulCheck: Finishing.");
         });
-        Task.WaitAny(timeoutTask, mainTask, successfulCheck);
+        bool timedOut = Task.WaitAny(timeoutTask, externalInputTask, mainTask) == 0;
+        Console.WriteLine($"timedOut={timedOut}");
+        bool wasSuccessfulCheck = Task.WaitAny(timeoutTask, mainTask, successfulCheck) == 2;
+        Console.WriteLine($"wasSuccessfulCheck={wasSuccessfulCheck}");
+        Console.WriteLine($"mainTask.IsCompleted={mainTask.IsCompleted}");
+        Console.WriteLine($"externalInputTask.IsCompleted={externalInputTask.IsCompleted}");
 
         Console.SetOut(consoleOut);
         Console.SetError(consoleError);
@@ -174,11 +201,17 @@ namespace SplatTagUnitTests
         }
         else
         {
+          Assert.IsTrue(actual.Contains("Slate"), "Doesn't contain Slate query");
+          Assert.IsTrue(actual.Contains("sendou"), "Doesn't contain sendou query");
+          Assert.IsTrue(actual.Contains("thatsrb2dude"), "Doesn't contain thatsrb2dude query");
+
           Assert.IsTrue(actual.Contains("kjhf1273"), "Doesn't contain kjhf1273");
           Assert.IsTrue(actual.Contains("Inkology"), "Doesn't contain Inkology");
           Assert.IsTrue(actual.Contains("Revitalize"), "Doesn't contain Revitalize");
           Assert.IsTrue(actual.Contains("Ghost Gaming"), "Doesn't contain Ghost Gaming");
+          Assert.IsTrue(actual.Contains("Team Olive"), "Doesn't contain Team Olive");
           Assert.IsFalse(actual.Contains("Nothing to search!"), "Contains nothing to search, which means the query re-executed without input");
+          Assert.IsFalse(mainTask.IsCompleted, "The main task should not have completed because keepOpen is specified."); // Test last
         }
       }
     }
