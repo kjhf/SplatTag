@@ -23,28 +23,34 @@ namespace SplatTagUnitTests
       var team1 = Guid.NewGuid();
       var team2 = Guid.NewGuid();
 
+      // p1
       Player p1 = new Player("p1_username", new[] { team1 }, new Source("p1"));
-      p1.AddBattlefyInformation("user", "user", Builtins.ManualSource);
-      p1.AddBattlefyInformation("slug", "z", Builtins.ManualSource);
+      p1.AddBattlefyInformation("user", "user", "p1id", Builtins.ManualSource);
+      p1.AddBattlefyInformation("slug", "z", "p1id2", Builtins.ManualSource);
       var id1 = p1.Id;
 
-      // p2 -> p1
+      // p2 -> p1 (slug match)
       Player p2 = new Player("p2_person", new[] { team1 }, new Source("p2"));
-      p2.AddBattlefyInformation("unrelated", "unrelated", Builtins.ManualSource);
-      p2.AddBattlefyInformation("slug", "x", Builtins.ManualSource);
+      p2.AddBattlefyInformation("unrelated", "unrelated", "p2id", Builtins.ManualSource);
+      p2.AddBattlefyInformation("slug", "x", "p2id", Builtins.ManualSource);
 
+      // p3
       Player p3 = new Player("player_ign_team", new[] { team1 }, new Source("p3"));
       var id3 = p3.Id;
 
-      // p4 -> p3
+      // p4 -> p3 (name and team matches)
       Player p4 = new Player("player_ign_team", new[] { team1 }, new Source("p4"));
 
-      // p5 -> p1
+      // p5 -> p1 (slug match)
       Player p5 = new Player("p5_slug", new[] { team2 }, new Source("p5"));
-      p5.AddBattlefyInformation("another", "another", Builtins.ManualSource);
-      p5.AddBattlefyInformation("slug", "y", Builtins.ManualSource);
+      p5.AddBattlefyInformation("another", "another", "p5id", Builtins.ManualSource);
+      p5.AddBattlefyInformation("slug", "y", "p5id2", Builtins.ManualSource);
 
-      var players = new List<Player>() { p1, p2, p3, p4, p5 };
+      // p6 -> p1 (persistent id)
+      Player p6 = new Player("p6_username", new[] { team2 }, new Source("p6"));
+      p6.AddBattlefyInformation("p6_slug", "p6_user", "p1id", Builtins.ManualSource);
+
+      var players = new List<Player>() { p1, p2, p3, p4, p5, p6 };
 
       // Perform the merge
       DumpPlayers("Players before merge:", players);
@@ -58,10 +64,10 @@ namespace SplatTagUnitTests
       Assert.AreEqual(2, dict.Count,
         $"Expected 2 players remaining - the others should be merged, actually: {string.Join("\n", dict.Keys.Select(k => k.ToString()))}");
       Assert.IsTrue(dict.ContainsKey(id1), "Expected id1.");
-      Assert.AreEqual(4, Matcher.NamesMatch(dict[id1].BattlefySlugs, Name.FromStrings(new[] { "slug", "user", "unrelated", "another" }, Builtins.ManualSource)),
+      Assert.AreEqual(5, Matcher.NamesMatch(dict[id1].Battlefy.Slugs, Name.FromStrings(new[] { "slug", "user", "unrelated", "another", "p6_slug" }, Builtins.ManualSource)),
         "Expected slugs to be merged.");
-      Assert.AreEqual(6, Matcher.NamesMatch(dict[id1].BattlefyUsernames, Name.FromStrings(new[] { "user", "unrelated", "another", "x", "y", "z" }, Builtins.ManualSource)),
-        $"Expected usernames to be merged, actually: {string.Join("\n", dict[id1].BattlefyUsernames)}");
+      Assert.AreEqual(7, Matcher.NamesMatch(dict[id1].Battlefy.Usernames, Name.FromStrings(new[] { "user", "unrelated", "another", "x", "y", "z", "p6_user" }, Builtins.ManualSource)),
+        $"Expected usernames to be merged, actually: {string.Join("\n", dict[id1].Battlefy.Usernames)}");
       Assert.AreEqual(3, Matcher.NamesMatch(dict[id1].Names, Name.FromStrings(new[] { "p1_username", "p2_person", "p5_slug" }, Builtins.ManualSource)),
         "Expected names to be merged.");
       Assert.AreEqual(2, Matcher.GenericMatch(dict[id1].Teams, new Guid[] { team1, team2 }),
@@ -107,8 +113,8 @@ namespace SplatTagUnitTests
       t5.AddDivision(new Division(4, DivType.LUTI));
 
       Player p1 = new Player("username", new[] { t1.Id, t2.Id, t4.Id }, new Source("p1"));
-      p1.AddBattlefyInformation("user", "user", Builtins.ManualSource);
-      p1.AddBattlefyInformation("slug", "user", Builtins.ManualSource);
+      p1.AddBattlefyInformation("user", "user", "p1id", Builtins.ManualSource);
+      p1.AddBattlefyInformation("slug", "user", "p1id2", Builtins.ManualSource);
 
       Player p2 = new Player("player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p2"));
       Player p3 = new Player("another player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p3"));

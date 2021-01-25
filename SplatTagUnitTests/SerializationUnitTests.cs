@@ -165,6 +165,7 @@ namespace SplatTagUnitTests
       player.AddBattlefyUsername("username2", u2);
       player.AddBattlefySlug("handle1", h1);
       player.AddBattlefyUsername("username1", u1);
+      player.AddBattlefyPersistentId("0000-1111-2222-3333", h1);
 
       player.AddDiscordId("123456789", source2);
       player.AddDiscordUsername("username2", u2);
@@ -190,6 +191,7 @@ namespace SplatTagUnitTests
       Assert.AreEqual("u1", battlefy.Usernames[0].Sources.First().Name, "Usernames [0] unexpected source");
       Assert.AreEqual("username2", battlefy.Usernames[1].Value, "Usernames [1] unexpected handle");
       Assert.AreEqual("u2", battlefy.Usernames[1].Sources.First().Name, "Usernames [1] unexpected source");
+      Assert.AreEqual("0000-1111-2222-3333", battlefy.PersistentIds[0].Value, "PersistentIds [0] unexpected id");
 
       var discord = deserialized.Discord;
       Assert.AreEqual(2, discord.Ids.Count, "Unexpected number of ids");
@@ -274,6 +276,53 @@ namespace SplatTagUnitTests
       Assert.AreEqual("team2", names[1].Value, "Names [1] unexpected handle");
       Assert.AreEqual("t1", names[0].Sources.First().Name, "Names [0] unexpected source");
       Assert.AreEqual("t2", names[1].Sources.First().Name, "Names [1] unexpected source");
+    }
+
+    [TestMethod]
+    public void SerializeBrackets()
+    {
+      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var source1 = new Source("source1");
+
+      Player player1 = new Player();
+      player1.AddSendou("slate", source1);
+      Player player2 = new Player();
+      player2.AddSendou("wug", source1);
+      Team team1 = new Team("Team One", source1);
+      player1.AddTeams(new[] { team1.Id });
+      Team team2 = new Team("Team Two", source1);
+      player2.AddTeams(new[] { team2.Id });
+      source1.Players = new[] { player1, player2 };
+      source1.Teams = new[] { team1, team2 };
+      sources.Add(source1.Id, source1);
+
+      Score s1 = new Score(new[] { 1, 3 });
+      Game g1 = new Game(s1, new[] { player1.Id, player2.Id }, new[] { team1.Id, team2.Id });
+      Dictionary<int, Guid[]> placementByPlayers = new Dictionary<int, Guid[]>
+      {
+        [1] = new[] { player2.Id },
+        [2] = new[] { player1.Id }
+      };
+      Dictionary<int, Guid[]> placementByTeams = new Dictionary<int, Guid[]>
+      {
+        [1] = new[] { team2.Id },
+        [2] = new[] { team1.Id }
+      };
+
+      Placement placement = new Placement(placementByPlayers, placementByTeams);
+      Bracket b1 = new Bracket("bracket_name", new[] { g1 }, new[] { player1.Id, player2.Id }, new[] { team1.Id, team2.Id }, placement);
+      source1.Brackets = new[] { b1 };
+
+      string json = Serialize(source1);
+      Console.WriteLine(nameof(SerializeBrackets) + ": ");
+      Console.WriteLine(json);
+      Source deserialized = Deserialize<Source>(json, sources);
+
+      Assert.AreEqual("1-3", deserialized.Brackets[0].Matches[0].Score.Description);
+      Assert.AreEqual(player2.Id, deserialized.Brackets[0].Placements.PlayersByPlacement[1][0]);
+      Assert.AreEqual(player1.Id, deserialized.Brackets[0].Placements.PlayersByPlacement[2][0]);
+      Assert.AreEqual(team2.Id, deserialized.Brackets[0].Placements.TeamsByPlacement[1][0]);
+      Assert.AreEqual(team1.Id, deserialized.Brackets[0].Placements.TeamsByPlacement[2][0]);
     }
 
     [TestMethod]

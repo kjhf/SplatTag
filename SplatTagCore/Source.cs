@@ -23,11 +23,6 @@ namespace SplatTagCore
     public string Name { get; }
 
     /// <summary>
-    /// Final placements for teams and players
-    /// </summary>
-    public Placement Placements { get; } = new Placement();
-
-    /// <summary>
     /// The players that this source represents
     /// e.g. all players that have signed up to this tournament
     /// </summary>
@@ -89,7 +84,6 @@ namespace SplatTagCore
       this.Brackets = info.GetValueOrDefault("Brackets", Array.Empty<Bracket>());
       this.Id = (Guid)info.GetValue("Id", typeof(Guid));
       this.Name = info.GetString("Name");
-      this.Placements = info.GetValueOrDefault("Placements", new Placement());
       this.Players = info.GetValueOrDefault("Players", Array.Empty<Player>());
       this.Teams = info.GetValueOrDefault("Teams", Array.Empty<Team>());
       this.Uris = info.GetValueOrDefault("Uris", Array.Empty<Uri>());
@@ -127,9 +121,6 @@ namespace SplatTagCore
 
       if (this.Name != null)
         info.AddValue("Name", this.Name);
-
-      if (this.Placements.PlayersByPlacement.Length > 0 || this.Placements.TeamsByPlacement.Length > 0)
-        info.AddValue("Placements", this.Placements);
 
       if (this.Players.Length > 0)
         info.AddValue("Players", this.Players);

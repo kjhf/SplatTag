@@ -53,16 +53,21 @@ namespace SplatTagCore
     BattlefyUsername = 0x100,
 
     /// <summary>
+    /// The query can specify a Battlefy persistent id
+    /// </summary>
+    BattlefyPersistentIds = 0x200,
+
+    /// <summary>
     /// The query can specify a Discord id
     /// </summary>
-    DiscordId = 0x200,
+    DiscordId = 0x400,
 
     /// <summary> Default search </summary>
     /// <remarks>Omits Sources</remarks>
-    Default = (Name | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs | BattlefyUsername | DiscordId),
+    Default = (Name | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs | BattlefyUsername | BattlefyPersistentIds | DiscordId),
 
     /// <summary> Persistent search </summary>
-    /// <remarks>Omits Sources, Clan Tags, and Names</remarks>
-    Persistent = (FriendCode | DiscordName | Twitter | Twitch | BattlefySlugs | BattlefyUsername | DiscordId)
+    /// <remarks>Omits Sources, Clan Tags, and non-persistent names</remarks>
+    Persistent = (FriendCode | Twitter | Twitch | BattlefySlugs | BattlefyPersistentIds | DiscordId)
   }
 }

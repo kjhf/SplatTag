@@ -110,7 +110,7 @@ namespace SplatTagDatabase
         // Write players
         File.WriteAllText(
           Path.Combine(saveDirectory, "Snapshot-Players-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"),
-          JsonConvert.SerializeObject(savePlayers),
+          JsonConvert.SerializeObject(savePlayers, Formatting.Indented),
           Encoding.UTF8);
       }
       catch (Exception ex)
@@ -125,7 +125,7 @@ namespace SplatTagDatabase
         // Write teams
         File.WriteAllText(
           Path.Combine(saveDirectory, "Snapshot-Teams-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"),
-          JsonConvert.SerializeObject(saveTeams),
+          JsonConvert.SerializeObject(saveTeams, Formatting.Indented),
           Encoding.UTF8);
       }
       catch (Exception ex)
@@ -140,7 +140,7 @@ namespace SplatTagDatabase
         // Write sources
         File.WriteAllText(
           Path.Combine(saveDirectory, "Snapshot-Sources-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"),
-          JsonConvert.SerializeObject(saveSources),
+          JsonConvert.SerializeObject(saveSources, Formatting.Indented),
           Encoding.UTF8);
       }
       catch (Exception ex)

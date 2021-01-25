@@ -158,8 +158,21 @@ namespace SplatTagCore
 
             if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
             {
-              // If the battle slugs match, return top match.
+              // If the battlefy slugs match, return top match.
               foreach (Name bf in p.Battlefy.Slugs)
+              {
+                string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
+                if (regex.IsMatch(toMatch))
+                {
+                  return int.MaxValue;
+                }
+              }
+            }
+
+            if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0)
+            {
+              // If the battlefy persistent ids match, return top match.
+              foreach (Name bf in p.Battlefy.PersistentIds)
               {
                 string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
                 if (regex.IsMatch(toMatch))
@@ -186,7 +199,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
             {
               // Look through the battlefy usernames.
-              foreach (Name bf in p.BattlefyUsernames)
+              foreach (Name bf in p.Battlefy.Usernames)
               {
                 string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
                 if (regex.IsMatch(toMatch))
@@ -294,8 +307,25 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
           {
-            // If the battle slugs match, return top match.
-            foreach (Name bf in p.BattlefySlugs)
+            // If the battlefy slugs match, return top match.
+            foreach (Name bf in p.Battlefy.Slugs)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
+              if (toMatch.Equals(query, comparison))
+              {
+                return int.MaxValue;
+              }
+              else if (toMatch.Contains(query, comparison))
+              {
+                relevance++;
+              }
+            }
+          }
+
+          if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0)
+          {
+            // If the battlefy persistent ids match, return top match.
+            foreach (Name bf in p.Battlefy.PersistentIds)
             {
               string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
               if (toMatch.Equals(query, comparison))
@@ -312,7 +342,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
           {
             // Look through the battlefy usernames.
-            foreach (Name bf in p.BattlefyUsernames)
+            foreach (Name bf in p.Battlefy.Usernames)
             {
               string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
               AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);

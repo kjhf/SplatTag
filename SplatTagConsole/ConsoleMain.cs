@@ -96,36 +96,44 @@ namespace SplatTagConsole
                   result.Players = splatTagController.MatchPlayer(query, options);
                   result.Teams = splatTagController.MatchTeam(query, options);
 
-                  result.AdditionalTeams =
-                    result.Players
-                    .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
-                    .Distinct()
-                    .ToDictionary(t => t.Id, t => t);
-                  result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
-                  result.AdditionalTeams[Team.UnlinkedTeam.Id] = Team.UnlinkedTeam;
-
-                  result.PlayersForTeams =
-                    result.Teams
-                    .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
-
-                  foreach (var pair in result.PlayersForTeams)
+                  if (result.Players.Length > 0 || result.Teams.Length > 0)
                   {
-                    foreach ((Player, bool) tuple in pair.Value)
+                    result.AdditionalTeams =
+                      result.Players
+                      .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
+                      .Distinct()
+                      .ToDictionary(t => t.Id, t => t);
+                    result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
+                    result.AdditionalTeams[Team.UnlinkedTeam.Id] = Team.UnlinkedTeam;
+
+                    result.PlayersForTeams =
+                      result.Teams
+                      .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
+
+                    foreach (var pair in result.PlayersForTeams)
                     {
-                      foreach (Guid t in tuple.Item1.Teams)
+                      foreach ((Player, bool) tuple in pair.Value)
                       {
-                        result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
+                        foreach (Guid t in tuple.Item1.Teams)
+                        {
+                          result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
+                        }
                       }
                     }
-                  }
 
-                  result.Sources =
-                    result.Players.SelectMany(p => p.Sources)
-                    .Concat(result.Teams.SelectMany(t => t.Sources))
-                    //.Concat(result.AdditionalTeams.Values.AsParallel().SelectMany(t => t.Sources))
-                    //.Concat(result.PlayersForTeams.Values.AsParallel().SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
-                    .Distinct()
-                    .ToDictionary(s => s.Id, s => s.Name);
+                    result.Sources =
+                      result.Players.SelectMany(p => p.Sources)
+                      .Concat(result.Teams.SelectMany(t => t.Sources))
+                      //.Concat(result.AdditionalTeams.Values.AsParallel().SelectMany(t => t.Sources))
+                      //.Concat(result.PlayersForTeams.Values.AsParallel().SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
+                      .Distinct()
+                      .ToDictionary(s => s.Id, s => s.Name);
+
+                    result.PlacementsForPlayers =
+                      result.Players
+                      .ToDictionary(p => p.Id, p => p.Sources
+                      .ToDictionary(s => s.Id, s => s.Brackets));
+                  }
                 }
                 catch (Exception ex)
                 {

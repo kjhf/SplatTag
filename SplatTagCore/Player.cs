@@ -15,16 +15,6 @@ namespace SplatTagCore
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
-    /// Back-store for player's Battlefy information.
-    /// </summary>
-    private readonly Battlefy battlefy = new Battlefy();
-
-    /// <summary>
-    /// Back-store for player's Discord information.
-    /// </summary>
-    private readonly Discord discord = new Discord();
-
-    /// <summary>
     /// Back-store for player's FCs.
     /// </summary>
     private readonly List<FriendCode> friendCodes = new List<FriendCode>();
@@ -96,19 +86,9 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Get the player's Battlefy profile details. This iterates over Battlefy slugs if used as a <see cref="SplatTagCore.Name"/> class.
+    /// Get the player's Battlefy profile details.
     /// </summary>
-    public Battlefy Battlefy => battlefy;
-
-    /// <summary>
-    /// Get the player's Battlefy Usernames.
-    /// </summary>
-    public IReadOnlyList<BattlefySocial> BattlefySlugs => battlefy.Slugs;
-
-    /// <summary>
-    /// Get the player's Battlefy Usernames.
-    /// </summary>
-    public IReadOnlyList<Name> BattlefyUsernames => battlefy.Usernames;
+    public Battlefy Battlefy { get; } = new Battlefy();
 
     /// <summary>
     /// Get or Set the Country.
@@ -119,6 +99,9 @@ namespace SplatTagCore
     /// <summary>
     /// Get the emoji flag of the <see cref="Country"/> specified.
     /// </summary>
+    /// <remarks>
+    /// Magic number is the offset '🇦' - 'A'
+    /// </remarks>
     public string? CountryFlag
     {
       get
@@ -136,7 +119,7 @@ namespace SplatTagCore
     /// <summary>
     /// Get the player's Discord profile details.
     /// </summary>
-    public Discord Discord => discord;
+    public Discord Discord { get; } = new Discord();
 
     /// <summary>
     /// The known Discord Ids of the player.
@@ -220,12 +203,14 @@ namespace SplatTagCore
     {
       Battlefy.AddSlugs(value.Slugs);
       Battlefy.AddUsernames(value.Usernames);
+      Battlefy.AddPersistentIds(value.PersistentIds);
     }
 
-    public void AddBattlefyInformation(string slug, string username, Source source)
+    public void AddBattlefyInformation(string slug, string username, string persistentId, Source source)
     {
       AddBattlefySlug(slug, source);
       AddBattlefyUsername(username, source);
+      AddBattlefyPersistentId(persistentId, source);
     }
 
     public void AddBattlefySlug(string slug, Source source)
@@ -236,6 +221,11 @@ namespace SplatTagCore
     public void AddBattlefyUsername(string username, Source source)
     {
       Battlefy.AddUsername(username, source);
+    }
+
+    public void AddBattlefyPersistentId(string persistentId, Source source)
+    {
+      Battlefy.AddPersistentId(persistentId, source);
     }
 
     public void AddDiscord(Discord value)
@@ -367,10 +357,10 @@ namespace SplatTagCore
       AddWeapons(newerPlayer.weapons);
 
       // Merge the Battlefy Slugs and usernames.
-      AddBattlefy(newerPlayer.battlefy);
+      AddBattlefy(newerPlayer.Battlefy);
 
       // Merge the Discord Slugs and usernames.
-      AddDiscord(newerPlayer.discord);
+      AddDiscord(newerPlayer.Discord);
 
       // Merge the Social Data.
       AddSendou(newerPlayer.SendouProfiles);
@@ -433,14 +423,14 @@ namespace SplatTagCore
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (this.BattlefySlugs.Count > 0 || this.BattlefyUsernames.Count > 0)
-        info.AddValue("Battlefy", this.battlefy);
+      if (this.Battlefy.Slugs.Count > 0 || this.Battlefy.Usernames.Count > 0 || this.Battlefy.PersistentIds.Count > 0)
+        info.AddValue("Battlefy", this.Battlefy);
 
       if (this.Country != null)
         info.AddValue("Country", this.Country);
 
       if (this.DiscordIds.Count > 0 || this.DiscordNames.Count > 0)
-        info.AddValue("Discord", this.discord);
+        info.AddValue("Discord", this.Discord);
 
       if (this.friendCodes.Count > 0)
         info.AddValue("FriendCode", this.friendCodes);

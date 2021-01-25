@@ -21,7 +21,7 @@ namespace SplatTagCore
     /// Back-store for the persistent ids of this team.
     /// </summary>
     /// <remarks>
-    private readonly List<Name> battlefyPersistentTeamIds = new List<Name>();
+    private readonly List<BattlefyTeamSocial> battlefyPersistentTeamIds = new List<BattlefyTeamSocial>();
 
     /// <summary>
     /// The tag(s) of the team, first is the current tag.
@@ -131,14 +131,14 @@ namespace SplatTagCore
     /// </summary>
     public IReadOnlyList<Twitter> Twitter => twitterProfiles;
 
-    public void AddBattlefyIds(IEnumerable<Name> value)
+    public void AddBattlefyIds(IEnumerable<BattlefyTeamSocial> value)
     {
       SplatTagCommon.AddNames(value, battlefyPersistentTeamIds);
     }
 
-    public Name AddBattlefyId(string id, Source source)
+    public BattlefyTeamSocial AddBattlefyId(string id, Source source)
     {
-      return SplatTagCommon.AddName(new Name(id, source), battlefyPersistentTeamIds);
+      return SplatTagCommon.AddName(new BattlefyTeamSocial(id, source), battlefyPersistentTeamIds);
     }
 
     public ClanTag AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
@@ -239,7 +239,7 @@ namespace SplatTagCore
     // Deserialize
     protected Team(SerializationInfo info, StreamingContext context)
     {
-      AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<Name>()));
+      AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<BattlefyTeamSocial>()));
       AddClanTags(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
       AddDivisions(info.GetValueOrDefault("Divisions", Array.Empty<Division>()));
       this.Id = (Guid)info.GetValue("Id", typeof(Guid));

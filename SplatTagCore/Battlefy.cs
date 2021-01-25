@@ -11,12 +11,17 @@ namespace SplatTagCore
     /// <summary>
     /// Back-store for the Battlefy slugs
     /// </summary>
-    private readonly List<BattlefySocial> slugs = new List<BattlefySocial>();
+    private readonly List<BattlefyUserSocial> slugs = new List<BattlefyUserSocial>();
 
     /// <summary>
     /// Back-store for the Battlefy usernames
     /// </summary>
     private readonly List<Name> usernames = new List<Name>();
+
+    /// <summary>
+    /// Back-store for the Battlefy persistent ids
+    /// </summary>
+    private readonly List<Name> persistentIds = new List<Name>();
 
     public Battlefy()
     {
@@ -25,7 +30,7 @@ namespace SplatTagCore
     /// <summary>
     /// The persistent Battlefy slugs
     /// </summary>
-    public IReadOnlyList<BattlefySocial> Slugs => slugs;
+    public IReadOnlyList<BattlefyUserSocial> Slugs => slugs;
 
     /// <summary>
     /// The Battlefy usernames
@@ -33,19 +38,24 @@ namespace SplatTagCore
     public IReadOnlyList<Name> Usernames => usernames;
 
     /// <summary>
+    /// The persistent Battlefy ids
+    /// </summary>
+    public IReadOnlyList<Name> PersistentIds => persistentIds;
+
+    /// <summary>
     /// Add a new Battlefy slug to the front of this Battlefy profile
     /// </summary>
     /// <param name="ids"></param>
     public void AddSlug(string slug, Source source)
     {
-      SplatTagCommon.InsertFrontUniqueSourced(new BattlefySocial(slug, source), slugs);
+      SplatTagCommon.InsertFrontUniqueSourced(new BattlefyUserSocial(slug, source), slugs);
     }
 
     /// <summary>
     /// Add new Battlefy slugs to the front of this Battlefy profile
     /// </summary>
     /// <param name="ids"></param>
-    public void AddSlugs(IEnumerable<BattlefySocial> slugs)
+    public void AddSlugs(IEnumerable<BattlefyUserSocial> slugs)
     {
       SplatTagCommon.AddNames(slugs, this.slugs);
     }
@@ -67,6 +77,22 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Add a new Battlefy persistent id to the front of this Battlefy profile
+    /// </summary>
+    public void AddPersistentId(string persistentId, Source source)
+    {
+      SplatTagCommon.AddName(new Name(persistentId, source), persistentIds);
+    }
+
+    /// <summary>
+    /// Add new Battlefy persistent ids to the front of this Battlefy profile
+    /// </summary>
+    public void AddPersistentIds(IEnumerable<Name> persistentIds)
+    {
+      SplatTagCommon.AddNames(persistentIds, this.persistentIds);
+    }
+
+    /// <summary>
     /// Return if this Battlefy matches another in any regard
     /// </summary>
     public bool MatchAny(Battlefy other)
@@ -79,12 +105,12 @@ namespace SplatTagCore
     /// </summary>
     public bool MatchPersistent(Battlefy other)
     {
-      return Matcher.NamesMatch(slugs, other.slugs) > 0;
+      return Matcher.NamesMatch(slugs, other.slugs) > 0 || Matcher.NamesMatch(persistentIds, other.persistentIds) > 0;
     }
 
     public override string ToString()
     {
-      return $"Slugs: [{string.Join(", ", slugs)}], Usernames: [{string.Join(", ", usernames)}]";
+      return $"Slugs: [{string.Join(", ", slugs)}], Usernames: [{string.Join(", ", usernames)}], Ids: [{string.Join(", ", persistentIds)}]";
     }
 
     #region Serialization
@@ -92,8 +118,9 @@ namespace SplatTagCore
     // Deserialize
     protected Battlefy(SerializationInfo info, StreamingContext context)
     {
-      AddSlugs(info.GetValueOrDefault("Slugs", Array.Empty<BattlefySocial>()));
+      AddSlugs(info.GetValueOrDefault("Slugs", Array.Empty<BattlefyUserSocial>()));
       AddUsernames(info.GetValueOrDefault("Usernames", Array.Empty<Name>()));
+      AddPersistentIds(info.GetValueOrDefault("PersistentIds", Array.Empty<Name>()));
     }
 
     // Serialize
@@ -104,6 +131,9 @@ namespace SplatTagCore
 
       if (Usernames.Count > 0)
         info.AddValue("Usernames", usernames);
+
+      if (PersistentIds.Count > 0)
+        info.AddValue("PersistentIds", persistentIds);
     }
 
     #endregion Serialization

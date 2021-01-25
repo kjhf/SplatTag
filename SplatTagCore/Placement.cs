@@ -1,23 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SplatTagCore
 {
+  [Serializable]
   public class Placement
   {
-    public Placement(Guid[]? players = null, Guid[]? teams = null)
+    public Placement(Dictionary<int, Guid[]>? players = null, Dictionary<int, Guid[]>? teams = null)
     {
-      this.PlayersByPlacement = players ?? Array.Empty<Guid>();
-      this.TeamsByPlacement = teams ?? Array.Empty<Guid>();
+      this.PlayersByPlacement = players ?? new Dictionary<int, Guid[]>();
+      this.TeamsByPlacement = teams ?? new Dictionary<int, Guid[]>();
     }
 
     /// <summary>
     /// Players ordered by placement.
     /// </summary>
-    public Guid[] PlayersByPlacement { get; } = Array.Empty<Guid>();
+    public Dictionary<int, Guid[]> PlayersByPlacement { get; }
 
     /// <summary>
     /// Teams ordered by placement.
     /// </summary>
-    public Guid[] TeamsByPlacement { get; } = Array.Empty<Guid>();
+    public Dictionary<int, Guid[]> TeamsByPlacement { get; }
   }
 }

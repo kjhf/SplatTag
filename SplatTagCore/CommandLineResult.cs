@@ -30,5 +30,12 @@ namespace SplatTagCore
 
     [JsonProperty("Sources", Required = Required.Always)]
     public Dictionary<Guid, string> Sources { get; set; } = new Dictionary<Guid, string>();
+
+    /// <summary>
+    /// Dictionary keyed by Player id, of value
+    /// Dictionary keyed by Source id of value Bracket array
+    /// </summary>
+    [JsonProperty("PlacementsForPlayers", Required = Required.Always)]
+    public Dictionary<Guid, Dictionary<Guid, Bracket[]>> PlacementsForPlayers { get; set; } = new Dictionary<Guid, Dictionary<Guid, Bracket[]>>();
   }
 }
