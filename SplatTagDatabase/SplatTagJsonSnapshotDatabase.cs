@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 
 namespace SplatTagDatabase
@@ -105,50 +106,64 @@ namespace SplatTagDatabase
 
     public void Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams, IEnumerable<Source> saveSources)
     {
-      try
+      Task savePlayersTask = Task.Run(async () =>
       {
-        // Write players
-        File.WriteAllText(
-          Path.Combine(saveDirectory, "Snapshot-Players-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"),
-          JsonConvert.SerializeObject(savePlayers, Formatting.Indented),
-          Encoding.UTF8);
-      }
-      catch (Exception ex)
-      {
-        string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} players because of an exception: {ex}";
-        Console.Error.WriteLine(error);
-        Console.WriteLine(error);
-      }
+        try
+        {
+          // Write players
+          string filePath = Path.Combine(saveDirectory, "Snapshot-Players-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json");
+          Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
-      try
-      {
-        // Write teams
-        File.WriteAllText(
-          Path.Combine(saveDirectory, "Snapshot-Teams-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"),
-          JsonConvert.SerializeObject(saveTeams, Formatting.Indented),
-          Encoding.UTF8);
-      }
-      catch (Exception ex)
-      {
-        string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} teams because of an exception: {ex}";
-        Console.Error.WriteLine(error);
-        Console.WriteLine(error);
-      }
+          using TextWriter file = new StreamWriter(filePath, false, outputEnc);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(savePlayers, Formatting.Indented)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+          string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} players because of an exception: {ex}";
+          Console.Error.WriteLine(error);
+          Console.WriteLine(error);
+        }
+      });
 
-      try
+      Task saveTeamsTask = Task.Run(async () =>
       {
-        // Write sources
-        File.WriteAllText(
-          Path.Combine(saveDirectory, "Snapshot-Sources-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json"),
-          JsonConvert.SerializeObject(saveSources, Formatting.Indented),
-          Encoding.UTF8);
-      }
-      catch (Exception ex)
+        try
+        {
+          // Write teams
+          string filePath = Path.Combine(saveDirectory, "Snapshot-Teams-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json");
+          Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
+
+          using TextWriter file = new StreamWriter(filePath, false, outputEnc);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(saveTeams, Formatting.Indented)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+          string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} teams because of an exception: {ex}";
+          Console.Error.WriteLine(error);
+          Console.WriteLine(error);
+        }
+      });
+
+      Task saveSourcesTask = Task.Run(async () =>
       {
-        string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} sources because of an exception: {ex}";
-        Console.Error.WriteLine(error);
-        Console.WriteLine(error);
-      }
+        try
+        {
+          // Write sources
+          string filePath = Path.Combine(saveDirectory, "Snapshot-Sources-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json");
+          Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
+
+          using TextWriter file = new StreamWriter(filePath, false, outputEnc);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(saveSources, Formatting.Indented)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+          string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} sources because of an exception: {ex}";
+          Console.Error.WriteLine(error);
+          Console.WriteLine(error);
+        }
+      });
+
+      Task.WaitAll(savePlayersTask, saveTeamsTask, saveSourcesTask);
     }
   }
 }
