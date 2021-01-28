@@ -22,16 +22,23 @@ namespace SplatTagConsole
     {
       // Set Console to UTF-8
       Console.OutputEncoding = Encoding.UTF8;
-      (splatTagController, importer) = SplatTagControllerFactory.CreateController();
 
       // Invoked from command line
       if (JsonConvert.DefaultSettings == null)
       {
-        JsonConvert.DefaultSettings = () => new JsonSerializerSettings();
+        JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+        {
+          DefaultValueHandling = DefaultValueHandling.Ignore,
+          Error = (sender, args) =>
+          {
+            Console.Error.WriteLine(args.ErrorContext.Error.Message);
+            args.ErrorContext.Handled = true;
+          }
+        };
       }
-      var settings = JsonConvert.DefaultSettings();
-      settings.DefaultValueHandling = DefaultValueHandling.Ignore;
-      serializer = JsonSerializer.Create(settings);
+      serializer = JsonSerializer.Create(JsonConvert.DefaultSettings());
+
+      (splatTagController, importer) = SplatTagControllerFactory.CreateController();
     }
 
     public static async Task Main(string[]? args)

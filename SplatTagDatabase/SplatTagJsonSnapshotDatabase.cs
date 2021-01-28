@@ -8,14 +8,14 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace SplatTagDatabase
 {
   public class SplatTagJsonSnapshotDatabase : ISplatTagDatabase
   {
-    private readonly string? saveDirectory;
     private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
+
+    private readonly string? saveDirectory;
     private string? playersSnapshotFile = null;
     private string? teamsSnapshotFile = null;
     private string? sourcesSnapshotFile = null;
@@ -83,17 +83,38 @@ namespace SplatTagDatabase
       t.Stop();
       Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (1/2)");
       t.Restart();
-      var sources = JsonConvert.DeserializeObject<Source[]>(json);
+
+      var settings = JsonConvert.DefaultSettings();
+      List<Source> sources = new List<Source>();
+      using (JsonTextReader reader = new JsonTextReader(new StringReader(json)))
+      {
+        reader.SupportMultipleContent = true;
+
+        var serializer = JsonSerializer.Create(settings);
+        while (reader.Read())
+        {
+          if (reader.TokenType == JsonToken.StartObject)
+          {
+            try
+            {
+              sources.Add(serializer.Deserialize<Source>(reader));
+            }
+            catch (Exception ex)
+            {
+              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse source from line " + reader.LineNumber + ".");
+              Console.WriteLine(ex);
+              Console.WriteLine(reader);
+            }
+          }
+        }
+      }
+
       t.Stop();
       Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (2/2)");
       Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Transforming sources... ");
       var lookup = sources.AsParallel().ToDictionary(s => s.Id, s => s);
 
       Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile... ");
-      var settings = new JsonSerializerSettings
-      {
-        DefaultValueHandling = DefaultValueHandling.Ignore
-      };
       settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
       var players = JsonConvert.DeserializeObject<Player[]>(File.ReadAllText(playersSnapshotFile), settings);
 
