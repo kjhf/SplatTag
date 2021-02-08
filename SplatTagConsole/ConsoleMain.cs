@@ -165,7 +165,6 @@ namespace SplatTagConsole
         CommandLineResult result = new CommandLineResult
         {
           Message = "OK",
-          Query = query ?? string.Empty,
           Options = options
         };
 
@@ -208,6 +207,7 @@ namespace SplatTagConsole
 
             if (!string.IsNullOrEmpty(slappId))
             {
+              result.Query = slappId;
               options.FilterOptions = FilterOptions.SlappId;
               result.Players = splatTagController.MatchPlayer(slappId, options);
               result.Teams = splatTagController.MatchTeam(slappId, options);
@@ -215,6 +215,7 @@ namespace SplatTagConsole
             else
             {
               Console.WriteLine($"Building result for query={query}");
+              result.Query = query ?? string.Empty;
               result.Players = splatTagController.MatchPlayer(query, options);
               result.Teams = splatTagController.MatchTeam(query, options);
             }

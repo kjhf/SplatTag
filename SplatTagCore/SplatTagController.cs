@@ -595,6 +595,19 @@ namespace SplatTagCore
             }
           }
 
+          if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0 && t.BattlefyPersistentTeamId != null)
+          {
+            // If the battlefy persistent ids match, return top match.
+            foreach (Name bf in t.BattlefyPersistentTeamIds)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
+              if (toMatch.Equals(query, comparison))
+              {
+                return int.MaxValue; // Id perfect match
+              }
+            }
+          }
+
           if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
           {
             string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.Transformed : t.Name.Value;
