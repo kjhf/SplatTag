@@ -76,7 +76,7 @@ namespace SplatTagDatabase
       if (playersSnapshotFile == null || teamsSnapshotFile == null || sourcesSnapshotFile == null)
         return (Array.Empty<Player>(), Array.Empty<Team>(), new Dictionary<Guid, Source>());
 
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load sourcesSnapshotFile... ");
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load sourcesSnapshotFile from {sourcesSnapshotFile}... ");
       Stopwatch t = new Stopwatch();
       t.Start();
       string json = File.ReadAllText(sourcesSnapshotFile);
@@ -85,7 +85,29 @@ namespace SplatTagDatabase
       t.Restart();
 
       var settings = JsonConvert.DefaultSettings();
-      List<Source> sources = new List<Source>();
+      List<Source> sources = LoadSnapshot<Source>(json, settings);
+
+      t.Stop();
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (2/2)");
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Transforming sources... ");
+      var lookup = sources.AsParallel().ToDictionary(s => s.Id, s => s);
+
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile from {playersSnapshotFile}... ");
+      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
+      json = File.ReadAllText(playersSnapshotFile);
+      List<Player> players = LoadSnapshot<Player>(json, settings);
+
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load teamsSnapshotFile from {teamsSnapshotFile}... ");
+      json = File.ReadAllText(teamsSnapshotFile);
+      List<Team> teams = LoadSnapshot<Team>(json, settings);
+
+      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
+      return (players.ToArray(), teams.ToArray(), lookup);
+    }
+
+    private static List<T> LoadSnapshot<T>(string json, JsonSerializerSettings settings) where T : class
+    {
+      List<T> result = new List<T>();
       using (JsonTextReader reader = new JsonTextReader(new StringReader(json)))
       {
         reader.SupportMultipleContent = true;
@@ -97,32 +119,19 @@ namespace SplatTagDatabase
           {
             try
             {
-              sources.Add(serializer.Deserialize<Source>(reader));
+              result.Add(serializer.Deserialize<T>(reader));
             }
             catch (Exception ex)
             {
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse source from line " + reader.LineNumber + ".");
-              Console.WriteLine(ex);
-              Console.WriteLine(reader);
+              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + reader.LineNumber + ".");
+              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
+              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + reader);
             }
           }
         }
       }
 
-      t.Stop();
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (2/2)");
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Transforming sources... ");
-      var lookup = sources.AsParallel().ToDictionary(s => s.Id, s => s);
-
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile... ");
-      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
-      var players = JsonConvert.DeserializeObject<Player[]>(File.ReadAllText(playersSnapshotFile), settings);
-
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load teamsSnapshotFile... ");
-      var teams = JsonConvert.DeserializeObject<Team[]>(File.ReadAllText(teamsSnapshotFile), settings);
-
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
-      return (players, teams, lookup);
+      return result;
     }
 
     public void Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams, IEnumerable<Source> saveSources)

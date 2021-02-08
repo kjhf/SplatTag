@@ -62,9 +62,14 @@ namespace SplatTagCore
     /// </summary>
     DiscordId = 0x400,
 
+    /// <summary>
+    /// The query can specify an internal Slapp id
+    /// </summary>
+    SlappId = 0x800,
+
     /// <summary> Default search </summary>
     /// <remarks>Omits Sources</remarks>
-    Default = (Name | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs | BattlefyUsername | BattlefyPersistentIds | DiscordId),
+    Default = (Name | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs | BattlefyUsername | BattlefyPersistentIds | DiscordId | SlappId),
 
     /// <summary> Persistent search </summary>
     /// <remarks>Omits Sources, Clan Tags, and non-persistent names</remarks>

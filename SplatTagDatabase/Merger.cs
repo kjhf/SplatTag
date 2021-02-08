@@ -279,47 +279,6 @@ namespace SplatTagDatabase
       return mergeResult;
     }
 
-    /// <summary>
-    /// Find a player that matches another instance through their persistent information.
-    /// </summary>
-    /// <param name="playersToMutate">The players to search</param>
-    /// <param name="testPlayer">The player instance to try and find</param>
-    /// <returns>The matched player, or null if new</returns>
-    private static Player FindSamePlayerPersistent(IEnumerable<Player> playersToMutate, Player testPlayer, TextWriter? logger = null)
-    {
-      FilterOptions matchOptions = FilterOptions.None;
-      if (testPlayer.FriendCodes.Count > 0)
-      {
-        matchOptions |= FilterOptions.FriendCode;
-      }
-      if (testPlayer.DiscordNames.Count > 0)
-      {
-        matchOptions |= FilterOptions.DiscordName;
-      }
-      if (testPlayer.DiscordIds.Count > 0)
-      {
-        matchOptions |= FilterOptions.DiscordId;
-      }
-      if (testPlayer.Twitch.Count > 0)
-      {
-        matchOptions |= FilterOptions.Twitch;
-      }
-      if (testPlayer.Twitter.Count > 0)
-      {
-        matchOptions |= FilterOptions.Twitter;
-      }
-      if (testPlayer.Battlefy.Slugs?.Count > 0)
-      {
-        matchOptions |= FilterOptions.BattlefySlugs;
-      }
-      if (testPlayer.Battlefy.Usernames?.Count > 0)
-      {
-        matchOptions |= FilterOptions.BattlefyUsername;
-      }
-
-      return playersToMutate.AsParallel().FirstOrDefault(p => Matcher.PlayersMatch(testPlayer, p, matchOptions, logger));
-    }
-
     private static void MergeExistingTeam(ConcurrentDictionary<Guid, Guid> mergeResult, Team newerTeam, Team olderTeam)
     {
       mergeResult.TryAdd(newerTeam.Id, olderTeam.Id);

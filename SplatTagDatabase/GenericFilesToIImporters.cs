@@ -8,20 +8,30 @@ namespace SplatTagDatabase
 {
   public class GenericFilesToIImporters
   {
-    public const string SourcesFileName = "sources.yaml";
+    public const string DefaultSourcesFileName = "sources.yaml";
     private readonly List<string> paths = new List<string>();
     private readonly string? sourcesFile;
     private readonly string? saveDirectory;
 
     public IReadOnlyCollection<string> Sources => paths;
 
-    public GenericFilesToIImporters(string saveDirectory)
+    public GenericFilesToIImporters(string saveDirectory, string sourcesFile = DefaultSourcesFileName)
     {
       this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
-
-      this.sourcesFile = Path.Combine(saveDirectory, SourcesFileName);
       Directory.CreateDirectory(saveDirectory);
-      if (File.Exists(sourcesFile))
+
+      // If the sources file is an absolute path, take as-is.
+      // Otherwise, combine with the save directory to find that file.
+      if (Path.IsPathRooted(sourcesFile))
+      {
+        this.sourcesFile = sourcesFile;
+      }
+      else
+      {
+        this.sourcesFile = Path.Combine(saveDirectory, sourcesFile);
+      }
+
+      if (File.Exists(this.sourcesFile))
       {
         paths = new List<string>(File.ReadAllLines(sourcesFile));
       }

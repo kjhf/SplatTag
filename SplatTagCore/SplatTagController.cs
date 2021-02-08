@@ -288,6 +288,17 @@ namespace SplatTagCore
         func = (p) =>
         {
           int relevance = 0;
+
+          if ((filterOptions & FilterOptions.SlappId) != 0)
+          {
+            // If internal id matches, return top match.
+            string toMatch = p.Id.ToString();
+            if (toMatch.Equals(query, comparison))
+            {
+              return int.MaxValue;
+            }
+          }
+
           if ((filterOptions & FilterOptions.FriendCode) != 0)
           {
             // If FC matches, return top match.
@@ -491,6 +502,7 @@ namespace SplatTagCore
           func = (t) =>
           {
             int relevance = 0;
+
             if ((filterOptions & FilterOptions.ClanTag) != 0 && t.ClanTags != null)
             {
               foreach (ClanTag tag in t.ClanTags)
@@ -557,6 +569,16 @@ namespace SplatTagCore
         func = (t) =>
         {
           int relevance = 0;
+          if ((filterOptions & FilterOptions.SlappId) != 0)
+          {
+            // If internal id matches, return top match.
+            string toMatch = t.Id.ToString();
+            if (toMatch.Equals(query, comparison))
+            {
+              return int.MaxValue;
+            }
+          }
+
           if ((filterOptions & FilterOptions.ClanTag) != 0 && t.ClanTags != null)
           {
             foreach (ClanTag tag in t.ClanTags)

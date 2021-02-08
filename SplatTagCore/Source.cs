@@ -82,11 +82,16 @@ namespace SplatTagCore
     protected Source(SerializationInfo info, StreamingContext context)
     {
       this.Brackets = info.GetValueOrDefault("Brackets", Array.Empty<Bracket>());
-      this.Id = (Guid)info.GetValue("Id", typeof(Guid));
       this.Name = info.GetString("Name");
       this.Players = info.GetValueOrDefault("Players", Array.Empty<Player>());
       this.Teams = info.GetValueOrDefault("Teams", Array.Empty<Team>());
       this.Uris = info.GetValueOrDefault("Uris", Array.Empty<Uri>());
+
+      this.Id = info.GetValueOrDefault("Id", Guid.Empty);
+      if (this.Id == Guid.Empty)
+      {
+        throw new SerializationException("Guid cannot be empty for source: " + this.Name + " with " + Brackets.Length + " brackets.");
+      }
     }
 
     // Serialize

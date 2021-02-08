@@ -1,5 +1,6 @@
 ﻿#nullable enable
 
+using Newtonsoft.Json;
 using SplatTagCore;
 using SplatTagCore.Social;
 using SplatTagDatabase;
@@ -10,6 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -61,6 +63,20 @@ namespace SplatTagUI
     static MainWindow()
     {
       Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] MainWindow Constructor... ");
+
+      // Invoked from command line
+      if (JsonConvert.DefaultSettings == null)
+      {
+        JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+        {
+          DefaultValueHandling = DefaultValueHandling.Ignore,
+          Error = (sender, args) =>
+          {
+            Console.Error.WriteLine(args.ErrorContext.Error.Message);
+            args.ErrorContext.Handled = true;
+          }
+        };
+      }
       (splatTagController, sourcesImporter) = SplatTagControllerFactory.CreateController();
     }
 

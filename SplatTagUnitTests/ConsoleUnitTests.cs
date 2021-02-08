@@ -37,7 +37,7 @@ namespace SplatTagUnitTests
       string expected = CHOOSE_A_FUNCTION;
 
       var timeoutTask = Task.Delay(MAX_WAIT_TIME);
-      var mainTask = Task.Run(() => ConsoleMain.Main(null));
+      var mainTask = Task.Run(() => ConsoleMain.Main(Array.Empty<string>()));
       var successfulCheck = Task.Run(() =>
       {
         for (; ; )

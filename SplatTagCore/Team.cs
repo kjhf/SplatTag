@@ -242,7 +242,6 @@ namespace SplatTagCore
       AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<BattlefyTeamSocial>()));
       AddClanTags(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
       AddDivisions(info.GetValueOrDefault("Divisions", Array.Empty<Division>()));
-      this.Id = (Guid)info.GetValue("Id", typeof(Guid));
       AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
       if (context.Context is Source.GuidToSourceConverter converter)
       {
@@ -255,6 +254,12 @@ namespace SplatTagCore
         AddSources(sourceIds.Select(s => new Source(s)));
       }
       AddTwitterProfiles(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
+
+      this.Id = info.GetValueOrDefault("Id", Guid.Empty);
+      if (this.Id == Guid.Empty)
+      {
+        throw new SerializationException("Guid cannot be empty for team: " + this.Name + " from source(s) [" + string.Join(", ", this.sources) + "].");
+      }
     }
 
     // Serialize

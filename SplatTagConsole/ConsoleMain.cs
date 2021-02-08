@@ -38,17 +38,27 @@ namespace SplatTagConsole
       }
       serializer = JsonSerializer.Create(JsonConvert.DefaultSettings());
 
-      (splatTagController, importer) = SplatTagControllerFactory.CreateController();
+      if (Environment.GetCommandLineArgs().Length > 0)
+      {
+        // Check for a rebuild argument
+        string[] args = Environment.GetCommandLineArgs();
+        if (!args.Contains("--rebuild"))
+        {
+          (splatTagController, importer) = SplatTagControllerFactory.CreateController();
+        }
+        else
+        {
+          (splatTagController, importer) = SplatTagControllerFactory.CreateController(suppressLoad: true);
+        }
+      }
+      else
+      {
+        (splatTagController, importer) = SplatTagControllerFactory.CreateController();
+      }
     }
 
-    public static async Task Main(string[]? args)
+    public static async Task Main(string[] args)
     {
-      if (args == null)
-      {
-        args = Array.Empty<string>();
-      }
-      // Console.WriteLine($"Slapp called with: [{string.Join(", ", args)}]");
-
       if (args.Length > 0)
       {
         var rootCommand = new RootCommand();
@@ -56,10 +66,11 @@ namespace SplatTagConsole
         {
           new Option<string>("--b64", "The team, tag, or player query as a base 64 query"),
           new Option<string>("--query", "The team, tag, or player query"),
+          new Option<string>("--slappId", "The team or player as an internal Slapp Id"),
           new Option<bool>("--exactCase", () => false, "Exact Case?"),
           new Option<bool>("--exactCharacterRecognition", () => false, "Exact Character Recognition?"),
           new Option<bool>("--queryIsRegex", () => false, "Exact Character Recognition?"),
-          new Option<bool>("--rebuild", () => false, "Rebuilds the database"),
+          new Option<string>("--rebuild", "Rebuilds the database"),
           new Option<bool>("--keepOpen", () => false, "Keep the console open?"),
         };
         rootCommand.Add(command);
@@ -71,6 +82,7 @@ namespace SplatTagConsole
           HandleCommandLineQuery(
             obj.B64,
             obj.Query,
+            obj.SlappId,
             obj.ExactCase,
             obj.ExactCharacterRecognition,
             obj.QueryIsRegex,
@@ -139,7 +151,7 @@ namespace SplatTagConsole
       }
     }
 
-    private static void HandleCommandLineQuery(string? b64, string? query, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, bool rebuild, bool _)
+    private static void HandleCommandLineQuery(string? b64, string? query, string? slappId, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, string? rebuild, bool _)
     {
       try
       {
@@ -157,12 +169,26 @@ namespace SplatTagConsole
           Options = options
         };
 
-        if (rebuild)
+        string?[] inputs = new string?[] { b64, query, slappId };
+
+        if (rebuild != null)
         {
-          SplatTagControllerFactory.GenerateNewDatabase();
-          result.Message = "Database rebuilt!";
+          if (rebuild.Equals(string.Empty))
+          {
+            SplatTagControllerFactory.GenerateNewDatabase();
+            result.Message = "Database rebuilt from default sources!";
+          }
+          else if (File.Exists(rebuild))
+          {
+            SplatTagControllerFactory.GenerateNewDatabase(sourcesFile: rebuild);
+            result.Message = $"Database rebuilt from {rebuild}!";
+          }
+          else
+          {
+            result.Message = $"Rebuild specified but the sources file specified ({rebuild}) does not exist. Aborting.";
+          }
         }
-        else if (string.IsNullOrWhiteSpace(query) && string.IsNullOrEmpty(b64))
+        else if (inputs.All(s => string.IsNullOrEmpty(s)))
         {
           result.Message = "Nothing to search!";
         }
@@ -170,18 +196,28 @@ namespace SplatTagConsole
         {
           try
           {
-            if (!string.IsNullOrEmpty(query) && !string.IsNullOrEmpty(b64))
+            if (new[] { b64, query, slappId }.Count(s => !string.IsNullOrEmpty(s)) > 1)
             {
-              result.Message = "Warning: Both b64 and query specified. Using b64.";
+              result.Message = "Warning: Multiple inputs defined. YMMV.";
             }
+
             if (!string.IsNullOrEmpty(b64))
             {
               query = Encoding.UTF8.GetString(Convert.FromBase64String(b64));
             }
 
-            Console.WriteLine($"Building result for query={query}");
-            result.Players = splatTagController.MatchPlayer(query, options);
-            result.Teams = splatTagController.MatchTeam(query, options);
+            if (!string.IsNullOrEmpty(slappId))
+            {
+              options.FilterOptions = FilterOptions.SlappId;
+              result.Players = splatTagController.MatchPlayer(slappId, options);
+              result.Teams = splatTagController.MatchTeam(slappId, options);
+            }
+            else
+            {
+              Console.WriteLine($"Building result for query={query}");
+              result.Players = splatTagController.MatchPlayer(query, options);
+              result.Teams = splatTagController.MatchTeam(query, options);
+            }
 
             if (result.Players.Length > 0 || result.Teams.Length > 0)
             {
@@ -271,9 +307,9 @@ namespace SplatTagConsole
         {
           Console.WriteLine("Player name?");
           string input = Console.ReadLine() ?? "";
-          foreach (var p in splatTagController.MatchPlayer(input))
+          foreach (Player p in splatTagController.MatchPlayer(input))
           {
-            Console.WriteLine(p);
+            Console.WriteLine($"{(p.Country != null ? ":flag_" + p.Country + ": " : "")}{(p.Top500 ? "👑 " : "")}{p.Name}, Plays for: {splatTagController.GetTeamById(p.CurrentTeam)}");
           }
           break;
         }

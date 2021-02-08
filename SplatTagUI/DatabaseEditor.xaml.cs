@@ -73,7 +73,7 @@ namespace SplatTagUI
           {
             foreach (var file in Directory.EnumerateFiles(path))
             {
-              if (!filesSource.Contains(file) && !file.Contains(SplatTagDatabase.GenericFilesToIImporters.SourcesFileName))
+              if (!filesSource.Contains(file) && !file.Contains(SplatTagDatabase.GenericFilesToIImporters.DefaultSourcesFileName))
               {
                 filesSource.Add(file);
               }

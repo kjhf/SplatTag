@@ -15,6 +15,11 @@ namespace SplatTagCore
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
+    /// Back-store for the two-letter country abbreviation.
+    /// </summary>
+    private string? country;
+
+    /// <summary>
     /// Back-store for player's FCs.
     /// </summary>
     private readonly List<FriendCode> friendCodes = new List<FriendCode>();
@@ -28,6 +33,11 @@ namespace SplatTagCore
     /// Back-store for the Sendou Profiles of this player.
     /// </summary>
     private readonly List<Sendou> sendouProfiles = new List<Sendou>();
+
+    /// <summary>
+    /// Back-store for the skill of this player.
+    /// </summary>
+    private readonly Skill skill = new Skill();
 
     /// <summary>
     /// Back-store for the sources of this player.
@@ -93,8 +103,27 @@ namespace SplatTagCore
     /// <summary>
     /// Get or Set the Country.
     /// Null by default.
+    /// To set this field, the value must be a two-letter abbreviation.
     /// </summary>
-    public string? Country { get; set; }
+    public string? Country
+    {
+      get => country;
+      set
+      {
+        if (value == null)
+        {
+          country = null;
+        }
+        else
+        {
+          value = value.Trim();
+          if (value.Length == 2)
+          {
+            country = value.ToUpper();
+          }
+        }
+      }
+    }
 
     /// <summary>
     /// Get the emoji flag of the <see cref="Country"/> specified.
@@ -107,7 +136,7 @@ namespace SplatTagCore
       get
       {
         if (Country == null) return null;
-        return string.Concat(Country.ToUpper().Select(x => char.ConvertFromUtf32(x + 0x1F1A5)));
+        return string.Concat(Country.Select(x => char.ConvertFromUtf32(x + 0x1F1A5)));
       }
     }
 
@@ -399,7 +428,6 @@ namespace SplatTagCore
       this.Country = info.GetValueOrDefault("Country", default(string));
       AddDiscord(info.GetValueOrDefault("Discord", new Discord()));
       AddFCs(info.GetValueOrDefault("FriendCode", Array.Empty<FriendCode>()));
-      this.Id = (Guid)info.GetValue("Id", typeof(Guid));
       AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
       AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
       if (context.Context is Source.GuidToSourceConverter converter)
@@ -413,11 +441,19 @@ namespace SplatTagCore
         AddSources(sourceIds.Select(s => new Source(s)));
       }
 
+      Skill[] skills = info.GetValueOrDefault("Skill", Array.Empty<Skill>());
+      this.skill = skills.Length == 1 ? skills[0] : new Skill();
       AddTeams(info.GetValueOrDefault("Teams", Array.Empty<Guid>()));
       this.Top500 = info.GetValueOrDefault("Top500", false);
       AddTwitch(info.GetValueOrDefault("Twitch", Array.Empty<Twitch>()));
       AddTwitter(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
       AddWeapons(info.GetValueOrDefault("Weapons", Array.Empty<string>()));
+
+      this.Id = info.GetValueOrDefault("Id", Guid.Empty);
+      if (this.Id == Guid.Empty)
+      {
+        throw new SerializationException("Guid cannot be empty for player: " + this.Name + " from source(s) [" + string.Join(", ", this.sources) + "].");
+      }
     }
 
     // Serialize
@@ -445,6 +481,9 @@ namespace SplatTagCore
 
       if (sources.Count > 0)
         info.AddValue("S", this.sources.Select(s => s.Id));
+
+      if (!this.skill.IsDefault)
+        info.AddValue("Skill", this.skill);
 
       if (this.teams.Count > 0)
         info.AddValue("Teams", this.teams);
