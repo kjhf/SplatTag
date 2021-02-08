@@ -15,14 +15,9 @@ namespace SplatTagCore
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
-    /// Back-store for player's Battlefy information.
+    /// Back-store for the two-letter country abbreviation.
     /// </summary>
-    private readonly Battlefy battlefy = new Battlefy();
-
-    /// <summary>
-    /// Back-store for player's Discord information.
-    /// </summary>
-    private readonly Discord discord = new Discord();
+    private string? country;
 
     /// <summary>
     /// Back-store for player's FCs.
@@ -38,6 +33,11 @@ namespace SplatTagCore
     /// Back-store for the Sendou Profiles of this player.
     /// </summary>
     private readonly List<Sendou> sendouProfiles = new List<Sendou>();
+
+    /// <summary>
+    /// Back-store for the skill of this player.
+    /// </summary>
+    private readonly Skill skill = new Skill();
 
     /// <summary>
     /// Back-store for the sources of this player.
@@ -96,35 +96,47 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Get the player's Battlefy profile details. This iterates over Battlefy slugs if used as a <see cref="SplatTagCore.Name"/> class.
+    /// Get the player's Battlefy profile details.
     /// </summary>
-    public Battlefy Battlefy => battlefy;
-
-    /// <summary>
-    /// Get the player's Battlefy Usernames.
-    /// </summary>
-    public IReadOnlyList<Social.Social> BattlefySlugs => battlefy.Slugs;
-
-    /// <summary>
-    /// Get the player's Battlefy Usernames.
-    /// </summary>
-    public IReadOnlyList<Name> BattlefyUsernames => battlefy.Usernames;
+    public Battlefy Battlefy { get; } = new Battlefy();
 
     /// <summary>
     /// Get or Set the Country.
     /// Null by default.
+    /// To set this field, the value must be a two-letter abbreviation.
     /// </summary>
-    public string? Country { get; set; }
+    public string? Country
+    {
+      get => country;
+      set
+      {
+        if (value == null)
+        {
+          country = null;
+        }
+        else
+        {
+          value = value.Trim();
+          if (value.Length == 2)
+          {
+            country = value.ToUpper();
+          }
+        }
+      }
+    }
 
     /// <summary>
     /// Get the emoji flag of the <see cref="Country"/> specified.
     /// </summary>
+    /// <remarks>
+    /// Magic number is the offset '🇦' - 'A'
+    /// </remarks>
     public string? CountryFlag
     {
       get
       {
         if (Country == null) return null;
-        return string.Concat(Country.ToUpper().Select(x => char.ConvertFromUtf32(x + 0x1F1A5)));
+        return string.Concat(Country.Select(x => char.ConvertFromUtf32(x + 0x1F1A5)));
       }
     }
 
@@ -136,7 +148,7 @@ namespace SplatTagCore
     /// <summary>
     /// Get the player's Discord profile details.
     /// </summary>
-    public Discord Discord => discord;
+    public Discord Discord { get; } = new Discord();
 
     /// <summary>
     /// The known Discord Ids of the player.
@@ -220,12 +232,14 @@ namespace SplatTagCore
     {
       Battlefy.AddSlugs(value.Slugs);
       Battlefy.AddUsernames(value.Usernames);
+      Battlefy.AddPersistentIds(value.PersistentIds);
     }
 
-    public void AddBattlefyInformation(string slug, string username, Source source)
+    public void AddBattlefyInformation(string slug, string username, string persistentId, Source source)
     {
       AddBattlefySlug(slug, source);
       AddBattlefyUsername(username, source);
+      AddBattlefyPersistentId(persistentId, source);
     }
 
     public void AddBattlefySlug(string slug, Source source)
@@ -236,6 +250,11 @@ namespace SplatTagCore
     public void AddBattlefyUsername(string username, Source source)
     {
       Battlefy.AddUsername(username, source);
+    }
+
+    public void AddBattlefyPersistentId(string persistentId, Source source)
+    {
+      Battlefy.AddPersistentId(persistentId, source);
     }
 
     public void AddDiscord(Discord value)
@@ -367,10 +386,10 @@ namespace SplatTagCore
       AddWeapons(newerPlayer.weapons);
 
       // Merge the Battlefy Slugs and usernames.
-      AddBattlefy(newerPlayer.battlefy);
+      AddBattlefy(newerPlayer.Battlefy);
 
       // Merge the Discord Slugs and usernames.
-      AddDiscord(newerPlayer.discord);
+      AddDiscord(newerPlayer.Discord);
 
       // Merge the Social Data.
       AddSendou(newerPlayer.SendouProfiles);
@@ -406,51 +425,79 @@ namespace SplatTagCore
     protected Player(SerializationInfo info, StreamingContext context)
     {
       AddBattlefy(info.GetValueOrDefault("Battlefy", new Battlefy()));
+      this.Country = info.GetValueOrDefault("Country", default(string));
       AddDiscord(info.GetValueOrDefault("Discord", new Discord()));
       AddFCs(info.GetValueOrDefault("FriendCode", Array.Empty<FriendCode>()));
-      this.Id = (Guid)info.GetValue("Id", typeof(Guid));
       AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
       AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
-      AddSources(info.GetValueOrDefault("Sources", Array.Empty<Source>()));
+      if (context.Context is Source.GuidToSourceConverter converter)
+      {
+        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+        AddSources(converter.Convert(sourceIds));
+      }
+      else
+      {
+        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+        AddSources(sourceIds.Select(s => new Source(s)));
+      }
+
+      Skill[] skills = info.GetValueOrDefault("Skill", Array.Empty<Skill>());
+      this.skill = skills.Length == 1 ? skills[0] : new Skill();
       AddTeams(info.GetValueOrDefault("Teams", Array.Empty<Guid>()));
+      this.Top500 = info.GetValueOrDefault("Top500", false);
       AddTwitch(info.GetValueOrDefault("Twitch", Array.Empty<Twitch>()));
       AddTwitter(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
       AddWeapons(info.GetValueOrDefault("Weapons", Array.Empty<string>()));
+
+      this.Id = info.GetValueOrDefault("Id", Guid.Empty);
+      if (this.Id == Guid.Empty)
+      {
+        throw new SerializationException("Guid cannot be empty for player: " + this.Name + " from source(s) [" + string.Join(", ", this.sources) + "].");
+      }
     }
 
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (this.BattlefySlugs.Any() || this.BattlefyUsernames.Any())
-        info.AddValue("Battlefy", this.battlefy);
+      if (this.Battlefy.Slugs.Count > 0 || this.Battlefy.Usernames.Count > 0 || this.Battlefy.PersistentIds.Count > 0)
+        info.AddValue("Battlefy", this.Battlefy);
 
-      if (this.DiscordIds.Any() || this.DiscordNames.Any())
-        info.AddValue("Discord", this.discord);
+      if (this.Country != null)
+        info.AddValue("Country", this.Country);
 
-      if (this.friendCodes.Any())
+      if (this.DiscordIds.Count > 0 || this.DiscordNames.Count > 0)
+        info.AddValue("Discord", this.Discord);
+
+      if (this.friendCodes.Count > 0)
         info.AddValue("FriendCode", this.friendCodes);
 
       info.AddValue("Id", this.Id);
 
-      if (this.names.Any())
+      if (this.names.Count > 0)
         info.AddValue("Names", this.names);
 
-      if (this.sendouProfiles.Any())
+      if (this.sendouProfiles.Count > 0)
         info.AddValue("Sendou", this.sendouProfiles);
 
-      if (this.sources.Any())
-        info.AddValue("Sources", this.sources);
+      if (sources.Count > 0)
+        info.AddValue("S", this.sources.Select(s => s.Id));
 
-      if (this.teams.Any())
+      if (!this.skill.IsDefault)
+        info.AddValue("Skill", this.skill);
+
+      if (this.teams.Count > 0)
         info.AddValue("Teams", this.teams);
 
-      if (this.twitchProfiles.Any())
+      if (this.Top500)
+        info.AddValue("Top500", this.Top500);
+
+      if (this.twitchProfiles.Count > 0)
         info.AddValue("Twitch", this.twitchProfiles);
 
-      if (this.twitterProfiles.Any())
+      if (this.twitterProfiles.Count > 0)
         info.AddValue("Twitter", this.twitterProfiles);
 
-      if (this.weapons.Any())
+      if (this.weapons.Count > 0)
         info.AddValue("Weapons", this.weapons);
     }
 

@@ -636,13 +636,15 @@ namespace SplatTagDatabase.Importers
     }
 
     private readonly string jsonFile;
+    private readonly Source source;
 
     public StatInkReader(string jsonFile)
     {
       this.jsonFile = jsonFile ?? throw new ArgumentNullException(nameof(jsonFile));
+      this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
     }
 
-    public (Player[], Team[]) Load()
+    public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
@@ -653,15 +655,16 @@ namespace SplatTagDatabase.Importers
       // Don't load the details if they are manual entries.
       if (!root.Automated || root.Players == null)
       {
-        return (players.ToArray(), Array.Empty<Team>());
+        return source;
+      }
+
+      if (root.Url != null)
+      {
+        source.Uris = new Uri[] { root.Url };
       }
 
       foreach (var p in root.Players)
       {
-        Source source = new Source(Path.GetFileNameWithoutExtension(jsonFile))
-        {
-          Uri = root.Url
-        };
         var newPlayer = new Player(p.Name ?? Builtins.UNKNOWN_PLAYER, source)
         {
           SplatnetId = p.SplatnetId,
@@ -688,7 +691,8 @@ namespace SplatTagDatabase.Importers
         players.Add(newPlayer);
       }
 
-      return (players.ToArray(), Array.Empty<Team>());
+      source.Players = players.ToArray();
+      return source;
     }
 
     public static bool AcceptsInput(string input)

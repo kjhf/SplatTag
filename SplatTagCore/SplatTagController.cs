@@ -1,5 +1,6 @@
 ﻿using SplatTagCore.Social;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,20 +11,22 @@ using System.Threading.Tasks;
 
 namespace SplatTagCore
 {
-  public class SplatTagController
+  public class SplatTagController : ITeamResolver
   {
     private readonly ISplatTagDatabase database;
     private Player[] players;
     private Dictionary<Guid, Team> teams;
+    private Dictionary<Guid, Source> sources;
     private Task? cachingTask;
-    private readonly Dictionary<Team, (Player, bool)[]> playersForTeam;
+    private readonly ConcurrentDictionary<Team, (Player, bool)[]> playersForTeam;
 
     public SplatTagController(ISplatTagDatabase database)
     {
       this.database = database;
       this.players = Array.Empty<Player>();
       this.teams = new Dictionary<Guid, Team>();
-      this.playersForTeam = new Dictionary<Team, (Player, bool)[]>();
+      this.sources = new Dictionary<Guid, Source>();
+      this.playersForTeam = new ConcurrentDictionary<Team, (Player, bool)[]>();
     }
 
     public void Initialise()
@@ -35,7 +38,7 @@ namespace SplatTagCore
     {
       Console.WriteLine("Loading Database... ");
       var start = DateTime.Now;
-      var (loadedPlayers, loadedTeams) = database.Load();
+      var (loadedPlayers, loadedTeams, loadedSources) = database.Load();
       if (loadedPlayers == null || loadedTeams == null)
       {
         Console.Error.WriteLine("ERROR: Failed to load.");
@@ -47,19 +50,20 @@ namespace SplatTagCore
       else
       {
         players = loadedPlayers;
-        teams = loadedTeams.ToDictionary(t => t.Id, t => t);
+        teams = loadedTeams.AsParallel().ToDictionary(t => t.Id, t => t);
+        sources = loadedSources;
 
         cachingTask = Task.Run(() =>
         {
           // Cache the players and their teams.
-          foreach (var t in teams.Values)
+          Parallel.ForEach(teams.Values, t =>
           {
             var teamPlayers =
               t.GetPlayers(players)
               .Select(p => (p, p.CurrentTeam == t.Id))
               .ToArray();
-            playersForTeam.Add(t, teamPlayers);
-          }
+            playersForTeam.TryAdd(t, teamPlayers);
+          });
           Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Caching task done.");
         });
 
@@ -67,11 +71,6 @@ namespace SplatTagCore
         Console.WriteLine("Database loaded successfully.");
         Console.WriteLine($"...Done in {diff.TotalSeconds} seconds.");
       }
-    }
-
-    public void SaveDatabase()
-    {
-      database.Save(players, teams.Values);
     }
 
     /// <summary>
@@ -159,8 +158,21 @@ namespace SplatTagCore
 
             if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
             {
-              // If the battle slugs match, return top match.
+              // If the battlefy slugs match, return top match.
               foreach (Name bf in p.Battlefy.Slugs)
+              {
+                string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
+                if (regex.IsMatch(toMatch))
+                {
+                  return int.MaxValue;
+                }
+              }
+            }
+
+            if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0)
+            {
+              // If the battlefy persistent ids match, return top match.
+              foreach (Name bf in p.Battlefy.PersistentIds)
               {
                 string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
                 if (regex.IsMatch(toMatch))
@@ -187,7 +199,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
             {
               // Look through the battlefy usernames.
-              foreach (Name bf in p.BattlefyUsernames)
+              foreach (Name bf in p.Battlefy.Usernames)
               {
                 string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
                 if (regex.IsMatch(toMatch))
@@ -276,6 +288,17 @@ namespace SplatTagCore
         func = (p) =>
         {
           int relevance = 0;
+
+          if ((filterOptions & FilterOptions.SlappId) != 0)
+          {
+            // If internal id matches, return top match.
+            string toMatch = p.Id.ToString();
+            if (toMatch.Equals(query, comparison))
+            {
+              return int.MaxValue;
+            }
+          }
+
           if ((filterOptions & FilterOptions.FriendCode) != 0)
           {
             // If FC matches, return top match.
@@ -295,8 +318,25 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
           {
-            // If the battle slugs match, return top match.
-            foreach (Name bf in p.BattlefySlugs)
+            // If the battlefy slugs match, return top match.
+            foreach (Name bf in p.Battlefy.Slugs)
+            {
+              string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
+              if (toMatch.Equals(query, comparison))
+              {
+                return int.MaxValue;
+              }
+              else if (toMatch.Contains(query, comparison))
+              {
+                relevance++;
+              }
+            }
+          }
+
+          if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0)
+          {
+            // If the battlefy persistent ids match, return top match.
+            foreach (Name bf in p.Battlefy.PersistentIds)
             {
               string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
               if (toMatch.Equals(query, comparison))
@@ -313,7 +353,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
           {
             // Look through the battlefy usernames.
-            foreach (Name bf in p.BattlefyUsernames)
+            foreach (Name bf in p.Battlefy.Usernames)
             {
               string toMatch = (matchOptions.NearCharacterRecognition) ? bf.Transformed : bf.Value;
               AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
@@ -384,11 +424,13 @@ namespace SplatTagCore
         };
       }
 
-      return playersToSearch.Select(p => (p, func(p)))
-                            .Where(pair => pair.Item2 > 0)
-                            .OrderByDescending(pair => pair.Item2)
-                            .Select(pair => pair.p)
-                            .ToArray();
+      return playersToSearch
+        .AsParallel()
+        .Select(p => (p, func(p)))
+        .Where(pair => pair.Item2 > 0)
+        .OrderByDescending(pair => pair.Item2)
+        .Select(pair => pair.p)
+        .ToArray();
     }
 
     private static void AdjustRelevanceForStringComparison(ref int relevance, string toMatch, string query, StringComparison comparison)
@@ -460,6 +502,7 @@ namespace SplatTagCore
           func = (t) =>
           {
             int relevance = 0;
+
             if ((filterOptions & FilterOptions.ClanTag) != 0 && t.ClanTags != null)
             {
               foreach (ClanTag tag in t.ClanTags)
@@ -526,6 +569,16 @@ namespace SplatTagCore
         func = (t) =>
         {
           int relevance = 0;
+          if ((filterOptions & FilterOptions.SlappId) != 0)
+          {
+            // If internal id matches, return top match.
+            string toMatch = t.Id.ToString();
+            if (toMatch.Equals(query, comparison))
+            {
+              return int.MaxValue;
+            }
+          }
+
           if ((filterOptions & FilterOptions.ClanTag) != 0 && t.ClanTags != null)
           {
             foreach (ClanTag tag in t.ClanTags)
@@ -580,7 +633,18 @@ namespace SplatTagCore
         };
       }
 
-      return teamsToSearch.Select(t => (t, func(t))).Where(pair => pair.Item2 > 0).OrderByDescending(pair => pair.Item2).Select(pair => pair.t).ToArray();
+      return teamsToSearch
+        .AsParallel()
+        .Select(t => (t, func(t)))
+        .Where(pair => pair.Item2 > 0)
+        .OrderByDescending(pair => pair.Item2)
+        .Select(pair => pair.t)
+        .ToArray();
+    }
+
+    public Source[] GetSources()
+    {
+      return sources.Values.ToArray();
     }
 
     /// <summary>
@@ -606,8 +670,8 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Match a Team by its id.
-    /// Never returns null.
+    /// Match a <see cref="Team"/> by its id.
+    /// Returns <see cref="Team.UnlinkedTeam"/> if not found.
     /// </summary>
     public Team GetTeamById(Guid id)
     {
@@ -616,6 +680,19 @@ namespace SplatTagCore
         return Team.NoTeam;
       }
       return teams.ContainsKey(id) ? teams[id] : Team.UnlinkedTeam;
+    }
+
+    /// <summary>
+    /// Match a <see cref="Source"/> by its id.
+    /// Returns <see cref="Builtins.BuiltinSource"/> if not found.
+    /// </summary>
+    public Source GetSourceById(Guid id)
+    {
+      if (id == Guid.Empty)
+      {
+        return Builtins.BuiltinSource;
+      }
+      return sources.ContainsKey(id) ? sources[id] : Builtins.BuiltinSource;
     }
 
     /// <summary> Launch an address in a separate internet browser. </summary>

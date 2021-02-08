@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using SplatTagCore;
-using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,7 +25,7 @@ namespace SplatTagDatabase.Importers
       return Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
 
-    public (Player[], Team[]) Load()
+    public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
@@ -125,16 +124,18 @@ namespace SplatTagDatabase.Importers
             }
           }
 
-          if (p.BattlefyName != null && p.BattlefyUserSlug != null)
+          if (p.BattlefyName != null && p.BattlefyUserSlug != null && p.PersistentPlayerId != null)
           {
-            newPlayer.AddBattlefyInformation(p.BattlefyUserSlug, p.BattlefyName, source);
+            newPlayer.AddBattlefyInformation(p.BattlefyUserSlug, p.BattlefyName, p.PersistentPlayerId, source);
           }
           newPlayer.AddFCs(parsedFriendCode.AsEnumerable());
           players.Add(newPlayer);
         }
       }
 
-      return (players.ToArray(), teams.ToArray());
+      source.Players = players.ToArray();
+      source.Teams = teams.ToArray();
+      return source;
     }
 
     [Serializable]
@@ -155,11 +156,14 @@ namespace SplatTagDatabase.Importers
       [JsonProperty("username")]
       public string? BattlefyName { get; set; }
 
-      [JsonProperty("userSlug", Required = Required.Default)]
+      [JsonProperty("userSlug")]
       public string? BattlefyUserSlug { get; set; }
 
       [JsonProperty("inGameName")]
       public string? Name { get; set; }
+
+      [JsonProperty("persistentPlayerID")]
+      public string? PersistentPlayerId { get; set; }
     }
 
     [Serializable]

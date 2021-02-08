@@ -45,11 +45,11 @@ namespace SplatTagCore
         {
           this.Value = UNKNOWN;
         }
-        else if (valueStr.Equals("X+", System.StringComparison.OrdinalIgnoreCase))
+        else if (valueStr.Equals("X+", StringComparison.OrdinalIgnoreCase))
         {
           this.Value = X_PLUS;
         }
-        else if (valueStr.Equals("X", System.StringComparison.OrdinalIgnoreCase))
+        else if (valueStr.Equals("X", StringComparison.OrdinalIgnoreCase))
         {
           this.Value = X;
         }
@@ -186,7 +186,7 @@ namespace SplatTagCore
     // Deserialize
     protected Division(SerializationInfo info, StreamingContext context)
     {
-      this.Value = info.GetInt32("Value");
+      this.Value = info.GetValueOrDefault("Value", UNKNOWN);
       this.DivType = info.GetEnumOrDefault("DivType", DivType.Unknown);
       this.Season = info.GetValueOrDefault("Season", "");
     }

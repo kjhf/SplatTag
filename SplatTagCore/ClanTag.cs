@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class ClanTag : Name, ISerializable
+  public class ClanTag : Name
   {
     /// <summary>
     /// Construct a ClanTag based on the tag and the source

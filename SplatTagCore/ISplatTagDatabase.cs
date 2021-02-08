@@ -1,16 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SplatTagCore
 {
-  public interface ISplatTagDatabase : IImporter
+  public interface ISplatTagDatabase
   {
-    // (Player[], Team[]) Load(); // From IImporter
-
     /// <summary>
-    /// Save the database with the given players and teams.
+    /// Load the database and return the merged Players, merged Teams, and Sources.
     /// </summary>
-    /// <param name="players"></param>
-    /// <param name="teams"></param>
-    void Save(IEnumerable<Player> players, IEnumerable<Team> teams);
+    (Player[], Team[], Dictionary<Guid, Source>) Load();
   }
 }

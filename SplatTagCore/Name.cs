@@ -107,7 +107,16 @@ namespace SplatTagCore
     protected Name(SerializationInfo info, StreamingContext context)
     {
       this.Value = info.GetString("Value");
-      AddSources(info.GetValueOrDefault("Sources", Array.Empty<Source>()));
+      if (context.Context is Source.GuidToSourceConverter converter)
+      {
+        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+        AddSources(converter.Convert(sourceIds));
+      }
+      else
+      {
+        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+        AddSources(sourceIds.Select(s => new Source(s)));
+      }
     }
 
     // Serialize
@@ -115,9 +124,11 @@ namespace SplatTagCore
     {
       info.AddValue("Value", this.Value);
 
-      if (this.Sources.Any())
-        info.AddValue("Sources", this.sources);
+      if (this.Sources.Count > 0)
+        info.AddValue("S", this.sources.Select(s => s.Id));
     }
+
+    #endregion Serialization
 
     public override bool Equals(object? obj)
     {
@@ -134,7 +145,5 @@ namespace SplatTagCore
     {
       return -1937169414 + Value.GetHashCode();
     }
-
-    #endregion Serialization
   }
 }

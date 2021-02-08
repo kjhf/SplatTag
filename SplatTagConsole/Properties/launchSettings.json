@@ -6,6 +6,14 @@
     "RebuildDatabase": {
       "commandName": "Project",
       "commandLineArgs": "--exactCase --rebuild \".\""
+    },
+    "single query": {
+      "commandName": "Project",
+      "commandLineArgs": "--query Slate"
+    },
+    "rebuild with bad sources": {
+      "commandName": "Project",
+      "commandLineArgs": "--rebuild ./file-does-not-exist.yaml"
     }
   }
 }

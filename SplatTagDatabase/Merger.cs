@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -121,7 +120,7 @@ namespace SplatTagDatabase
         if (!progressBar.Equals(lastProgressBar))
         {
           logger?.WriteLine(progressBar);
-          Trace.WriteLine(progressBar);
+          Console.WriteLine(progressBar);
           lastProgressBar = progressBar;
         }
       }
@@ -170,7 +169,7 @@ namespace SplatTagDatabase
         if (!progressBar.Equals(lastProgressBar))
         {
           logger?.WriteLine(progressBar);
-          Trace.WriteLine(progressBar);
+          Console.WriteLine(progressBar);
           lastProgressBar = progressBar;
         }
       }
@@ -182,14 +181,14 @@ namespace SplatTagDatabase
     /// <summary>
     /// Merge the loaded players into the current players list.
     /// </summary>
-    public static void MergePlayers(ICollection<Player> playersToMutate, IEnumerable<Player> incomingPlayers, TextWriter? logger = null)
+    internal static void MergePlayers(List<Player> playersToMutate, IEnumerable<Player> incomingPlayers, TextWriter? logger = null)
     {
       if (playersToMutate == null || incomingPlayers == null) return;
 
       // Add if the player is new (by name) and assign them with a new id
       // Otherwise, match the found team with its id, based on name.
-      ConcurrentBag<Player> playersToAdd = new ConcurrentBag<Player>();
-      ConcurrentBag<(Player, Player)> playersToMerge = new ConcurrentBag<(Player, Player)>();
+      ConcurrentBag<Player> concurrentPlayersToAdd = new ConcurrentBag<Player>();
+      ConcurrentBag<(Player, Player)> concurrentPlayersToMerge = new ConcurrentBag<(Player, Player)>();
 
       Parallel.ForEach(incomingPlayers, (importPlayer) =>
       {
@@ -198,16 +197,16 @@ namespace SplatTagDatabase
           // First, try match through persistent information only.
           // If that doesn't work, try and match a name and same team.
           Player foundPlayer =
-            playersToMutate.FirstOrDefault(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent, logger))
-            ?? playersToMutate.FirstOrDefault(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Name, logger));
+            playersToMutate.AsParallel().FirstOrDefault(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent, logger))
+            ?? playersToMutate.AsParallel().FirstOrDefault(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Name, logger));
 
           if (foundPlayer == null)
           {
-            playersToAdd.Add(importPlayer);
+            concurrentPlayersToAdd.Add(importPlayer);
           }
           else
           {
-            playersToMerge.Add((foundPlayer, importPlayer));
+            concurrentPlayersToMerge.Add((foundPlayer, importPlayer));
           }
         }
         catch (Exception ex)
@@ -216,12 +215,9 @@ namespace SplatTagDatabase
         }
       });
 
-      foreach (Player importPlayer in playersToAdd)
-      {
-        playersToMutate.Add(importPlayer);
-      }
+      playersToMutate.AddRange(concurrentPlayersToAdd);
 
-      foreach (var (foundPlayer, importPlayer) in playersToMerge)
+      foreach (var (foundPlayer, importPlayer) in concurrentPlayersToMerge)
       {
         foundPlayer.Merge(importPlayer);
       }
@@ -233,7 +229,7 @@ namespace SplatTagDatabase
     /// <returns>
     /// A dictionary of merged team ids keyed by initial with values of the new id.
     /// </returns>
-    public static IDictionary<Guid, Guid> MergeTeamsByPersistentIds(ICollection<Team> teamsToMutate, IEnumerable<Team> incomingTeams)
+    public static IDictionary<Guid, Guid> MergeTeamsByPersistentIds(List<Team> teamsToMutate, IEnumerable<Team> incomingTeams)
     {
       ConcurrentDictionary<Guid, Guid> mergeResult = new ConcurrentDictionary<Guid, Guid>();
 
@@ -249,78 +245,38 @@ namespace SplatTagDatabase
 
       if (teamsToMutate.Count > 0)
       {
+        ConcurrentBag<Team> concurrentTeamsToAdd = new ConcurrentBag<Team>();
+
         // Merge teams based on the Battlefy Persistent Id.
-        foreach (Team importTeam in incomingTeams)
+        Parallel.ForEach(incomingTeams, importTeam =>
         {
           if (importTeam.BattlefyPersistentTeamId != null)
           {
-            var foundTeam = teamsToMutate.FirstOrDefault(t => importTeam.BattlefyPersistentTeamId.Value.Equals(t?.BattlefyPersistentTeamId?.Value));
+            var foundTeam = teamsToMutate.AsParallel().FirstOrDefault(t => importTeam.BattlefyPersistentTeamId.Value.Equals(t?.BattlefyPersistentTeamId?.Value));
             if (foundTeam != null)
             {
               MergeExistingTeam(mergeResult, importTeam, foundTeam);
             }
             else
             {
-              teamsToMutate.Add(importTeam);
+              concurrentTeamsToAdd.Add(importTeam);
             }
           }
           else
           {
-            teamsToMutate.Add(importTeam);
+            concurrentTeamsToAdd.Add(importTeam);
           }
-        }
+        });
+
+        teamsToMutate.AddRange(concurrentTeamsToAdd);
       }
       else
       {
         // No merge required, just take as-is.
-        foreach (Team importTeam in incomingTeams)
-        {
-          teamsToMutate.Add(importTeam);
-        }
+        teamsToMutate.AddRange(incomingTeams);
       }
 
       return mergeResult;
-    }
-
-    /// <summary>
-    /// Find a player that matches another instance through their persistent information.
-    /// </summary>
-    /// <param name="playersToMutate">The players to search</param>
-    /// <param name="testPlayer">The player instance to try and find</param>
-    /// <returns>The matched player, or null if new</returns>
-    private static Player FindSamePlayerPersistent(IEnumerable<Player> playersToMutate, Player testPlayer, TextWriter? logger = null)
-    {
-      FilterOptions matchOptions = FilterOptions.None;
-      if (testPlayer.FriendCodes.Count > 0)
-      {
-        matchOptions |= FilterOptions.FriendCode;
-      }
-      if (testPlayer.DiscordNames.Count > 0)
-      {
-        matchOptions |= FilterOptions.DiscordName;
-      }
-      if (testPlayer.DiscordIds.Count > 0)
-      {
-        matchOptions |= FilterOptions.DiscordId;
-      }
-      if (testPlayer.Twitch.Count > 0)
-      {
-        matchOptions |= FilterOptions.Twitch;
-      }
-      if (testPlayer.Twitter.Count > 0)
-      {
-        matchOptions |= FilterOptions.Twitter;
-      }
-      if (testPlayer.Battlefy.Slugs?.Count > 0)
-      {
-        matchOptions |= FilterOptions.BattlefySlugs;
-      }
-      if (testPlayer.Battlefy.Usernames?.Count > 0)
-      {
-        matchOptions |= FilterOptions.BattlefyUsername;
-      }
-
-      return playersToMutate.FirstOrDefault(p => Matcher.PlayersMatch(testPlayer, p, matchOptions, logger));
     }
 
     private static void MergeExistingTeam(ConcurrentDictionary<Guid, Guid> mergeResult, Team newerTeam, Team olderTeam)

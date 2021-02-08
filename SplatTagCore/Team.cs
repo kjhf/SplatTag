@@ -18,6 +18,12 @@ namespace SplatTagCore
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
+    /// Back-store for the persistent ids of this team.
+    /// </summary>
+    /// <remarks>
+    private readonly List<BattlefyTeamSocial> battlefyPersistentTeamIds = new List<BattlefyTeamSocial>();
+
+    /// <summary>
     /// The tag(s) of the team, first is the current tag.
     /// </summary>
     private readonly List<ClanTag> clanTags = new List<ClanTag>();
@@ -28,22 +34,6 @@ namespace SplatTagCore
     private readonly List<Division> divisions = new List<Division>();
 
     /// <summary>
-    /// Back-store for the sources of this team.
-    /// </summary>
-    private readonly List<Source> sources = new List<Source>();
-
-    /// <summary>
-    /// Back-store for the Twitter Profiles of this player.
-    /// </summary>
-    private readonly List<Twitter> twitterProfiles = new List<Twitter>();
-
-    /// <summary>
-    /// Back-store for the persistent ids of this team.
-    /// </summary>
-    /// <remarks>
-    private readonly List<Name> battlefyPersistentTeamIds = new List<Name>();
-
-    /// <summary>
     /// Back-store for the names of this team. The first element is the current name.
     /// </summary>
     /// <remarks>
@@ -52,6 +42,16 @@ namespace SplatTagCore
     /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
     /// </remarks>
     private readonly List<Name> names = new List<Name>();
+
+    /// <summary>
+    /// Back-store for the sources of this team.
+    /// </summary>
+    private readonly List<Source> sources = new List<Source>();
+
+    /// <summary>
+    /// Back-store for the Twitter Profiles of this player.
+    /// </summary>
+    private readonly List<Twitter> twitterProfiles = new List<Twitter>();
 
     /// <summary>
     /// Default construct a Team
@@ -94,7 +94,7 @@ namespace SplatTagCore
     /// <summary>
     /// The current division of the team
     /// </summary>
-    public Division CurrentDiv => divisions.Any() ? divisions[0] : Division.Unknown;
+    public Division CurrentDiv => divisions.Count > 0 ? divisions[0] : Division.Unknown;
 
     /// <summary>
     /// The divisions of the team
@@ -131,14 +131,14 @@ namespace SplatTagCore
     /// </summary>
     public IReadOnlyList<Twitter> Twitter => twitterProfiles;
 
-    public void AddBattlefyIds(IEnumerable<Name> value)
+    public void AddBattlefyIds(IEnumerable<BattlefyTeamSocial> value)
     {
       SplatTagCommon.AddNames(value, battlefyPersistentTeamIds);
     }
 
-    public Name AddBattlefyId(string id, Source source)
+    public BattlefyTeamSocial AddBattlefyId(string id, Source source)
     {
-      return SplatTagCommon.AddName(new Name(id, source), battlefyPersistentTeamIds);
+      return SplatTagCommon.AddName(new BattlefyTeamSocial(id, source), battlefyPersistentTeamIds);
     }
 
     public ClanTag AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
@@ -197,7 +197,7 @@ namespace SplatTagCore
     /// </summary>
     public IEnumerable<Player> GetPlayers(IEnumerable<Player> allPlayers)
     {
-      return allPlayers.Where(p => p.Teams.Contains(this.Id));
+      return allPlayers.AsParallel().Where(p => p.Teams.Contains(this.Id));
     }
 
     /// <summary>
@@ -231,7 +231,7 @@ namespace SplatTagCore
     /// <returns></returns>
     public override string ToString()
     {
-      return $"{Tag} {Name} ({CurrentDiv})";
+      return $"{(Tag != null ? Tag.Value + " " : "")}{Name}{(CurrentDiv == Division.Unknown ? "" : $" ({CurrentDiv})")}";
     }
 
     #region Serialization
@@ -239,36 +239,50 @@ namespace SplatTagCore
     // Deserialize
     protected Team(SerializationInfo info, StreamingContext context)
     {
-      AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<Name>()));
+      AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<BattlefyTeamSocial>()));
       AddClanTags(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
       AddDivisions(info.GetValueOrDefault("Divisions", Array.Empty<Division>()));
-      this.Id = (Guid)info.GetValue("Id", typeof(Guid));
       AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
-      AddSources(info.GetValueOrDefault("Sources", Array.Empty<Source>()));
+      if (context.Context is Source.GuidToSourceConverter converter)
+      {
+        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+        AddSources(converter.Convert(sourceIds));
+      }
+      else
+      {
+        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+        AddSources(sourceIds.Select(s => new Source(s)));
+      }
       AddTwitterProfiles(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
+
+      this.Id = info.GetValueOrDefault("Id", Guid.Empty);
+      if (this.Id == Guid.Empty)
+      {
+        throw new SerializationException("Guid cannot be empty for team: " + this.Name + " from source(s) [" + string.Join(", ", this.sources) + "].");
+      }
     }
 
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (battlefyPersistentTeamIds.Any())
+      if (battlefyPersistentTeamIds.Count > 0)
         info.AddValue("BattlefyPersistentTeamIds", this.battlefyPersistentTeamIds);
 
-      if (clanTags.Any())
+      if (clanTags.Count > 0)
         info.AddValue("ClanTags", this.clanTags);
 
-      if (divisions.Any())
+      if (divisions.Count > 0)
         info.AddValue("Divisions", this.divisions);
 
       info.AddValue("Id", this.Id);
 
-      if (names.Any())
+      if (names.Count > 0)
         info.AddValue("Names", this.names);
 
-      if (sources.Any())
-        info.AddValue("Sources", this.sources);
+      if (sources.Count > 0)
+        info.AddValue("S", this.sources.Select(s => s.Id));
 
-      if (twitterProfiles.Any())
+      if (twitterProfiles.Count > 0)
         info.AddValue("Twitter", this.twitterProfiles);
     }
 

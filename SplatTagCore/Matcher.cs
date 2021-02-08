@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace SplatTagCore
 {
@@ -47,7 +46,7 @@ namespace SplatTagCore
       }
 
       // Test if the Battlefy Usernames match.
-      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && GenericMatch(first.BattlefyUsernames, second.BattlefyUsernames) > 0)
+      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && GenericMatch(first.Battlefy.Usernames, second.Battlefy.Usernames) > 0)
       {
         // They do.
         if (logger != null)
@@ -58,7 +57,7 @@ namespace SplatTagCore
           logger.Write(" (Id ");
           logger.Write(first.Id);
           logger.Write(") with BattlefyUsername(s) [");
-          logger.Write(string.Join(", ", first.BattlefyUsernames));
+          logger.Write(string.Join(", ", first.Battlefy.Usernames));
           logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
@@ -81,6 +80,28 @@ namespace SplatTagCore
           logger.Write(first.Id);
           logger.Write(") with Battlefy Slugs(s) [");
           logger.Write(string.Join(", ", first.Battlefy.Slugs));
+          logger.Write("] from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
+        return true;
+      }
+
+      // Test if any of the Battlefy Persistent Ids match.
+      if ((matchOptions & FilterOptions.BattlefyPersistentIds) != 0 && NamesMatch(first.Battlefy.PersistentIds, second.Battlefy.PersistentIds) > 0)
+      {
+        // They do.
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with Battlefy Persistent Id(s) [");
+          logger.Write(string.Join(", ", first.Battlefy.PersistentIds));
           logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");

@@ -50,6 +50,38 @@ namespace SplatTagCore
   /// </summary>
   public static class StringTransformation
   {
+    /// <summary>Encode the UTF-8 string in base64.</summary>
+    public static string Base64Encode(this string plainText)
+    {
+      var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
+      return Convert.ToBase64String(plainTextBytes);
+    }
+
+    /// <summary>Decode the UTF-8 string from base64.</summary>
+    public static string Base64Decode(this string base64EncodedData)
+    {
+      var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
+      return Encoding.UTF8.GetString(base64EncodedBytes);
+    }
+
+    /// <summary>Decode the UTF-8 string from base64 by scanning the lines and aggressively decoding wherever possible.</summary>
+    public static string Base64DecodeByLines(this string base64EncodedData)
+    {
+      StringBuilder sb = new StringBuilder();
+      foreach (string line in base64EncodedData.Split(Environment.NewLine.ToCharArray()))
+      {
+        try
+        {
+          sb.AppendLine(line.Base64Decode());
+        }
+        catch (FormatException)
+        {
+          sb.AppendLine(line);
+        }
+      }
+      return sb.ToString();
+    }
+
     /// <summary>
     /// Converts characters above ASCII to their ASCII equivalents. For example,
     /// accents are removed from accented characters.

@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
-namespace SplatTagCore.Social
+namespace SplatTagCore
 {
   [Serializable]
   public class Discord : ISerializable
@@ -41,7 +40,7 @@ namespace SplatTagCore.Social
     /// <param name="ids"></param>
     public void AddId(string slug, Source source)
     {
-      SplatTagCommon.AddName(new Name(slug, source), this.ids);
+      SplatTagCommon.AddName(new Name(slug, source), ids);
     }
 
     /// <summary>
@@ -59,7 +58,7 @@ namespace SplatTagCore.Social
     /// <param name="ids"></param>
     public void AddUsername(string username, Source source)
     {
-      SplatTagCommon.AddName(new Name(username, source), this.usernames);
+      SplatTagCommon.AddName(new Name(username, source), usernames);
     }
 
     /// <summary>
@@ -75,7 +74,7 @@ namespace SplatTagCore.Social
     /// </summary>
     public bool MatchAny(Discord other)
     {
-      return MatchPersistent(other) || Matcher.NamesMatch(this.usernames, other.usernames) > 0;
+      return MatchPersistent(other) || Matcher.NamesMatch(usernames, other.usernames) > 0;
     }
 
     /// <summary>
@@ -83,7 +82,7 @@ namespace SplatTagCore.Social
     /// </summary>
     public bool MatchPersistent(Discord other)
     {
-      return Matcher.NamesMatch(this.ids, other.ids) > 0;
+      return Matcher.NamesMatch(ids, other.ids) > 0;
     }
 
     public override string ToString()
@@ -103,11 +102,11 @@ namespace SplatTagCore.Social
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (this.Ids.Any())
-        info.AddValue("Ids", this.ids);
+      if (Ids.Count > 0)
+        info.AddValue("Ids", ids);
 
-      if (this.Usernames.Any())
-        info.AddValue("Usernames", this.usernames);
+      if (Usernames.Count > 0)
+        info.AddValue("Usernames", usernames);
     }
 
     #endregion Serialization

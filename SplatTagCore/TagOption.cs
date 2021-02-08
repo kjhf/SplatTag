@@ -1,5 +1,8 @@
 ﻿namespace SplatTagCore
 {
+  /// <summary>
+  /// How the <see cref="ClanTag"/> should be rendered around a <see cref="Player"/>'s name.
+  /// </summary>
   public enum TagOption
   {
     /// <summary>

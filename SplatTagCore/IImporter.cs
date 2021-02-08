@@ -3,9 +3,8 @@
   public interface IImporter
   {
     /// <summary>
-    /// Load the importer to return its Players and Teams.
+    /// Load the importer to return its Source.
     /// </summary>
-    /// <returns></returns>
-    (Player[], Team[]) Load();
+    Source Load();
   }
 }
