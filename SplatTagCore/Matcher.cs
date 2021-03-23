@@ -243,16 +243,15 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Get if two Teams match.
+    /// Get if two Teams match through ids.
     /// This is implemented as:
-    /// - BattlefyPersistentIds match, or
-    /// - The names are (roughly) the same AND the teams have AT LEAST TWO players the same.
+    /// - Ids match or BattlefyPersistentIds match.
     /// </summary>
     /// <param name="first">First Team to match</param>
     /// <param name="second">Second Team to match</param>
     /// <param name="logger">Logger to write to (or null to not write)</param>
     /// <returns>Teams match</returns>
-    public static bool TeamsMatch(IReadOnlyCollection<Player> allPlayers, Team first, Team second, TextWriter? logger = null)
+    public static bool TeamsMatch(Team first, Team second, TextWriter? logger = null)
     {
       // Quick out if they're literally the same.
       if (first.Id == second.Id) return true;
@@ -279,6 +278,25 @@ namespace SplatTagCore
         return true;
       }
 
+      return false;
+    }
+
+    /// <summary>
+    /// Get if two Teams match.
+    /// This is implemented as:
+    /// - BattlefyPersistentIds match, or
+    /// - The names are (roughly) the same AND the teams have AT LEAST TWO players the same.
+    /// </summary>
+    /// <param name="first">First Team to match</param>
+    /// <param name="second">Second Team to match</param>
+    /// <param name="logger">Logger to write to (or null to not write)</param>
+    /// <returns>Teams match</returns>
+    public static bool TeamsMatch(IReadOnlyCollection<Player> allPlayers, Team first, Team second, TextWriter? logger = null)
+    {
+      // Get if ids match first.
+      if (TeamsMatch(first, second, logger)) return true;
+
+      // Otherwise, test if players match.
       var matchedTransformedNames = first.TransformedNames.Intersect(second.TransformedNames);
       if (matchedTransformedNames.Any())
       {

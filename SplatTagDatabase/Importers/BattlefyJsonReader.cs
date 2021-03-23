@@ -37,7 +37,7 @@ namespace SplatTagDatabase.Importers
       {
         if (row.TeamName == null || row.Players == null)
         {
-          Console.Error.WriteLine($"ERROR: JSON did not import a team correctly. Ignoring this team entry. File: " + jsonFile);
+          Console.Error.WriteLine("ERROR: JSON did not import a team correctly. Ignoring this team entry. File: " + jsonFile);
           continue;
         }
 
@@ -49,6 +49,12 @@ namespace SplatTagDatabase.Importers
             Console.Error.WriteLine($"ERROR: JSON does not contain a player for team \"{row.TeamName}\". Ignoring this team entry. File: " + jsonFile);
           }
           continue;
+        }
+
+        // Set the source start time if not already
+        if (source.Start == Builtins.UnknownDateTime && row.CheckInTime != null)
+        {
+          source.Start = new DateTime(row.CheckInTime.Value.Year, row.CheckInTime.Value.Month, row.CheckInTime.Value.DayOfYear);
         }
 
         if (row.Captain == null)
@@ -178,6 +184,9 @@ namespace SplatTagDatabase.Importers
       [JsonProperty("captain")]
       public BattlefyJsonPlayer? Captain { get; set; }
 
+      [JsonProperty("checkedInAt", Required = Required.Default)]
+      public DateTime? CheckInTime { get; set; }
+
       public string? CaptainDiscordName
       {
         get
@@ -251,9 +260,6 @@ namespace SplatTagDatabase.Importers
 
       // [JsonProperty("captainID", Required = Required.Default)]
       // public string CaptainId { get; set; }
-
-      // [JsonProperty("checkedInAt", Required = Required.Default)]
-      // public string CheckedInAt { get; set; }
     }
   }
 }

@@ -649,6 +649,7 @@ namespace SplatTagDatabase.Importers
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
       StatInkRoot root = JsonConvert.DeserializeObject<StatInkRoot>(json);
+      source.Start = new DateTime(root.EndAt?.Time ?? Builtins.UNKNOWN_DATE_TIME_TICKS);
 
       List<Player> players = new List<Player>();
 

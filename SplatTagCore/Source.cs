@@ -29,6 +29,13 @@ namespace SplatTagCore
     public Player[] Players { get; set; } = Array.Empty<Player>();
 
     /// <summary>
+    /// Get the start time of the source, e.g. the tourney time or when the source was created.
+    /// Used in figuring out 'current' order.
+    /// Defaults to <see cref="Builtins.UnknownDateTime"/>
+    /// </summary>
+    public DateTime Start { get; set; }
+
+    /// <summary>
     /// The teams that this source represents
     /// e.g. all teams that have signed up to this tournament
     /// </summary>
@@ -40,18 +47,27 @@ namespace SplatTagCore
     public Uri[] Uris { get; set; } = Array.Empty<Uri>();
 
     /// <summary>
-    /// Construct a source with a name.
+    /// Construct a source with a name and date.
     /// </summary>
     /// <param name="name"></param>
-    public Source(string name = Builtins.UNKNOWN_SOURCE)
+    public Source(string name = Builtins.UNKNOWN_SOURCE, DateTime? start = null)
     {
       Name = name;
+      if (start == null && name.Length > "yyyy-mm-dd".Length)
+      {
+        string dateStr = name.Substring(0, "yyyy-mm-dd".Length);
+        if (DateTime.TryParse(dateStr, out var temp))
+        {
+          start = temp;
+        }
+      }
+
+      Start = start ?? Builtins.UnknownDateTime;
     }
 
     /// <summary>
     /// Construct a source with an id.
     /// </summary>
-    /// <param name="name"></param>
     public Source(Guid id)
     {
       Id = id;
@@ -84,6 +100,7 @@ namespace SplatTagCore
       this.Brackets = info.GetValueOrDefault("Brackets", Array.Empty<Bracket>());
       this.Name = info.GetString("Name");
       this.Players = info.GetValueOrDefault("Players", Array.Empty<Player>());
+      this.Start = new DateTime(info.GetValueOrDefault("Start", Builtins.UNKNOWN_DATE_TIME_TICKS));
       this.Teams = info.GetValueOrDefault("Teams", Array.Empty<Team>());
       this.Uris = info.GetValueOrDefault("Uris", Array.Empty<Uri>());
 
@@ -129,6 +146,9 @@ namespace SplatTagCore
 
       if (this.Players.Length > 0)
         info.AddValue("Players", this.Players);
+
+      if (this.Start != Builtins.UnknownDateTime)
+        info.AddValue("Start", this.Start.Ticks);
 
       if (this.Teams.Length > 0)
         info.AddValue("Teams", this.Teams);

@@ -202,7 +202,7 @@ namespace SplatTagConsole
 
             if (!string.IsNullOrEmpty(b64))
             {
-              query = Encoding.UTF8.GetString(Convert.FromBase64String(b64));
+              result.Query = query = Encoding.UTF8.GetString(Convert.FromBase64String(b64));
             }
 
             if (!string.IsNullOrEmpty(slappId))

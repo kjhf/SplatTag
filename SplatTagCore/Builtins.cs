@@ -46,5 +46,15 @@ namespace SplatTagCore
     /// The <see cref="Name"/> object for an <see cref="UNKNOWN_TEAM"/>.
     /// </summary>
     public static readonly Name UnknownTeamName = new Name(UNKNOWN_TEAM, BuiltinSource);
+
+    /// <summary>
+    /// Unknown or not set datetime ticks.
+    /// </summary>
+    public const long UNKNOWN_DATE_TIME_TICKS = 0;
+
+    /// <summary>
+    /// Unknown or not set datetime.
+    /// </summary>
+    public static readonly DateTime UnknownDateTime = new DateTime(UNKNOWN_DATE_TIME_TICKS);
   }
 }
