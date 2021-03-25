@@ -47,7 +47,7 @@ namespace SplatTagUnitTests
       bool result = FriendCode.TryParse("111122223333", out FriendCode friendCode);
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsTrue(result);
-      Assert.AreEqual("1111-2222-3333", friendCode!.ToString());
+      Assert.AreEqual("1111-2222-3333", friendCode.ToString());
     }
 
     [TestMethod]
@@ -56,7 +56,7 @@ namespace SplatTagUnitTests
       bool result = FriendCode.TryParse("3333-4444-5555", out FriendCode friendCode);
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsTrue(result);
-      Assert.AreEqual("3333-4444-5555", friendCode!.ToString());
+      Assert.AreEqual("3333-4444-5555", friendCode.ToString());
     }
 
     [TestMethod]
@@ -65,7 +65,7 @@ namespace SplatTagUnitTests
       bool success = FriendCode.TryParse("SW: 3456.7654.9876", out FriendCode friendCode);
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsTrue(success);
-      Assert.AreEqual("3456-7654-9876", friendCode!.ToString());
+      Assert.AreEqual("3456-7654-9876", friendCode.ToString());
     }
 
     [TestMethod]
@@ -74,7 +74,7 @@ namespace SplatTagUnitTests
       bool success = FriendCode.TryParse("SW-1234-5678-4321", out FriendCode friendCode);
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsTrue(success);
-      Assert.AreEqual("1234-5678-4321", friendCode!.ToString());
+      Assert.AreEqual("1234-5678-4321", friendCode.ToString());
     }
 
     [TestMethod]
@@ -83,7 +83,7 @@ namespace SplatTagUnitTests
       bool success = FriendCode.TryParse("5555.6789 7890", out FriendCode friendCode);
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsTrue(success);
-      Assert.AreEqual("5555/6789/7890", friendCode!.ToString("/"));
+      Assert.AreEqual("5555/6789/7890", friendCode.ToString("/"));
     }
 
     [TestMethod]
@@ -92,7 +92,7 @@ namespace SplatTagUnitTests
       bool success = FriendCode.TryParse("123456789", out FriendCode friendCode);
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsTrue(success);
-      Assert.AreEqual("000123456789", friendCode!.ToString(""));
+      Assert.AreEqual("000123456789", friendCode.ToString(""));
     }
 
     [TestMethod]
@@ -101,7 +101,7 @@ namespace SplatTagUnitTests
       bool success = FriendCode.TryParse("This is a player name believe it or not with the fc 0123-4567-8912?", out FriendCode friendCode);
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsTrue(success);
-      Assert.AreEqual("0123.4567.8912", friendCode!.ToString("."));
+      Assert.AreEqual("0123.4567.8912", friendCode.ToString("."));
     }
 
     [TestMethod]
@@ -110,7 +110,7 @@ namespace SplatTagUnitTests
       var (friendCode, stripped) = FriendCode.ParseAndStripFriendCode(":) Some pleb (SW: 0123-4567-8912)");
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsNotNull(stripped);
-      Assert.AreEqual("0123 4567 8912", friendCode!.ToString(" "));
+      Assert.AreEqual("0123 4567 8912", friendCode.ToString(" "));
       Assert.AreEqual(":) Some pleb", stripped);
     }
 
@@ -120,7 +120,7 @@ namespace SplatTagUnitTests
       var (friendCode, stripped) = FriendCode.ParseAndStripFriendCode("My name 1234 - 5678 - 9012");
       Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsNotNull(stripped);
-      Assert.AreEqual("1234-5678-9012", friendCode!.ToString());
+      Assert.AreEqual("1234-5678-9012", friendCode.ToString());
       Assert.AreEqual("My name", stripped);
     }
 

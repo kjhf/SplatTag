@@ -81,7 +81,7 @@ namespace SplatTagUnitTests
     }
 
     /// <summary>
-    /// Test the <see cref="Merger.FinaliseTeams(SplatTagController, IList{Team})"/> function.
+    /// Test the Merger.FinaliseTeams(...) function.
     /// </summary>
     [TestMethod]
     public void FinaliseTeamsTest()
@@ -114,6 +114,7 @@ namespace SplatTagUnitTests
 
       Player p1 = new Player("username", new[] { t1.Id, t2.Id, t4.Id }, new Source("p1"));
       p1.AddBattlefyInformation("user", "user", "p1id", Builtins.ManualSource);
+      Assert.IsNotNull(t1.BattlefyPersistentTeamId);
       p1.AddBattlefyInformation("slug", "user", "p1id2", Builtins.ManualSource);
 
       Player p2 = new Player("player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p2"));
@@ -137,7 +138,7 @@ namespace SplatTagUnitTests
 
       Assert.IsTrue(result.ContainsKey(t4.Id), "Expected t4 to be merged");
       Assert.AreEqual(t1.Id, result[t4.Id], "Expected t4 to be merged --> t1");
-      Assert.AreEqual<string>(T4_STRING, t1.BattlefyPersistentTeamId?.Value!, "Expected t4 to be merged --> t1 (Battlefy Id should have merged)");
+      Assert.AreEqual<string>(T4_STRING, t1.BattlefyPersistentTeamId.Value, "Expected t4 to be merged --> t1 (Battlefy Id should have merged)");
 
       Assert.IsTrue(result.ContainsKey(t3.Id), "Expected t3 to be merged");
       Assert.AreEqual(t2.Id, result[t3.Id], "Expected t3 to be merged --> t2");

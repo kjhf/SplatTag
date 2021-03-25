@@ -20,10 +20,10 @@ namespace SplatTagUnitTests
     private readonly TextWriter consoleError = Console.Error;
 
     private static readonly string CHOOSE_A_FUNCTION = ("Choose a function:" + Environment.NewLine);
-    private static readonly string MESSAGE_OK = "\"Message\":\"OK\"";
-    private static readonly string EMPTY_PLAYERS = "\"Players\":[]";
-    private static readonly string POPULATED_PLAYERS = "\"Players\":[{";
-    private static readonly string SLATE = "Slate";
+    private const string MESSAGE_OK = "\"Message\":\"OK\"";
+    private const string EMPTY_PLAYERS = "\"Players\":[]";
+    private const string POPULATED_PLAYERS = "\"Players\":[{";
+    private const string SLATE = "Slate";
 
     /// <summary>
     /// Verify that the console starts.

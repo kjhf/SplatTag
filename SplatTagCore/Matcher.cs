@@ -301,20 +301,6 @@ namespace SplatTagCore
       if (matchedTransformedNames.Any())
       {
         // They do.
-        int sharedPlayersCount = 0;
-        var firstPlayers = first.GetPlayers(allPlayers);
-        var secondPlayers = second.GetPlayers(allPlayers);
-        foreach (var firstPlayer in firstPlayers)
-        {
-          foreach (var secondPlayer in secondPlayers)
-          {
-            if (PlayersMatch(firstPlayer, secondPlayer, FilterOptions.Default))
-            {
-              ++sharedPlayersCount;
-            }
-          }
-        }
-
         if (logger != null)
         {
           logger.Write(nameof(TeamsMatch));
@@ -328,14 +314,27 @@ namespace SplatTagCore
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
-          logger.Write(") with ");
-          logger.Write(sharedPlayersCount);
-          logger.WriteLine(" shared player(s).");
+          logger.Write(")");
         }
 
-        if (sharedPlayersCount >= 2)
+        int sharedPlayersCount = 0;
+        var firstPlayers = first.GetPlayers(allPlayers);
+        var secondPlayers = second.GetPlayers(allPlayers);
+        foreach (var firstPlayer in firstPlayers)
         {
-          return true;
+          foreach (var secondPlayer in secondPlayers)
+          {
+            if (PlayersMatch(firstPlayer, secondPlayer, FilterOptions.Default))
+            {
+              ++sharedPlayersCount;
+
+              if (sharedPlayersCount > 2)
+              {
+                logger?.WriteLine("Shared players requirement met.");
+                return true;
+              }
+            }
+          }
         }
       }
 

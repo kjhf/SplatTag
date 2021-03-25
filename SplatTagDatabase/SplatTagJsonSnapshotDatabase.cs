@@ -15,7 +15,7 @@ namespace SplatTagDatabase
   {
     private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
 
-    private readonly string? saveDirectory;
+    private readonly string saveDirectory;
     private string? playersSnapshotFile = null;
     private string? teamsSnapshotFile = null;
     private string? sourcesSnapshotFile = null;
@@ -28,9 +28,17 @@ namespace SplatTagDatabase
 
     public SplatTagJsonSnapshotDatabase(string playersSnapshotFile, string teamsSnapshotFile, string sourcesSnapshotFile)
     {
-      this.playersSnapshotFile = playersSnapshotFile;
-      this.teamsSnapshotFile = teamsSnapshotFile;
-      this.sourcesSnapshotFile = sourcesSnapshotFile;
+      this.playersSnapshotFile = playersSnapshotFile ?? throw new ArgumentNullException(nameof(playersSnapshotFile));
+      this.teamsSnapshotFile = teamsSnapshotFile ?? throw new ArgumentNullException(nameof(teamsSnapshotFile));
+      this.sourcesSnapshotFile = sourcesSnapshotFile ?? throw new ArgumentNullException(nameof(sourcesSnapshotFile));
+
+      this.saveDirectory = Directory.GetParent(playersSnapshotFile).FullName;
+    }
+
+    public static IOrderedEnumerable<FileInfo> GetSnapshots(string dir)
+    {
+      // Check in the save directory for the latest snapshot.
+      return new DirectoryInfo(dir).GetFiles(SNAPSHOT_FORMAT).OrderByDescending(f => f.LastWriteTime);
     }
 
     public (Player[], Team[], Dictionary<Guid, Source>) Load()
@@ -41,11 +49,7 @@ namespace SplatTagDatabase
       }
 
       // Check in the save directory for the latest snapshot.
-      var directory = new DirectoryInfo(saveDirectory);
-      var snapshots = directory.GetFiles(SNAPSHOT_FORMAT)
-        .OrderByDescending(f => f.LastWriteTime);
-
-      foreach (var snapshot in snapshots)
+      foreach (var snapshot in GetSnapshots(saveDirectory))
       {
         if (playersSnapshotFile == null && snapshot.Name.Contains("Players"))
         {

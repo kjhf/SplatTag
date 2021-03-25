@@ -54,19 +54,19 @@ namespace SplatTagUnitTests
       // Also check the player and team is now in the controller
       object? playersDict = Util.GetPrivateMember(controller, "players");
       Assert.IsNotNull(playersDict);
-      var players = (IList<Player>)playersDict!;
+      var players = (IList<Player>)playersDict;
       Assert.IsNotNull(players);
       Player? player1 = players.FirstOrDefault(p => p.Id == PLAYER_ID);
       Assert.IsNotNull(player1);
-      Assert.IsTrue(player1!.Id == PLAYER_ID);
+      Assert.IsTrue(player1.Id == PLAYER_ID);
 
       object? teamsDict = Util.GetPrivateMember(controller, "teams");
       Assert.IsNotNull(teamsDict);
-      var teams = (IDictionary<Guid, Team>)teamsDict!;
+      var teams = (IDictionary<Guid, Team>)teamsDict;
       Assert.IsNotNull(teams);
       Team? team1 = teams[TEAM_ID];
       Assert.IsNotNull(team1);
-      Assert.IsTrue(team1!.Id == TEAM_ID);
+      Assert.IsTrue(team1.Id == TEAM_ID);
       Assert.IsTrue(team1.CurrentDiv.Value == 1);
       Assert.IsTrue(team1.CurrentDiv.DivType == DivType.DSB);
 

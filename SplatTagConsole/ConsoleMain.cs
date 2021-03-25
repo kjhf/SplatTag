@@ -179,7 +179,8 @@ namespace SplatTagConsole
           }
           else if (File.Exists(rebuild))
           {
-            SplatTagControllerFactory.GenerateNewDatabase(sourcesFile: rebuild);
+            string? saveFolder = Directory.GetParent(rebuild)?.FullName;
+            SplatTagControllerFactory.GenerateNewDatabase(saveFolder: saveFolder, sourcesFile: rebuild);
             result.Message = $"Database rebuilt from {rebuild}!";
           }
           else
