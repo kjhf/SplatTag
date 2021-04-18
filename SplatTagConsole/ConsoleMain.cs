@@ -72,6 +72,7 @@ namespace SplatTagConsole
           new Option<bool>("--queryIsRegex", () => false, "Exact Character Recognition?"),
           new Option<string>("--rebuild", "Rebuilds the database"),
           new Option<bool>("--keepOpen", () => false, "Keep the console open?"),
+          new Option<bool>("--verbose", () => false, "Verbose output"),
         };
         rootCommand.Add(command);
 
@@ -87,7 +88,8 @@ namespace SplatTagConsole
             obj.ExactCharacterRecognition,
             obj.QueryIsRegex,
             obj.Rebuild,
-            obj.KeepOpen);
+            obj.KeepOpen,
+            obj.Verbose);
           return 0;
         });
 
@@ -151,7 +153,7 @@ namespace SplatTagConsole
       }
     }
 
-    private static void HandleCommandLineQuery(string? b64, string? query, string? slappId, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, string? rebuild, bool _)
+    private static void HandleCommandLineQuery(string? b64, string? query, string? slappId, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, string? rebuild, bool _, bool verbose)
     {
       try
       {
@@ -169,6 +171,7 @@ namespace SplatTagConsole
         };
 
         string?[] inputs = new string?[] { b64, query, slappId };
+        SplatTagControllerFactory.Verbose = verbose;
 
         if (rebuild != null)
         {
@@ -180,12 +183,13 @@ namespace SplatTagConsole
           else if (File.Exists(rebuild))
           {
             string? saveFolder = Directory.GetParent(rebuild)?.FullName;
-            SplatTagControllerFactory.GenerateNewDatabase(saveFolder: saveFolder, sourcesFile: rebuild);
+            string sourcesFile = Path.GetFileName(rebuild);
+            SplatTagControllerFactory.GenerateNewDatabase(saveFolder: saveFolder, sourcesFile: sourcesFile);
             result.Message = $"Database rebuilt from {rebuild}!";
           }
           else
           {
-            result.Message = $"Rebuild specified but the sources file specified ({rebuild}) does not exist. Aborting.";
+            result.Message = $"Rebuild specified but the sources file specified `{rebuild}` from `{Directory.GetCurrentDirectory()}` does not exist. Aborting.";
           }
         }
         else if (inputs.All(s => string.IsNullOrEmpty(s)))

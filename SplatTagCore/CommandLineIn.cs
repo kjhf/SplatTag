@@ -10,5 +10,6 @@
     public bool QueryIsRegex { get; set; }
     public string? Rebuild { get; set; }
     public bool KeepOpen { get; set; }
+    public bool Verbose { get; set; }
   }
 }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -28,6 +29,8 @@ namespace SplatTagDatabase
 
     public (Player[], Team[], Dictionary<Guid, Source>) Load()
     {
+      TextWriter? logger = SplatTagControllerFactory.Verbose ? Console.Out : null;
+
       // If we need to do our conversion first, do so now.
       if (converter != null)
       {
@@ -61,8 +64,8 @@ namespace SplatTagDatabase
         try
         {
           var mergeResult = Merger.MergeTeamsByPersistentIds(teams, source.Teams);
-          Merger.MergePlayers(players, source.Players);
-          Merger.CorrectTeamIdsForPlayers(players, mergeResult);
+          Merger.MergePlayers(players, source.Players, logger);
+          Merger.CorrectTeamIdsForPlayers(players, mergeResult, logger);
         }
         catch (Exception ex)
         {
@@ -78,12 +81,17 @@ namespace SplatTagDatabase
       }
 
       // Perform a final merge.
-      Console.WriteLine($"Performing final merge...");
+      Console.WriteLine("Performing final merge...");
       try
       {
-        Merger.FinalisePlayers(players);
-        var mergeResult = Merger.FinaliseTeams(players, teams);
-        Merger.CorrectTeamIdsForPlayers(players, mergeResult);
+        bool workDone = true;
+        while (workDone)
+        {
+          workDone = Merger.FinalisePlayers(players, logger);
+          var mergeResult = Merger.FinaliseTeams(players, teams, logger);
+          Merger.CorrectTeamIdsForPlayers(players, mergeResult, logger);
+          workDone |= (mergeResult.Count != 0);
+        }
       }
       catch (Exception ex)
       {

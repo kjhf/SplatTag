@@ -104,7 +104,7 @@ namespace SplatTagUnitTests
       Team t4 = new Team("Shared Name", new Source("t4"));
       t4.AddBattlefyId(T4_STRING, Builtins.ManualSource);
 
-      // t5 should be left because it has no players in common.
+      // t5 should NOT merge into t1 because it has no players in common despite sharing a name.
       Team t5 = new Team("Shared Name", new Source("t5"));
       t5.AddDivision(new Division(5, DivType.LUTI));
 

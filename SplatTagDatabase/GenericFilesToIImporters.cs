@@ -33,7 +33,11 @@ namespace SplatTagDatabase
 
       if (File.Exists(this.sourcesFile))
       {
-        paths = new List<string>(File.ReadAllLines(sourcesFile));
+        paths = new List<string>(File.ReadAllLines(this.sourcesFile));
+      }
+      else
+      {
+        Console.WriteLine($"Sources file doesn't exist `{this.sourcesFile}`.");
       }
     }
 

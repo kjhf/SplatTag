@@ -285,8 +285,9 @@ namespace SplatTagCore
     /// Get if two Teams match.
     /// This is implemented as:
     /// - BattlefyPersistentIds match, or
-    /// - The names are (roughly) the same AND the teams have AT LEAST TWO players the same.
+    /// - The names are (roughly) the same AND the teams have AT LEAST TWO players that match.
     /// </summary>
+    /// <param name="allPlayers">Collection of all players to help base team equality</param>
     /// <param name="first">First Team to match</param>
     /// <param name="second">Second Team to match</param>
     /// <param name="logger">Logger to write to (or null to not write)</param>
@@ -314,7 +315,7 @@ namespace SplatTagCore
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
-          logger.Write(")");
+          logger.WriteLine(")");
         }
 
         int sharedPlayersCount = 0;
@@ -324,11 +325,11 @@ namespace SplatTagCore
         {
           foreach (var secondPlayer in secondPlayers)
           {
-            if (PlayersMatch(firstPlayer, secondPlayer, FilterOptions.Default))
+            if (NamesMatch(firstPlayer.Names, secondPlayer.Names) > 0)
             {
               ++sharedPlayersCount;
 
-              if (sharedPlayersCount > 2)
+              if (sharedPlayersCount >= 2)
               {
                 logger?.WriteLine("Shared players requirement met.");
                 return true;
@@ -336,6 +337,8 @@ namespace SplatTagCore
             }
           }
         }
+
+        logger?.WriteLine($"Shared players requirement NOT met.\nFirst: {first}, with players: {string.Join(", ", firstPlayers)}\nSecond: {second}, with players: {string.Join(", ", secondPlayers)}");
       }
 
       return false;

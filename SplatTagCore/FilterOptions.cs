@@ -72,7 +72,7 @@ namespace SplatTagCore
     Default = (Name | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs | BattlefyUsername | BattlefyPersistentIds | DiscordId | SlappId),
 
     /// <summary> Persistent search </summary>
-    /// <remarks>Omits Sources, Clan Tags, and non-persistent names</remarks>
-    Persistent = (FriendCode | Twitter | Twitch | BattlefySlugs | BattlefyPersistentIds | DiscordId)
+    /// <remarks>This is the information we can safely merge records together by.</remarks>
+    Persistent = (Twitter | Twitch | BattlefyPersistentIds | DiscordId)
   }
 }

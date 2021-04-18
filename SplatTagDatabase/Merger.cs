@@ -70,9 +70,11 @@ namespace SplatTagDatabase
     /// Final time-consuming call to look at all player entries and merge where appropriate.
     /// </summary>
     /// <param name="playersToMutate"></param>
-    public static void FinalisePlayers(IList<Player> playersToMutate, TextWriter? logger = null)
+    /// <returns>Any work done (true, should loop) or No work done (false, can stop)</returns>
+    public static bool FinalisePlayers(IList<Player> playersToMutate, TextWriter? logger = null)
     {
-      if (playersToMutate == null) return;
+      bool workDone = false;
+      if (playersToMutate == null) return workDone;
 
       string logMessage = $"Beginning {nameof(FinalisePlayers)} on {playersToMutate.Count} entries.";
       logger?.WriteLine(logMessage);
@@ -114,19 +116,27 @@ namespace SplatTagDatabase
           logger?.WriteLine($"Merging player {newerPlayerRecord} with teams [{string.Join(", ", newerPlayerRecord.Teams)}] into {foundPlayer} with teams [{string.Join(", ", foundPlayer.Teams)}].");
           foundPlayer.Merge(newerPlayerRecord);
           playersToMutate.RemoveAt(i); // remove the newer record
+          workDone = true;
         }
 
         string progressBar = Util.GetProgressBar(playersToMutate.Count - i, playersToMutate.Count, 100);
         if (!progressBar.Equals(lastProgressBar))
         {
-          logger?.WriteLine(progressBar);
-          Console.WriteLine(progressBar);
+          if (logger != null)
+          {
+            logger.WriteLine(progressBar);
+          }
+          else
+          {
+            Console.WriteLine(progressBar);
+          }
           lastProgressBar = progressBar;
         }
       }
 
-      logMessage = $"Finished {nameof(FinalisePlayers)} with {playersToMutate.Count} entries.";
+      logMessage = $"Finished {nameof(FinalisePlayers)} with {playersToMutate.Count} entries. Work done: {workDone}";
       logger?.WriteLine(logMessage);
+      return workDone;
     }
 
     /// <summary>
@@ -134,6 +144,7 @@ namespace SplatTagDatabase
     /// </summary>
     /// <returns>
     /// A dictionary of merged team ids keyed by initial with values of the new id.
+    /// Empty dictionary = no work done.
     /// </returns>
     public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, IList<Team> teamsToMutate, TextWriter? logger = null)
     {
@@ -161,8 +172,12 @@ namespace SplatTagDatabase
         // If a teams has now been found, merge it.
         if (foundTeam != null)
         {
+          logger?.WriteLine($"Merging newer team {newerTeamRecord} into {foundTeam} and deleting index [{i}].");
           MergeExistingTeam(mergeResult, newerTeamRecord, foundTeam);
+
+          // Remove the newer record (the older record persists)
           teamsToMutate.RemoveAt(i);
+          logger?.WriteLine($"Resultant team: {foundTeam}.");
         }
 
         string progressBar = Util.GetProgressBar(teamsToMutate.Count - i, teamsToMutate.Count, 100);

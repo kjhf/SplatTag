@@ -8,6 +8,11 @@ namespace SplatTagDatabase
   public static class SplatTagControllerFactory
   {
     /// <summary>
+    /// Verbose flag
+    /// </summary>
+    public static bool Verbose { get; set; }
+
+    /// <summary>
     /// Get the SplatTag application data folder
     /// </summary>
     /// <returns></returns>
@@ -74,17 +79,21 @@ namespace SplatTagDatabase
       string? sourcesFile = null,
       SplatTagJsonSnapshotDatabase? snapshotDatabase = null)
     {
-      if (saveFolder == null)
-      {
-        saveFolder = GetDefaultPath();
-      }
-      Directory.CreateDirectory(saveFolder);
-
       if (sourcesFile == null)
       {
         sourcesFile = GenericFilesToIImporters.DefaultSourcesFileName;
+
+        if (saveFolder == null)
+        {
+          saveFolder = GetDefaultPath();
+        }
+      }
+      else if (saveFolder == null)
+      {
+        saveFolder = Directory.GetParent(sourcesFile).FullName;
       }
 
+      // Directories created in GenericFilesToIImporters
       GenericFilesToIImporters sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
       MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
       SplatTagController splatTagController = new SplatTagController(splatTagDatabase);

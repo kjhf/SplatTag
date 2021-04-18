@@ -51,7 +51,7 @@ namespace SplatTagUnitTests
 
       var mainTask = Task.Run(async () =>
       {
-        await ConsoleMain.Main($"--rebuild {sourcesPath}".Split(" ")).ConfigureAwait(false);
+        await ConsoleMain.Main($"--verbose --rebuild {sourcesPath}".Split(" ")).ConfigureAwait(false);
         await Task.Delay(500).ConfigureAwait(false); // Let any logging finish.
       });
 
@@ -71,7 +71,7 @@ namespace SplatTagUnitTests
       (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.Load();
 
       // Assertions.
-      Assert.AreEqual(1, players.Count(p => p.Name.Value == "Slate"), "Incorrect number of Slates!");
+      Assert.AreEqual(2, players.Count(p => p.Name.Value == "Slate"), "Incorrect number of Slates!");
     }
   }
 }
