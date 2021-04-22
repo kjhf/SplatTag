@@ -13,6 +13,11 @@ namespace SplatTagCore
 {
   public class SplatTagController : ITeamResolver
   {
+    /// <summary>
+    /// Verbose flag
+    /// </summary>
+    public static bool Verbose { get; set; }
+
     private readonly ISplatTagDatabase database;
     private Player[] players;
     private Dictionary<Guid, Team> teams;

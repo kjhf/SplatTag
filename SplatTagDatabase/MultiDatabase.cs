@@ -29,7 +29,7 @@ namespace SplatTagDatabase
 
     public (Player[], Team[], Dictionary<Guid, Source>) Load()
     {
-      TextWriter? logger = SplatTagControllerFactory.Verbose ? Console.Out : null;
+      TextWriter? logger = SplatTagController.Verbose ? Console.Out : null;
 
       // If we need to do our conversion first, do so now.
       if (converter != null)
@@ -37,9 +37,16 @@ namespace SplatTagDatabase
         importers = converter.Load();
       }
 
+      if (importers.Length == 0)
+      {
+        Console.WriteLine("No importers.");
+        return (Array.Empty<Player>(), Array.Empty<Team>(), new Dictionary<Guid, Source>());
+      }
+
       // Load each importer into a Source
       Console.WriteLine($"Reading {importers.Length} sources...");
       Source[] sources = new Source[importers.Length];
+
       Parallel.For(0, importers.Length, i =>
       {
         try
@@ -53,7 +60,7 @@ namespace SplatTagDatabase
       });
 
       // Merge each Source into our global Players and Teams list.
-      Console.WriteLine($"Merging {sources.Length} sources...");
+      Console.WriteLine($"Merging {sources.Length} sources beginning with {sources[0]} and ending with {sources[sources.Length - 1].Name}...");
       List<Player> players = new List<Player>();
       List<Team> teams = new List<Team>();
 
@@ -61,6 +68,7 @@ namespace SplatTagDatabase
       for (int i = 0; i < sources.Length; i++)
       {
         Source source = sources[i];
+        Console.WriteLine($"Merging {source.Name}...");
         try
         {
           var mergeResult = Merger.MergeTeamsByPersistentIds(teams, source.Teams);

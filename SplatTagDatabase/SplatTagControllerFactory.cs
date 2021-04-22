@@ -8,11 +8,6 @@ namespace SplatTagDatabase
   public static class SplatTagControllerFactory
   {
     /// <summary>
-    /// Verbose flag
-    /// </summary>
-    public static bool Verbose { get; set; }
-
-    /// <summary>
     /// Get the SplatTag application data folder
     /// </summary>
     /// <returns></returns>

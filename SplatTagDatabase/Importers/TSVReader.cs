@@ -332,7 +332,11 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.Name:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.AddName(value, source);
+
+              var playerName = value.Trim();
+              playerName = t.Tag?.StripFromPlayer(playerName) ?? playerName;
+              p.AddName(playerName, source);
+
               if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
                 p.AddFCs(friendCode.AsEnumerable());
@@ -399,15 +403,33 @@ namespace SplatTagDatabase.Importers
           players.Add(p);
         }
 
-        // Add the source.
-        t.AddSources(source.AsEnumerable());
-
-        // Recalculate the ClanTag layout
-        if (t.Tag != null && players.Any())
+        // Don't bother adding the team if it has no players
+        if (players.Count > 0)
         {
-          t.Tag.CalculateTagOption(players.First().Name.Value);
+          // Add the source
+          t.AddSources(source.AsEnumerable());
+
+          // Recalculate the ClanTag layout
+          if (t.Tag != null)
+          {
+            t.Tag.CalculateTagOption(players[0].Name.Value);
+          }
+          else
+          {
+            ClanTag? newTag = ClanTag.CalculateTagFromNames(players.Select(p => p.Name.Value).ToArray(), source);
+
+            if (newTag != null)
+            {
+              t.AddClanTags(new[] { newTag });
+            }
+          }
+          teams.Add(t);
         }
-        teams.Add(t);
+        else
+        {
+          Console.WriteLine($"Warning: skipping team with no players. Line {lineIndex}:");
+          Debug.WriteLine(line);
+        }
       }
 
       source.Players = players.ToArray();

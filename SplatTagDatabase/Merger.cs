@@ -13,31 +13,6 @@ namespace SplatTagDatabase
   /// </summary>
   internal static class Merger
   {
-    /// <summary>
-    /// Adds a new player to the players list with respect to their team and its tag.
-    /// Returns the player that was added (or null if <paramref name="playerName"/> was null or empty).
-    /// </summary>
-    /// <param name="playerName">The player's name on the roster</param>
-    /// <param name="newTeam">The new team, including its tag</param>
-    /// <param name="players">Players list to add the player to</param>
-    /// <param name="source">Source</param>
-    public static Player? AddPlayerFromTag(string? playerName, Team newTeam, List<Player> players, Source source)
-    {
-      if (playerName != null && !string.IsNullOrWhiteSpace(playerName))
-      {
-        playerName = playerName.Trim();
-        playerName = newTeam.Tag?.StripFromPlayer(playerName) ?? playerName;
-
-        var p = new Player(playerName, new[] { newTeam.Id }, source);
-        players.Add(p);
-        return p;
-      }
-      else
-      {
-        return null;
-      }
-    }
-
     public static void CorrectTeamIdsForPlayers(ICollection<Player> incomingPlayers, IDictionary<Guid, Guid> teamsMergeResult, TextWriter? logger = null)
     {
       if (incomingPlayers == null || teamsMergeResult == null || incomingPlayers.Count == 0 || teamsMergeResult.Count == 0) return;
@@ -158,26 +133,26 @@ namespace SplatTagDatabase
         var newerTeamRecord = teamsToMutate[i];
 
         // Try match teams.
-        Team? foundTeam = null;
+        Team? olderFoundTeam = null;
         for (int j = 0; j < i; ++j)
         {
           var olderTeamRecord = teamsToMutate[j];
           if (Matcher.TeamsMatch(allPlayers, olderTeamRecord, newerTeamRecord, logger))
           {
-            foundTeam = olderTeamRecord;
+            olderFoundTeam = olderTeamRecord;
             break;
           }
         }
 
         // If a teams has now been found, merge it.
-        if (foundTeam != null)
+        if (olderFoundTeam != null)
         {
-          logger?.WriteLine($"Merging newer team {newerTeamRecord} into {foundTeam} and deleting index [{i}].");
-          MergeExistingTeam(mergeResult, newerTeamRecord, foundTeam);
+          logger?.WriteLine($"Merging newer team {newerTeamRecord} into {olderFoundTeam} and deleting index [{i}].");
+          MergeExistingTeam(mergeResult, newerTeamRecord, olderFoundTeam);
 
           // Remove the newer record (the older record persists)
           teamsToMutate.RemoveAt(i);
-          logger?.WriteLine($"Resultant team: {foundTeam}.");
+          logger?.WriteLine($"Resultant team: {olderFoundTeam}.");
         }
 
         string progressBar = Util.GetProgressBar(teamsToMutate.Count - i, teamsToMutate.Count, 100);
@@ -267,7 +242,7 @@ namespace SplatTagDatabase
         {
           if (importTeam.BattlefyPersistentTeamId != null)
           {
-            var foundTeam = teamsToMutate.AsParallel().FirstOrDefault(t => importTeam.BattlefyPersistentTeamId.Value.Equals(t?.BattlefyPersistentTeamId?.Value));
+            var foundTeam = teamsToMutate.Find(t => importTeam.BattlefyPersistentTeamId.Value.Equals(t?.BattlefyPersistentTeamId?.Value));
             if (foundTeam != null)
             {
               MergeExistingTeam(mergeResult, importTeam, foundTeam);

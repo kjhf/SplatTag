@@ -153,7 +153,7 @@ namespace SplatTagCore
 
     public void AddDivision(Division division)
     {
-      if (division != Division.Unknown && (division != CurrentDiv || !division.Season.Equals(CurrentDiv.Season)))
+      if (!division.IsUnknown && (division.DivType != CurrentDiv.DivType || division.Value != CurrentDiv.Value || !division.Season.Equals(CurrentDiv.Season)))
       {
         SplatTagCommon.InsertFrontUnique(division, this.divisions);
       }

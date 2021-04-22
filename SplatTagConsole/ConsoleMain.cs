@@ -171,7 +171,7 @@ namespace SplatTagConsole
         };
 
         string?[] inputs = new string?[] { b64, query, slappId };
-        SplatTagControllerFactory.Verbose = verbose;
+        SplatTagController.Verbose = verbose;
 
         if (rebuild != null)
         {

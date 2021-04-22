@@ -19,15 +19,9 @@ namespace SplatTagCore
       StringBuilder sb = new StringBuilder();
       sb.Append("[");
       int bars = Math.Min(width - 1, (int)(((value + 1) * width) / (double)capacity));
-      for (int i = 0; i < bars; i++)
-      {
-        sb.Append("=");
-      }
+      sb.Append(new string('=', Math.Max(0, bars)));
       sb.Append(">");
-      for (int i = bars; i < (width - 1); i++)
-      {
-        sb.Append(" ");
-      }
+      sb.Append(new string(' ', Math.Max(0, width - 1 - bars)));
       sb.Append("]");
       return sb.ToString();
     }

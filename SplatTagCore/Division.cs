@@ -15,11 +15,16 @@ namespace SplatTagCore
     public const int UNKNOWN = int.MaxValue;
     public const int X = 0;
     public const int X_PLUS = -1;
-    public static readonly Division Unknown = new Division();
+    public static readonly Division Unknown = new();
 
     public readonly DivType DivType = DivType.Unknown;
     public readonly string Season = "";
     public readonly int Value = UNKNOWN;
+
+    /// <summary>s
+    /// Get if a division is unknown.
+    /// </summary>
+    public bool IsUnknown => this.Value == UNKNOWN || this.DivType == DivType.Unknown;
 
     public Division(int value = UNKNOWN, DivType divType = DivType.Unknown, string season = "")
     {
@@ -103,19 +108,19 @@ namespace SplatTagCore
                 D2  | D4-D7
                 D3-8| D8
              */
-            switch (Value)
+            return Value switch
             {
-              case 1: return 2;
-              case 2: return 5;
-              default: return 8;
-            }
+              1 => 2,
+              2 => 5,
+              _ => 8,
+            };
           }
 
           case DivType.EBTV:
             return Value + 2;
 
           case DivType.LUTI:
-            return Value;
+            return Value == X_PLUS ? X : Value;  // Season 11 removed X+ again. Just group X altogether.
 
           default:
             return UNKNOWN;

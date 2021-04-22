@@ -70,7 +70,14 @@ namespace SplatTagDatabase.Importers
         }
 
         // Attempt to resolve the team tags
+        ClanTag? teamTag = ClanTag.CalculateTagFromNames(row.Players.Select(p => p.Name).Where(name => name != null && !string.IsNullOrWhiteSpace(name)).ToArray()!, source);
+
         Team newTeam = new Team(row.TeamName, source);
+        if (teamTag != null)
+        {
+          newTeam.AddClanTags(new[] { teamTag });
+        }
+
         if (row.BattlefyPersistentTeamId != null)
         {
           newTeam.AddBattlefyId(row.BattlefyPersistentTeamId, source);
@@ -102,12 +109,6 @@ namespace SplatTagDatabase.Importers
             continue;
           }
 
-          // Add the player
-          //if (p.Name.StartsWith(tag) && p.Name != tag)
-          //{
-          //  p.Name = p.Name.Substring(tag.Length).Trim();
-          //}
-
           // Filter the friend code from the name, if found
           var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);
           if (parsedFriendCode != FriendCode.NO_FRIEND_CODE)
@@ -115,6 +116,13 @@ namespace SplatTagDatabase.Importers
             p.Name = strippedName;
           }
 
+          // Remove tag from player
+          if (teamTag != null)
+          {
+            p.Name = teamTag.StripFromPlayer(p.Name.Trim());
+          }
+
+          // Add Discord information, if we have it
           var newPlayer = new Player(p.Name, new[] { newTeam.Id }, source);
 
           if (p.BattlefyName != null && p.BattlefyName == row.Captain.BattlefyName)
@@ -130,6 +138,7 @@ namespace SplatTagDatabase.Importers
             }
           }
 
+          // Add Battlefy
           if (p.BattlefyName != null && p.BattlefyUserSlug != null && p.PersistentPlayerId != null)
           {
             newPlayer.AddBattlefyInformation(p.BattlefyUserSlug, p.BattlefyName, p.PersistentPlayerId, source);

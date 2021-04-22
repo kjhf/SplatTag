@@ -1,9 +1,12 @@
 ﻿using Newtonsoft.Json;
 using SplatTagCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SplatTagDatabase.Importers
 {
@@ -68,6 +71,11 @@ namespace SplatTagDatabase.Importers
 
       [JsonProperty("Player 10")]
       public string Player10 { get; set; } = "";
+
+      /// <summary>
+      /// Get the players of this team (checks/omits null and empty)
+      /// </summary>
+      public IEnumerable<string> Players => new[] { Player1, Player2, Player3, Player4, Player5, Player6, Player7, Player8, Player9, Player10 }.Where(p => !string.IsNullOrWhiteSpace(p));
     }
 
     private readonly string jsonFile;
@@ -95,36 +103,46 @@ namespace SplatTagDatabase.Importers
       string json = File.ReadAllText(jsonFile); // N.B. by default this reads UTF-8.
       LUTIJsonRow[] rows = JsonConvert.DeserializeObject<LUTIJsonRow[]>(json);
 
-      List<Team> teams = new List<Team>();
-      List<Player> players = new List<Player>();
-      foreach (LUTIJsonRow row in rows)
+      var teams = new ConcurrentBag<Team>();
+      var players = new ConcurrentBag<Player>();
+      Parallel.ForEach(rows, row =>
       {
         if (row.TeamCaptain == null)
         {
           throw new ArgumentException("JSON does not contain a Team Captain. Check format of spreadsheet.");
         }
 
+        string[] playerNames = row.Players.ToArray();
+
         Team newTeam = new Team(row.TeamName, source);
         newTeam.AddDivision(new Division(row.Division, DivType.LUTI, season));
 
-        if (row.Tag != null)
+        if (!string.IsNullOrEmpty(row.Tag) && row.TeamCaptain.Contains(row.Tag))
         {
           // Handle tag placements from the captain's name
           newTeam.AddClanTag(row.Tag, source, ClanTag.CalculateTagOption(row.Tag, row.TeamCaptain));
         }
+        else
+        {
+          // Calculate a tag
+          ClanTag? newTag = ClanTag.CalculateTagFromNames(playerNames, source);
+
+          if (newTag != null)
+          {
+            newTeam.AddClanTags(new[] { newTag });
+          }
+        }
 
         teams.Add(newTeam);
-        Merger.AddPlayerFromTag(row.TeamCaptain, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player2, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player3, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player4, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player5, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player6, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player7, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player8, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player9, newTeam, players, source);
-        Merger.AddPlayerFromTag(row.Player10, newTeam, players, source);
-      }
+        foreach (string player in playerNames)
+        {
+          var playerName = player.Trim();
+          playerName = newTeam.Tag?.StripFromPlayer(playerName) ?? playerName;
+
+          var p = new Player(playerName, new[] { newTeam.Id }, source);
+          players.Add(p);
+        }
+      });
 
       source.Players = players.ToArray();
       source.Teams = teams.ToArray();
