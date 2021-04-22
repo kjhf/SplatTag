@@ -74,7 +74,7 @@ namespace SplatTagCore
     /// </summary>
     public bool MatchAny(Discord other)
     {
-      return MatchPersistent(other) || Matcher.NamesMatch(usernames, other.usernames) > 0;
+      return MatchPersistent(other) || Matcher.NamesMatch(usernames, other.usernames);
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ namespace SplatTagCore
     /// </summary>
     public bool MatchPersistent(Discord other)
     {
-      return Matcher.NamesMatch(ids, other.ids) > 0;
+      return Matcher.NamesMatch(ids, other.ids);
     }
 
     public override string ToString()

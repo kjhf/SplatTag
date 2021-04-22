@@ -16,14 +16,14 @@ namespace SplatTagCore
     /// <param name="width"></param>
     public static string GetProgressBar(int value, int capacity, int width = 10)
     {
-      StringBuilder sb = new StringBuilder();
-      sb.Append("[");
       int bars = Math.Min(width - 1, (int)(((value + 1) * width) / (double)capacity));
-      sb.Append(new string('=', Math.Max(0, bars)));
-      sb.Append(">");
-      sb.Append(new string(' ', Math.Max(0, width - 1 - bars)));
-      sb.Append("]");
-      return sb.ToString();
+      return new StringBuilder()
+      .Append('[')
+      .Append(new string('=', Math.Max(0, bars)))
+      .Append('>')
+      .Append(new string(' ', Math.Max(0, width - 1 - bars)))
+      .Append(']')
+      .ToString();
     }
   }
 }

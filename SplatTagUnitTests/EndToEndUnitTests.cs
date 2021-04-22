@@ -5,6 +5,7 @@ using SplatTagDatabase;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SplatTagUnitTests
@@ -71,7 +72,26 @@ namespace SplatTagUnitTests
       (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.Load();
 
       // Assertions.
-      Assert.AreEqual(2, players.Count(p => p.Name.Value == "Slate"), "Incorrect number of Slates!");
+      Assert.AreEqual(2, players.Count(p => p.Name.Value == "Slate"), "Incorrect number of Slates:\n - " +
+        new StringBuilder()
+        .AppendJoin("\n - ",
+          players
+          .Where(p => p.Name.Value == "Slate")
+          .Select(p => new StringBuilder()
+                  .Append('[')
+                  .AppendJoin(", ", p.Names)
+                  .Append(']')
+                  .Append(" -- Sourced from [")
+                  .AppendJoin(", ", p.Sources)
+                  .Append("] and teams [")
+                  .AppendJoin(", ", p.Teams)
+                  .Append("].")
+          )
+        ));
+      var splatarians = teams.Where(p => p.Name.Value == "Splatarians");
+      Assert.AreEqual(1, splatarians.Count(), $"Incorrect number of Splatarians:\n - { string.Join("\n - ", splatarians)}");
+      Assert.AreEqual("SX", splatarians.First().CurrentDiv.Season);
+      Assert.IsTrue(splatarians.First().Divisions.Any(d => d.Season == "S9"));
     }
   }
 }

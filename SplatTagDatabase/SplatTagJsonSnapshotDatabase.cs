@@ -94,7 +94,7 @@ namespace SplatTagDatabase
       t.Stop();
       Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (2/2)");
       Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Transforming sources... ");
-      var lookup = sources.AsParallel().ToDictionary(s => s.Id, s => s);
+      var lookup = sources.ToDictionary(s => s.Id, s => s);
 
       Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile from {playersSnapshotFile}... ");
       settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));

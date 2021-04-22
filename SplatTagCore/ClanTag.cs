@@ -11,7 +11,7 @@ namespace SplatTagCore
   [Serializable]
   public class ClanTag : Name
   {
-    private static readonly char[] tagDelimiters = new[] { ' ', '•', '_', '.', '⭐' };
+    private static readonly char[] tagDelimiters = new[] { ' ', '•', '_', '.', '⭐', '~' };
 
     /// <summary>
     /// Construct a ClanTag based on the tag and the source

@@ -97,7 +97,7 @@ namespace SplatTagCore
     /// </summary>
     public bool MatchAny(Battlefy other)
     {
-      return MatchPersistent(other) || Matcher.NamesMatch(usernames, other.usernames) > 0;
+      return MatchPersistent(other) || Matcher.NamesMatch(usernames, other.usernames);
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ namespace SplatTagCore
     /// </summary>
     public bool MatchPersistent(Battlefy other)
     {
-      return Matcher.NamesMatch(slugs, other.slugs) > 0 || Matcher.NamesMatch(persistentIds, other.persistentIds) > 0;
+      return Matcher.NamesMatch(slugs, other.slugs) || Matcher.NamesMatch(persistentIds, other.persistentIds);
     }
 
     public override string ToString()

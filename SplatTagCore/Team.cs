@@ -203,7 +203,6 @@ namespace SplatTagCore
     /// <summary>
     /// Merge this team with another (newer) team instance
     /// </summary>
-    /// <param name="newerTeam"></param>
     public void Merge(Team newerTeam)
     {
       // Merge the tags.

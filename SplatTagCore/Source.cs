@@ -47,9 +47,9 @@ namespace SplatTagCore
     public Uri[] Uris { get; set; } = Array.Empty<Uri>();
 
     /// <summary>
-    /// Construct a source with a name and date.
+    /// Construct a source with a name and optional date.
+    /// Date will be inferred if not specified, or set to Builtins.UnknownDateTime.
     /// </summary>
-    /// <param name="name"></param>
     public Source(string name = Builtins.UNKNOWN_SOURCE, DateTime? start = null)
     {
       Name = name;

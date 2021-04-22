@@ -339,3 +339,6 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 /.DataFiles
+/SplatTagUnitTests/EndToEndData/Snapshot-Teams-*.json
+/SplatTagUnitTests/EndToEndData/Snapshot-Sources-*.json
+/SplatTagUnitTests/EndToEndData/Snapshot-Players-*.json

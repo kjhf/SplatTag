@@ -29,8 +29,6 @@ namespace SplatTagDatabase
 
     public (Player[], Team[], Dictionary<Guid, Source>) Load()
     {
-      TextWriter? logger = SplatTagController.Verbose ? Console.Out : null;
-
       // If we need to do our conversion first, do so now.
       if (converter != null)
       {
@@ -60,6 +58,8 @@ namespace SplatTagDatabase
       });
 
       // Merge each Source into our global Players and Teams list.
+      TextWriter? logger = SplatTagController.Verbose ? Console.Out : null;
+
       Console.WriteLine($"Merging {sources.Length} sources beginning with {sources[0]} and ending with {sources[sources.Length - 1].Name}...");
       List<Player> players = new List<Player>();
       List<Team> teams = new List<Team>();
@@ -83,7 +83,14 @@ namespace SplatTagDatabase
         string progressBar = Util.GetProgressBar(sources.Length - i, sources.Length, 100);
         if (!progressBar.Equals(lastProgressBar))
         {
-          Console.WriteLine(progressBar);
+          if (logger != null)
+          {
+            logger.WriteLine(progressBar);
+          }
+          else
+          {
+            Console.WriteLine(progressBar);
+          }
           lastProgressBar = progressBar;
         }
       }
@@ -106,7 +113,7 @@ namespace SplatTagDatabase
         Console.WriteLine($"ERROR: Failed {nameof(Merger.FinalisePlayers)}. Continuing anyway. {ex}");
       }
 
-      return (players.ToArray(), teams.ToArray(), sources.AsParallel().ToDictionary(s => s.Id, s => s));
+      return (players.ToArray(), teams.ToArray(), sources.ToDictionary(s => s.Id, s => s));
     }
   }
 }

@@ -55,7 +55,7 @@ namespace SplatTagCore
       else
       {
         players = loadedPlayers;
-        teams = loadedTeams.AsParallel().ToDictionary(t => t.Id, t => t);
+        teams = loadedTeams.ToDictionary(t => t.Id, t => t);
         sources = loadedSources;
 
         cachingTask = Task.Run(() =>
@@ -84,15 +84,16 @@ namespace SplatTagCore
     /// </summary>
     public (Player, bool)[] GetPlayersForTeam(Team t)
     {
-      if (cachingTask == null || !cachingTask.IsCompleted)
+      if (cachingTask?.IsCompleted == true)
       {
-        return t.GetPlayers(players)
-          .Select(p => (p, p.CurrentTeam == t.Id))
-          .ToArray();
+        return playersForTeam[t];
       }
       else
       {
-        return playersForTeam[t];
+        return t.GetPlayers(players)
+          .AsParallel()
+          .Select(p => (p, p.CurrentTeam == t.Id))
+          .ToArray();
       }
     }
 

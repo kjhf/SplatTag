@@ -46,10 +46,11 @@ namespace SplatTagDatabase
     /// </summary>
     /// <param name="playersToMutate"></param>
     /// <returns>Any work done (true, should loop) or No work done (false, can stop)</returns>
-    public static bool FinalisePlayers(IList<Player> playersToMutate, TextWriter? logger = null)
+    public static bool FinalisePlayers(List<Player> playersToMutate, TextWriter? logger = null)
     {
       bool workDone = false;
       if (playersToMutate == null) return workDone;
+      var indexesToRemove = new List<int>();
 
       string logMessage = $"Beginning {nameof(FinalisePlayers)} on {playersToMutate.Count} entries.";
       logger?.WriteLine(logMessage);
@@ -66,6 +67,14 @@ namespace SplatTagDatabase
           var olderPlayerRecord = playersToMutate[j];
           if (Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Persistent, logger))
           {
+            // Quick check that the player is definitely older
+            if (olderPlayerRecord.CompareToBySourceChronology(newerPlayerRecord) == 1)
+            {
+              // Swap the instances round
+              logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord}.");
+              (newerPlayerRecord, olderPlayerRecord) = (playersToMutate[i], playersToMutate[j]) = (olderPlayerRecord, newerPlayerRecord);
+            }
+
             foundPlayer = olderPlayerRecord;
             break;
           }
@@ -79,6 +88,14 @@ namespace SplatTagDatabase
             var olderPlayerRecord = playersToMutate[j];
             if (Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Name, logger))
             {
+              // Quick check that the player is definitely older
+              if (olderPlayerRecord.CompareToBySourceChronology(newerPlayerRecord) == 1)
+              {
+                // Swap the instances round
+                logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord}.");
+                (newerPlayerRecord, olderPlayerRecord) = (playersToMutate[i], playersToMutate[j]) = (olderPlayerRecord, newerPlayerRecord);
+              }
+
               foundPlayer = olderPlayerRecord;
               break;
             }
@@ -88,9 +105,9 @@ namespace SplatTagDatabase
         // If a player has now been found, merge it.
         if (foundPlayer != null)
         {
-          logger?.WriteLine($"Merging player {newerPlayerRecord} with teams [{string.Join(", ", newerPlayerRecord.Teams)}] into {foundPlayer} with teams [{string.Join(", ", foundPlayer.Teams)}].");
+          logger?.WriteLine($"Merging player {newerPlayerRecord} from sources [{string.Join(", ", newerPlayerRecord.Sources)}] into {foundPlayer} from sources [{string.Join(", ", foundPlayer.Sources)}].");
           foundPlayer.Merge(newerPlayerRecord);
-          playersToMutate.RemoveAt(i); // remove the newer record
+          indexesToRemove.Add(i);
           workDone = true;
         }
 
@@ -109,6 +126,9 @@ namespace SplatTagDatabase
         }
       }
 
+      logger?.WriteLine($"{nameof(FinalisePlayers)}: Remaking players list {playersToMutate.Count} --> {playersToMutate.Count - indexesToRemove.Count} entries.");
+      playersToMutate.RemoveAtRange(indexesToRemove);
+
       logMessage = $"Finished {nameof(FinalisePlayers)} with {playersToMutate.Count} entries. Work done: {workDone}";
       logger?.WriteLine(logMessage);
       return workDone;
@@ -118,12 +138,13 @@ namespace SplatTagDatabase
     /// Final time-consuming call to look at all team entries and merge where appropriate.
     /// </summary>
     /// <returns>
-    /// A dictionary of merged team ids keyed by initial with values of the new id.
+    /// A dictionary of merged team ids keyed by the newest id to become the value of the pre-known id.
     /// Empty dictionary = no work done.
     /// </returns>
-    public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, IList<Team> teamsToMutate, TextWriter? logger = null)
+    public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, List<Team> teamsToMutate, TextWriter? logger = null)
     {
-      ConcurrentDictionary<Guid, Guid> mergeResult = new ConcurrentDictionary<Guid, Guid>();
+      var mergeResult = new Dictionary<Guid, Guid>();
+      var indexesToRemove = new List<int>();
 
       logger?.WriteLine($"Beginning {nameof(FinaliseTeams)} on {teamsToMutate.Count} entries.");
 
@@ -133,39 +154,111 @@ namespace SplatTagDatabase
         var newerTeamRecord = teamsToMutate[i];
 
         // Try match teams.
-        Team? olderFoundTeam = null;
+        Team? foundOlderTeamRecord = null;
         for (int j = 0; j < i; ++j)
         {
           var olderTeamRecord = teamsToMutate[j];
+
           if (Matcher.TeamsMatch(allPlayers, olderTeamRecord, newerTeamRecord, logger))
           {
-            olderFoundTeam = olderTeamRecord;
+            // Quick check that the team is definitely older
+            if (olderTeamRecord.CompareToBySourceChronology(newerTeamRecord) == 1)
+            {
+              // Swap the instances round
+              logger?.WriteLine($"Newer team is not newer, swapping {newerTeamRecord} with {olderTeamRecord}.");
+              (newerTeamRecord, olderTeamRecord) = (teamsToMutate[i], teamsToMutate[j]) = (olderTeamRecord, newerTeamRecord);
+            }
+
+            foundOlderTeamRecord = olderTeamRecord;
             break;
           }
         }
 
-        // If a teams has now been found, merge it.
-        if (olderFoundTeam != null)
+        // If an older team was found, merge it.
+        if (foundOlderTeamRecord != null)
         {
-          logger?.WriteLine($"Merging newer team {newerTeamRecord} into {olderFoundTeam} and deleting index [{i}].");
-          MergeExistingTeam(mergeResult, newerTeamRecord, olderFoundTeam);
+          logger?.WriteLine($"Merging newer team {newerTeamRecord} into {foundOlderTeamRecord} and deleting index [{i}].");
+          MergeExistingTeam(mergeResult, newerTeamRecord, foundOlderTeamRecord);
 
           // Remove the newer record (the older record persists)
-          teamsToMutate.RemoveAt(i);
-          logger?.WriteLine($"Resultant team: {olderFoundTeam}.");
+          indexesToRemove.Add(i);
+          logger?.WriteLine($"Resultant team: {foundOlderTeamRecord}.");
         }
 
         string progressBar = Util.GetProgressBar(teamsToMutate.Count - i, teamsToMutate.Count, 100);
         if (!progressBar.Equals(lastProgressBar))
         {
-          logger?.WriteLine(progressBar);
-          Console.WriteLine(progressBar);
+          if (logger != null)
+          {
+            logger.WriteLine(progressBar);
+          }
+          else
+          {
+            Console.WriteLine(progressBar);
+          }
           lastProgressBar = progressBar;
         }
       }
 
+      logger?.WriteLine($"{nameof(FinaliseTeams)}: Remaking teams list {teamsToMutate.Count} --> {teamsToMutate.Count - indexesToRemove.Count} entries.");
+      teamsToMutate.RemoveAtRange(indexesToRemove);
+
       logger?.WriteLine($"Finished {nameof(FinaliseTeams)} with {teamsToMutate.Count} entries.");
       return mergeResult;
+    }
+
+    /// <summary>
+    /// Remove multiple indicies
+    /// With thanks to https://stackoverflow.com/questions/63495264/how-can-i-efficiently-remove-elements-by-index-from-a-very-large-list
+    /// </summary>
+    internal static void RemoveAtRange<T>(this List<T> values, List<int> indicies)
+    {
+      if (indicies.Count == 0)
+      {
+        return;
+      }
+      else if (indicies.Count == 1)
+      {
+        values.RemoveAt(indicies[0]);
+      }
+      else
+      {
+        indicies.Sort();
+
+        int sourceStartIndex = 0;
+        int skipCount = 0;
+
+        int destStartIndex;
+        int spanLength;
+
+        // Copy items up to last index to be skipped
+        foreach (var skipIndex in indicies)
+        {
+          spanLength = skipIndex - sourceStartIndex;
+          destStartIndex = sourceStartIndex - skipCount;
+
+          for (int i = sourceStartIndex; i < sourceStartIndex + spanLength; i++)
+          {
+            values[destStartIndex] = values[i];
+            destStartIndex++;
+          }
+
+          sourceStartIndex = skipIndex + 1;
+          skipCount++;
+        }
+
+        // Copy remaining items (between last index to be skipped and end of list)
+        spanLength = values.Count - sourceStartIndex;
+        destStartIndex = sourceStartIndex - skipCount;
+
+        for (int i = sourceStartIndex; i < sourceStartIndex + spanLength; i++)
+        {
+          values[destStartIndex] = values[i];
+          destStartIndex++;
+        }
+
+        values.RemoveRange(destStartIndex, indicies.Count);
+      }
     }
 
     /// <summary>
@@ -187,8 +280,8 @@ namespace SplatTagDatabase
           // First, try match through persistent information only.
           // If that doesn't work, try and match a name and same team.
           Player foundPlayer =
-            playersToMutate.AsParallel().FirstOrDefault(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent, logger))
-            ?? playersToMutate.AsParallel().FirstOrDefault(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Name, logger));
+            playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent, logger))
+            ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Name, logger));
 
           if (foundPlayer == null)
           {
@@ -269,10 +362,20 @@ namespace SplatTagDatabase
       return mergeResult;
     }
 
-    private static void MergeExistingTeam(ConcurrentDictionary<Guid, Guid> mergeResult, Team newerTeam, Team olderTeam)
+    /// <summary>
+    /// Merge two existing teams and add to the merge result dictionary.
+    /// </summary>
+    private static void MergeExistingTeam(IDictionary<Guid, Guid> mergeResult, Team newerTeam, Team olderTeam)
     {
-      mergeResult.TryAdd(newerTeam.Id, olderTeam.Id);
+      // Newer id to become the older team's id
+      mergeResult.Add(newerTeam.Id, olderTeam.Id);
       olderTeam.Merge(newerTeam);
+
+      // If the merge result is already pointing to the newer team, we need to update it to the new older team
+      foreach (var pair in mergeResult.Where(p => p.Value == newerTeam.Id).ToArray())
+      {
+        mergeResult[pair.Key] = olderTeam.Id;
+      }
     }
   }
 }

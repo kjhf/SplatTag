@@ -1,7 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagCore;
 using SplatTagDatabase.Importers;
+using System;
 using System.IO;
+using System.Linq;
 
 namespace SplatTagUnitTests
 {
@@ -12,10 +14,10 @@ namespace SplatTagUnitTests
   public class LUTIImporterUnitTests
   {
     /// <summary>
-    /// Test match a player by (no match).
+    /// Test the LUTI Importer
     /// </summary>
     [TestMethod]
-    public void MatchPlayerNoMatchTest()
+    public void TestLUTIImporter()
     {
       string filePath = Path.GetTempFileName() + ".json";
       const string JSON =
@@ -78,35 +80,37 @@ namespace SplatTagUnitTests
         Assert.AreEqual(3, loadedTeams.Length);
         Assert.AreEqual(18, loadedPlayers.Length);
 
-        Assert.AreEqual<string>("Example Team", loadedTeams[0].Name.Value);
-        Assert.AreEqual<string>("ex", loadedTeams[0].ClanTags[0].Value);
-        Assert.AreEqual<string>("Another Team", loadedTeams[1].Name.Value);
-        Assert.AreEqual<string>("AT", loadedTeams[1].ClanTags[0].Value);
-        Assert.AreEqual<string>("Oh No", loadedTeams[2].Name.Value);
-        Assert.AreEqual<string>("//", loadedTeams[2].ClanTags[0].Value);
+        int indexOfExampleTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Example Team"));
+        Assert.AreEqual<string>("ex", loadedTeams[indexOfExampleTeam].ClanTags[0].Value);
 
-        Assert.AreEqual(TagOption.Back, loadedTeams[0].ClanTagOption);
-        Assert.AreEqual(TagOption.Front, loadedTeams[1].ClanTagOption);
-        Assert.AreEqual(TagOption.Surrounding, loadedTeams[2].ClanTagOption);
+        int indexOfAnotherTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Another Team"));
+        Assert.AreEqual<string>("AT", loadedTeams[indexOfAnotherTeam].ClanTags[0].Value);
 
-        Assert.AreEqual<string>("Cap 1", loadedPlayers[0].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("P2", loadedPlayers[1].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("TagAgainstName", loadedPlayers[2].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("P4", loadedPlayers[3].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("SubNoTag", loadedPlayers[4].Name.Value); // Assert name was loaded.
-        Assert.AreEqual<string>("CAP", loadedPlayers[5].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("A2", loadedPlayers[6].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("A3", loadedPlayers[7].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("A4", loadedPlayers[8].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("Alpha", loadedPlayers[9].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("Bravo", loadedPlayers[10].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("Charlie", loadedPlayers[11].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("Delta", loadedPlayers[12].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("Echo", loadedPlayers[13].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("Foxtrot", loadedPlayers[14].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("Oops", loadedPlayers[15].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("We", loadedPlayers[16].Name.Value); // Assert name was loaded without the tag.
-        Assert.AreEqual<string>("Dropped", loadedPlayers[17].Name.Value); // Assert name was loaded without the tag.
+        int indexOfOhNoTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Oh No"));
+        Assert.AreEqual<string>("/", loadedTeams[indexOfOhNoTeam].ClanTags[0].Value);
+
+        Assert.AreEqual(TagOption.Back, loadedTeams[indexOfExampleTeam].ClanTagOption);
+        Assert.AreEqual(TagOption.Front, loadedTeams[indexOfAnotherTeam].ClanTagOption);
+        Assert.AreEqual(TagOption.Surrounding, loadedTeams[indexOfOhNoTeam].ClanTagOption);
+
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Cap 1")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "P2")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "TagAgainstName")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "P4")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "SubNoTag")); // Assert name was loaded.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "CAP")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "A2")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "A3")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "A4")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Alpha")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Bravo")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Charlie")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Delta")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Echo")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Foxtrot")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Oops")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "We")); // Assert name was loaded without the tag.
+        Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Dropped")); // Assert name was loaded without the tag.
 
         for (int i = 0; i < loadedPlayers.Length; i++)
         {

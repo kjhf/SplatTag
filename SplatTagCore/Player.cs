@@ -338,29 +338,32 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Correct the team ids for this player given a merge result (containing old team id --> new id)
+    /// Correct the team ids for this player given a merge result (containing old id --> the replacement id)
     /// </summary>
     public void CorrectTeamIds(IDictionary<Guid, Guid> teamsMergeResult)
     {
-      // Reverse order to reduce Remove impact
-      for (int i = teams.Count - 1; i >= 0; i--)
-      {
-        if (teamsMergeResult.ContainsKey(teams[i]))
-        {
-          var correctedId = teamsMergeResult[teams[i]];
+      // The result should be a Set to de-dupe
+      var result = new HashSet<Guid>();
 
-          // If the id already exists in this list, remove this entry.
-          if (teams.Contains(correctedId))
-          {
-            teams.RemoveAt(i);
-          }
-          else
-          {
-            // Otherwise set the new id.
-            teams[i] = correctedId;
-          }
+      // Foreach team in our team ids
+      foreach (var id in teams)
+      {
+        // If the merge result has this id changed (if not already present)
+        if (teamsMergeResult.ContainsKey(id))
+        {
+          // Add the updated id.
+          result.Add(teamsMergeResult[id]);
+        }
+        else
+        {
+          // Otherwise take the previous id and add it (if not already present)
+          result.Add(id);
         }
       }
+
+      // Set our team ids accordingly.
+      teams.Clear();
+      teams.AddRange(result);
     }
 
     /// <summary>
