@@ -43,7 +43,8 @@ namespace SplatTagDatabase
 
       // Load each importer into a Source
       Console.WriteLine($"Reading {importers.Length} sources...");
-      Source[] sources = new Source[importers.Length];
+      var sources = new Source[importers.Length];
+      bool filterSourcesForNull = false;
 
       Parallel.For(0, importers.Length, i =>
       {
@@ -54,8 +55,14 @@ namespace SplatTagDatabase
         catch (Exception ex)
         {
           Console.WriteLine($"ERROR: Importer {importers[i]} failed. Discarding result and continuing. {ex}");
+          filterSourcesForNull = true;
         }
       });
+
+      if (filterSourcesForNull)
+      {
+        sources = sources.Where(s => s != null).ToArray();
+      }
 
       // Merge each Source into our global Players and Teams list.
       TextWriter? logger = SplatTagController.Verbose ? Console.Out : null;
@@ -64,34 +71,29 @@ namespace SplatTagDatabase
       List<Player> players = new List<Player>();
       List<Team> teams = new List<Team>();
 
-      string lastProgressBar = "";
+      int lastProgressBars = -1;
       for (int i = 0; i < sources.Length; i++)
       {
-        Source source = sources[i];
-        Console.WriteLine($"Merging {source.Name}...");
         try
         {
+          Source source = sources[i];
+          Console.WriteLine($"Merging {source.Name}...");
+
           var mergeResult = Merger.MergeTeamsByPersistentIds(teams, source.Teams);
           Merger.MergePlayers(players, source.Players, logger);
           Merger.CorrectTeamIdsForPlayers(players, mergeResult, logger);
         }
         catch (Exception ex)
         {
-          Console.WriteLine($"ERROR: Failed to merge during import of {source}. Discarding result and continuing. {ex}");
+          Console.WriteLine($"ERROR: Failed to merge during import of {sources[i]}. Discarding result and continuing. {ex}");
         }
 
-        string progressBar = Util.GetProgressBar(sources.Length - i, sources.Length, 100);
-        if (!progressBar.Equals(lastProgressBar))
+        int progressBars = ProgressBar.CalculateProgressBars(sources.Length - i, sources.Length, 100);
+        if (progressBars != lastProgressBars)
         {
-          if (logger != null)
-          {
-            logger.WriteLine(progressBar);
-          }
-          else
-          {
-            Console.WriteLine(progressBar);
-          }
-          lastProgressBar = progressBar;
+          string progressBar = ProgressBar.GetProgressBar(progressBars, 100);
+          Console.WriteLine(progressBar);
+          lastProgressBars = progressBars;
         }
       }
 

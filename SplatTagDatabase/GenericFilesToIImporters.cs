@@ -3,6 +3,7 @@ using SplatTagDatabase.Importers;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace SplatTagDatabase
 {
@@ -33,7 +34,7 @@ namespace SplatTagDatabase
 
       if (File.Exists(this.sourcesFile))
       {
-        paths = new List<string>(File.ReadAllLines(this.sourcesFile));
+        paths = new List<string>(File.ReadAllLines(this.sourcesFile).Where(s => !string.IsNullOrWhiteSpace(s)));
       }
       else
       {
@@ -43,7 +44,7 @@ namespace SplatTagDatabase
 
     public GenericFilesToIImporters(IEnumerable<string> loadedSources)
     {
-      paths = new List<string>(loadedSources);
+      paths = new List<string>(loadedSources.Where(s => !string.IsNullOrWhiteSpace(s)));
     }
 
     public IImporter[] Load()
@@ -90,6 +91,11 @@ namespace SplatTagDatabase
     {
       // Remove preceding and seceding quotes from path.
       input = input.TrimStart('"').TrimEnd('"');
+
+      if (string.IsNullOrWhiteSpace(input))
+      {
+        throw new ArgumentException("Input path cannot be null or whitespace.", nameof(input));
+      }
 
       // Correct paths
       if (!Path.IsPathRooted(input))

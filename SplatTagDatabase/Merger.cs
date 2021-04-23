@@ -55,7 +55,7 @@ namespace SplatTagDatabase
       string logMessage = $"Beginning {nameof(FinalisePlayers)} on {playersToMutate.Count} entries.";
       logger?.WriteLine(logMessage);
 
-      string lastProgressBar = "";
+      int lastProgressBars = -1;
       for (int i = playersToMutate.Count - 1; i >= 0; --i)
       {
         var newerPlayerRecord = playersToMutate[i];
@@ -78,27 +78,21 @@ namespace SplatTagDatabase
             foundPlayer = olderPlayerRecord;
             break;
           }
-        }
-
-        // If that doesn't work, try and match a name and same team.
-        if (foundPlayer == null)
-        {
-          for (int j = 0; j < i; ++j)
+          // else
+          // If that doesn't work, try and match a name and same team.
+          if (foundPlayer == null && Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Name, logger))
           {
-            var olderPlayerRecord = playersToMutate[j];
-            if (Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Name, logger))
+            // Quick check that the player is definitely older
+            if (olderPlayerRecord.CompareToBySourceChronology(newerPlayerRecord) == 1)
             {
-              // Quick check that the player is definitely older
-              if (olderPlayerRecord.CompareToBySourceChronology(newerPlayerRecord) == 1)
-              {
-                // Swap the instances round
-                logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord}.");
-                (newerPlayerRecord, olderPlayerRecord) = (playersToMutate[i], playersToMutate[j]) = (olderPlayerRecord, newerPlayerRecord);
-              }
-
-              foundPlayer = olderPlayerRecord;
-              break;
+              // Swap the instances round
+              logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord}.");
+              (newerPlayerRecord, olderPlayerRecord) = (playersToMutate[i], playersToMutate[j]) = (olderPlayerRecord, newerPlayerRecord);
             }
+
+            foundPlayer = olderPlayerRecord;
+            // no break -- we want to continue searching all Persistent records first
+            // however by assigning foundPlayer, we've earmarked this entry so we don't have to iterate again
           }
         }
 
@@ -111,9 +105,10 @@ namespace SplatTagDatabase
           workDone = true;
         }
 
-        string progressBar = Util.GetProgressBar(playersToMutate.Count - i, playersToMutate.Count, 100);
-        if (!progressBar.Equals(lastProgressBar))
+        int progressBars = ProgressBar.CalculateProgressBars(playersToMutate.Count - i, playersToMutate.Count, 100);
+        if (progressBars != lastProgressBars)
         {
+          string progressBar = ProgressBar.GetProgressBar(progressBars, 100);
           if (logger != null)
           {
             logger.WriteLine(progressBar);
@@ -122,7 +117,7 @@ namespace SplatTagDatabase
           {
             Console.WriteLine(progressBar);
           }
-          lastProgressBar = progressBar;
+          lastProgressBars = progressBars;
         }
       }
 
@@ -148,7 +143,7 @@ namespace SplatTagDatabase
 
       logger?.WriteLine($"Beginning {nameof(FinaliseTeams)} on {teamsToMutate.Count} entries.");
 
-      string lastProgressBar = "";
+      int lastProgressBars = -1;
       for (int i = teamsToMutate.Count - 1; i >= 0; --i)
       {
         var newerTeamRecord = teamsToMutate[i];
@@ -185,9 +180,10 @@ namespace SplatTagDatabase
           logger?.WriteLine($"Resultant team: {foundOlderTeamRecord}.");
         }
 
-        string progressBar = Util.GetProgressBar(teamsToMutate.Count - i, teamsToMutate.Count, 100);
-        if (!progressBar.Equals(lastProgressBar))
+        int progressBars = ProgressBar.CalculateProgressBars(teamsToMutate.Count - i, teamsToMutate.Count, 100);
+        if (progressBars != lastProgressBars)
         {
+          string progressBar = ProgressBar.GetProgressBar(progressBars, 100);
           if (logger != null)
           {
             logger.WriteLine(progressBar);
@@ -196,7 +192,7 @@ namespace SplatTagDatabase
           {
             Console.WriteLine(progressBar);
           }
-          lastProgressBar = progressBar;
+          lastProgressBars = progressBars;
         }
       }
 
@@ -217,38 +213,26 @@ namespace SplatTagDatabase
       {
         return;
       }
-      else if (indicies.Count == 1)
+
+      if (indicies.Count == 1)
       {
         values.RemoveAt(indicies[0]);
+        return;
       }
-      else
+
+      // Otherwise
+      indicies.Sort();
+
+      int sourceStartIndex = 0;
+      int skipCount = 0;
+
+      int destStartIndex;
+      int spanLength;
+
+      // Copy items up to last index to be skipped
+      foreach (var skipIndex in indicies)
       {
-        indicies.Sort();
-
-        int sourceStartIndex = 0;
-        int skipCount = 0;
-
-        int destStartIndex;
-        int spanLength;
-
-        // Copy items up to last index to be skipped
-        foreach (var skipIndex in indicies)
-        {
-          spanLength = skipIndex - sourceStartIndex;
-          destStartIndex = sourceStartIndex - skipCount;
-
-          for (int i = sourceStartIndex; i < sourceStartIndex + spanLength; i++)
-          {
-            values[destStartIndex] = values[i];
-            destStartIndex++;
-          }
-
-          sourceStartIndex = skipIndex + 1;
-          skipCount++;
-        }
-
-        // Copy remaining items (between last index to be skipped and end of list)
-        spanLength = values.Count - sourceStartIndex;
+        spanLength = skipIndex - sourceStartIndex;
         destStartIndex = sourceStartIndex - skipCount;
 
         for (int i = sourceStartIndex; i < sourceStartIndex + spanLength; i++)
@@ -257,8 +241,21 @@ namespace SplatTagDatabase
           destStartIndex++;
         }
 
-        values.RemoveRange(destStartIndex, indicies.Count);
+        sourceStartIndex = skipIndex + 1;
+        skipCount++;
       }
+
+      // Copy remaining items (between last index to be skipped and end of list)
+      spanLength = values.Count - sourceStartIndex;
+      destStartIndex = sourceStartIndex - skipCount;
+
+      for (int i = sourceStartIndex; i < sourceStartIndex + spanLength; i++)
+      {
+        values[destStartIndex] = values[i];
+        destStartIndex++;
+      }
+
+      values.RemoveRange(destStartIndex, indicies.Count);
     }
 
     /// <summary>

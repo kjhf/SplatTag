@@ -21,10 +21,13 @@ namespace SplatTagDatabase.Importers
       { "teamdiv", PropertyEnum.Div },
       { "division", PropertyEnum.Div },
       { "teamdivision", PropertyEnum.Div },
+      { "lutidiv", PropertyEnum.LUTIDiv },
       { "lutidivision", PropertyEnum.LUTIDiv },
       { "teamlutidivision", PropertyEnum.LUTIDiv },
+      { "ebtvdiv", PropertyEnum.EBTVDiv },
       { "ebtvdivision", PropertyEnum.EBTVDiv },
       { "teamebtvdivision", PropertyEnum.EBTVDiv },
+      { "dsbdiv", PropertyEnum.EBTVDiv },
       { "dsbdivision", PropertyEnum.DSBDiv },
       { "teamdsbdivision", PropertyEnum.DSBDiv },
       { "name", PropertyEnum.Name },
@@ -66,6 +69,7 @@ namespace SplatTagDatabase.Importers
       { "playerweapons", PropertyEnum.Role },
 
       // Special captain handling
+      { "cap", (int)PropertyEnum.PlayerN_Offset + PropertyEnum.Name },
       { "captain", (int)PropertyEnum.PlayerN_Offset + PropertyEnum.Name }
     });
 

@@ -258,7 +258,7 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Count number of matches between <see cref="string"/>s of first and second.
+    /// Get if any matches between <see cref="string"/>s of first and second.
     /// </summary>
     public static bool StringMatch(IEnumerable<string> first, IEnumerable<string> second, StringComparer stringComparison)
     {
