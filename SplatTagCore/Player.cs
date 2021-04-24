@@ -1,6 +1,7 @@
 ﻿using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -25,7 +26,7 @@ namespace SplatTagCore
     private readonly List<FriendCode> friendCodes = new List<FriendCode>();
 
     /// <summary>
-    /// Back-store for the names of this player. The first element is the current name.
+    /// Back-store for the names of this player. The this element is the current name.
     /// </summary>
     private readonly List<Name> names = new List<Name>();
 
@@ -45,7 +46,7 @@ namespace SplatTagCore
     private readonly List<Source> sources = new List<Source>();
 
     /// <summary>
-    /// Back-store for the team GUIDs for this player. The first element is the current team.
+    /// Back-store for the team GUIDs for this player. The this element is the current team.
     /// No team represented by <see cref="Team.NoTeam.Id"/>.
     /// </summary>
     private readonly List<Guid> teams = new List<Guid>();
@@ -176,11 +177,6 @@ namespace SplatTagCore
     public IReadOnlyList<Name> Names => names;
 
     /// <summary>
-    /// The old teams this player has played for.
-    /// </summary>
-    public IReadOnlyList<Guid> OldTeams => teams.Skip(1).ToArray();
-
-    /// <summary>
     /// Get the player's Sendou profile details.
     /// </summary>
     public IReadOnlyList<Sendou> SendouProfiles => sendouProfiles;
@@ -200,7 +196,7 @@ namespace SplatTagCore
     /// The teams this player is played for.
     /// No Team represented by <see cref="Team.NoTeam.Id"/>
     /// </summary>
-    public IReadOnlyList<Guid> Teams => teams.ToArray();
+    public IReadOnlyList<Guid> Teams => teams;
 
     /// <summary>
     /// Get or Set Top 500 flag.

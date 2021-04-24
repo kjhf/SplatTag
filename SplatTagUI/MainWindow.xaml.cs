@@ -325,7 +325,8 @@ namespace SplatTagUI
       IEnumerable<Team> oldTeams;
       if (value is Player p)
       {
-        oldTeams = p.OldTeams.Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
+        // Teams.Skip(1) for the old teams
+        oldTeams = p.Teams.Skip(1).Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
       }
       else if (value is IEnumerable<Team> t)
       {
@@ -476,7 +477,7 @@ namespace SplatTagUI
       {
         var fieldName = prop.Name;
         var fieldVal = prop.GetValue(value, null);
-        if (fieldVal is null || fieldName == nameof(Player.OldTeams) || fieldName == nameof(Player.Name) || fieldName == nameof(Player.CurrentTeam))
+        if (fieldVal is null || fieldName == nameof(Player.Name) || fieldName == nameof(Player.CurrentTeam))
         {
           // Don't bother listing values that are not set (or provided by other values)
           continue;

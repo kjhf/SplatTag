@@ -82,15 +82,10 @@ namespace SplatTagCore
     /// </summary>
     /// <param name="strings"></param>
     /// <param name="source"></param>
-    /// <returns></returns>
     public static List<Name> FromStrings(IEnumerable<string> strings, Source source)
     {
-      List<Name> names = new List<Name>();
-      foreach (var s in strings.Distinct().Reverse())
-      {
-        names.Add(new Name(s, source));
-      }
-      return names;
+      return (from s in strings.Distinct().Reverse()
+              select new Name(s, source)).ToList();
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
@@ -70,11 +71,19 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Return if this Discord matches another in any regard
+    /// Return if this Discord matches by username
     /// </summary>
-    public bool MatchAny(Discord other)
+    public bool MatchUsernames(Discord other)
     {
-      return MatchPersistent(other) || Matcher.NamesMatch(usernames, other.usernames);
+      return usernames.NamesMatch(other.usernames);
+    }
+
+    /// <summary>
+    /// Return if this Discord matches another by username.
+    /// </summary>
+    public bool MatchUsername(string name)
+    {
+      return usernames.Cast<string>().Contains(name, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -82,7 +91,15 @@ namespace SplatTagCore
     /// </summary>
     public bool MatchPersistent(Discord other)
     {
-      return Matcher.NamesMatch(ids, other.ids);
+      return ids.NamesMatch(other.ids);
+    }
+
+    /// <summary>
+    /// Return if this Discord matches another by persistent data (ids).
+    /// </summary>
+    public bool MatchPersistent(string id)
+    {
+      return ids.Cast<string>().Contains(id, StringComparison.OrdinalIgnoreCase);
     }
 
     public override string ToString()

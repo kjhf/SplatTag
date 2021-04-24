@@ -23,8 +23,8 @@ namespace SplatTagCore
       // Quick out if they're literally the same.
       if (first.Id == second.Id) return true;
 
-      // Test if the Discord Ids match.
-      if ((matchOptions & FilterOptions.DiscordId) != 0 && NamesMatch(first.DiscordIds, second.DiscordIds))
+      // Test if any of the Battlefy Persistent Ids match.
+      if ((matchOptions & FilterOptions.BattlefyPersistentIds) != 0 && first.Battlefy.MatchPersistent(second.Battlefy))
       {
         // They do.
         if (logger != null)
@@ -34,8 +34,8 @@ namespace SplatTagCore
           logger.Write(first.ToString());
           logger.Write(" (Id ");
           logger.Write(first.Id);
-          logger.Write(") with Discord Id(s) [");
-          logger.Write(string.Join(", ", first.DiscordIds));
+          logger.Write(") with Battlefy Persistent Id(s) [");
+          logger.Write(string.Join(", ", first.Battlefy.PersistentIds));
           logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
@@ -46,7 +46,7 @@ namespace SplatTagCore
       }
 
       // Test if the Battlefy Usernames match.
-      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && NamesMatch(first.Battlefy.Usernames, second.Battlefy.Usernames))
+      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && first.Battlefy.MatchUsernames(second.Battlefy))
       {
         // They do.
         if (logger != null)
@@ -68,7 +68,7 @@ namespace SplatTagCore
       }
 
       // Test if any of the Battlefy Slugs match.
-      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && NamesMatch(first.Battlefy.Slugs, second.Battlefy.Slugs))
+      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && first.Battlefy.MatchSlugs(second.Battlefy))
       {
         // They do.
         if (logger != null)
@@ -89,30 +89,8 @@ namespace SplatTagCore
         return true;
       }
 
-      // Test if any of the Battlefy Persistent Ids match.
-      if ((matchOptions & FilterOptions.BattlefyPersistentIds) != 0 && NamesMatch(first.Battlefy.PersistentIds, second.Battlefy.PersistentIds))
-      {
-        // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with Battlefy Persistent Id(s) [");
-          logger.Write(string.Join(", ", first.Battlefy.PersistentIds));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
-        return true;
-      }
-
       // Test if the Switch FC's match.
-      if ((matchOptions & FilterOptions.FriendCode) != 0 && GenericMatch(first.FriendCodes, second.FriendCodes))
+      if ((matchOptions & FilterOptions.FriendCode) != 0 && first.FriendCodes.StructMatch(second.FriendCodes))
       {
         // They do.
         if (logger != null)
@@ -134,7 +112,7 @@ namespace SplatTagCore
       }
 
       // Test if the Twitches match.
-      if ((matchOptions & FilterOptions.Twitch) != 0 && NamesMatch(first.Twitch, second.Twitch))
+      if ((matchOptions & FilterOptions.Twitch) != 0 && first.Twitch.NamesMatch(second.Twitch))
       {
         // They do.
         if (logger != null)
@@ -156,7 +134,7 @@ namespace SplatTagCore
       }
 
       // Test if the Twitters match.
-      if ((matchOptions & FilterOptions.Twitter) != 0 && NamesMatch(first.Twitter, second.Twitter))
+      if ((matchOptions & FilterOptions.Twitter) != 0 && first.Twitter.NamesMatch(second.Twitter))
       {
         // They do.
         if (logger != null)
@@ -177,8 +155,30 @@ namespace SplatTagCore
         return true;
       }
 
+      // Test if the Discord Ids match.
+      if ((matchOptions & FilterOptions.DiscordId) != 0 && first.Discord.MatchPersistent(second.Discord))
+      {
+        // They do.
+        if (logger != null)
+        {
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with Discord Id(s) [");
+          logger.Write(string.Join(", ", first.DiscordIds));
+          logger.Write("] from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.WriteLine(").");
+        }
+        return true;
+      }
+
       // Test if the Discord names match.
-      if ((matchOptions & FilterOptions.DiscordName) != 0 && NamesMatch(first.DiscordNames, second.DiscordNames))
+      if ((matchOptions & FilterOptions.DiscordName) != 0 && first.Discord.MatchUsernames(second.Discord))
       {
         // They do.
         if (logger != null)
@@ -200,70 +200,184 @@ namespace SplatTagCore
       }
 
       if ((matchOptions & FilterOptions.Name) != 0
-        && first.Teams.Intersect(second.Teams).Any()
-)
+        && first.Teams.StructMatch(second.Teams)
+        && first.Names.TransformedNamesMatch(second.Names))
       {
-        if (first.TransformedNames.Intersect(second.TransformedNames).Any())
+        if (logger != null)
         {
-          if (logger != null)
-          {
-            logger.Write(nameof(PlayersMatch));
-            logger.Write(": Matched player ");
-            logger.Write(first.ToString());
-            logger.Write(" (Id ");
-            logger.Write(first.Id);
-            logger.Write(") with TransformedNames [");
-            logger.Write(string.Join(", ", first.TransformedNames));
-            logger.Write("] from player ");
-            logger.Write(second);
-            logger.Write(" (Id ");
-            logger.Write(second.Id);
-            logger.Write(") with TransformedNames [");
-            logger.Write(string.Join(", ", second.TransformedNames));
-            logger.WriteLine("].");
-          }
-          return true;
+          logger.Write(nameof(PlayersMatch));
+          logger.Write(": Matched player ");
+          logger.Write(first.ToString());
+          logger.Write(" (Id ");
+          logger.Write(first.Id);
+          logger.Write(") with TransformedNames [");
+          logger.Write(string.Join(", ", first.TransformedNames));
+          logger.Write("] from player ");
+          logger.Write(second);
+          logger.Write(" (Id ");
+          logger.Write(second.Id);
+          logger.Write(") with TransformedNames [");
+          logger.Write(string.Join(", ", second.TransformedNames));
+          logger.WriteLine("].");
         }
+        return true;
       }
 
       return false;
     }
 
     /// <summary>
-    /// Get if matches between <see cref="Name"/>s of first and second.
+    /// Get if this collection matches a second by the Name.
     /// Matches by Ordinal Ignore Case by default.
     /// </summary>
-    public static bool NamesMatch(IEnumerable<Name> first, IEnumerable<Name> second, StringComparer? stringComparison = null)
+    public static bool NamesMatch(this IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
     {
+      if (first.Count == 0 || second.Count == 0) return false;
+
       stringComparison ??= StringComparer.OrdinalIgnoreCase;
-      return StringMatch(first.Select(n => n.Value), second.Select(n => n.Value), stringComparison);
+      if (first.Count == 1)
+      {
+        return (second.Count == 1)
+          ? stringComparison.Equals(first[0].Value, second[0].Value)
+          : second.Select(n => n.Value).Contains(first[0].Value, stringComparison);
+      }
+      else if (second.Count == 1)
+      {
+        return first.Select(n => n.Value).Contains(second[0].Value, stringComparison);
+      }
+      else
+      {
+        return first.Select(n => n.Value).Intersect(second.Select(n => n.Value), stringComparison).Any();
+      }
+    }
+
+    /// <summary>
+    /// Get if this collection matches a second by the transformed names.
+    /// Matches by Ordinal by default.
+    /// </summary>
+    public static bool TransformedNamesMatch(this IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
+    {
+      if (first.Count == 0 || second.Count == 0) return false;
+
+      stringComparison ??= StringComparer.Ordinal;
+      if (first.Count == 1)
+      {
+        return (second.Count == 1)
+          ? stringComparison.Equals(first[0].Transformed, second[0].Transformed)
+          : second.Select(n => n.Transformed).Contains(first[0].Transformed, stringComparison);
+      }
+      else if (second.Count == 1)
+      {
+        return first.Select(n => n.Transformed).Contains(second[0].Transformed, stringComparison);
+      }
+      else
+      {
+        return first.Select(n => n.Transformed).Intersect(second.Select(n => n.Transformed), stringComparison).Any();
+      }
     }
 
     /// <summary>
     /// Count matches between <see cref="Name"/>s of first and second.
     /// Matches by Ordinal Ignore Case by default.
     /// </summary>
-    public static int NamesMatchCount(IEnumerable<Name> first, IEnumerable<Name> second, StringComparer? stringComparison = null)
+    public static int NamesMatchCount(IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
     {
+      if (first.Count == 0 || second.Count == 0) return 0;
+
       stringComparison ??= StringComparer.OrdinalIgnoreCase;
-      return first.Select(n => n.Value).Intersect(second.Select(n => n.Value), stringComparison).Count();
+      if (first.Count == 1)
+      {
+        return (second.Count == 1)
+          ? stringComparison.Equals(first[0].Value, second[0].Value) ? 1 : 0
+          : second.Select(n => n.Value).Contains(first[0].Value, stringComparison) ? 1 : 0;
+      }
+      else if (second.Count == 1)
+      {
+        return first.Select(n => n.Value).Contains(second[0].Value, stringComparison) ? 1 : 0;
+      }
+      else
+      {
+        return first.Select(n => n.Value).Intersect(second.Select(n => n.Value), stringComparison).Count();
+      }
     }
 
     /// <summary>
     /// Get if matches between lists of first and second with a default comparison.
     /// </summary>
-    public static bool GenericMatch<T>(IEnumerable<T> first, IEnumerable<T> second)
+    /// <remarks>
+    /// This is a lot more performant for lists with 0 or 1 object in it rather than creating Intersect HashMaps.
+    /// </remarks>
+    public static bool StructMatch<T>(this IReadOnlyList<T> first, IReadOnlyList<T> second) where T : struct
     {
-      return first.Intersect(second).Any();
+      if (first.Count == 0 || second.Count == 0) return false;
+
+      if (first.Count == 1)
+      {
+        return (second.Count == 1)
+          ? first[0].Equals(second[0])
+          : second.Contains(first[0]);
+      }
+      else if (second.Count == 1)
+      {
+        return first.Contains(second[0]);
+      }
+      else if (first.Count > 4 || second.Count > 4)
+      {
+        return first.Intersect(second).Any();
+      }
+      else
+      {
+        foreach (var obj in first)
+        {
+          if (second.Contains(obj))
+          {
+            return true;
+          }
+        }
+        return false;
+      }
+    }
+
+    /// <summary>
+    /// Get if any matches between <see cref="string"/>s of first and second.
+    /// Matches by Ordinal by default.
+    /// </summary>
+    public static bool StringMatch(this IReadOnlyList<string> first, IReadOnlyList<string> second, StringComparer? stringComparison = null)
+    {
+      if (first.Count == 0 || second.Count == 0) return false;
+
+      stringComparison ??= StringComparer.Ordinal;
+      if (first.Count == 1)
+      {
+        return (second.Count == 1)
+          ? stringComparison.Equals(first[0], second[0])
+          : second.Contains(first[0], stringComparison);
+      }
+      else if (second.Count == 1)
+      {
+        return first.Contains(second[0], stringComparison);
+      }
+      else if (first.Count > 4 || second.Count > 4)
+      {
+        return first.Intersect(second, stringComparison).Any();
+      }
+      else
+      {
+        foreach (var obj in first)
+        {
+          if (second.Contains(obj, stringComparison))
+          {
+            return true;
+          }
+        }
+        return false;
+      }
     }
 
     /// <summary>
     /// Get if any matches between <see cref="string"/>s of first and second.
     /// </summary>
-    public static bool StringMatch(IEnumerable<string> first, IEnumerable<string> second, StringComparer stringComparison)
-    {
-      return first.Intersect(second, stringComparison).Any();
-    }
+    public static bool StringMatch(IEnumerable<string> first, IEnumerable<string> second, StringComparer stringComparison) => first.Intersect(second, stringComparison).Any();
 
     /// <summary>
     /// Get if two Teams match through ids.
@@ -280,7 +394,7 @@ namespace SplatTagCore
       if (first.Id == second.Id) return true;
 
       // Get if the Battlefy Ids match.
-      if (first.BattlefyPersistentTeamId != null && NamesMatch(first.BattlefyPersistentTeamIds, second.BattlefyPersistentTeamIds))
+      if (first.BattlefyPersistentTeamId != null && first.BattlefyPersistentTeamIds.NamesMatch(second.BattlefyPersistentTeamIds))
       {
         // They do.
         if (logger != null)
@@ -321,7 +435,7 @@ namespace SplatTagCore
       if (TeamsMatch(first, second, logger)) return true;
 
       // Otherwise, test if players match.
-      if (first.TransformedNames.Intersect(second.TransformedNames).Any())
+      if (first.Names.TransformedNamesMatch(second.Names))
       {
         // They do.
         if (logger != null)

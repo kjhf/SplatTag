@@ -124,7 +124,7 @@ namespace SplatTagCore
     /// <summary>
     /// The names this player is known by transformed into searchable query.
     /// </summary>
-    public IReadOnlyList<string> TransformedNames => Names.Select(n => n.Transformed).ToArray();
+    public IEnumerable<string> TransformedNames => Names.Select(n => n.Transformed);
 
     /// <summary>
     /// Get the team's Twitter profile details.
