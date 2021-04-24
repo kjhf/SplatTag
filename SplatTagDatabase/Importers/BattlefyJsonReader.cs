@@ -109,6 +109,12 @@ namespace SplatTagDatabase.Importers
             continue;
           }
 
+          if (p.PersistentPlayerId == null)
+          {
+            Console.WriteLine($"Warning: Player ({p.Name}) does not have a PersistentPlayerId. Did they sub? Ignoring this player entry. File: " + jsonFile);
+            continue;
+          }
+
           // Filter the friend code from the name, if found
           var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);
           if (parsedFriendCode != FriendCode.NO_FRIEND_CODE)

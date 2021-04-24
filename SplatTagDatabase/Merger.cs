@@ -105,10 +105,11 @@ namespace SplatTagDatabase
           workDone = true;
         }
 
+        // -i because we're counting backwards
         int progressBars = ProgressBar.CalculateProgressBars(playersToMutate.Count - i, playersToMutate.Count, 100);
         if (progressBars != lastProgressBars)
         {
-          string progressBar = ProgressBar.GetProgressBar(progressBars, 100);
+          string progressBar = ProgressBar.GetProgressBar(progressBars, 100) + " " + i + "/" + playersToMutate.Count;
           if (logger != null)
           {
             logger.WriteLine(progressBar);
@@ -183,7 +184,7 @@ namespace SplatTagDatabase
         int progressBars = ProgressBar.CalculateProgressBars(teamsToMutate.Count - i, teamsToMutate.Count, 100);
         if (progressBars != lastProgressBars)
         {
-          string progressBar = ProgressBar.GetProgressBar(progressBars, 100);
+          string progressBar = ProgressBar.GetProgressBar(progressBars, 100) + " " + i + "/" + teamsToMutate.Count;
           if (logger != null)
           {
             logger.WriteLine(progressBar);

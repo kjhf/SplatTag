@@ -199,8 +199,9 @@ namespace SplatTagCore
         return true;
       }
 
+      // If we're matching by name, then the player must also have a matching battlefy slug, or matching team.
       if ((matchOptions & FilterOptions.Name) != 0
-        && first.Teams.StructMatch(second.Teams)
+        && (first.Teams.StructMatch(second.Teams) || first.Battlefy.MatchSlugs(second.Battlefy))
         && first.Names.TransformedNamesMatch(second.Names))
       {
         if (logger != null)

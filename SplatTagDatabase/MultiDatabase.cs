@@ -91,19 +91,19 @@ namespace SplatTagDatabase
         int progressBars = ProgressBar.CalculateProgressBars(sources.Length - i, sources.Length, 100);
         if (progressBars != lastProgressBars)
         {
-          string progressBar = ProgressBar.GetProgressBar(progressBars, 100);
+          string progressBar = ProgressBar.GetProgressBar(progressBars, 100, true) + " " + i + "/" + sources.Length;
           Console.WriteLine(progressBar);
           lastProgressBars = progressBars;
         }
       }
 
       // Perform a final merge.
-      Console.WriteLine("Performing final merge...");
       try
       {
         bool workDone = true;
-        while (workDone)
+        for (int iteration = 1; workDone && iteration < 20; iteration++)
         {
+          Console.WriteLine($"Performing final merge (iteration #{iteration})...");
           workDone = Merger.FinalisePlayers(players, logger);
           var mergeResult = Merger.FinaliseTeams(players, teams, logger);
           Merger.CorrectTeamIdsForPlayers(players, mergeResult, logger);
