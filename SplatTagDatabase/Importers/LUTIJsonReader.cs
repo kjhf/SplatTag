@@ -117,7 +117,7 @@ namespace SplatTagDatabase.Importers
         Team newTeam = new Team(row.TeamName, source);
         newTeam.AddDivision(new Division(row.Division, DivType.LUTI, season));
 
-        if (!string.IsNullOrEmpty(row.Tag) && row.TeamCaptain.Contains(row.Tag))
+        if (row.Tag != null && row.Tag.Length != 0 && row.TeamCaptain.Contains(row.Tag))
         {
           // Handle tag placements from the captain's name
           newTeam.AddClanTag(row.Tag, source, ClanTag.CalculateTagOption(row.Tag, row.TeamCaptain));

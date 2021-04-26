@@ -1,6 +1,5 @@
 ﻿using SplatTagCore;
 using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace SplatTagDatabase
@@ -88,24 +87,36 @@ namespace SplatTagDatabase
         saveFolder = Directory.GetParent(sourcesFile).FullName;
       }
 
-      // Directories created in GenericFilesToIImporters
-      GenericFilesToIImporters sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
-      MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
-      SplatTagController splatTagController = new SplatTagController(splatTagDatabase);
-      Console.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
-      splatTagController.Initialise();
+      // TURBO MODE ENGAGE
+      Console.WriteLine("Engaging TURBO");
+      WinApi.TimeBeginPeriod(1);
 
-      // Now that we've initialised, take a snapshot of everything.
-      if (snapshotDatabase == null)
+      try
       {
-        SaveDatabase(splatTagController, saveFolder);
-      }
-      else
-      {
-        SaveDatabase(splatTagController, snapshotDatabase);
-      }
+        // Directories created in GenericFilesToIImporters
+        GenericFilesToIImporters sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
+        MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
+        SplatTagController splatTagController = new SplatTagController(splatTagDatabase);
+        Console.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
+        splatTagController.Initialise();
 
-      return (sourcesImporter, splatTagController);
+        // Now that we've initialised, take a snapshot of everything.
+        if (snapshotDatabase == null)
+        {
+          SaveDatabase(splatTagController, saveFolder);
+        }
+        else
+        {
+          SaveDatabase(splatTagController, snapshotDatabase);
+        }
+
+        return (sourcesImporter, splatTagController);
+      }
+      finally
+      {
+        WinApi.TimeEndPeriod(1);
+        Console.WriteLine("TURBO disengaged");
+      }
     }
 
     public static void SaveDatabase(SplatTagController splatTagController, SplatTagJsonSnapshotDatabase snapshotDatabase)

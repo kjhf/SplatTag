@@ -88,7 +88,7 @@ namespace SplatTagDatabase
           Console.WriteLine($"ERROR: Failed to merge during import of {sources[i]}. Discarding result and continuing. {ex}");
         }
 
-        int progressBars = ProgressBar.CalculateProgressBars(sources.Length - i, sources.Length, 100);
+        int progressBars = ProgressBar.CalculateProgressBars(i, sources.Length, 100);
         if (progressBars != lastProgressBars)
         {
           string progressBar = ProgressBar.GetProgressBar(progressBars, 100, true) + " " + i + "/" + sources.Length;
@@ -97,24 +97,7 @@ namespace SplatTagDatabase
         }
       }
 
-      // Perform a final merge.
-      try
-      {
-        bool workDone = true;
-        for (int iteration = 1; workDone && iteration < 20; iteration++)
-        {
-          Console.WriteLine($"Performing final merge (iteration #{iteration})...");
-          workDone = Merger.FinalisePlayers(players, logger);
-          var mergeResult = Merger.FinaliseTeams(players, teams, logger);
-          Merger.CorrectTeamIdsForPlayers(players, mergeResult, logger);
-          workDone |= (mergeResult.Count != 0);
-        }
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"ERROR: Failed {nameof(Merger.FinalisePlayers)}. Continuing anyway. {ex}");
-      }
-
+      Merger.FinalMerge(players, teams, logger);
       return (players.ToArray(), teams.ToArray(), sources.ToDictionary(s => s.Id, s => s));
     }
   }

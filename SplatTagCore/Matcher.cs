@@ -233,22 +233,37 @@ namespace SplatTagCore
     /// </summary>
     public static bool NamesMatch(this IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
     {
-      if (first.Count == 0 || second.Count == 0) return false;
+      int firstCount = first.Count;
+      int secondCount = second.Count;
 
-      stringComparison ??= StringComparer.OrdinalIgnoreCase;
-      if (first.Count == 1)
+      if (firstCount == 0)
       {
-        return (second.Count == 1)
-          ? stringComparison.Equals(first[0].Value, second[0].Value)
-          : second.Select(n => n.Value).Contains(first[0].Value, stringComparison);
+        return false;
       }
-      else if (second.Count == 1)
+      else if (secondCount == 0)
       {
-        return first.Select(n => n.Value).Contains(second[0].Value, stringComparison);
+        return false;
       }
       else
       {
-        return first.Select(n => n.Value).Intersect(second.Select(n => n.Value), stringComparison).Any();
+        stringComparison ??= StringComparer.OrdinalIgnoreCase;
+
+        if (firstCount == 1 && secondCount == 1)
+        {
+          return stringComparison.Equals(first[0].Value, second[0].Value);
+        }
+        else if (firstCount == 1)
+        {
+          return second.Select(n => n.Value).Contains(first[0].Value, stringComparison);
+        }
+        else if (secondCount == 1)
+        {
+          return first.Select(n => n.Value).Contains(second[0].Value, stringComparison);
+        }
+        else
+        {
+          return first.Select(n => n.Value).Intersect(second.Select(n => n.Value), stringComparison).Any();
+        }
       }
     }
 
@@ -258,22 +273,37 @@ namespace SplatTagCore
     /// </summary>
     public static bool TransformedNamesMatch(this IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
     {
-      if (first.Count == 0 || second.Count == 0) return false;
+      int firstCount = first.Count;
+      int secondCount = second.Count;
 
-      stringComparison ??= StringComparer.Ordinal;
-      if (first.Count == 1)
+      if (firstCount == 0)
       {
-        return (second.Count == 1)
-          ? stringComparison.Equals(first[0].Transformed, second[0].Transformed)
-          : second.Select(n => n.Transformed).Contains(first[0].Transformed, stringComparison);
+        return false;
       }
-      else if (second.Count == 1)
+      else if (secondCount == 0)
       {
-        return first.Select(n => n.Transformed).Contains(second[0].Transformed, stringComparison);
+        return false;
       }
       else
       {
-        return first.Select(n => n.Transformed).Intersect(second.Select(n => n.Transformed), stringComparison).Any();
+        stringComparison ??= StringComparer.Ordinal;
+
+        if (firstCount == 1 && secondCount == 1)
+        {
+          return stringComparison.Equals(first[0].Transformed, second[0].Transformed);
+        }
+        else if (firstCount == 1)
+        {
+          return second.Select(n => n.Transformed).Contains(first[0].Transformed, stringComparison);
+        }
+        else if (secondCount == 1)
+        {
+          return first.Select(n => n.Transformed).Contains(second[0].Transformed, stringComparison);
+        }
+        else
+        {
+          return first.Select(n => n.Transformed).Intersect(second.Select(n => n.Transformed), stringComparison).Any();
+        }
       }
     }
 
@@ -310,19 +340,30 @@ namespace SplatTagCore
     /// </remarks>
     public static bool StructMatch<T>(this IReadOnlyList<T> first, IReadOnlyList<T> second) where T : struct
     {
-      if (first.Count == 0 || second.Count == 0) return false;
+      int firstCount = first.Count;
+      int secondCount = second.Count;
 
-      if (first.Count == 1)
+      if (firstCount == 0)
       {
-        return (second.Count == 1)
-          ? first[0].Equals(second[0])
-          : second.Contains(first[0]);
+        return false;
       }
-      else if (second.Count == 1)
+      else if (secondCount == 0)
+      {
+        return false;
+      }
+      else if (firstCount == 1 && secondCount == 1)
+      {
+        return first[0].Equals(second[0]);
+      }
+      else if (firstCount == 1)
+      {
+        return second.Contains(first[0]);
+      }
+      else if (secondCount == 1)
       {
         return first.Contains(second[0]);
       }
-      else if (first.Count > 4 || second.Count > 4)
+      else if (firstCount > 4 || secondCount > 4)
       {
         return first.Intersect(second).Any();
       }

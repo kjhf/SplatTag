@@ -27,6 +27,13 @@ namespace SplatTagCore
 
     public SplatTagController(ISplatTagDatabase database)
     {
+      Console.WriteLine("Creating SplatTagController. Debugger.IsAttached=" + Debugger.IsAttached);
+#if DEBUG
+      Console.WriteLine("Running in DEBUG.");
+#else
+      Console.WriteLine("Running in Release.");
+#endif // DEBUG
+
       this.database = database;
       this.players = Array.Empty<Player>();
       this.teams = new Dictionary<Guid, Team>();

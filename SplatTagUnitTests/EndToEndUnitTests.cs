@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SplatTagConsole;
 using SplatTagCore;
+using SplatTagCore.Social;
 using SplatTagDatabase;
 using System;
 using System.IO;
@@ -72,11 +73,11 @@ namespace SplatTagUnitTests
       (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.Load();
 
       // Assertions.
-      Assert.AreEqual(2, players.Count(p => p.Name.Value == "Slate"), "Incorrect number of Slates:\n - " +
+      Assert.AreEqual(2, players.Count(p => p.Name.Value.Contains("Slate")), "Incorrect number of Slates:\n - " +
         new StringBuilder()
         .AppendJoin("\n - ",
           players
-          .Where(p => p.Name.Value == "Slate")
+          .Where(p => p.Name.Value.Contains("Slate"))
           .Select(p => new StringBuilder()
                   .Append('[')
                   .AppendJoin(", ", p.Names)
@@ -85,6 +86,8 @@ namespace SplatTagUnitTests
                   .AppendJoin(", ", p.Sources)
                   .Append("] and teams [")
                   .AppendJoin(", ", p.Teams)
+                  .Append("] and Battlefy Slugs [")
+                  .AppendJoin(", ", p.Battlefy.Slugs ?? Array.Empty<BattlefyUserSocial>())
                   .Append("].")
           )
         ));

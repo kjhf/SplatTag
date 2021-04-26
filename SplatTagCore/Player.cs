@@ -335,31 +335,58 @@ namespace SplatTagCore
 
     /// <summary>
     /// Correct the team ids for this player given a merge result (containing old id --> the replacement id)
+    /// Returns if any work was done.
     /// </summary>
-    public void CorrectTeamIds(IDictionary<Guid, Guid> teamsMergeResult)
+    public bool CorrectTeamIds(IDictionary<Guid, Guid> teamsMergeResult)
     {
-      // The result should be a Set to de-dupe
-      var result = new HashSet<Guid>();
-
-      // Foreach team in our team ids
-      foreach (var id in teams)
+      // Simple cases
+      if (teams.Count == 0)
       {
-        // If the merge result has this id changed (if not already present)
-        if (teamsMergeResult.ContainsKey(id))
+        return false;
+      }
+      else if (teams.Count == 1)
+      {
+        if (teamsMergeResult.ContainsKey(teams[0]))
         {
-          // Add the updated id.
-          result.Add(teamsMergeResult[id]);
+          teams[0] = teamsMergeResult[teams[0]];
+          return true;
         }
         else
         {
-          // Otherwise take the previous id and add it (if not already present)
-          result.Add(id);
+          return false;
         }
       }
+      // Otherwise, for each team, correct the team id and de-dupe.
+      else
+      {
+        bool workDone = false;
+        var result = new HashSet<Guid>();
 
-      // Set our team ids accordingly.
-      teams.Clear();
-      teams.AddRange(result);
+        foreach (var id in teams)
+        {
+          // If the merge result has this id changed
+          if (teamsMergeResult.ContainsKey(id))
+          {
+            // Add the updated id (if not already present).
+            result.Add(teamsMergeResult[id]);
+            workDone = true;
+          }
+          else
+          {
+            // Otherwise take the previous id and add it (if not already present).
+            result.Add(id);
+          }
+        }
+
+        // Set our team ids if any changes were made.
+        if (workDone)
+        {
+          teams.Clear();
+          teams.AddRange(result);
+        }
+
+        return workDone;
+      }
     }
 
     /// <summary>

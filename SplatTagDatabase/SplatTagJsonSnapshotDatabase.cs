@@ -80,33 +80,44 @@ namespace SplatTagDatabase
       if (playersSnapshotFile == null || teamsSnapshotFile == null || sourcesSnapshotFile == null)
         return (Array.Empty<Player>(), Array.Empty<Team>(), new Dictionary<Guid, Source>());
 
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load sourcesSnapshotFile from {sourcesSnapshotFile}... ");
-      Stopwatch t = new Stopwatch();
-      t.Start();
-      string json = File.ReadAllText(sourcesSnapshotFile);
-      t.Stop();
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (1/2)");
-      t.Restart();
+      try
+      {
+        Console.WriteLine("Engaging TURBO");
+        WinApi.TimeBeginPeriod(1);
 
-      var settings = JsonConvert.DefaultSettings();
-      List<Source> sources = LoadSnapshot<Source>(json, settings);
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load sourcesSnapshotFile from {sourcesSnapshotFile}... ");
+        Stopwatch t = new Stopwatch();
+        t.Start();
+        string json = File.ReadAllText(sourcesSnapshotFile);
+        t.Stop();
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (1/2)");
+        t.Restart();
 
-      t.Stop();
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (2/2)");
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Transforming sources... ");
-      var lookup = sources.ToDictionary(s => s.Id, s => s);
+        var settings = JsonConvert.DefaultSettings();
+        List<Source> sources = LoadSnapshot<Source>(json, settings);
 
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile from {playersSnapshotFile}... ");
-      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
-      json = File.ReadAllText(playersSnapshotFile);
-      List<Player> players = LoadSnapshot<Player>(json, settings);
+        t.Stop();
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (2/2)");
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Transforming sources... ");
+        var lookup = sources.ToDictionary(s => s.Id, s => s);
 
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load teamsSnapshotFile from {teamsSnapshotFile}... ");
-      json = File.ReadAllText(teamsSnapshotFile);
-      List<Team> teams = LoadSnapshot<Team>(json, settings);
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile from {playersSnapshotFile}... ");
+        settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
+        json = File.ReadAllText(playersSnapshotFile);
+        List<Player> players = LoadSnapshot<Player>(json, settings);
 
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
-      return (players.ToArray(), teams.ToArray(), lookup);
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load teamsSnapshotFile from {teamsSnapshotFile}... ");
+        json = File.ReadAllText(teamsSnapshotFile);
+        List<Team> teams = LoadSnapshot<Team>(json, settings);
+
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
+        return (players.ToArray(), teams.ToArray(), lookup);
+      }
+      finally
+      {
+        WinApi.TimeEndPeriod(1);
+        Console.WriteLine("TURBO disengaged");
+      }
     }
 
     private static List<T> LoadSnapshot<T>(string json, JsonSerializerSettings settings) where T : class
