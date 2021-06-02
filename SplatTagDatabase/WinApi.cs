@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using System.Security;
 
 namespace SplatTagDatabase
@@ -14,10 +15,36 @@ namespace SplatTagDatabase
   {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod", SetLastError = true)]
-    public static extern uint TimeBeginPeriod(uint uMilliseconds);
+    private static extern uint TimeBeginPeriod(uint uMilliseconds);
+
+    public static void TryTimeBeginPeriod(uint uMilliseconds)
+    {
+      Console.WriteLine("Engaging TURBO");
+      try
+      {
+        TimeBeginPeriod(uMilliseconds);
+      }
+      catch (DllNotFoundException ex)
+      {
+        Console.Error.WriteLine("Cannot invoke TimeBeginPeriod. SystemException: " + ex.Message);
+      }
+    }
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("winmm.dll", EntryPoint = "timeEndPeriod", SetLastError = true)]
-    public static extern uint TimeEndPeriod(uint uMilliseconds);
+    private static extern uint TimeEndPeriod(uint uMilliseconds);
+
+    public static void TryTimeEndPeriod(uint uMilliseconds)
+    {
+      try
+      {
+        TimeEndPeriod(uMilliseconds);
+      }
+      catch (DllNotFoundException ex)
+      {
+        Console.Error.WriteLine("Cannot invoke TimeEndPeriod. SystemException: " + ex.Message);
+      }
+      Console.WriteLine("TURBO disengaged");
+    }
   }
 }

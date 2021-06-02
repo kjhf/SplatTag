@@ -73,6 +73,8 @@ namespace SplatTagDatabase
       string? sourcesFile = null,
       SplatTagJsonSnapshotDatabase? snapshotDatabase = null)
     {
+      Console.WriteLine($"GenerateNewDatabase called with saveFolder={saveFolder}, sourcesFile={sourcesFile}, snapshotDatabase={snapshotDatabase}...");
+
       if (sourcesFile == null)
       {
         sourcesFile = GenericFilesToIImporters.DefaultSourcesFileName;
@@ -87,17 +89,15 @@ namespace SplatTagDatabase
         saveFolder = Directory.GetParent(sourcesFile).FullName;
       }
 
-      // TURBO MODE ENGAGE
-      Console.WriteLine("Engaging TURBO");
-      WinApi.TimeBeginPeriod(1);
-
       try
       {
+        WinApi.TryTimeBeginPeriod(1);
+
         // Directories created in GenericFilesToIImporters
         GenericFilesToIImporters sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
         MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
         SplatTagController splatTagController = new SplatTagController(splatTagDatabase);
-        Console.WriteLine($"Full load of {sourcesImporter.Sources.Count} files...");
+        Console.WriteLine($"Full load of {sourcesImporter.Sources.Count} files from dir {Path.GetFullPath(saveFolder)}...");
         splatTagController.Initialise();
 
         // Now that we've initialised, take a snapshot of everything.
@@ -114,8 +114,7 @@ namespace SplatTagDatabase
       }
       finally
       {
-        WinApi.TimeEndPeriod(1);
-        Console.WriteLine("TURBO disengaged");
+        WinApi.TryTimeEndPeriod(1);
       }
     }
 

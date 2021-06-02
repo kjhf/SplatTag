@@ -82,8 +82,7 @@ namespace SplatTagDatabase
 
       try
       {
-        Console.WriteLine("Engaging TURBO");
-        WinApi.TimeBeginPeriod(1);
+        WinApi.TryTimeBeginPeriod(1);
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load sourcesSnapshotFile from {sourcesSnapshotFile}... ");
         Stopwatch t = new Stopwatch();
@@ -115,8 +114,7 @@ namespace SplatTagDatabase
       }
       finally
       {
-        WinApi.TimeEndPeriod(1);
-        Console.WriteLine("TURBO disengaged");
+        WinApi.TryTimeEndPeriod(1);
       }
     }
 
