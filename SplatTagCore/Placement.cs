@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Placement
+  public record Placement
   {
     public Placement(Dictionary<int, Guid[]>? players = null, Dictionary<int, Guid[]>? teams = null)
     {
@@ -21,5 +23,38 @@ namespace SplatTagCore
     /// Teams ordered by placement.
     /// </summary>
     public Dictionary<int, Guid[]> TeamsByPlacement { get; }
+
+    /// <summary>
+    /// Get if this Placements object has placements.
+    /// </summary>
+    public bool HasPlacements => PlayersByPlacement.Count > 0 && TeamsByPlacement.Count > 0;
+
+    #region Serialization
+
+    // Deserialize
+    protected Placement(SerializationInfo info, StreamingContext _)
+    {
+      this.PlayersByPlacement =
+        info.GetValueOrDefault("PlayersByPlacement", new Dictionary<string, Guid[]>())
+        .Where(pair => pair.Value.Length > 0)
+        .ToDictionary(pair => { int.TryParse(pair.Key, out var place); return place; }, pair => pair.Value); // If not parsed, this uses the default 0
+
+      this.TeamsByPlacement =
+        info.GetValueOrDefault("TeamsByPlacement", new Dictionary<string, Guid[]>())
+        .Where(pair => pair.Value.Length > 0)
+        .ToDictionary(pair => { int.TryParse(pair.Key, out var place); return place; }, pair => pair.Value);
+    }
+
+    // Serialize
+    public void GetObjectData(SerializationInfo info, StreamingContext _)
+    {
+      if (this.PlayersByPlacement.Count > 0)
+        info.AddValue("PlayersByPlacement", this.PlayersByPlacement.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value));
+
+      if (this.TeamsByPlacement.Count > 0)
+        info.AddValue("TeamsByPlacement", this.TeamsByPlacement.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value));
+    }
+
+    #endregion Serialization
   }
 }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace SplatTagCore
 {
   [Serializable]
-  public class CommandLineResult
+  public record CommandLineResult
   {
     [JsonProperty("Message", Required = Required.Always)]
     public string Message { get; set; } = "Message not set!";

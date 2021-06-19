@@ -2,6 +2,7 @@
 using SplatTagCore;
 using SplatTagDatabase;
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
@@ -17,11 +18,13 @@ namespace SplatTagConsole
     private static readonly SplatTagController splatTagController;
     private static readonly GenericFilesToIImporters? importer;
     private static readonly JsonSerializer serializer;
+    private static readonly HashSet<string> errorMessagesReported;
 
     static ConsoleMain()
     {
       // Set Console to UTF-8
       Console.OutputEncoding = Encoding.UTF8;
+      errorMessagesReported = new HashSet<string>();
 
       // Invoked from command line
       if (JsonConvert.DefaultSettings == null)
@@ -31,7 +34,12 @@ namespace SplatTagConsole
           DefaultValueHandling = DefaultValueHandling.Ignore,
           Error = (sender, args) =>
           {
-            Console.Error.WriteLine(args.ErrorContext.Error.Message);
+            string m = args.ErrorContext.Error.Message;
+            if (!errorMessagesReported.Contains(m))
+            {
+              Console.Error.WriteLine(m);
+              errorMessagesReported.Add(m);
+            }
             args.ErrorContext.Handled = true;
           }
         };
@@ -73,6 +81,7 @@ namespace SplatTagConsole
           new Option<string>("--rebuild", "Rebuilds the database"),
           new Option<bool>("--keepOpen", () => false, "Keep the console open?"),
           new Option<bool>("--verbose", () => false, "Verbose output"),
+          new Option<bool>("--queryIsClanTag", () => false, "The specified query is a Clan Tag?"),
         };
         rootCommand.Add(command);
 
@@ -89,7 +98,8 @@ namespace SplatTagConsole
             obj.QueryIsRegex,
             obj.Rebuild,
             obj.KeepOpen,
-            obj.Verbose);
+            obj.Verbose,
+            obj.QueryIsClanTag);
           return 0;
         });
 
@@ -153,7 +163,17 @@ namespace SplatTagConsole
       }
     }
 
-    private static void HandleCommandLineQuery(string? b64, string? query, string? slappId, bool exactCase, bool exactCharacterRecognition, bool queryIsRegex, string? rebuild, bool _, bool verbose)
+    private static void HandleCommandLineQuery(
+      string? b64,
+      string? query,
+      string? slappId,
+      bool exactCase,
+      bool exactCharacterRecognition,
+      bool queryIsRegex,
+      string? rebuild,
+      bool _,
+      bool verbose,
+      bool queryIsClanTag)
     {
       try
       {
@@ -163,6 +183,11 @@ namespace SplatTagConsole
           NearCharacterRecognition = !exactCharacterRecognition,
           QueryIsRegex = queryIsRegex
         };
+
+        if (queryIsClanTag)
+        {
+          options.FilterOptions = FilterOptions.ClanTag;
+        }
 
         CommandLineResult result = new CommandLineResult
         {
@@ -258,37 +283,82 @@ namespace SplatTagConsole
                 .Distinct()
                 .ToDictionary(s => s.Id, s => s.Name);
 
-              result.PlacementsForPlayers =
-                result.Players
-                .ToDictionary(p => p.Id, p => p.Sources
-                .ToDictionary(s => s.Id, s => s.Brackets));
+              try
+              {
+                result.PlacementsForPlayers = new Dictionary<Guid, Dictionary<Guid, Bracket[]>>();
+                foreach (var player in result.Players)
+                {
+                  result.PlacementsForPlayers[player.Id] = new Dictionary<Guid, Bracket[]>();
+                  foreach (var source in player.Sources)
+                  {
+                    result.PlacementsForPlayers[player.Id][source.Id] = source.Brackets;
+                  }
+                }
+              }
+              catch (OutOfMemoryException oom)
+              {
+                const string message = "ERROR: OutOfMemoryException on PlacementsForPlayers. Will continue anyway.";
+                Console.WriteLine(message);
+                Console.WriteLine(oom.ToString());
+                result.PlacementsForPlayers = new Dictionary<Guid, Dictionary<Guid, Bracket[]>>();
+              }
             }
           }
           catch (Exception ex)
           {
-            Console.WriteLine("ERROR: Exception while compiling data for serialization...");
+            string message = $"ERROR: {ex.GetType().Name} while compiling data for serialization...";
+            Console.WriteLine(message);
             Console.WriteLine(ex.ToString());
+
+            string q = result.Query;
+            result = new CommandLineResult
+            {
+              Query = q,
+              Options = options,
+              Message = message,
+            };
           }
         }
+
+        string messageToSend;
 
         try
         {
           StringWriter sw = new StringWriter();
           serializer.Serialize(sw, result);
-
-          // Send back as a b64 string
-          Console.WriteLine(Convert.ToBase64String(Encoding.UTF8.GetBytes(sw.ToString())));
+          messageToSend = sw.ToString();
         }
         catch (Exception ex)
         {
-          Console.WriteLine("ERROR: Exception while Serializing result...");
+          string message = $"ERROR: {ex.GetType().Name} while serializing result...";
+          Console.WriteLine(message);
           Console.WriteLine(ex.ToString());
+
+          string q = result.Query;
+          result = new CommandLineResult
+          {
+            Query = q,
+            Options = options,
+            Message = message
+          };
+
+          // Attempt to send the message as a different serialized error
+          StringWriter sw = new StringWriter();
+          serializer.Serialize(sw, result);
+          messageToSend = sw.ToString();
         }
+
+        // Send back as a b64 string
+        Console.WriteLine(Convert.ToBase64String(Encoding.UTF8.GetBytes(messageToSend)));
       }
       catch (Exception ex)
       {
-        Console.WriteLine("ERROR: Outer Exception handler...");
+        Console.WriteLine($"ERROR: Outer Exception handler, caught a {ex.GetType().Name}...");
         Console.WriteLine(ex.ToString());
+      }
+      finally
+      {
+        errorMessagesReported.Clear();
       }
     }
 
