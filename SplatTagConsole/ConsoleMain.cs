@@ -171,7 +171,7 @@ namespace SplatTagConsole
       bool exactCharacterRecognition,
       bool queryIsRegex,
       string? rebuild,
-      bool _,
+      bool keepOpen,
       bool verbose,
       bool queryIsClanTag)
     {
@@ -219,7 +219,15 @@ namespace SplatTagConsole
         }
         else if (inputs.All(s => string.IsNullOrEmpty(s)))
         {
-          result.Message = "Nothing to search!";
+          if (keepOpen)
+          {
+            // First run to open
+            result.Message = $"Connection established. {splatTagController.MatchPlayer(null).Length} players and {splatTagController.MatchTeam(null).Length} teams loaded.";
+          }
+          else
+          {
+            result.Message = "Nothing to search!";
+          }
         }
         else
         {
