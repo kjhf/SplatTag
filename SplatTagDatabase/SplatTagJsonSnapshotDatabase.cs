@@ -112,6 +112,12 @@ namespace SplatTagDatabase
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
         return (players.ToArray(), teams.ToArray(), lookup);
       }
+      catch (Exception ex)
+      {
+        Console.Error.WriteLine("An error occurred in loading the Snapshot Database.");
+        Console.Error.WriteLine(ex);
+        throw;
+      }
       finally
       {
         WinApi.TryTimeEndPeriod(1);
@@ -136,9 +142,9 @@ namespace SplatTagDatabase
             }
             catch (Exception ex)
             {
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + reader.LineNumber + ".");
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + reader);
+              Console.Error.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + reader.LineNumber + ".");
+              Console.Error.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
+              Console.Error.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + reader);
             }
           }
         }
