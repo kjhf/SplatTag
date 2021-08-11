@@ -38,8 +38,8 @@ namespace SplatTagUnitTests
       Assert.AreEqual(1, t1.CompareToBySourceChronology(t2));
       Assert.AreEqual(-1, t2.CompareToBySourceChronology(t1));
 
-      t1.AddSources(new[] { s3 });
-      t2.AddSources(new[] { s4 });
+      t1.AddTwitter("twit1", s3);
+      t2.AddTwitter("twit2", s4);
 
       Assert.AreEqual(1, t1.CompareToBySourceChronology(t2));
       Assert.AreEqual(-1, t2.CompareToBySourceChronology(t1));
@@ -59,8 +59,8 @@ namespace SplatTagUnitTests
       Assert.AreEqual(-1, t1.CompareToBySourceChronology(t2));
       Assert.AreEqual(1, t2.CompareToBySourceChronology(t1));
 
-      t1.AddSources(new[] { s1 });
-      t2.AddSources(new[] { s2 });
+      t1.AddTwitter("twit1", s1);
+      t2.AddTwitter("twit2", s2);
 
       Assert.AreEqual(1, t1.CompareToBySourceChronology(t2));
       Assert.AreEqual(-1, t2.CompareToBySourceChronology(t1));

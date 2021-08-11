@@ -2,7 +2,6 @@
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -85,32 +84,21 @@ namespace SplatTagDatabase
         WinApi.TryTimeBeginPeriod(1);
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load sourcesSnapshotFile from {sourcesSnapshotFile}... ");
-        Stopwatch t = new Stopwatch();
-        t.Start();
-        string json = File.ReadAllText(sourcesSnapshotFile);
-        t.Stop();
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (1/2)");
-        t.Restart();
-
         var settings = JsonConvert.DefaultSettings();
-        List<Source> sources = LoadSnapshot<Source>(json, settings);
-
-        t.Stop();
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Took {t.ElapsedMilliseconds}ms (2/2)");
+        Source[] sources = LoadSnapshot<Source>(sourcesSnapshotFile, settings);
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Transforming sources... ");
         var lookup = sources.ToDictionary(s => s.Id, s => s);
+        GC.Collect();
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile from {playersSnapshotFile}... ");
         settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
-        json = File.ReadAllText(playersSnapshotFile);
-        List<Player> players = LoadSnapshot<Player>(json, settings);
+        Player[] players = LoadSnapshot<Player>(playersSnapshotFile, settings);
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load teamsSnapshotFile from {teamsSnapshotFile}... ");
-        json = File.ReadAllText(teamsSnapshotFile);
-        List<Team> teams = LoadSnapshot<Team>(json, settings);
+        Team[] teams = LoadSnapshot<Team>(teamsSnapshotFile, settings);
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
-        return (players.ToArray(), teams.ToArray(), lookup);
+        return (players, teams, lookup);
       }
       catch (Exception ex)
       {
@@ -124,10 +112,11 @@ namespace SplatTagDatabase
       }
     }
 
-    private static List<T> LoadSnapshot<T>(string json, JsonSerializerSettings settings) where T : class
+    private static T[] LoadSnapshot<T>(string filePath, JsonSerializerSettings settings) where T : class
     {
       List<T> result = new List<T>();
-      using (JsonTextReader reader = new JsonTextReader(new StringReader(json)))
+      using (StreamReader file = File.OpenText(filePath))
+      using (JsonTextReader reader = new JsonTextReader(file))
       {
         reader.SupportMultipleContent = true;
 
@@ -150,7 +139,7 @@ namespace SplatTagDatabase
         }
       }
 
-      return result;
+      return result.ToArray();
     }
 
     public void Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams, IEnumerable<Source> saveSources)

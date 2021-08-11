@@ -159,13 +159,13 @@ namespace SplatTagUnitTests
       Assert.AreEqual(p5.CurrentTeam, t5.Id, "Expected p5's current team to now be t5");
     }
 
-    private static void DumpSourceable(string label, IEnumerable<ISourceable> sourceable)
+    private static void DumpSourceable(string label, IEnumerable<IReadonlySourceable> sourceable)
     {
       Console.WriteLine(label);
       Console.WriteLine(SourceablesToString(sourceable));
     }
 
-    private static string SourceablesToString(IEnumerable<ISourceable> sourceable)
+    private static string SourceablesToString(IEnumerable<IReadonlySourceable> sourceable)
     {
       StringBuilder sb = new StringBuilder();
       foreach (var s in sourceable)

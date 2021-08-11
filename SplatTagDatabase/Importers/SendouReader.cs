@@ -22,59 +22,75 @@ namespace SplatTagDatabase.Importers
     public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
-      JObject json = JObject.Parse(File.ReadAllText(jsonFile));
+      JToken json = JToken.Parse(File.ReadAllText(jsonFile));
+      if (!(json is JArray))
+      {
+        json = json["users"];
+      }
 
       List<Player> players = new List<Player>();
-      foreach (JToken userToken in json["users"])
+      foreach (JToken userToken in json)
       {
         Player player = new Player();
-        var name = userToken["username"].Value<string>();
+        var name = userToken.GetValue<string>("username");
         if (name != null)
         {
           player.AddName(name, source);
         }
-        name = userToken["twitch_name"].Value<string>();
+        name = userToken.GetValue<string>("twitch_name");
         if (name != null)
         {
           player.AddTwitch(name, source);
         }
-        name = userToken["twitter_name"].Value<string>();
+        name = userToken.GetValue<string>("twitter_name");
         if (name != null)
         {
           player.AddTwitter(name, source);
         }
-        var sendouId = userToken["id"].Value<string>();
+        var sendouId = userToken.GetValue<string>("id");
         if (sendouId != null)
         {
           player.AddSendou(sendouId, source);
         }
-        var country = userToken["country"].Value<string>();
+        var country = userToken.GetValue<string>("country");
         if (name != null)
         {
           player.Country = country;
         }
-        var weapons = userToken["weapons"].HasValues ? userToken["weapons"].Values<string>() : null;
+        var weapons = userToken["weapons"]?.HasValues == true ? userToken["weapons"].Values<string>() : null;
         if (weapons != null)
         {
           player.AddWeapons(weapons);
         }
-        var top500 = userToken["top500"].Value<bool?>();
-        if (top500 != null)
+        var top500 = userToken.GetValue("top500", false);
+        if (top500)
         {
-          player.Top500 = top500.Value;
+          player.Top500 = true;
         }
-        JToken discord = userToken["discord"];
+        JToken discord = userToken["discord"] ?? userToken;
         if (discord != null)
         {
           player.AddDiscordUsername($"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}", source);
-          var discordId = discord["id"].Value<string>();
+          var discordId = discord["discordId"].Value<string>();
           if (discordId != null)
           {
             player.AddDiscordId(discordId, source);
           }
         }
-
-        player.AddSources(source.AsEnumerable());
+        JToken profile = userToken["profile"] ?? userToken;
+        if (profile != null && profile.HasValues)
+        {
+          name = profile.GetValue<string>("twitchName");
+          if (name != null)
+          {
+            player.AddTwitch(name, source);
+          }
+          name = profile.GetValue<string>("twitterName");
+          if (name != null)
+          {
+            player.AddTwitter(name, source);
+          }
+        }
         players.Add(player);
       }
 

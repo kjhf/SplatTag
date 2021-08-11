@@ -398,6 +398,7 @@ namespace SplatTagDatabase.Importers
         // End of the row, add the data.
         foreach (var pair in rowPlayers)
         {
+          // Don't add empty players
           Player p = pair.Value;
           if (p.Name.Equals(Builtins.UNKNOWN_PLAYER))
           {
@@ -410,9 +411,6 @@ namespace SplatTagDatabase.Importers
         // Don't bother adding the team if it has no players
         if (players.Count > 0)
         {
-          // Add the source
-          t.AddSources(source.AsEnumerable());
-
           // Recalculate the ClanTag layout
           if (t.Tag != null)
           {
@@ -450,7 +448,6 @@ namespace SplatTagDatabase.Importers
       else
       {
         Player p = new Player();
-        p.AddSources(source.AsEnumerable());
         rowPlayers.Add(playerNum, p);
         return p;
       }

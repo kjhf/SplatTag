@@ -1,14 +1,13 @@
 ﻿using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Player : ISerializable, ISourceable
+  public class Player : ISerializable, IReadonlySourceable
   {
     /// <summary>
     /// The database Id of the player.
@@ -39,11 +38,6 @@ namespace SplatTagCore
     /// Back-store for the skill of this player.
     /// </summary>
     private readonly Skill skill = new Skill();
-
-    /// <summary>
-    /// Back-store for the sources of this player.
-    /// </summary>
-    private readonly List<Source> sources = new List<Source>();
 
     /// <summary>
     /// Back-store for the team GUIDs for this player. The this element is the current team.
@@ -81,7 +75,6 @@ namespace SplatTagCore
     public Player(string ign, Source source)
     {
       this.names.Add(new Name(ign, source));
-      this.sources.Add(source);
     }
 
     /// <summary>
@@ -93,7 +86,6 @@ namespace SplatTagCore
     {
       this.names.Add(new Name(ign, source));
       this.teams.AddRange(teams);
-      this.sources.Add(source);
     }
 
     /// <summary>
@@ -181,10 +173,16 @@ namespace SplatTagCore
     /// </summary>
     public IReadOnlyList<Sendou> SendouProfiles => sendouProfiles;
 
-    /// <summary>
-    /// Get or Set the current sources that make up this Player instance.
-    /// </summary>
-    public IList<Source> Sources => sources;
+    public IReadOnlyList<Source> Sources =>
+      names.SelectMany(n => n.Sources)
+      .Concat(sendouProfiles.SelectMany(s => s.Sources))
+      .Concat(twitchProfiles.SelectMany(s => s.Sources))
+      .Concat(twitterProfiles.SelectMany(s => s.Sources))
+      .Concat(Battlefy.PersistentIds.SelectMany(s => s.Sources))
+      .Concat(Discord.Usernames.SelectMany(s => s.Sources))
+      .Distinct()
+      .ToList()
+      ;
 
     /// <summary>
     /// The Splatnet database Id of the player (a hex string).
@@ -298,11 +296,6 @@ namespace SplatTagCore
       SplatTagCommon.AddNames(value, sendouProfiles);
     }
 
-    public void AddSources(IEnumerable<Source> value)
-    {
-      SplatTagCommon.AddSources(value, sources);
-    }
-
     public void AddTeams(IEnumerable<Guid> value)
     {
       SplatTagCommon.InsertFrontUnique(value, teams);
@@ -405,9 +398,6 @@ namespace SplatTagCore
       // Merge the player's name(s).
       AddNames(newerPlayer.names);
 
-      // Merge the sources.
-      AddSources(newerPlayer.sources);
-
       // Merge the weapons.
       AddWeapons(newerPlayer.weapons);
 
@@ -456,16 +446,6 @@ namespace SplatTagCore
       AddFCs(info.GetValueOrDefault("FriendCode", Array.Empty<FriendCode>()));
       AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
       AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
-      if (context.Context is Source.GuidToSourceConverter converter)
-      {
-        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
-        AddSources(converter.Convert(sourceIds));
-      }
-      else
-      {
-        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
-        AddSources(sourceIds.Select(s => new Source(s)));
-      }
 
       Skill[] skills = info.GetValueOrDefault("Skill", Array.Empty<Skill>());
       this.skill = skills.Length == 1 ? skills[0] : new Skill();
@@ -478,7 +458,7 @@ namespace SplatTagCore
       this.Id = info.GetValueOrDefault("Id", Guid.Empty);
       if (this.Id == Guid.Empty)
       {
-        throw new SerializationException("Guid cannot be empty for player: " + this.Name + " from source(s) [" + string.Join(", ", this.sources) + "].");
+        throw new SerializationException("Guid cannot be empty for player: " + this.Name + " from source(s) [" + string.Join(", ", this.Sources) + "].");
       }
     }
 
@@ -504,9 +484,6 @@ namespace SplatTagCore
 
       if (this.sendouProfiles.Count > 0)
         info.AddValue("Sendou", this.sendouProfiles);
-
-      if (sources.Count > 0)
-        info.AddValue("S", this.sources.Select(s => s.Id));
 
       if (!this.skill.IsDefault)
         info.AddValue("Skill", this.skill);

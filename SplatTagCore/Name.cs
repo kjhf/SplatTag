@@ -31,6 +31,11 @@ namespace SplatTagCore
     /// <summary>
     /// List of sources that this name has been used under
     /// </summary>
+    IReadOnlyList<Source> IReadonlySourceable.Sources => sources;
+
+    /// <summary>
+    /// List of sources that this name has been used under
+    /// </summary>
     private readonly List<Source> sources = new List<Source>();
 
     /// <summary>

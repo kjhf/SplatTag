@@ -7,7 +7,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Team : ISerializable, ISourceable
+  public class Team : ISerializable, IReadonlySourceable
   {
     public static readonly Team NoTeam = new Team("(Free Agent)", Builtins.BuiltinSource);
     public static readonly Team UnlinkedTeam = new Team("(UNLINKED TEAM)", Builtins.BuiltinSource);
@@ -44,11 +44,6 @@ namespace SplatTagCore
     private readonly List<Name> names = new List<Name>();
 
     /// <summary>
-    /// Back-store for the sources of this team.
-    /// </summary>
-    private readonly List<Source> sources = new List<Source>();
-
-    /// <summary>
     /// Back-store for the Twitter Profiles of this player.
     /// </summary>
     private readonly List<Twitter> twitterProfiles = new List<Twitter>();
@@ -68,7 +63,6 @@ namespace SplatTagCore
     public Team(string ign, Source source)
     {
       this.names.Add(new Name(ign, source));
-      this.sources.Add(source);
     }
 
     /// <summary>
@@ -112,9 +106,16 @@ namespace SplatTagCore
     public IReadOnlyList<Name> Names => names;
 
     /// <summary>
-    /// List of sources that this name has been used under
+    /// Get the current sources that make up this Team instance.
     /// </summary>
-    public IList<Source> Sources => sources;
+    public IReadOnlyList<Source> Sources =>
+      names.SelectMany(n => n.Sources)
+      .Concat(battlefyPersistentTeamIds.SelectMany(s => s.Sources))
+      .Concat(clanTags.SelectMany(s => s.Sources))
+      .Concat(twitterProfiles.SelectMany(s => s.Sources))
+      .Distinct()
+      .ToList()
+      ;
 
     /// <summary>
     /// The most recent tag of the team
@@ -177,11 +178,6 @@ namespace SplatTagCore
       SplatTagCommon.AddNames(value, names);
     }
 
-    public void AddSources(IEnumerable<Source> value)
-    {
-      SplatTagCommon.AddSources(value, sources);
-    }
-
     public Twitter AddTwitter(string handle, Source source)
     {
       return SplatTagCommon.AddName(new Twitter(handle, source), twitterProfiles);
@@ -219,9 +215,6 @@ namespace SplatTagCore
 
       // Merge the team's persistent battlefy id(s).
       AddBattlefyIds(newerTeam.battlefyPersistentTeamIds);
-
-      // Merge the sources.
-      AddSources(newerTeam.sources);
     }
 
     /// <summary>
@@ -242,22 +235,12 @@ namespace SplatTagCore
       AddClanTags(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
       AddDivisions(info.GetValueOrDefault("Divisions", Array.Empty<Division>()));
       AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
-      if (context.Context is Source.GuidToSourceConverter converter)
-      {
-        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
-        AddSources(converter.Convert(sourceIds));
-      }
-      else
-      {
-        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
-        AddSources(sourceIds.Select(s => new Source(s)));
-      }
       AddTwitterProfiles(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
 
       this.Id = info.GetValueOrDefault("Id", Guid.Empty);
       if (this.Id == Guid.Empty)
       {
-        throw new SerializationException("Guid cannot be empty for team: " + this.Name + " from source(s) [" + string.Join(", ", this.sources) + "].");
+        throw new SerializationException("Guid cannot be empty for team: " + this.Name + " from source(s) [" + string.Join(", ", this.Sources) + "].");
       }
     }
 
@@ -277,9 +260,6 @@ namespace SplatTagCore
 
       if (names.Count > 0)
         info.AddValue("Names", this.names);
-
-      if (sources.Count > 0)
-        info.AddValue("S", this.sources.Select(s => s.Id));
 
       if (twitterProfiles.Count > 0)
         info.AddValue("Twitter", this.twitterProfiles);
