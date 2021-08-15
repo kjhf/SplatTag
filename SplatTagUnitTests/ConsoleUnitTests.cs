@@ -90,16 +90,10 @@ namespace SplatTagUnitTests
       Console.WriteLine("==================================================");
 
       Assert.IsTrue(actual.Contains(MESSAGE_OK));
-      if (actual.Contains(EMPTY_PLAYERS))
-      {
-        Assert.Inconclusive("The test returned an empty players list. This may be because the database has not been populated. Do so and re-run the test.");
-      }
-      else
-      {
-        Assert.IsTrue(actual.Contains("kjhf1273"));
-        Assert.IsTrue(actual.Contains("Inkology"));
-        Assert.IsTrue(actual.Contains("Revitalize"));
-      }
+      Assert.IsTrue(actual.Contains("kjhf1273"));
+      Assert.IsTrue(actual.Contains("Inkology"));
+      Assert.IsTrue(actual.Contains("Revitalize"));
+      Assert.IsTrue(actual.Contains("2019-03-25-LUTI-S8"));  // Check sources populated
     }
 
     /// <summary>
@@ -130,16 +124,10 @@ namespace SplatTagUnitTests
       Console.WriteLine("==================================================");
 
       Assert.IsTrue(actual.Contains(MESSAGE_OK));
-      if (actual.Contains(EMPTY_PLAYERS))
-      {
-        Assert.Inconclusive("The test returned an empty players list. This may be because the database has not been populated. Do so and re-run the test.");
-      }
-      else
-      {
-        Assert.IsTrue(actual.Contains("kjhf1273"));
-        Assert.IsTrue(actual.Contains("Inkology"));
-        Assert.IsTrue(actual.Contains("Revitalize"));
-      }
+      Assert.IsTrue(actual.Contains("kjhf1273"));
+      Assert.IsTrue(actual.Contains("Inkology"));
+      Assert.IsTrue(actual.Contains("Revitalize"));
+      Assert.IsTrue(actual.Contains("2019-03-25-LUTI-S8"));  // Check sources populated
     }
 
     /// <summary>

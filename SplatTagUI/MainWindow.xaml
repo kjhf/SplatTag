@@ -131,7 +131,7 @@
                       </TextBlock.ContextMenu>
                     </TextBlock>
                     <StackPanel Orientation="Horizontal"  Grid.Column="1">
-                      <ItemsControl ItemsSource="{Binding BattlefySlugs}">
+                      <ItemsControl ItemsSource="{Binding Battlefy.Slugs}">
                         <ItemsControl.ItemsPanel>
                           <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" />

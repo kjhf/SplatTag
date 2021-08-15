@@ -114,6 +114,7 @@ namespace SplatTagCore
       .Concat(clanTags.SelectMany(s => s.Sources))
       .Concat(twitterProfiles.SelectMany(s => s.Sources))
       .Distinct()
+      .OrderByDescending(s => s)
       .ToList()
       ;
 

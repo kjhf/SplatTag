@@ -82,19 +82,19 @@ namespace SplatTagDatabase
       try
       {
         WinApi.TryTimeBeginPeriod(1);
-
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load sourcesSnapshotFile from {sourcesSnapshotFile}... ");
         var settings = JsonConvert.DefaultSettings();
+
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading sourcesSnapshotFile from {sourcesSnapshotFile}... ");
         Source[] sources = LoadSnapshot<Source>(sourcesSnapshotFile, settings);
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Transforming sources... ");
         var lookup = sources.ToDictionary(s => s.Id, s => s);
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {lookup.Count} sources transformed. ");
         GC.Collect();
 
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load playersSnapshotFile from {playersSnapshotFile}... ");
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading playersSnapshotFile from {playersSnapshotFile}... ");
         settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
         Player[] players = LoadSnapshot<Player>(playersSnapshotFile, settings);
 
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load teamsSnapshotFile from {teamsSnapshotFile}... ");
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading teamsSnapshotFile from {teamsSnapshotFile}... ");
         Team[] teams = LoadSnapshot<Team>(teamsSnapshotFile, settings);
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");

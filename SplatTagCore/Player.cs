@@ -181,6 +181,7 @@ namespace SplatTagCore
       .Concat(Battlefy.PersistentIds.SelectMany(s => s.Sources))
       .Concat(Discord.Usernames.SelectMany(s => s.Sources))
       .Distinct()
+      .OrderByDescending(s => s)
       .ToList()
       ;
 

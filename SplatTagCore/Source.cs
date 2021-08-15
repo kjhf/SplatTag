@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Source : ISerializable, ITeamResolver
+  public class Source : ISerializable, ITeamResolver, IComparable<Source>
   {
     /// <summary>
     /// The brackets that make up the source.
@@ -73,6 +73,11 @@ namespace SplatTagCore
       Id = id;
       Name = Builtins.UNKNOWN_SOURCE;
     }
+
+    /// <summary>
+    /// Compare start time to another Source's start time.
+    /// </summary>
+    public int CompareTo(Source other) => Start.CompareTo(other.Start);
 
     /// <summary>
     /// Match a Team by its id.
