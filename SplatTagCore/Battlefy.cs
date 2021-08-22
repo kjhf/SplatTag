@@ -1,6 +1,7 @@
 ﻿using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace SplatTagCore
@@ -41,6 +42,11 @@ namespace SplatTagCore
     /// The persistent Battlefy ids
     /// </summary>
     public IReadOnlyList<Name> PersistentIds => persistentIds;
+
+    /// <summary>
+    /// Combination of Discord usernames and ids
+    /// </summary>
+    public IReadOnlyList<Name> AllNames => new List<Name>(usernames.Concat(slugs).Concat(persistentIds).Distinct());
 
     /// <summary>
     /// Add a new Battlefy slug to the front of this Battlefy profile

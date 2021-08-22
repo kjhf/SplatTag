@@ -36,9 +36,13 @@ namespace SplatTagCore
     public IReadOnlyList<Name> Usernames => usernames;
 
     /// <summary>
+    /// Combination of Discord usernames and ids
+    /// </summary>
+    public IReadOnlyList<Name> AllNames => new List<Name>(ids.Concat(usernames).Distinct());
+
+    /// <summary>
     /// Add a new Discord id to the front of this profile
     /// </summary>
-    /// <param name="ids"></param>
     public void AddId(string slug, Source source)
     {
       SplatTagCommon.AddName(new Name(slug, source), ids);

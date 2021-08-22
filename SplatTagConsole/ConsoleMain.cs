@@ -79,9 +79,12 @@ namespace SplatTagConsole
           new Option<bool>("--exactCharacterRecognition", () => false, "Exact Character Recognition?"),
           new Option<bool>("--queryIsRegex", () => false, "Exact Character Recognition?"),
           new Option<string>("--rebuild", "Rebuilds the database"),
+          new Option<string>("--patch", "Patches the database with new sources"),
           new Option<bool>("--keepOpen", () => false, "Keep the console open?"),
           new Option<bool>("--verbose", () => false, "Verbose output"),
           new Option<bool>("--queryIsClanTag", () => false, "The specified query is a Clan Tag?"),
+          new Option<bool>("--queryIsTeam", () => false, "The specified query is a Team"),
+          new Option<bool>("--queryIsPlayer", () => false, "The specified query is a Player"),
         };
         rootCommand.Add(command);
 
@@ -97,9 +100,12 @@ namespace SplatTagConsole
             obj.ExactCharacterRecognition,
             obj.QueryIsRegex,
             obj.Rebuild,
+            obj.Patch,
             obj.KeepOpen,
             obj.Verbose,
-            obj.QueryIsClanTag);
+            obj.QueryIsClanTag,
+            obj.QueryIsTeam,
+            obj.QueryIsPlayer);
           return 0;
         });
 
@@ -171,9 +177,12 @@ namespace SplatTagConsole
       bool exactCharacterRecognition,
       bool queryIsRegex,
       string? rebuild,
+      string? patch,
       bool keepOpen,
       bool verbose,
-      bool queryIsClanTag)
+      bool queryIsClanTag,
+      bool queryIsTeam,
+      bool queryIsPlayer)
     {
       try
       {
@@ -184,9 +193,21 @@ namespace SplatTagConsole
           QueryIsRegex = queryIsRegex
         };
 
-        if (queryIsClanTag)
+        if (queryIsPlayer)
+        {
+          options.FilterOptions = FilterOptions.Player;
+        }
+        else if (queryIsTeam)
+        {
+          options.FilterOptions = FilterOptions.Team;
+        }
+        else if (queryIsClanTag)
         {
           options.FilterOptions = FilterOptions.ClanTag;
+        }
+        else
+        {
+          options.FilterOptions = FilterOptions.Default;
         }
 
         CommandLineResult result = new CommandLineResult
@@ -215,6 +236,22 @@ namespace SplatTagConsole
           else
           {
             result.Message = $"Rebuild specified but the sources file specified `{rebuild}` from `{Directory.GetCurrentDirectory()}` does not exist. Aborting.";
+          }
+        }
+        else if (patch != null)
+        {
+          if (patch.Equals(string.Empty))
+          {
+            result.Message = "Patch specified but no patch sources file specified. Aborting.";
+          }
+          else if (File.Exists(patch))
+          {
+            SplatTagControllerFactory.GenerateDatabasePatch(patchFile: patch);
+            result.Message = $"Database patched from {patch}!";
+          }
+          else
+          {
+            result.Message = $"Patch specified but the sources file specified `{patch}` from `{Directory.GetCurrentDirectory()}` does not exist. Aborting.";
           }
         }
         else if (inputs.All(s => string.IsNullOrEmpty(s)))

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
@@ -10,7 +11,7 @@ namespace SplatTagCore
   /// For LUTI, X is div 0. X+ is div -1.
   /// Higher divs are LOWER in number.
   /// </summary>
-  public class Division : ISerializable, IComparable<Division>
+  public class Division : ISerializable, IComparable<Division>, IEquatable<Division?>
   {
     public const int UNKNOWN = int.MaxValue;
     public const int X = 0;
@@ -152,6 +153,39 @@ namespace SplatTagCore
     public static bool operator >=(Division left, Division right)
     {
       return left.CompareTo(right) >= 0;
+    }
+
+    public static bool operator ==(Division? left, Division? right)
+    {
+      if (left is null || right is null) return false;
+      return EqualityComparer<Division>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(Division? left, Division? right)
+    {
+      return !(left == right);
+    }
+
+    public override bool Equals(object? obj)
+    {
+      return Equals(obj as Division);
+    }
+
+    public bool Equals(Division? other)
+    {
+      return other != null &&
+             DivType == other.DivType &&
+             Season == other.Season &&
+             Value == other.Value;
+    }
+
+    public override int GetHashCode()
+    {
+      int hashCode = 854497090;
+      hashCode = (hashCode * -1521134295) + DivType.GetHashCode();
+      hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(Season);
+      hashCode = (hashCode * -1521134295) + Value.GetHashCode();
+      return hashCode;
     }
 
     /// <summary>

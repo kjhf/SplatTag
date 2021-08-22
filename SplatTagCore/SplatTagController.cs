@@ -200,9 +200,9 @@ namespace SplatTagCore
 
             // Otherwise ...
             int relevance = 0;
-            if ((filterOptions & FilterOptions.Name) != 0)
+            if ((filterOptions & FilterOptions.PlayerName) != 0)
             {
-              foreach (var toMatch in from Name name in p.Names
+              foreach (var toMatch in from Name name in p.AllKnownNames
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                       select toMatch)
               {
@@ -380,9 +380,9 @@ namespace SplatTagCore
             }
           }
 
-          if ((filterOptions & FilterOptions.Name) != 0)
+          if ((filterOptions & FilterOptions.PlayerName) != 0)
           {
-            foreach (var toMatch in from Name name in p.Names
+            foreach (var toMatch in from Name name in p.AllKnownNames
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -535,7 +535,7 @@ namespace SplatTagCore
               }
             }
 
-            if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
+            if ((filterOptions & FilterOptions.TeamName) != 0 && t.Name != null)
             {
               string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.Transformed : t.Name.Value;
               if (regex.IsMatch(toMatch))
@@ -624,7 +624,7 @@ namespace SplatTagCore
             }
           }
 
-          if ((filterOptions & FilterOptions.Name) != 0 && t.Name != null)
+          if ((filterOptions & FilterOptions.TeamName) != 0 && t.Name != null)
           {
             string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.Transformed : t.Name.Value;
             AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);

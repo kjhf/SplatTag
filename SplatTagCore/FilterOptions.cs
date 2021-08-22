@@ -8,9 +8,9 @@ namespace SplatTagCore
     None = 0,
 
     /// <summary>
-    /// The query can specify a name
+    /// The query can specify a Player IGN or alias
     /// </summary>
-    Name = 0x1,
+    PlayerName = 0x1,
 
     /// <summary>
     /// The query can specify a friend code
@@ -67,12 +67,28 @@ namespace SplatTagCore
     /// </summary>
     SlappId = 0x800,
 
+    /// <summary>
+    /// The query can specify a Team IGN or alias
+    /// </summary>
+    TeamName = 0x1000,
+
+    /// <summary>
+    /// The query can specify a team (team name or clan tag)
+    /// </summary>
+    Team = (TeamName | ClanTag | SlappId),
+
+    /// <summary>
+    /// The query can specify a player (relevant details)
+    /// </summary>
+    Player = (PlayerName | FriendCode | DiscordName | Twitter | Twitch | BattlefySlugs | BattlefyUsername | BattlefyPersistentIds | DiscordId | SlappId),
+
     /// <summary> Default search </summary>
     /// <remarks>Omits Sources</remarks>
-    Default = (Name | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs | BattlefyUsername | BattlefyPersistentIds | DiscordId | SlappId),
+    Default = (PlayerName | TeamName | FriendCode | DiscordName | ClanTag | Twitter | Twitch | BattlefySlugs | BattlefyUsername | BattlefyPersistentIds | DiscordId | SlappId),
 
     /// <summary> Persistent search </summary>
-    /// <remarks>This is the information we can safely merge records together by.</remarks>
-    Persistent = (Twitter | Twitch | BattlefyPersistentIds | DiscordId)
+    /// <remarks>This is the information we can safely merge records together with.
+    /// FC and Discord Name is not here because people sometimes enter a team captain FC or discord as their own account ...</remarks>
+    Persistent = (Twitter | Twitch | BattlefyPersistentIds | DiscordId | BattlefySlugs)
   }
 }

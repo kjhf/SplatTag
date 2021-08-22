@@ -1,0 +1,26 @@
+{
+  "users": [
+    {
+      "username": "Slate",
+      "id": "5cfcfdcffeacd36315926b5e",
+      "twitch_name": "kjhf_slate",
+      "twitter_name": "kjhf1273",
+      "country": "gb",
+      "weapons": [
+        "Carbon Roller Deco",
+        "Hero Roller Replica",
+        "Krak-On Splat Roller",
+        "Kensa Dynamo Roller",
+        "Foil Flingza Roller"
+      ],
+      "top500": true,
+      "discord": {
+        "discordId": "97288493029416960",
+        "username": "Slate",
+        "avatar": "c178b52119c6c620b1b6bf7a238612f8",
+        "discriminator": "3249",
+        "public_flags": 128
+      }
+    }
+  ]
+}

@@ -142,7 +142,7 @@ namespace SplatTagDatabase
       return result.ToArray();
     }
 
-    public void Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams, IEnumerable<Source> saveSources)
+    public SplatTagJsonSnapshotDatabase Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams, IEnumerable<Source> saveSources)
     {
       Task savePlayersTask = Task.Run(async () =>
       {
@@ -202,6 +202,7 @@ namespace SplatTagDatabase
       });
 
       Task.WaitAll(savePlayersTask, saveTeamsTask, saveSourcesTask);
+      return this;
     }
   }
 }

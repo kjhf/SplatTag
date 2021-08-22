@@ -118,7 +118,7 @@ namespace SplatTagDatabase
           }
           // else
           // If that doesn't work, try and match a name and same team.
-          if (foundOlderPlayerRecord == null && Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Name, logger))
+          if (foundOlderPlayerRecord == null && Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.PlayerName, logger))
           {
             if (olderPlayerRecord.CompareToBySourceChronology(newerPlayerRecord) == 1)
             {
@@ -326,7 +326,7 @@ namespace SplatTagDatabase
           // If that doesn't work, try and match a name and same team.
           Player foundPlayer =
               playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent, logger))
-              ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Name, logger));
+              ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.PlayerName, logger));
 
           if (foundPlayer == null)
           {
@@ -364,7 +364,7 @@ namespace SplatTagDatabase
           // If that doesn't work, try and match a name and same team.
           Player foundPlayer =
               playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent, logger))
-              ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Name, logger));
+              ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.PlayerName, logger));
 
           if (foundPlayer == null)
           {

@@ -9,7 +9,6 @@ namespace SplatTagDatabase
     /// <summary>
     /// Get the SplatTag application data folder
     /// </summary>
-    /// <returns></returns>
     public static string GetDefaultPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
 
     /// <summary>
@@ -47,8 +46,7 @@ namespace SplatTagDatabase
           (sourcesImporter, splatTagController) =
             GenerateNewDatabase(
               saveFolder: saveFolder,
-              sourcesFile: sourcesFile,
-              snapshotDatabase: snapshotDatabase);
+              sourcesFile: sourcesFile);
         }
       }
       catch (Exception ex)
@@ -62,18 +60,57 @@ namespace SplatTagDatabase
     }
 
     /// <summary>
+    /// Patch the current Database. Optionally save.
+    /// </summary>
+    /// <param name="saveFolder">The working directory of the Controller. Set to null for default handling.</param>
+    /// <returns>The Generic Importer and the Controller.</returns>
+    /// <exception cref="Exception">This method may throw based on the Initialisation method.</exception>
+    public static void GenerateDatabasePatch(
+      string patchFile,
+      string? saveFolder = null)
+    {
+      Console.WriteLine($"GenerateDatabasePatch called with patchFile={patchFile}, saveFolder={saveFolder}...");
+
+      if (saveFolder == null)
+      {
+        saveFolder = Directory.GetParent(patchFile).FullName;
+      }
+
+      try
+      {
+        WinApi.TryTimeBeginPeriod(1);
+        Directory.CreateDirectory(saveFolder);
+
+        // Load.
+        SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(saveFolder);
+        GenericFilesToIImporters iImporters = new GenericFilesToIImporters(saveFolder, patchFile);
+        MultiDatabase database = new MultiDatabase()
+          .With(splatTagJsonSnapshotDatabase)
+          .With(iImporters);
+
+        SplatTagController splatTagController = new SplatTagController(database);
+        splatTagController.Initialise();
+
+        // Now that we've initialised, take a snapshot of everything.
+        SaveDatabase(splatTagController, splatTagJsonSnapshotDatabase);
+      }
+      finally
+      {
+        WinApi.TryTimeEndPeriod(1);
+      }
+    }
+
+    /// <summary>
     /// Generate a new Database. Optionally save.
     /// </summary>
     /// <param name="saveFolder">The working directory of the Controller. Set to null for default handling.</param>
-    /// <param name="snapshotDatabase">The Snapshot Database. Set to null for default handling.</param>
     /// <returns>The Generic Importer and the Controller.</returns>
     /// <exception cref="Exception">This method may throw based on the Initialisation method.</exception>
     public static (GenericFilesToIImporters, SplatTagController) GenerateNewDatabase(
       string? saveFolder = null,
-      string? sourcesFile = null,
-      SplatTagJsonSnapshotDatabase? snapshotDatabase = null)
+      string? sourcesFile = null)
     {
-      Console.WriteLine($"GenerateNewDatabase called with saveFolder={saveFolder}, sourcesFile={sourcesFile}, snapshotDatabase={snapshotDatabase}...");
+      Console.WriteLine($"GenerateNewDatabase called with saveFolder={saveFolder}, sourcesFile={sourcesFile}...");
 
       if (sourcesFile == null)
       {
@@ -95,21 +132,13 @@ namespace SplatTagDatabase
 
         // Directories created in GenericFilesToIImporters
         GenericFilesToIImporters sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
-        MultiDatabase splatTagDatabase = new MultiDatabase(saveFolder, sourcesImporter);
+        MultiDatabase splatTagDatabase = new MultiDatabase().With(sourcesImporter);
         SplatTagController splatTagController = new SplatTagController(splatTagDatabase);
         Console.WriteLine($"Full load of {sourcesImporter.Sources.Count} files from dir {Path.GetFullPath(saveFolder)}...");
         splatTagController.Initialise();
 
         // Now that we've initialised, take a snapshot of everything.
-        if (snapshotDatabase == null)
-        {
-          SaveDatabase(splatTagController, saveFolder);
-        }
-        else
-        {
-          SaveDatabase(splatTagController, snapshotDatabase);
-        }
-
+        SaveDatabase(splatTagController, saveFolder);
         return (sourcesImporter, splatTagController);
       }
       finally
@@ -123,13 +152,13 @@ namespace SplatTagDatabase
       snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null), splatTagController.GetSources());
     }
 
-    public static void SaveDatabase(SplatTagController splatTagController, string? saveFolder = null)
+    public static SplatTagJsonSnapshotDatabase SaveDatabase(SplatTagController splatTagController, string? saveFolder = null)
     {
       if (saveFolder == null)
       {
         saveFolder = GetDefaultPath();
       }
-      new SplatTagJsonSnapshotDatabase(saveFolder).Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null), splatTagController.GetSources());
+      return new SplatTagJsonSnapshotDatabase(saveFolder).Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null), splatTagController.GetSources());
     }
   }
 }

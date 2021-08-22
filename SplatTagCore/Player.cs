@@ -1,6 +1,7 @@
 ﻿using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -164,9 +165,14 @@ namespace SplatTagCore
     public Name Name => names.Count > 0 ? names[0] : Builtins.UnknownPlayerName;
 
     /// <summary>
-    /// The names this player is known by.
+    /// The in-game or registered names this player is known by.
     /// </summary>
     public IReadOnlyList<Name> Names => names;
+
+    /// <summary>
+    /// Any names (social or IGN) this player is known by.
+    /// </summary>
+    public IReadOnlyList<Name> AllKnownNames => new List<Name>(names.Concat(sendouProfiles).Concat(Discord.AllNames).Concat(Battlefy.AllNames).Concat(twitchProfiles).Concat(twitterProfiles).Distinct());
 
     /// <summary>
     /// Get the player's Sendou profile details.
@@ -263,9 +269,11 @@ namespace SplatTagCore
       Discord.AddId(id, source);
     }
 
-    public void AddDiscordUsername(string username, Source source)
+    public void AddDiscordUsername(string discordNameIncludingDiscrim, Source source)
     {
-      Discord.AddUsername(username, source);
+      Debug.WriteLineIf(!discordNameIncludingDiscrim.Contains("#"), $"Added Discord name to player {this.Name} but it does not have a #!");
+      Discord.AddUsername(discordNameIncludingDiscrim, source);
+      // AddName(discordNameIncludingDiscrim.Split('#')[0], source);
     }
 
     public void AddFCs(IEnumerable<FriendCode> value)
