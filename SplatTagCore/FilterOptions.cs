@@ -88,7 +88,7 @@ namespace SplatTagCore
 
     /// <summary> Persistent search </summary>
     /// <remarks>This is the information we can safely merge records together with.
-    /// FC and Discord Name is not here because people sometimes enter a team captain FC or discord as their own account ...</remarks>
-    Persistent = (Twitter | Twitch | BattlefyPersistentIds | DiscordId | BattlefySlugs)
+    /// FC, Discord Name, and BattlefySlugs are not here because people sometimes enter their captain's info into their own account ...</remarks>
+    Persistent = (Twitter | Twitch | BattlefyPersistentIds | DiscordId)
   }
 }

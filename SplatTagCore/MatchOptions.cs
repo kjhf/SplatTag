@@ -26,6 +26,11 @@ namespace SplatTagCore
     public bool NearCharacterRecognition { get; set; } = true;
 
     /// <summary>
+    /// Get or set the limit of the query (i.e. max number of results to return). -1 is unset (return all).
+    /// </summary>
+    public int Limit { get; set; } = -1;
+
+    /// <summary>
     /// Get or set how the query should match players and teams.
     /// </summary>
     public FilterOptions FilterOptions { get; set; } = FilterOptions.Default;
@@ -39,6 +44,7 @@ namespace SplatTagCore
       this.QueryIsRegex = info.GetBoolean("QueryIsRegex");
       this.NearCharacterRecognition = info.GetBoolean("NearCharacterRecognition");
       this.FilterOptions = info.GetEnumOrDefault("FilterOptions", FilterOptions.Default);
+      this.Limit = info.GetValueOrDefault("Limit", -1);
     }
 
     // Serialize
@@ -52,6 +58,8 @@ namespace SplatTagCore
       {
         info.AddValue("FilterOptions", this.FilterOptions);
       }
+
+      info.AddValue("Limit", this.Limit);
     }
 
     #endregion Serialization

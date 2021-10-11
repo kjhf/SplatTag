@@ -1,35 +1,85 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public struct FriendCode : IEquatable<FriendCode>
+  public readonly struct FriendCode : IEquatable<FriendCode>, IReadOnlyCollection<short>
   {
-    private static readonly short[] NO_FRIEND_CODE_SHORTS = new short[3] { 0, 0, 0 };
-    public static readonly FriendCode NO_FRIEND_CODE = new FriendCode(NO_FRIEND_CODE_SHORTS);
-
     /// <summary>
     /// We have exactly 12 digits, or we have 3 lots of 4 digits separated by - or . or space. The code may be wrapped in brackets ().
     /// </summary>
     private static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?(SW|FC|sw|fc)?\s*(:|-)?\s?(\d{4})\s*(-| |\.|_|/)\s*(\d{4})\s*(-| |\.|_|/)\s*(\d{4})\s*\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
+    private static readonly short[] NO_FRIEND_CODE_SHORTS = new short[3] { 0, 0, 0 };
+
     private static readonly Regex TWELVE_DIGITS_REGEX = new Regex(@"(\D|^)(\d{12})(\D|$)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
-    [JsonProperty("FC", Required = Required.Default)]
-    public short[] FC { get; private set; }
+    public static readonly FriendCode NO_FRIEND_CODE = new FriendCode(NO_FRIEND_CODE_SHORTS);
+
+    public FriendCode(ulong fc)
+    {
+      this.FCShorts = new short[3];
+      var str = fc.ToString();
+      if (str.Length < 10 || str.Length > 12)
+      {
+        throw new ArgumentException(nameof(fc), $"The stored FC value should be 9-12 characters [it's a friend code of 12 chars as an int without zero pad], actually {str.Length}.");
+      }
+
+      // Count back 4 chars
+      FCShorts[2] = short.Parse(str.Substring(str.Length - 4, 4));
+      FCShorts[1] = short.Parse(str.Substring(str.Length - 8, 4));
+      // The first group may have had zeros at the start, in which case, the start is index 0, until the second group.
+      FCShorts[0] = short.Parse(str.Substring(0, 12 - str.Length));
+    }
+
+    [JsonConstructor]
+    internal FriendCode(ICollection<short> fc)
+    {
+      if (fc == null || fc.Count != 3)
+        throw new ArgumentException($"FC is not length 3 (actually {fc} == {fc?.Count})", nameof(fc));
+
+      this.FCShorts = fc is short[] x ? x : fc.ToArray();
+    }
 
     /// <summary>
-    /// Take a string and parse a friend code from it, returning it and true if parsed, or NO_FRIEND_CODE and false if not.
+    /// String to FriendCode.
     /// </summary>
-    /// <param name="value">The string to search</param>
-    /// <param name="outFriendCode">The resulting friend code.</param>
-    public static bool TryParse(string value, out FriendCode outFriendCode)
+    /// <param name="toParse"></param>
+    /// <exception cref="ArgumentException">String is not in the correct format. Use <see cref="TryParse(string, out FriendCode)"/>.</exception>
+    internal FriendCode(string fc)
     {
-      (outFriendCode, _) = ParseAndStripFriendCode(value);
-      return outFriendCode != NO_FRIEND_CODE;
+      if (TryParse(fc, out FriendCode friendCode) && friendCode != NO_FRIEND_CODE)
+      {
+        this.FCShorts = friendCode.FCShorts;
+      }
+      else
+      {
+        throw new ArgumentException("String was not in a valid format. Failed to parse.", nameof(fc));
+      }
+    }
+
+    /// <summary>
+    /// Get the underlying friend code as an array of 3 shorts.
+    /// </summary>
+    private readonly short[] FCShorts { get; }
+
+    public readonly int Count => 3;
+
+    public readonly bool IsReadOnly => true;
+
+    public static bool operator !=(FriendCode left, FriendCode right)
+    {
+      return !(left == right);
+    }
+
+    public static bool operator ==(FriendCode left, FriendCode right)
+    {
+      return left.Equals(right);
     }
 
     /// <summary>
@@ -48,14 +98,13 @@ namespace SplatTagCore
       {
         value = FRIEND_CODE_REGEX.Replace(value, "").Trim();
 
-        var outFriendCode = new FriendCode
+        short[] outFriendCode = new short[3]
         {
-          FC = new short[3]
+          short.Parse(fcMatch.Groups[3].Value),
+          short.Parse(fcMatch.Groups[5].Value),
+          short.Parse(fcMatch.Groups[7].Value)
         };
-        outFriendCode.FC[0] = short.Parse(fcMatch.Groups[3].Value);
-        outFriendCode.FC[1] = short.Parse(fcMatch.Groups[5].Value);
-        outFriendCode.FC[2] = short.Parse(fcMatch.Groups[7].Value);
-        return (outFriendCode, value);
+        return (new FriendCode(outFriendCode), value);
       }
 
       // If the regex didn't match, we'll try to match through digits instead.
@@ -78,91 +127,98 @@ namespace SplatTagCore
       }
       else
       {
-        var outFriendCode = new FriendCode
-        {
-          FC = new short[3]
-        };
+        short[] outFriendCode = new short[3];
         for (int outer = 0; outer < 3; ++outer)
         {
-          outFriendCode.FC[outer] = short.Parse(fcMatch.Groups[2].Value.Substring(outer * 4, 4));
+          outFriendCode[outer] = short.Parse(fcMatch.Groups[2].Value.Substring(outer * 4, 4));
 
-          if (outFriendCode.FC[outer] == 0)
+          if (outFriendCode[outer] == 0)
           {
             // Not expecting the friend code to contain 0000-
             Console.WriteLine($"Warning: Not accepting FC containing a group with all zeros, value={value}, trimmed={trimmed}");
             return (NO_FRIEND_CODE, value);
           }
         }
-        return (outFriendCode, value);
+        return (new FriendCode(outFriendCode), value);
       }
-    }
-
-    [JsonConstructor]
-    public FriendCode(short[] fc)
-    {
-      if (fc == null || fc.Length != 3)
-        throw new ArgumentException("FC is not length 3", nameof(fc));
-
-      this.FC = fc;
     }
 
     /// <summary>
-    /// String to FriendCode.
+    /// Take a string and parse a friend code from it, returning it and true if parsed, or NO_FRIEND_CODE and false if not.
     /// </summary>
-    /// <param name="toParse"></param>
-    /// <exception cref="ArgumentException">String is not in the correct format. Use <see cref="TryParse(string, out FriendCode)"/>.</exception>
-    public FriendCode(string fc)
+    /// <param name="value">The string to search</param>
+    /// <param name="outFriendCode">The resulting friend code.</param>
+    public static bool TryParse(string value, out FriendCode outFriendCode)
     {
-      if (TryParse(fc, out FriendCode friendCode) && friendCode != NO_FRIEND_CODE)
-      {
-        this.FC = friendCode.FC;
-      }
-      else
-      {
-        throw new ArgumentException("String was not in a valid format. Failed to parse.", nameof(fc));
-      }
+      (outFriendCode, _) = ParseAndStripFriendCode(value);
+      return outFriendCode != NO_FRIEND_CODE;
+    }
+
+    public override readonly bool Equals(object? obj)
+    {
+      return obj is FriendCode friendCode && Equals(friendCode);
+    }
+
+    public readonly bool Equals(FriendCode other)
+    {
+      return FCShorts.SequenceEqual(other.FCShorts);
+    }
+
+    public override readonly int GetHashCode()
+    {
+      return FCShorts[0].GetHashCode() + FCShorts[1].GetHashCode() + FCShorts[2].GetHashCode();
     }
 
     /// <summary>
     /// Overridden ToString, returns the <see cref="FriendCode"/> as a string separated by the specified <paramref name="separator"/>.
     /// </summary>
-    public string ToString(string separator)
+    public readonly string ToString(string separator)
     {
-      return FC.SequenceEqual(NO_FRIEND_CODE_SHORTS) ? ("(not set)") :
-        $"{FC[0]:0000}{separator}{FC[1]:0000}{separator}{FC[2]:0000}";
+      return FCShorts.SequenceEqual(NO_FRIEND_CODE_SHORTS) ? ("(not set)") :
+        $"{FCShorts[0]:0000}{separator}{FCShorts[1]:0000}{separator}{FCShorts[2]:0000}";
     }
 
     /// <summary>
     /// Overridden ToString, returns the <see cref="FriendCode"/> as a string separated by -
     /// </summary>
-    public override string ToString()
+    public override readonly string ToString()
     {
       return ToString("-");
     }
 
-    public override bool Equals(object? obj)
+    public readonly void Add(short item)
     {
-      return obj is FriendCode friendCode && Equals(friendCode);
+      throw new InvalidOperationException();
     }
 
-    public bool Equals(FriendCode other)
+    public readonly void Clear()
     {
-      return FC.SequenceEqual(other.FC);
+      throw new InvalidOperationException();
     }
 
-    public override int GetHashCode()
+    public readonly bool Contains(short item)
     {
-      return FC[0].GetHashCode() + FC[1].GetHashCode() + FC[2].GetHashCode();
+      return ((ICollection<short>)FCShorts).Contains(item);
     }
 
-    public static bool operator ==(FriendCode left, FriendCode right)
+    public readonly void CopyTo(short[] array, int arrayIndex)
     {
-      return left.Equals(right);
+      ((ICollection<short>)FCShorts).CopyTo(array, arrayIndex);
     }
 
-    public static bool operator !=(FriendCode left, FriendCode right)
+    public readonly bool Remove(short item)
     {
-      return !(left == right);
+      throw new InvalidOperationException();
+    }
+
+    public readonly IEnumerator<short> GetEnumerator()
+    {
+      return ((IEnumerable<short>)FCShorts).GetEnumerator();
+    }
+
+    readonly IEnumerator IEnumerable.GetEnumerator()
+    {
+      return FCShorts.GetEnumerator();
     }
   }
 }

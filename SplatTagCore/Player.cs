@@ -452,8 +452,8 @@ namespace SplatTagCore
       AddBattlefy(info.GetValueOrDefault("Battlefy", new Battlefy()));
       this.Country = info.GetValueOrDefault("Country", default(string));
       AddDiscord(info.GetValueOrDefault("Discord", new Discord()));
-      AddFCs(info.GetValueOrDefault("FriendCode", Array.Empty<FriendCode>()));
-      AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
+      AddFCs(info.GetValueOrDefault("FCs", Array.Empty<FriendCode>()));
+      AddNames(info.GetValueOrDefault("N", Array.Empty<Name>()));
       AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
 
       Skill[] skills = info.GetValueOrDefault("Skill", Array.Empty<Skill>());
@@ -484,12 +484,12 @@ namespace SplatTagCore
         info.AddValue("Discord", this.Discord);
 
       if (this.friendCodes.Count > 0)
-        info.AddValue("FriendCode", this.friendCodes);
+        info.AddValue("FCs", this.friendCodes);
 
       info.AddValue("Id", this.Id);
 
       if (this.names.Count > 0)
-        info.AddValue("Names", this.names);
+        info.AddValue("N", this.names);
 
       if (this.sendouProfiles.Count > 0)
         info.AddValue("Sendou", this.sendouProfiles);

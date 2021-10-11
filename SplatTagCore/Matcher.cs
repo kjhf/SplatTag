@@ -271,6 +271,9 @@ namespace SplatTagCore
     /// Get if this collection matches a second by the transformed names.
     /// Matches by Ordinal by default.
     /// </summary>
+    /// <remarks>
+    /// Highly optimised method as this is called literally millions of times during matching
+    /// </remarks>
     public static bool TransformedNamesMatch(this IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
     {
       int firstCount = first.Count;

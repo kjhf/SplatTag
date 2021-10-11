@@ -81,6 +81,7 @@ namespace SplatTagConsole
           new Option<string>("--rebuild", "Rebuilds the database"),
           new Option<string>("--patch", "Patches the database with new sources"),
           new Option<bool>("--keepOpen", () => false, "Keep the console open?"),
+          new Option<int>("--limit", () => 20, "The number of results, maximum, to retrieve. Default 20."),
           new Option<bool>("--verbose", () => false, "Verbose output"),
           new Option<bool>("--queryIsClanTag", () => false, "The specified query is a Clan Tag?"),
           new Option<bool>("--queryIsTeam", () => false, "The specified query is a Team"),
@@ -102,6 +103,7 @@ namespace SplatTagConsole
             obj.Rebuild,
             obj.Patch,
             obj.KeepOpen,
+            obj.Limit,
             obj.Verbose,
             obj.QueryIsClanTag,
             obj.QueryIsTeam,
@@ -179,6 +181,7 @@ namespace SplatTagConsole
       string? rebuild,
       string? patch,
       bool keepOpen,
+      int limit,
       bool verbose,
       bool queryIsClanTag,
       bool queryIsTeam,
@@ -190,7 +193,8 @@ namespace SplatTagConsole
         {
           IgnoreCase = !exactCase,
           NearCharacterRecognition = !exactCharacterRecognition,
-          QueryIsRegex = queryIsRegex
+          QueryIsRegex = queryIsRegex,
+          Limit = limit
         };
 
         if (queryIsPlayer)

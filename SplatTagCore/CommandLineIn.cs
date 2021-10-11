@@ -11,6 +11,7 @@
     public string? Rebuild { get; set; }
     public string? Patch { get; set; }
     public bool KeepOpen { get; set; }
+    public int Limit { get; set; }
     public bool Verbose { get; set; }
     public bool QueryIsClanTag { get; set; }
     public bool QueryIsTeam { get; set; }

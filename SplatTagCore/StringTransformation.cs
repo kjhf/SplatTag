@@ -89,7 +89,7 @@ namespace SplatTagCore
     /// <param name="input">     The string of characters to fold </param>
     /// <param name="length">    The length of the folded return string </param>
     /// <returns> length of output </returns>
-    public static string TransformString(this string input, int? length = null)
+    public static string TransformString(this string input, int? length = null, bool keepSpaces = false)
     {
       int end = length ?? input.Length;
 
@@ -99,8 +99,13 @@ namespace SplatTagCore
       {
         char c = input[pos];
 
+        // If stripping spaces
+        if (keepSpaces && char.IsWhiteSpace(c))
+        {
+          s.Append(c);
+        }
         // Quick test: if it's not in range then just keep current character
-        if (c < '\u0080')
+        else if (c < '\u0080')
         {
           s.Append(c);
         }

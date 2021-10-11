@@ -328,8 +328,8 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void DeserializeFriendCodes()
     {
-      string json = @"[{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]},{""FC"":[6653,9220,3527]}]";
-      List<FriendCode> fcs = Deserialize<List<FriendCode>>(json, new Dictionary<Guid, Source>());
+      string json = @"[[6653,9220,3527],[6653,9220,3527],[6653,9220,3527],[6653,9220,3527]]";
+      FriendCode[] fcs = Deserialize<FriendCode[]>(json, new Dictionary<Guid, Source>());
 
       Player player = new Player();
       player.AddFCs(fcs);

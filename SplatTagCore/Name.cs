@@ -103,29 +103,29 @@ namespace SplatTagCore
 
     #region Serialization
 
-    // Deserialize
+    // Deserialize as dict
     protected Name(SerializationInfo info, StreamingContext context)
     {
-      this.Value = info.GetString("Value");
+      this.Value = info.GetString("N");
+      var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
       if (context.Context is Source.GuidToSourceConverter converter)
       {
-        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
         AddSources(converter.Convert(sourceIds));
       }
       else
       {
-        var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
         AddSources(sourceIds.Select(s => new Source(s)));
       }
     }
 
-    // Serialize
+    // Serialize as dict
     public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      info.AddValue("Value", this.Value);
-
-      if (this.Sources.Count > 0)
+      info.AddValue("N", this.Value);
+      if (this.sources.Count > 0)
+      {
         info.AddValue("S", this.sources.Select(s => s.Id));
+      }
     }
 
     #endregion Serialization

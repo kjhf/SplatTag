@@ -153,7 +153,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(savePlayers, Formatting.Indented)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(savePlayers, Formatting.None)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -172,7 +172,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(saveTeams, Formatting.Indented)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(saveTeams, Formatting.None)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -191,7 +191,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(saveSources, Formatting.Indented)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(saveSources, Formatting.None)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

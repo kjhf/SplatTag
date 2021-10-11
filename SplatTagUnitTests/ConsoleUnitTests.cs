@@ -15,7 +15,7 @@ namespace SplatTagUnitTests
   [TestClass]
   public class ConsoleUnitTests
   {
-    private const int MAX_WAIT_TIME = 30000;
+    private const int MAX_WAIT_TIME = 60000;
     private readonly TextWriter consoleOut = Console.Out;
     private readonly TextWriter consoleError = Console.Error;
 

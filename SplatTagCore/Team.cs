@@ -235,7 +235,7 @@ namespace SplatTagCore
       AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<BattlefyTeamSocial>()));
       AddClanTags(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
       AddDivisions(info.GetValueOrDefault("Divisions", Array.Empty<Division>()));
-      AddNames(info.GetValueOrDefault("Names", Array.Empty<Name>()));
+      AddNames(info.GetValueOrDefault("N", Array.Empty<Name>()));
       AddTwitterProfiles(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
 
       this.Id = info.GetValueOrDefault("Id", Guid.Empty);
@@ -260,7 +260,7 @@ namespace SplatTagCore
       info.AddValue("Id", this.Id);
 
       if (names.Count > 0)
-        info.AddValue("Names", this.names);
+        info.AddValue("N", this.names);
 
       if (twitterProfiles.Count > 0)
         info.AddValue("Twitter", this.twitterProfiles);

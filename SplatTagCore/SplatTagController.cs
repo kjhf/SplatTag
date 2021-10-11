@@ -115,6 +115,7 @@ namespace SplatTagCore
     /// <summary>
     /// Match a query to players with given options with all known players.
     /// </summary>
+    /// <param name="limit">Limit number of results, or -1 to not set.</param>
     public Player[] MatchPlayer(string? query, MatchOptions matchOptions)
     {
       return MatchPlayer(query, matchOptions, players);
@@ -443,13 +444,15 @@ namespace SplatTagCore
         };
       }
 
-      return playersToSearch
+      var r = playersToSearch
         .AsParallel()
         .Select(p => (p, func(p)))
         .Where(pair => pair.Item2 > 0)
         .OrderByDescending(pair => pair.Item2)
-        .Select(pair => pair.p)
-        .ToArray();
+        .Select(pair => pair.p);
+
+      // Take is a limit operation (does not throw if limit > count)
+      return matchOptions.Limit == -1 ? r.ToArray() : r.Take(matchOptions.Limit).ToArray();
     }
 
     private static void AdjustRelevanceForStringComparison(ref int relevance, string toMatch, string query, StringComparison comparison)
@@ -662,13 +665,15 @@ namespace SplatTagCore
         };
       }
 
-      return teamsToSearch
+      var r = teamsToSearch
         .AsParallel()
         .Select(t => (t, func(t)))
         .Where(pair => pair.Item2 > 0)
         .OrderByDescending(pair => pair.Item2)
-        .Select(pair => pair.t)
-        .ToArray();
+        .Select(pair => pair.t);
+
+      // Take is a limit operation (does not throw if limit > count)
+      return matchOptions.Limit == -1 ? r.ToArray() : r.Take(matchOptions.Limit).ToArray();
     }
 
     public Source[] GetSources()
