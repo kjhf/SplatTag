@@ -31,6 +31,11 @@ namespace SplatTagCore
     private readonly List<Name> names = new List<Name>();
 
     /// <summary>
+    /// Back-store for the names of this player. The this element is the current name.
+    /// </summary>
+    private readonly List<PlusMembership> plusMembership = new List<PlusMembership>();
+
+    /// <summary>
     /// Back-store for the Sendou Profiles of this player.
     /// </summary>
     private readonly List<Sendou> sendouProfiles = new List<Sendou>();
@@ -295,6 +300,16 @@ namespace SplatTagCore
       SplatTagCommon.AddNames(value, names);
     }
 
+    public void AddPlusServerMembership(int? plusLevel, Source source)
+    {
+      SplatTagCommon.AddName(new PlusMembership(plusLevel, source), plusMembership);
+    }
+
+    public void AddPlusServerMembership(IEnumerable<PlusMembership> value)
+    {
+      SplatTagCommon.AddNames(value, plusMembership);
+    }
+
     public void AddSendou(string handle, Source source)
     {
       SplatTagCommon.AddName(new Sendou(handle, source), sendouProfiles);
@@ -417,6 +432,7 @@ namespace SplatTagCore
       AddDiscord(newerPlayer.Discord);
 
       // Merge the Social Data.
+      AddPlusServerMembership(newerPlayer.plusMembership);
       AddSendou(newerPlayer.SendouProfiles);
       AddTwitch(newerPlayer.twitchProfiles);
       AddTwitter(newerPlayer.twitterProfiles);
@@ -454,6 +470,7 @@ namespace SplatTagCore
       AddDiscord(info.GetValueOrDefault("Discord", new Discord()));
       AddFCs(info.GetValueOrDefault("FCs", Array.Empty<FriendCode>()));
       AddNames(info.GetValueOrDefault("N", Array.Empty<Name>()));
+      AddPlusServerMembership(info.GetValueOrDefault("Plus", Array.Empty<PlusMembership>()));
       AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
 
       Skill[] skills = info.GetValueOrDefault("Skill", Array.Empty<Skill>());
@@ -490,6 +507,9 @@ namespace SplatTagCore
 
       if (this.names.Count > 0)
         info.AddValue("N", this.names);
+
+      if (this.plusMembership.Count > 0)
+        info.AddValue("Plus", this.plusMembership);
 
       if (this.sendouProfiles.Count > 0)
         info.AddValue("Sendou", this.sendouProfiles);

@@ -629,8 +629,16 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.TeamName) != 0 && t.Name != null)
           {
-            string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.Transformed : t.Name.Value;
-            AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
+            // If the battlefy persistent ids match, return top match.
+            foreach (var toMatch in from Name name in t.Names
+                                    let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
+                                    select toMatch)
+            {
+              if (toMatch.Equals(query, comparison))
+              {
+                AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
+              }
+            }
           }
 
           if ((filterOptions & FilterOptions.Sources) != 0 && t.Sources != null)

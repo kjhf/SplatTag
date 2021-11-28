@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 namespace SplatTagDatabase.Importers
 {
@@ -90,6 +89,11 @@ namespace SplatTagDatabase.Importers
           {
             player.AddTwitter(name, source);
           }
+        }
+        var plusServerMembership = userToken.GetValue<int?>("membershipTier");
+        if (plusServerMembership != null)
+        {
+          player.AddPlusServerMembership(plusServerMembership, source);
         }
         players.Add(player);
       }

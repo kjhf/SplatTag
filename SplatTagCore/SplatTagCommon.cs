@@ -151,7 +151,7 @@ namespace SplatTagCore
 
         if (foundSource == null)
         {
-          privateDestinationList.Add(source);
+          privateDestinationList.InsertSorted(source);
         }
       }
     }
@@ -176,7 +176,7 @@ namespace SplatTagCore
           else
           {
             privateList.Remove(w);
-            privateList.Insert(0, w);
+            privateList.InsertSorted(w);
           }
         }
       }
