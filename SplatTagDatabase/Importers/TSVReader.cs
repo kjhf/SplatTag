@@ -35,6 +35,7 @@ namespace SplatTagDatabase.Importers
       { "player", PropertyEnum.Name },
       { "ign", PropertyEnum.Name },
       { "playerign", PropertyEnum.Name },
+      { "ingamename", PropertyEnum.Name },
       { "fc", PropertyEnum.FC },
       { "playerfc", PropertyEnum.FC },
       { "friend", PropertyEnum.FC },
@@ -47,10 +48,14 @@ namespace SplatTagDatabase.Importers
       { "playerswitchcode", PropertyEnum.FC },
       { "switchfriendcode", PropertyEnum.FC },
       { "playerswitchfriendcode", PropertyEnum.FC },
+      { "discordservernickname", PropertyEnum.Name },  // Importantly should come before "discord" which we'll assume is the discord name in user#0000 format. Nickname is not.
+      { "discordnickname", PropertyEnum.Name },
       { "discord", PropertyEnum.DiscordName },
       { "playerdiscord", PropertyEnum.DiscordName },
       { "discordname", PropertyEnum.DiscordName },
+      { "discordtag", PropertyEnum.DiscordName },
       { "playerdiscordname", PropertyEnum.DiscordName },
+      { "playerdiscordtag", PropertyEnum.DiscordName },
       { "discordid", PropertyEnum.DiscordId },
       { "playerdiscordid", PropertyEnum.DiscordId },
       { "twitch", PropertyEnum.Twitch },
@@ -67,6 +72,7 @@ namespace SplatTagDatabase.Importers
       { "playerrole", PropertyEnum.Role },
       { "weapons", PropertyEnum.Role },
       { "playerweapons", PropertyEnum.Role },
+      { "timestamp", PropertyEnum.Timestamp },
 
       // Special captain handling
       { "cap", (int)PropertyEnum.PlayerN_Offset + PropertyEnum.Name },
@@ -111,6 +117,7 @@ namespace SplatTagDatabase.Importers
       LUTIDiv = 4,
       EBTVDiv = 5,
       DSBDiv = 6,
+      Timestamp = 7,
 
       UnspecifiedPlayer_Offset = 10,
       Name,
@@ -151,8 +158,11 @@ namespace SplatTagDatabase.Importers
       for (int i = 0; i < numberOfHeaders; ++i)
       {
         string header = columns[i].ToLowerInvariant()
+          .Replace("your ", "")
           .Replace(" ", "")
           .Replace("_", "")
+          .Replace(":", "")
+          .Replace("-", "")
           .Replace("'s", "")
           .Replace("teamcaptain", "captain")
           .Replace("teammember", "player")
@@ -162,12 +172,14 @@ namespace SplatTagDatabase.Importers
           Console.WriteLine($"Warning: Unable to resolve header, it is blank after processing: \"{header}\", (was \"{columns[i]}\")");
           resolved[i] = PropertyEnum.UNKNOWN;
         }
+        // Quick case
         else if (propertyValueStringMap.ContainsKey(header))
         {
           resolved[i] = propertyValueStringMap[header];
         }
         else
         {
+          // Need to do some searching
           int playerNum = 0;
           if (header.Contains("captain"))
           {
@@ -186,22 +198,21 @@ namespace SplatTagDatabase.Importers
             }
           }
 
-          if (playerNum == 0)
+          var matchedKey = propertyValueStringMap.Keys.FirstOrDefault(key => header.StartsWith(key));
+          if (matchedKey != null)
+          {
+            // For player num = 0 (not found), this will just return the appropriate header.
+            resolved[i] = (playerNum * (int)PropertyEnum.PlayerN_Offset) + propertyValueStringMap[matchedKey];
+          }
+          else if (playerNum == 0)
           {
             resolved[i] = PropertyEnum.UNKNOWN;
             Console.WriteLine("Warning: Unable to resolve header: " + header);
           }
           else
           {
-            if (propertyValueStringMap.ContainsKey(header))
-            {
-              resolved[i] = (playerNum * (int)PropertyEnum.PlayerN_Offset) + propertyValueStringMap[header];
-            }
-            else
-            {
-              resolved[i] = PropertyEnum.UNKNOWN;
-              Console.WriteLine("Warning: Unable to resolve header for player " + playerNum + ": " + header);
-            }
+            resolved[i] = PropertyEnum.UNKNOWN;
+            Console.WriteLine("Warning: Unable to resolve header for player " + playerNum + ": " + header);
           }
         }
       }
@@ -332,6 +343,11 @@ namespace SplatTagDatabase.Importers
               t.AddDivision(new Division(value, DivType.DSB, season));
               break;
             }
+            case PropertyEnum.Timestamp:
+            {
+              // TODO - not supported right now. In future we could customise the source timestamp for this entry.
+              break;
+            }
 
             case PropertyEnum.Name:
             {
@@ -411,21 +427,25 @@ namespace SplatTagDatabase.Importers
         // Don't bother adding the team if it has no players
         if (players.Count > 0)
         {
-          // Recalculate the ClanTag layout
-          if (t.Tag != null)
+          // Don't register a team if that information doesn't exist.
+          if (t.Name != Builtins.UnknownTeamName)
           {
-            t.Tag.CalculateTagOption(players[0].Name.Value);
-          }
-          else
-          {
-            ClanTag? newTag = ClanTag.CalculateTagFromNames(players.Select(p => p.Name.Value).ToArray(), source);
-
-            if (newTag != null)
+            // Recalculate the ClanTag layout
+            if (t.Tag != null)
             {
-              t.AddClanTags(new[] { newTag });
+              t.Tag.CalculateTagOption(players[0].Name.Value);
             }
+            else
+            {
+              ClanTag? newTag = ClanTag.CalculateTagFromNames(players.Select(p => p.Name.Value).ToArray(), source);
+
+              if (newTag != null)
+              {
+                t.AddClanTags(new[] { newTag });
+              }
+            }
+            teams.Add(t);
           }
-          teams.Add(t);
         }
         else
         {

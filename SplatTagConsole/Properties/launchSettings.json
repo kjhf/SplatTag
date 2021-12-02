@@ -19,6 +19,10 @@
       "commandName": "Project",
       "commandLineArgs": "--verbose --rebuild \"../../../../SplatTagUnitTests/EndToEndData/sources.yaml\"",
       "nativeDebugging": false
+    },
+    "rebuild with one test source": {
+      "commandName": "Project",
+      "commandLineArgs": "--verbose --rebuild \"%appdata%\\SplatTag\\test.yaml\""
     }
   }
 }

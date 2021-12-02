@@ -455,7 +455,7 @@ namespace SplatTagCore
       return matchOptions.Limit == -1 ? r.ToArray() : r.Take(matchOptions.Limit).ToArray();
     }
 
-    private static void AdjustRelevanceForStringComparison(ref int relevance, string toMatch, string query, StringComparison comparison)
+    private static void AdjustRelevanceForStringComparison(ref int relevance, string toMatch, string query, StringComparison comparison, int containsScore = 1)
     {
       if (toMatch.Equals(query, comparison))
       {
@@ -465,9 +465,9 @@ namespace SplatTagCore
       {
         relevance += 10;
       }
-      else if (toMatch.Contains(query, comparison))
+      else if ((containsScore != 0) && toMatch.Contains(query, comparison))
       {
-        relevance += 2;
+        relevance += containsScore;
       }
     }
 
@@ -629,16 +629,8 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.TeamName) != 0 && t.Name != null)
           {
-            // If the battlefy persistent ids match, return top match.
-            foreach (var toMatch in from Name name in t.Names
-                                    let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
-                                    select toMatch)
-            {
-              if (toMatch.Equals(query, comparison))
-              {
-                AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
-              }
-            }
+            string toMatch = (matchOptions.NearCharacterRecognition) ? t.Name.Transformed : t.Name.Value;
+            AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
           }
 
           if ((filterOptions & FilterOptions.Sources) != 0 && t.Sources != null)

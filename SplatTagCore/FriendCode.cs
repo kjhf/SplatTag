@@ -11,9 +11,9 @@ namespace SplatTagCore
   public readonly struct FriendCode : IEquatable<FriendCode>, IReadOnlyCollection<short>
   {
     /// <summary>
-    /// We have exactly 12 digits, or we have 3 lots of 4 digits separated by - or . or space. The code may be wrapped in brackets ().
+    /// We have exactly 12 digits, or we have 3 lots of 4 digits separated by - or . or space or =. The code may be wrapped in brackets ().
     /// </summary>
-    private static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?(SW|FC|sw|fc)?\s*(:|-)?\s?(\d{4})\s*(-| |\.|_|/)\s*(\d{4})\s*(-| |\.|_|/)\s*(\d{4})\s*\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+    private static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?(SW|FC|sw|fc)?\s*(:|-|=)?\s?(\d{4})\s*(-| |\.|_|/|=)\s*(\d{4})\s*(-| |\.|_|/|=)\s*(\d{4})\s*\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     private static readonly short[] NO_FRIEND_CODE_SHORTS = new short[3] { 0, 0, 0 };
 
@@ -49,7 +49,6 @@ namespace SplatTagCore
     /// <summary>
     /// String to FriendCode.
     /// </summary>
-    /// <param name="toParse"></param>
     /// <exception cref="ArgumentException">String is not in the correct format. Use <see cref="TryParse(string, out FriendCode)"/>.</exception>
     internal FriendCode(string fc)
     {

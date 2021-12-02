@@ -324,13 +324,25 @@ namespace SplatTagConsole
                 }
               }
 
-              result.Sources =
-                result.Players.SelectMany(p => p.Sources)
-                .Concat(result.Teams.SelectMany(t => t.Sources))
-                //.Concat(result.AdditionalTeams.Values.AsParallel().SelectMany(t => t.Sources))
-                //.Concat(result.PlayersForTeams.Values.AsParallel().SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
-                .Distinct()
-                .ToDictionary(s => s.Id, s => s.Name);
+              result.Sources = new Dictionary<Guid, string>();
+              foreach (var s in result.Players.SelectMany(p => p.Sources))
+              {
+                result.Sources.TryAdd(s.Id, s.Name);
+              }
+              foreach (var s in result.Teams.SelectMany(t => t.Sources))
+              {
+                result.Sources.TryAdd(s.Id, s.Name);
+              }
+              foreach (var s in result.AdditionalTeams.Values.SelectMany(t => t.Sources))
+              {
+                result.Sources.TryAdd(s.Id, s.Name);
+              }
+              foreach (var s in result.PlayersForTeams.Values.SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
+              {
+                result.Sources.TryAdd(s.Id, s.Name);
+              }
+              result.Sources[Builtins.BuiltinSource.Id] = Builtins.BuiltinSource.Name;
+              result.Sources[Builtins.ManualSource.Id] = Builtins.ManualSource.Name;
 
               try
               {
