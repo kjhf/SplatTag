@@ -30,7 +30,7 @@ namespace SplatTagUnitTests
       return sw.ToString();
     }
 
-    private static T Deserialize<T>(string json, Dictionary<Guid, Source> lookup)
+    private static T Deserialize<T>(string json, Dictionary<string, Source> lookup)
     {
       var settings = new JsonSerializerSettings
       {
@@ -44,7 +44,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializeBattlefy()
     {
-      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      Dictionary<string, Source> sources = new Dictionary<string, Source>();
       var h2 = new Source("h2");
       var u2 = new Source("u2");
       var h1 = new Source("h1");
@@ -82,7 +82,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializeDiscord()
     {
-      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var sources = new Dictionary<string, Source>();
       var source2 = new Source("source2");
       var u2 = new Source("u2");
       var source1 = new Source("source1");
@@ -119,7 +119,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializeSendou()
     {
-      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var sources = new Dictionary<string, Source>();
       var source2 = new Source("source2");
       var u2 = new Source("u2");
       var source1 = new Source("source1");
@@ -143,7 +143,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializePlayer()
     {
-      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var sources = new Dictionary<string, Source>();
       var source2 = new Source("source2");
       var u2 = new Source("u2");
       var source1 = new Source("source1");
@@ -212,7 +212,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializeTeam()
     {
-      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var sources = new Dictionary<string, Source>();
       var source3 = new Source("source3");
       var source2 = new Source("source2");
       var u2 = new Source("u2");
@@ -236,8 +236,8 @@ namespace SplatTagUnitTests
       team.AddClanTag("old", source2);
       team.AddClanTag("new", source3);
 
-      team.AddDivision(new Division(10, DivType.LUTI, "S9"));
-      team.AddDivision(new Division(8, DivType.LUTI, "SX"));
+      team.AddDivision(new Division(10, DivType.LUTI, "S9"), u2);
+      team.AddDivision(new Division(8, DivType.LUTI, "SX"), u1);
 
       team.AddName("team2", t2);
       team.AddName("team1", t1);
@@ -261,14 +261,14 @@ namespace SplatTagUnitTests
       Assert.AreEqual("source3", clanTags[0].Sources.First().Name, "clanTags[0] unexpected source");
       Assert.AreEqual("source2", clanTags[1].Sources.First().Name, "clanTags[1] unexpected source");
 
-      var divisions = deserialized.Divisions;
+      var divisions = deserialized.DivisionInformation.GetDivisionsOrdered();
       Assert.AreEqual(2, divisions.Count, "Unexpected number of divisions");
       Assert.AreEqual(DivType.LUTI, divisions[0].DivType, "Unexpected DivType");
       Assert.AreEqual(DivType.LUTI, divisions[1].DivType, "Unexpected DivType");
-      Assert.AreEqual("SX", divisions[0].Season, "Unexpected Season");
-      Assert.AreEqual("S9", divisions[1].Season, "Unexpected Season");
-      Assert.AreEqual(8, divisions[0].Value, "Unexpected Value");
-      Assert.AreEqual(10, divisions[1].Value, "Unexpected Value");
+      Assert.AreEqual("S9", divisions[0].Season, "Unexpected Season");
+      Assert.AreEqual("SX", divisions[1].Season, "Unexpected Season");
+      Assert.AreEqual(10, divisions[0].Value, "Unexpected Value");
+      Assert.AreEqual(8, divisions[1].Value, "Unexpected Value");
 
       var names = deserialized.Names;
       Assert.AreEqual(2, names.Count, "Unexpected number of team names");
@@ -281,7 +281,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void SerializeBrackets()
     {
-      Dictionary<Guid, Source> sources = new Dictionary<Guid, Source>();
+      var sources = new Dictionary<string, Source>();
       var source1 = new Source("source1");
 
       Player player1 = new Player();
@@ -289,9 +289,9 @@ namespace SplatTagUnitTests
       Player player2 = new Player();
       player2.AddSendou("wug", source1);
       Team team1 = new Team("Team One", source1);
-      player1.AddTeams(new[] { team1.Id });
+      player1.AddTeams(team1.Id, source1);
       Team team2 = new Team("Team Two", source1);
-      player2.AddTeams(new[] { team2.Id });
+      player2.AddTeams(team2.Id, source1);
       source1.Players = new[] { player1, player2 };
       source1.Teams = new[] { team1, team2 };
       sources.Add(source1.Id, source1);
@@ -328,12 +328,14 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void DeserializeFriendCodes()
     {
-      string json = @"[[6653,9220,3527],[6653,9220,3527],[6653,9220,3527],[6653,9220,3527]]";
-      FriendCode[] fcs = Deserialize<FriendCode[]>(json, new Dictionary<Guid, Source>());
+      const string json = @"[[6653,9220,3527],[6653,9220,3527],[6653,9220,3527],[6653,9220,3527]]";
+      FriendCode[] fcs = Deserialize<FriendCode[]>(json, new Dictionary<string, Source>());
+      Assert.IsNotNull(fcs);
+      Assert.AreEqual(4, fcs.Length, "Expected 4 friend codes parsed.");
 
       Player player = new Player();
-      player.AddFCs(fcs);
-      Assert.AreEqual(1, player.FriendCodes.Count, "Expected only 1 FC as the values are equal.");
+      player.AddFCs(fcs, Builtins.ManualSource);
+      Assert.AreEqual(1, player.FCInformation.Count, "Expected only 1 FC as the values are equal.");
     }
   }
 }

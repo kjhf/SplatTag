@@ -72,6 +72,10 @@ namespace SplatTagDatabase.Importers
       { "playerrole", PropertyEnum.Role },
       { "weapons", PropertyEnum.Role },
       { "playerweapons", PropertyEnum.Role },
+      { "pronoun", PropertyEnum.Pronouns },
+      { "playerpronoun", PropertyEnum.Pronouns },
+      { "pronouns", PropertyEnum.Pronouns },
+      { "playerpronouns", PropertyEnum.Pronouns },
       { "timestamp", PropertyEnum.Timestamp },
 
       // Special captain handling
@@ -128,6 +132,7 @@ namespace SplatTagDatabase.Importers
       Twitter,
       Country,
       Role,
+      Pronouns,
 
       /// <summary>
       /// Player N offset, where N = 1, 2, 3... to give 100, 200, 300 ...
@@ -149,11 +154,11 @@ namespace SplatTagDatabase.Importers
         throw new ArgumentException("TSV does not have any data. Check format of spreadsheet.");
       }
 
+      // Build a map of the incoming data
       string headerRow = text[0];
       string[] columns = headerRow.Split('\t').Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
       int numberOfHeaders = columns.Length;
 
-      // Build a map of the incoming data
       PropertyEnum[] resolved = new PropertyEnum[numberOfHeaders];
       for (int i = 0; i < numberOfHeaders; ++i)
       {
@@ -217,10 +222,13 @@ namespace SplatTagDatabase.Importers
         }
       }
 
-      // Now read.
+      // Now read the data...
+      // Most tsv files will be team sheets, but for draft cups and verif they could be player records instead.
+      // Each row therefore might be a single team with players, or a single player entry.
       List<Team> teams = new List<Team>();
       List<Player> players = new List<Player>();
 
+      // From 1 as [0] is header row
       for (int lineIndex = 1; lineIndex < text.Length; ++lineIndex)
       {
         string line = text[lineIndex];
@@ -271,13 +279,28 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.DiscordId:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out ulong parsedId))
+              if (value.Length >= 14 && value.Length < 21)
               {
-                p.AddDiscordId(value, source);
+                // First, test is decimal (of length 17+)
+                bool isDecimal = value.Length >= 17 && value.All("0123456789".Contains);
+                if (isDecimal)
+                {
+                  p.AddDiscordId(value, source);
+                }
+                // Otherwise test if we can get from a hex string (of length 14+ to give the correct 17 digit decimal)
+                else if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out ulong parsedId))
+                {
+                  p.AddDiscordId(value, source);
+                }
+                else
+                {
+                  Console.WriteLine($"Warning: DiscordId was specified ({lineIndex},{i}), but the value could not be parsed from a decimal or hex string. {value}.");
+                  Debug.WriteLine(line);
+                }
               }
               else
               {
-                Console.WriteLine($"Warning: DiscordId was specified ({lineIndex},{i}), but the value could not be parsed from a hex string. {value}.");
+                Console.WriteLine($"Warning: DiscordId was specified ({lineIndex},{i}), but the value length does not fit into a discord id. {value}.");
                 Debug.WriteLine(line);
               }
               break;
@@ -292,7 +315,7 @@ namespace SplatTagDatabase.Importers
               }
               else if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
-                p.AddFCs(friendCode.AsEnumerable());
+                p.AddFCs(friendCode, source);
                 Console.WriteLine($"Warning: This value was declared as a Discord name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
               }
               else
@@ -308,7 +331,7 @@ namespace SplatTagDatabase.Importers
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
-                p.AddFCs(friendCode.AsEnumerable());
+                p.AddFCs(friendCode, source);
               }
               else
               {
@@ -320,7 +343,7 @@ namespace SplatTagDatabase.Importers
 
             case PropertyEnum.Div:
             {
-              t.AddDivision(new Division(value, divType, season));
+              t.AddDivision(new Division(value, divType, season), source);
 
               if (divType == DivType.Unknown)
               {
@@ -330,17 +353,17 @@ namespace SplatTagDatabase.Importers
             }
             case PropertyEnum.LUTIDiv:
             {
-              t.AddDivision(new Division(value, DivType.LUTI, season));
+              t.AddDivision(new Division(value, DivType.LUTI, season), source);
               break;
             }
             case PropertyEnum.EBTVDiv:
             {
-              t.AddDivision(new Division(value, DivType.EBTV, season));
+              t.AddDivision(new Division(value, DivType.EBTV, season), source);
               break;
             }
             case PropertyEnum.DSBDiv:
             {
-              t.AddDivision(new Division(value, DivType.DSB, season));
+              t.AddDivision(new Division(value, DivType.DSB, season), source);
               break;
             }
             case PropertyEnum.Timestamp:
@@ -359,7 +382,7 @@ namespace SplatTagDatabase.Importers
 
               if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
-                p.AddFCs(friendCode.AsEnumerable());
+                p.AddFCs(friendCode, source);
                 Console.WriteLine($"Warning: This value was declared as a name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
                 Debug.WriteLine(line);
               }
@@ -370,6 +393,13 @@ namespace SplatTagDatabase.Importers
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
               p.AddWeapons(value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)));
+              break;
+            }
+
+            case PropertyEnum.Pronouns:
+            {
+              var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
+              p.SetPronoun(value, source);
               break;
             }
 
@@ -416,11 +446,15 @@ namespace SplatTagDatabase.Importers
         {
           // Don't add empty players
           Player p = pair.Value;
-          if (p.Name.Equals(Builtins.UNKNOWN_PLAYER))
+          if (p.Name.Equals(Builtins.UnknownPlayerName))
           {
             continue;
           }
-          p.AddTeams(t.Id.AsEnumerable());
+          // Don't add the team to the player if it's not complete (e.g. single player record)
+          if (!t.Name.Equals(Builtins.UnknownTeamName))
+          {
+            p.TeamInformation.Add(t.Id, source);
+          }
           players.Add(p);
         }
 
@@ -428,7 +462,7 @@ namespace SplatTagDatabase.Importers
         if (players.Count > 0)
         {
           // Don't register a team if that information doesn't exist.
-          if (t.Name != Builtins.UnknownTeamName)
+          if (!t.Name.Equals(Builtins.UnknownTeamName))
           {
             // Recalculate the ClanTag layout
             if (t.Tag != null)
@@ -446,11 +480,6 @@ namespace SplatTagDatabase.Importers
             }
             teams.Add(t);
           }
-        }
-        else
-        {
-          Console.WriteLine($"Warning: skipping team with no players. Line {lineIndex}:");
-          Debug.WriteLine(line);
         }
       }
 

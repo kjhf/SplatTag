@@ -36,14 +36,7 @@ namespace SplatTagCore
     public static T GetValueOrDefault<T>(this SerializationInfo serializationInfo, string name, T defaultValue)
     {
       object? value = getValueNoThrow.Invoke(serializationInfo, new object[] { name, typeof(T) });
-      if (value == null)
-      {
-        return defaultValue;
-      }
-      else
-      {
-        return (T)value;
-      }
+      return value == null ? defaultValue : (T)value;
     }
 
     /// <summary>
@@ -61,16 +54,14 @@ namespace SplatTagCore
       {
         return defaultValue;
       }
-      else
+      // else
+      try
       {
-        try
-        {
-          return (T)Enum.Parse(typeof(T), (string)value);
-        }
-        catch (SystemException)
-        {
-          return defaultValue;
-        }
+        return (T)Enum.Parse(typeof(T), (string)value);
+      }
+      catch (SystemException)
+      {
+        return defaultValue;
       }
     }
   }

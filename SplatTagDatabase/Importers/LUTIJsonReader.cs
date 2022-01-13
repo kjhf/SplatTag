@@ -115,7 +115,7 @@ namespace SplatTagDatabase.Importers
         string[] playerNames = row.Players.ToArray();
 
         Team newTeam = new Team(row.TeamName, source);
-        newTeam.AddDivision(new Division(row.Division, DivType.LUTI, season));
+        newTeam.AddDivision(new Division(row.Division, DivType.LUTI, season), source);
 
         if (row.Tag != null && row.Tag.Length != 0 && row.TeamCaptain.Contains(row.Tag))
         {

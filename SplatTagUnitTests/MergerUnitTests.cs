@@ -72,14 +72,14 @@ namespace SplatTagUnitTests
         $"Expected usernames to be merged, actually: {string.Join("\n", dict[id1].Battlefy.Usernames)}");
       Assert.AreEqual(expectedP1IGNs.Length, Matcher.NamesMatchCount(dict[id1].Names, Name.FromStrings(expectedP1IGNs, Builtins.ManualSource)),
         "Expected names to be merged.");
-      Assert.IsTrue(dict[id1].Teams.Contains(team1) && dict[id1].Teams.Contains(team2),
-        "Expected teams to be merged. Teams: [" + string.Join(", ", dict[id1].Teams) + "]");
+      Assert.IsTrue(dict[id1].TeamInformation.Contains(team1) && dict[id1].TeamInformation.Contains(team2),
+        "Expected teams to be merged. Teams: [" + string.Join(", ", dict[id1].TeamInformation.GetTeamsUnordered()) + "]");
 
       Assert.IsTrue(dict.ContainsKey(id3), "Expected id3.");
       Assert.AreEqual(1, Matcher.NamesMatchCount(dict[id3].Names, Name.FromStrings(new[] { "player_ign_team" }, Builtins.ManualSource)),
         "Expected names to be merged.");
-      Assert.AreEqual(team1, dict[id3].CurrentTeam, "Expected current team (p4 -> p3). p3 Teams: [" + string.Join(", ", dict[id3].Teams) + "]");
-      Assert.AreEqual(1, dict[id3].Teams.Count, "Expected current team to be merged. p3 Teams: [" + string.Join(", ", dict[id3].Teams) + "]");
+      Assert.AreEqual(team1, dict[id3].CurrentTeam, "Expected current team (p4 -> p3). p3 Teams: [" + string.Join(", ", dict[id3].TeamInformation.GetTeamsUnordered()) + "]");
+      Assert.AreEqual(1, dict[id3].TeamInformation.Count, "Expected current team to be merged. p3 Teams: [" + string.Join(", ", dict[id3].TeamInformation.GetTeamsUnordered()) + "]");
     }
 
     /// <summary>
@@ -107,12 +107,12 @@ namespace SplatTagUnitTests
       t4.AddBattlefyId(T4_STRING, Builtins.ManualSource);
 
       // t5 should NOT merge into t1 because it has no players in common despite sharing a name.
-      Team t5 = new Team("Shared Name", new Source("t5"));
-      t5.AddDivision(new Division(5, DivType.LUTI));
+      Team t5 = new Team("Shared Name", new Source("t5", DateTime.UtcNow.AddDays(-1)));
+      t5.AddDivision(new Division(5, DivType.LUTI, "FirstSeason"), t5.Sources[0]);
 
       // t6 -> t5
-      Team t6 = new Team("Shared Name", new Source("t6"));
-      t5.AddDivision(new Division(4, DivType.LUTI));
+      Team t6 = new Team("Shared Name", new Source("t6", DateTime.UtcNow));
+      t6.AddDivision(new Division(4, DivType.LUTI, "LaterSeason"), t6.Sources[0]);
 
       Player p1 = new Player("username", new[] { t1.Id, t2.Id, t4.Id }, new Source("p1"));
       p1.AddBattlefyInformation("user", "user", "p1id", Builtins.ManualSource);
@@ -152,10 +152,10 @@ namespace SplatTagUnitTests
       // Fix the players.
       Merger.CorrectTeamIdsForPlayers(players, result, Console.Out);
       Assert.AreEqual(p1.CurrentTeam, t1.Id, "Expected p1's current team to still be team 1");
-      Assert.AreEqual(2, p1.Teams.Count, $"Expected p1's number of teams to now be 2, actually: {IdsToString(p1.Teams)}");
-      Assert.AreEqual(1, p4.Teams.Count, $"Expected p4's number of teams to now be 1, actually: {IdsToString(p4.Teams)}");
+      Assert.AreEqual(2, p1.TeamInformation.Count, $"Expected p1's number of teams to now be 2, actually: {IdsToString(p1.TeamInformation.GetTeamsUnordered())}");
+      Assert.AreEqual(1, p4.TeamInformation.Count, $"Expected p4's number of teams to now be 1, actually: {IdsToString(p4.TeamInformation.GetTeamsUnordered())}");
       Assert.AreEqual(p4.CurrentTeam, t5.Id, "Expected p4's current team to now be t5");
-      Assert.AreEqual(1, p5.Teams.Count, $"Expected p5's number of teams to now be 1, actually: {IdsToString(p5.Teams)}");
+      Assert.AreEqual(1, p5.TeamInformation.Count, $"Expected p5's number of teams to now be 1, actually: {IdsToString(p5.TeamInformation.GetTeamsUnordered())}");
       Assert.AreEqual(p5.CurrentTeam, t5.Id, "Expected p5's current team to now be t5");
     }
 

@@ -29,13 +29,13 @@ namespace SplatTagCore
     public Dictionary<Guid, (Player, bool)[]> PlayersForTeams { get; set; } = new Dictionary<Guid, (Player, bool)[]>();
 
     [JsonProperty("Sources", Required = Required.Always)]
-    public Dictionary<Guid, string> Sources { get; set; } = new Dictionary<Guid, string>();
+    public string[] Sources { get; set; } = Array.Empty<string>();
 
     /// <summary>
     /// Dictionary keyed by Player id, of value
     /// Dictionary keyed by Source id of value Bracket array
     /// </summary>
     [JsonProperty("PlacementsForPlayers", Required = Required.Always)]
-    public Dictionary<Guid, Dictionary<Guid, Bracket[]>> PlacementsForPlayers { get; set; } = new Dictionary<Guid, Dictionary<Guid, Bracket[]>>();
+    public Dictionary<Guid, Dictionary<string, Bracket[]>> PlacementsForPlayers { get; set; } = new Dictionary<Guid, Dictionary<string, Bracket[]>>();
   }
 }

@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SplatTagCore
 {
@@ -28,12 +29,17 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Get if a string[] contains a string by <see cref="StringComparison"/>.
+    /// Get if a string enumerable contains a string by <see cref="StringComparison"/>.
     /// </summary>
     public static bool Contains(this IEnumerable<string> s, string other, StringComparison comp)
     {
       return s.Any(str => str.IndexOf(other, comp) != -1);
     }
+
+    /// <summary>
+    /// Get the number of times a string contains another string.
+    /// </summary>
+    public static int Count(this string s, string other) => Regex.Matches(s, Regex.Escape(other)).Count;
 
     /// <summary>
     /// Searches for an element that matches the conditions defined by the specified

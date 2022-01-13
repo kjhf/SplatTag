@@ -10,6 +10,15 @@ namespace SplatTagUnitTests
   public class FriendCodeUnitTests
   {
     [TestMethod]
+    public void NoCodeProperty()
+    {
+      var fc = new FriendCode("1111-2222-3333");
+      Assert.IsFalse(fc.NoCode);
+      fc = FriendCode.NO_FRIEND_CODE;
+      Assert.IsTrue(fc.NoCode);
+    }
+
+    [TestMethod]
     public void NoMatchNullString()
     {
       bool result = FriendCode.TryParse(null!, out FriendCode friendCode);
@@ -149,6 +158,32 @@ namespace SplatTagUnitTests
       Assert.AreEqual(FriendCode.NO_FRIEND_CODE, friendCode);
       Assert.IsNotNull(stripped);
       Assert.AreEqual("Ludic--<", stripped);
+    }
+
+    [TestMethod]
+    public void ToULongRoundTrip()
+    {
+      bool result = FriendCode.TryParse("0001-2345-6789", out FriendCode friendCode);
+      Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
+      Assert.IsTrue(result);
+      Assert.AreEqual("0001-2345-6789", friendCode.ToString());
+      Assert.AreEqual((ulong)123456789, friendCode.ToULong());
+
+      var fc2 = new FriendCode(123456789);
+      Assert.AreEqual(friendCode, fc2);
+    }
+
+    [TestMethod]
+    public void ToULongRoundTrip_2()
+    {
+      bool result = FriendCode.TryParse("9999-9999-9998", out FriendCode friendCode);
+      Assert.AreNotEqual(FriendCode.NO_FRIEND_CODE, friendCode);
+      Assert.IsTrue(result);
+      Assert.AreEqual("9999-9999-9998", friendCode.ToString());
+      Assert.AreEqual((ulong)999999999998, friendCode.ToULong());
+
+      var fc2 = new FriendCode(999999999998);
+      Assert.AreEqual(fc2, friendCode);
     }
   }
 }

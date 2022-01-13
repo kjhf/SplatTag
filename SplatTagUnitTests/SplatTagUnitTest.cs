@@ -38,7 +38,7 @@ namespace SplatTagUnitTests
       database.loadCalled = false;
       Team exampleTeam = controller.CreateTeam("Example Team");
       exampleTeam.AddClanTag("e.g", Builtins.ManualSource, TagOption.Front);
-      exampleTeam.AddDivision(new Division(1, DivType.DSB));
+      exampleTeam.AddDivision(new Division(1, DivType.DSB), Builtins.ManualSource);
       var TEAM_ID = exampleTeam.Id;
 
       database.expectedTeams = new List<Team> { exampleTeam };

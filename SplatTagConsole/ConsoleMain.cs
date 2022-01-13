@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -146,7 +147,7 @@ namespace SplatTagConsole
           catch (ObjectDisposedException odex)
           {
             Console.WriteLine($"Sleeping (input was disposed - {odex.Message}).");
-            await Task.Delay(100).ConfigureAwait(false);
+            await Task.Delay(500).ConfigureAwait(false);
           }
           catch (Exception ex)
           {
@@ -303,7 +304,7 @@ namespace SplatTagConsole
             {
               result.AdditionalTeams =
                 result.Players
-                .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
+                .SelectMany(p => p.TeamInformation.GetTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
                 .Distinct()
                 .ToDictionary(t => t.Id, t => t);
               result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
@@ -317,42 +318,43 @@ namespace SplatTagConsole
               {
                 foreach ((Player, bool) tuple in pair.Value)
                 {
-                  foreach (Guid t in tuple.Item1.Teams)
+                  foreach (Guid t in tuple.Item1.TeamInformation.GetTeamsUnordered())
                   {
                     result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
                   }
                 }
               }
 
-              result.Sources = new Dictionary<Guid, string>();
+              var sources = new HashSet<string>();
               foreach (var s in result.Players.SelectMany(p => p.Sources))
               {
-                result.Sources.TryAdd(s.Id, s.Name);
+                sources.Add(s.Name);
               }
               foreach (var s in result.Teams.SelectMany(t => t.Sources))
               {
-                result.Sources.TryAdd(s.Id, s.Name);
+                sources.Add(s.Name);
               }
               foreach (var s in result.AdditionalTeams.Values.SelectMany(t => t.Sources))
               {
-                result.Sources.TryAdd(s.Id, s.Name);
+                sources.Add(s.Name);
               }
               foreach (var s in result.PlayersForTeams.Values.SelectMany(tupleArray => tupleArray.SelectMany(p => p.Item1.Sources)))
               {
-                result.Sources.TryAdd(s.Id, s.Name);
+                sources.Add(s.Name);
               }
-              result.Sources[Builtins.BuiltinSource.Id] = Builtins.BuiltinSource.Name;
-              result.Sources[Builtins.ManualSource.Id] = Builtins.ManualSource.Name;
+              sources.Add(Builtins.BuiltinSource.Name);
+              sources.Add(Builtins.ManualSource.Name);
+              result.Sources = sources.ToArray();
 
               try
               {
-                result.PlacementsForPlayers = new Dictionary<Guid, Dictionary<Guid, Bracket[]>>();
+                result.PlacementsForPlayers = new Dictionary<Guid, Dictionary<string, Bracket[]>>();
                 foreach (var player in result.Players)
                 {
-                  result.PlacementsForPlayers[player.Id] = new Dictionary<Guid, Bracket[]>();
+                  result.PlacementsForPlayers[player.Id] = new Dictionary<string, Bracket[]>();
                   foreach (var source in player.Sources)
                   {
-                    result.PlacementsForPlayers[player.Id][source.Id] = source.Brackets;
+                    result.PlacementsForPlayers[player.Id][source.Name] = source.Brackets;
                   }
                 }
               }
@@ -361,7 +363,7 @@ namespace SplatTagConsole
                 const string message = "ERROR: OutOfMemoryException on PlacementsForPlayers. Will continue anyway.";
                 Console.WriteLine(message);
                 Console.WriteLine(oom.ToString());
-                result.PlacementsForPlayers = new Dictionary<Guid, Dictionary<Guid, Bracket[]>>();
+                result.PlacementsForPlayers = new Dictionary<Guid, Dictionary<string, Bracket[]>>();
               }
             }
           }

@@ -21,7 +21,7 @@ namespace SplatTagCore
     private readonly ISplatTagDatabase database;
     private Player[] players;
     private Dictionary<Guid, Team> teams;
-    private Dictionary<Guid, Source> sources;
+    private Dictionary<string, Source> sources;
     private Task? cachingTask;
     private readonly ConcurrentDictionary<Team, (Player, bool)[]> playersForTeam;
 
@@ -37,7 +37,7 @@ namespace SplatTagCore
       this.database = database;
       this.players = Array.Empty<Player>();
       this.teams = new Dictionary<Guid, Team>();
-      this.sources = new Dictionary<Guid, Source>();
+      this.sources = new Dictionary<string, Source>();
       this.playersForTeam = new ConcurrentDictionary<Team, (Player, bool)[]>();
     }
 
@@ -62,7 +62,7 @@ namespace SplatTagCore
       else
       {
         players = loadedPlayers;
-        teams = loadedTeams.ToDictionary(t => t.Id, t => t);
+        teams = loadedTeams?.ToDictionary(t => t.Id, t => t) ?? new Dictionary<Guid, Team>();
         sources = loadedSources;
 
         cachingTask = Task.Run(() =>
@@ -70,11 +70,14 @@ namespace SplatTagCore
           // Cache the players and their teams.
           Parallel.ForEach(teams.Values, t =>
           {
-            var teamPlayers =
-              t.GetPlayers(players)
-              .Select(p => (p, p.CurrentTeam == t.Id))
-              .ToArray();
-            playersForTeam.TryAdd(t, teamPlayers);
+            if (t != null)
+            {
+              var teamPlayers =
+                t.GetPlayers(players)
+                .Select(p => (p, p.CurrentTeam == t.Id))
+                .ToArray();
+              playersForTeam.TryAdd(t, teamPlayers);
+            }
           });
           Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Caching task done.");
         });
@@ -160,7 +163,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.FriendCode) != 0)
             {
               // If FC matches, return top match.
-              foreach (var toMatch in from FriendCode code in p.FriendCodes
+              foreach (var toMatch in from FriendCode code in p.FCInformation.GetCodesUnordered()
                                       let toMatch = code.ToString()
                                       select toMatch)
               {
@@ -319,7 +322,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.FriendCode) != 0)
           {
             // If FC matches, return top match.
-            foreach (var toMatch in from FriendCode code in p.FriendCodes
+            foreach (var toMatch in from FriendCode code in p.FCInformation.GetCodesUnordered()
                                     let toMatch = code.ToString()
                                     select toMatch)
             {
@@ -449,6 +452,7 @@ namespace SplatTagCore
         .Select(p => (p, func(p)))
         .Where(pair => pair.Item2 > 0)
         .OrderByDescending(pair => pair.Item2)
+        .ThenBy(pair => pair.p, IReadonlySourceableExtensions.GetMostRecentComparer())  // Most recent first
         .Select(pair => pair.p);
 
       // Take is a limit operation (does not throw if limit > count)
@@ -670,6 +674,7 @@ namespace SplatTagCore
         .Select(t => (t, func(t)))
         .Where(pair => pair.Item2 > 0)
         .OrderByDescending(pair => pair.Item2)
+        .ThenBy(pair => pair.t, IReadonlySourceableExtensions.GetMostRecentComparer())  // Most recent first
         .Select(pair => pair.t);
 
       // Take is a limit operation (does not throw if limit > count)
@@ -714,19 +719,6 @@ namespace SplatTagCore
         return Team.NoTeam;
       }
       return teams.ContainsKey(id) ? teams[id] : Team.UnlinkedTeam;
-    }
-
-    /// <summary>
-    /// Match a <see cref="Source"/> by its id.
-    /// Returns <see cref="Builtins.BuiltinSource"/> if not found.
-    /// </summary>
-    public Source GetSourceById(Guid id)
-    {
-      if (id == Guid.Empty)
-      {
-        return Builtins.BuiltinSource;
-      }
-      return sources.ContainsKey(id) ? sources[id] : Builtins.BuiltinSource;
     }
 
     /// <summary> Launch an address in a separate internet browser. </summary>

@@ -8,6 +8,6 @@ namespace SplatTagCore
     /// <summary>
     /// Load the database and return the merged Players, merged Teams, and Sources.
     /// </summary>
-    (Player[], Team[], Dictionary<Guid, Source>) Load();
+    (Player[], Team[], Dictionary<string, Source>) Load();
   }
 }

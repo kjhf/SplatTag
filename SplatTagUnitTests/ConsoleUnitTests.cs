@@ -4,6 +4,7 @@ using SplatTagCore;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -94,6 +95,8 @@ namespace SplatTagUnitTests
       Assert.IsTrue(actual.Contains("Inkology"));
       Assert.IsTrue(actual.Contains("Revitalize"));
       Assert.IsTrue(actual.Contains("2019-03-25-LUTI-S8"));  // Check sources populated
+      Assert.IsTrue(actual.Count("UNLINKED") == 1);  // Check no unlinked teams (except the one specified in Additional Sources)
+      Assert.IsTrue(actual.Count("Built-in") >= 1);  // Check for built-in sources (one specified in Additional Sources)
     }
 
     /// <summary>
@@ -128,6 +131,8 @@ namespace SplatTagUnitTests
       Assert.IsTrue(actual.Contains("Inkology"));
       Assert.IsTrue(actual.Contains("Revitalize"));
       Assert.IsTrue(actual.Contains("2019-03-25-LUTI-S8"));  // Check sources populated
+      Assert.IsTrue(actual.Count("UNLINKED") == 1);  // Check no unlinked teams (except the one specified in Additional Sources)
+      Assert.IsTrue(actual.Count("Built-in") >= 1);  // Check for built-in sources (one specified in Additional Sources)
     }
 
     /// <summary>

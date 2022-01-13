@@ -107,7 +107,7 @@ namespace SplatTagCore
     protected Name(SerializationInfo info, StreamingContext context)
     {
       this.Value = info.GetString("N");
-      var sourceIds = info.GetValueOrDefault("S", Array.Empty<Guid>());
+      var sourceIds = info.GetValueOrDefault("S", Array.Empty<string>());
       if (context.Context is Source.GuidToSourceConverter converter)
       {
         AddSources(converter.Convert(sourceIds));

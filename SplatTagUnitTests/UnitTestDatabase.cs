@@ -9,12 +9,12 @@ namespace SplatTagUnitTests
   {
     public List<Player> expectedPlayers = new List<Player>();
     public List<Team> expectedTeams = new List<Team>();
-    public Dictionary<Guid, Source> expectedSources = new Dictionary<Guid, Source>();
+    public Dictionary<string, Source> expectedSources = new Dictionary<string, Source>();
 
     public bool loadCalled;
     public bool saveCalled;
 
-    public (Player[], Team[], Dictionary<Guid, Source>) Load()
+    public (Player[], Team[], Dictionary<string, Source>) Load()
     {
       loadCalled = true;
       return (expectedPlayers.ToArray(), expectedTeams.ToArray(), expectedSources);

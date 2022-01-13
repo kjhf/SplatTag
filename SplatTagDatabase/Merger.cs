@@ -61,13 +61,13 @@ namespace SplatTagDatabase
       // If we have a lot of work, fire up a parallel for-each, otherwise just do a regular one.
       if (incomingPlayers.Count > 15)
       {
-        Parallel.ForEach(incomingPlayers, (importPlayer) => importPlayer.CorrectTeamIds(teamsMergeResult));
+        Parallel.ForEach(incomingPlayers, (importPlayer) => importPlayer.TeamInformation.CorrectTeamIds(teamsMergeResult));
       }
       else
       {
         foreach (var importPlayer in incomingPlayers)
         {
-          importPlayer.CorrectTeamIds(teamsMergeResult);
+          importPlayer.TeamInformation.CorrectTeamIds(teamsMergeResult);
         }
       }
     }
@@ -106,10 +106,10 @@ namespace SplatTagDatabase
           {
             // Quick check that the player is definitely older
             // This happens when a merge has already happened, but the dates then go out of order.
-            if (olderPlayerRecord.CompareToBySourceChronology(newerPlayerRecord) == 1)
+            if (olderPlayerRecord.CompareToBySourceAscending(newerPlayerRecord) == 1)
             {
               // Swap the instances round
-              logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord}.");
+              logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord} (Persistent).");
               (newerPlayerRecord, olderPlayerRecord) = (playersToMutate[i], playersToMutate[j]) = (olderPlayerRecord, newerPlayerRecord);
             }
 
@@ -120,9 +120,9 @@ namespace SplatTagDatabase
           // If that doesn't work, try and match a name and same team.
           if (foundOlderPlayerRecord == null && Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.PlayerName, logger))
           {
-            if (olderPlayerRecord.CompareToBySourceChronology(newerPlayerRecord) == 1)
+            if (olderPlayerRecord.CompareToBySourceAscending(newerPlayerRecord) == 1)
             {
-              logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord}.");
+              logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord} (PlayerName).");
               (newerPlayerRecord, olderPlayerRecord) = (playersToMutate[i], playersToMutate[j]) = (olderPlayerRecord, newerPlayerRecord);
             }
 
@@ -191,7 +191,7 @@ namespace SplatTagDatabase
           if (Matcher.TeamsMatch(allPlayers, olderTeamRecord, newerTeamRecord, logger))
           {
             // Quick check that the team is definitely older
-            if (olderTeamRecord.CompareToBySourceChronology(newerTeamRecord) == 1)
+            if (olderTeamRecord.CompareToBySourceAscending(newerTeamRecord) == 1)
             {
               // Swap the instances round
               logger?.WriteLine($"Newer team is not newer, swapping {newerTeamRecord} with {olderTeamRecord}.");

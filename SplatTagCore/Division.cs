@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
@@ -13,9 +14,12 @@ namespace SplatTagCore
   /// </summary>
   public class Division : ISerializable, IComparable<Division>, IEquatable<Division?>
   {
+    public const string UNKNOWN_STR = "Div Unknown";
     public const int UNKNOWN = int.MaxValue;
     public const int X = 0;
     public const int X_PLUS = -1;
+    private const string VALUE_SEPARATOR_STR = " Div ";
+
     public static readonly Division Unknown = new();
 
     public readonly DivType DivType = DivType.Unknown;
@@ -27,21 +31,74 @@ namespace SplatTagCore
     /// </summary>
     public bool IsUnknown => this.Value == UNKNOWN || this.DivType == DivType.Unknown;
 
+    [JsonConstructor]
+    internal Division(string serialized)
+    {
+      if (serialized.Equals(UNKNOWN_STR))
+      {
+        this.Value = Unknown.Value;
+        this.DivType = Unknown.DivType;
+        this.Season = Unknown.Season;
+      }
+      else
+      {
+        int index = serialized.IndexOf(" ");
+        if (index < 0)
+        {
+          this.Value = Unknown.Value;
+          this.DivType = Unknown.DivType;
+          this.Season = Unknown.Season;
+        }
+        else
+        {
+          var divTypeStr = serialized.Substring(0, index);
+          bool parsed = Enum.TryParse(divTypeStr, out this.DivType);
+          if (!parsed)
+          {
+            this.Value = Unknown.Value;
+            this.DivType = Unknown.DivType;
+            this.Season = Unknown.Season;
+          }
+          else
+          {
+            serialized = serialized.Substring(index + 1);
+            index = serialized.IndexOf(VALUE_SEPARATOR_STR);
+            if (index < 0)
+            {
+              this.Value = Unknown.Value;
+              this.DivType = Unknown.DivType;
+              this.Season = Unknown.Season;
+            }
+            else
+            {
+              this.Season = serialized.Substring(0, index).Trim();
+              serialized = serialized.Substring(index + VALUE_SEPARATOR_STR.Length).Trim();
+              this.Value = ParseValueString(serialized);
+            }
+          }
+        }
+      }
+    }
+
     public Division(int value = UNKNOWN, DivType divType = DivType.Unknown, string season = "")
     {
       this.Value = value;
       this.DivType = divType;
-      this.Season = season;
+      this.Season = season.Trim();
     }
 
     public Division(string valueStr, DivType divType, string season)
     {
       this.DivType = divType;
-      this.Season = season;
+      this.Season = season.Trim();
+      this.Value = ParseValueString(valueStr);
+    }
 
+    private static int ParseValueString(string valueStr)
+    {
       if (valueStr == null)
       {
-        this.Value = UNKNOWN;
+        return UNKNOWN;
       }
       else
       {
@@ -49,19 +106,19 @@ namespace SplatTagCore
 
         if (string.IsNullOrWhiteSpace(valueStr))
         {
-          this.Value = UNKNOWN;
+          return UNKNOWN;
         }
         else if (valueStr.Equals("X+", StringComparison.OrdinalIgnoreCase))
         {
-          this.Value = X_PLUS;
+          return X_PLUS;
         }
         else if (valueStr.Equals("X", StringComparison.OrdinalIgnoreCase))
         {
-          this.Value = X;
+          return X;
         }
         else if (int.TryParse(valueStr, out int divParse))
         {
-          this.Value = divParse;
+          return divParse;
         }
         else if (char.IsDigit(valueStr[0]) || valueStr[0] == '-')
         {
@@ -75,16 +132,16 @@ namespace SplatTagCore
           valueStr = sb.ToString();
           if (int.TryParse(valueStr, out int divParse2))
           {
-            this.Value = negative ? -divParse2 : divParse2;
+            return negative ? -divParse2 : divParse2;
           }
           else
           {
-            this.Value = UNKNOWN;
+            return UNKNOWN;
           }
         }
         else
         {
-          this.Value = UNKNOWN;
+          return UNKNOWN;
         }
       }
     }
@@ -200,24 +257,24 @@ namespace SplatTagCore
     {
       if (this.Value == UNKNOWN)
       {
-        return "Div Unknown";
+        return UNKNOWN_STR;
       }
-      else
+
+      StringBuilder sb = new StringBuilder();
+      sb.Append(DivType)
+        .Append(" ")
+        .Append(Season)
+        .Append(VALUE_SEPARATOR_STR);
+
+      switch (Value)
       {
-        StringBuilder sb = new StringBuilder();
-        sb.Append(DivType);
-        sb.Append(" ");
-        sb.Append(Season);
-        sb.Append(" Div ");
-        switch (Value)
-        {
-          case UNKNOWN: sb.Append("Unknown"); break;
-          case X_PLUS: sb.Append("X+"); break;
-          case X: sb.Append("X"); break;
-          default: sb.Append(Value); break;
-        }
-        return sb.ToString();
+        case UNKNOWN: sb.Append("Unknown"); break;
+        case X_PLUS: sb.Append("X+"); break;
+        case X: sb.Append("X"); break;
+        default: sb.Append(Value); break;
       }
+
+      return sb.ToString();
     }
 
     #region Serialization

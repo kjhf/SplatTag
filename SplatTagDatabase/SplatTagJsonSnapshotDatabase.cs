@@ -13,6 +13,7 @@ namespace SplatTagDatabase
   public class SplatTagJsonSnapshotDatabase : ISplatTagDatabase
   {
     private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
+    private static readonly HashSet<string> errorMessagesReported = new HashSet<string>();
 
     private readonly string saveDirectory;
     private string? playersSnapshotFile = null;
@@ -40,7 +41,7 @@ namespace SplatTagDatabase
       return new DirectoryInfo(dir).GetFiles(SNAPSHOT_FORMAT).OrderByDescending(f => f.LastWriteTime);
     }
 
-    public (Player[], Team[], Dictionary<Guid, Source>) Load()
+    public (Player[], Team[], Dictionary<string, Source>) Load()
     {
       if (playersSnapshotFile != null && teamsSnapshotFile != null && sourcesSnapshotFile != null)
       {
@@ -74,14 +75,33 @@ namespace SplatTagDatabase
       return Load(playersSnapshotFile, teamsSnapshotFile, sourcesSnapshotFile);
     }
 
-    private static (Player[], Team[], Dictionary<Guid, Source>) Load(string? playersSnapshotFile, string? teamsSnapshotFile, string? sourcesSnapshotFile)
+    private static (Player[], Team[], Dictionary<string, Source>) Load(string? playersSnapshotFile, string? teamsSnapshotFile, string? sourcesSnapshotFile)
     {
       if (playersSnapshotFile == null || teamsSnapshotFile == null || sourcesSnapshotFile == null)
-        return (Array.Empty<Player>(), Array.Empty<Team>(), new Dictionary<Guid, Source>());
+        return (Array.Empty<Player>(), Array.Empty<Team>(), new Dictionary<string, Source>());
 
       try
       {
         WinApi.TryTimeBeginPeriod(1);
+
+        // Invoked from command line
+        if (JsonConvert.DefaultSettings == null)
+        {
+          JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+          {
+            DefaultValueHandling = DefaultValueHandling.Ignore,
+            Error = (sender, args) =>
+            {
+              string m = args.ErrorContext.Error.Message;
+              if (!errorMessagesReported.Contains(m))
+              {
+                Console.Error.WriteLine(m);
+                errorMessagesReported.Add(m);
+              }
+              args.ErrorContext.Handled = true;
+            }
+          };
+        }
         var settings = JsonConvert.DefaultSettings();
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading sourcesSnapshotFile from {sourcesSnapshotFile}... ");
@@ -127,13 +147,21 @@ namespace SplatTagDatabase
           {
             try
             {
-              result.Add(serializer.Deserialize<T>(reader));
+              var toAdd = serializer.Deserialize<T>(reader);
+              if (toAdd == null)
+              {
+                throw new ArgumentNullException("Should not have deserialized null.");
+              }
+              result.Add(toAdd);
             }
             catch (Exception ex)
             {
-              Console.Error.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + reader.LineNumber + ".");
-              Console.Error.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
-              Console.Error.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + reader);
+              var restore = Console.BackgroundColor;
+              Console.BackgroundColor = ConsoleColor.Red;
+              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + reader.LineNumber + ".");
+              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
+              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + reader);
+              Console.BackgroundColor = restore;
             }
           }
         }

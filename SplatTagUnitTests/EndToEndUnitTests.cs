@@ -77,6 +77,9 @@ namespace SplatTagUnitTests
       // Load.
       SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(current);
       (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.Load();
+      Assert.IsNotNull(players, "Not expecting null return for players");
+      Assert.IsNotNull(teams, "Not expecting null return for teams");
+      Assert.IsNotNull(sources, "Not expecting null return for sources");
 
       // Assertions.
       Assert.AreEqual(2, players.Count(p => p.Name.Value.Contains("Slate")), "Incorrect number of Slates:\n - " +
@@ -91,7 +94,7 @@ namespace SplatTagUnitTests
                   .Append(" -- Sourced from [")
                   .AppendJoin(", ", p.Sources)
                   .Append("] and teams [")
-                  .AppendJoin(", ", p.Teams)
+                  .AppendJoin(", ", p.TeamInformation.GetTeamsUnordered())
                   .Append("] and Battlefy Slugs [")
                   .AppendJoin(", ", p.Battlefy.Slugs ?? Array.Empty<BattlefyUserSocial>())
                   .Append("] top500=")
@@ -102,7 +105,7 @@ namespace SplatTagUnitTests
       var splatarians = teams.Where(p => p.Name.Value == "Splatarians");
       Assert.AreEqual(1, splatarians.Count(), $"Incorrect number of Splatarians:\n - { string.Join("\n - ", splatarians)}");
       Assert.AreEqual("SX", splatarians.First().CurrentDiv.Season);
-      Assert.IsTrue(splatarians.First().Divisions.Any(d => d.Season == "S9"));
+      Assert.IsTrue(splatarians.First().DivisionInformation.GetDivisionsUnordered().Any(d => d.Season == "S9"));
       Assert.AreEqual(4, sources.Count, "Unexpected number of sources loaded.");
       Assert.IsTrue(players.Where(p => p.Name.Value.Contains("Slate")).All(p => !p.Top500), "Expected Slate top 500 flag to be false.");
     }
@@ -154,7 +157,7 @@ namespace SplatTagUnitTests
                   .Append(" -- Sourced from [")
                   .AppendJoin(", ", p.Sources)
                   .Append("] and teams [")
-                  .AppendJoin(", ", p.Teams)
+                  .AppendJoin(", ", p.TeamInformation.GetTeamsUnordered())
                   .Append("] and Battlefy Slugs [")
                   .AppendJoin(", ", p.Battlefy.Slugs ?? Array.Empty<BattlefyUserSocial>())
                   .Append("] top500=")
@@ -174,7 +177,7 @@ namespace SplatTagUnitTests
         Assert.Fail(failMessage.ToString());
       }
       Assert.AreEqual("SX", splatarians.First().CurrentDiv.Season);
-      Assert.IsTrue(splatarians.First().Divisions.Any(d => d.Season == "S9"));
+      Assert.IsTrue(splatarians.First().DivisionInformation.GetDivisionsUnordered().Any(d => d.Season == "S9"));
 
       // Check that the patching has happened
       Assert.AreEqual(5, sources.Count, "Unexpected number of sources loaded.");

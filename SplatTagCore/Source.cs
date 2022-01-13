@@ -13,9 +13,9 @@ namespace SplatTagCore
     public Bracket[] Brackets { get; set; } = Array.Empty<Bracket>();
 
     /// <summary>
-    /// The source identifier
+    /// The source identifier, which is its name.
     /// </summary>
-    public Guid Id { get; } = Guid.NewGuid();
+    public string Id => Name;
 
     /// <summary>
     /// The friendly name for the source
@@ -66,16 +66,8 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Construct a source with an id.
-    /// </summary>
-    public Source(Guid id)
-    {
-      Id = id;
-      Name = Builtins.UNKNOWN_SOURCE;
-    }
-
-    /// <summary>
     /// Compare start time to another Source's start time.
+    /// 0 is same, &lt; 0 is earlier, &gt; 0 is later.
     /// </summary>
     public int CompareTo(Source other) => Start.CompareTo(other.Start);
 
@@ -108,34 +100,28 @@ namespace SplatTagCore
       this.Start = new DateTime(info.GetValueOrDefault("Start", Builtins.UNKNOWN_DATE_TIME_TICKS));
       this.Teams = info.GetValueOrDefault("Teams", Array.Empty<Team>());
       this.Uris = info.GetValueOrDefault("Uris", Array.Empty<Uri>());
-
-      this.Id = info.GetValueOrDefault("Id", Guid.Empty);
-      if (this.Id == Guid.Empty)
-      {
-        throw new SerializationException("Guid cannot be empty for source: " + this.Name + " with " + Brackets.Length + " brackets.");
-      }
     }
 
     // Serialize
 
     public class GuidToSourceConverter
     {
-      private readonly Dictionary<Guid, Source> lookup;
+      private readonly Dictionary<string, Source> lookup;
 
-      public GuidToSourceConverter(Dictionary<Guid, Source> lookup)
+      public GuidToSourceConverter(Dictionary<string, Source> lookup)
       {
         this.lookup = lookup;
       }
 
-      public IEnumerable<Source> Convert(IEnumerable<Guid> ids)
+      public IEnumerable<Source> Convert(IEnumerable<string> names)
       {
-        foreach (var id in ids)
+        foreach (var id in names)
           yield return Convert(id);
       }
 
-      public Source Convert(Guid id)
+      public Source Convert(string name)
       {
-        return lookup.ContainsKey(id) ? lookup[id] : Builtins.BuiltinSource;
+        return lookup.ContainsKey(name) ? lookup[name] : Builtins.BuiltinSource;
       }
     }
 
@@ -143,8 +129,6 @@ namespace SplatTagCore
     {
       if (this.Brackets.Length > 0)
         info.AddValue("Brackets", this.Brackets);
-
-      info.AddValue("Id", this.Id);
 
       if (this.Name != null)
         info.AddValue("Name", this.Name);

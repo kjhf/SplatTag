@@ -681,7 +681,7 @@ namespace SplatTagDatabase.Importers
           {
             if (FriendCode.TryParse(root.User.Profile.FriendCode, out FriendCode friendCode))
             {
-              newPlayer.AddFCs(friendCode.AsEnumerable());
+              newPlayer.AddFCs(friendCode, source);
             }
           }
         }

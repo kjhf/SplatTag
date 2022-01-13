@@ -90,7 +90,7 @@ namespace SplatTagCore
       }
 
       // Test if the Switch FC's match.
-      if ((matchOptions & FilterOptions.FriendCode) != 0 && first.FriendCodes.StructMatch(second.FriendCodes))
+      if ((matchOptions & FilterOptions.FriendCode) != 0 && first.FCInformation.Match(second.FCInformation))
       {
         // They do.
         if (logger != null)
@@ -101,7 +101,7 @@ namespace SplatTagCore
           logger.Write(" (Id ");
           logger.Write(first.Id);
           logger.Write(") with Friend Code(s) [");
-          logger.Write(string.Join(", ", first.FriendCodes));
+          logger.Write(string.Join(", ", first.FCInformation.GetCodesUnordered()));
           logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
@@ -201,11 +201,14 @@ namespace SplatTagCore
 
       // If we're matching by name, then the player must also have a matching battlefy slug, or matching team.
       if ((matchOptions & FilterOptions.PlayerName) != 0
-        && (first.Teams.StructMatch(second.Teams) || first.Battlefy.MatchSlugs(second.Battlefy))
+        && (first.TeamInformation.Match(second.TeamInformation) || first.Battlefy.MatchSlugs(second.Battlefy))
         && first.AllKnownNames.TransformedNamesMatch(second.AllKnownNames))
       {
         if (logger != null)
         {
+          var teamMatch = first.TeamInformation.Match(second.TeamInformation);
+          var battlefyMatch = first.Battlefy.MatchSlugs(second.Battlefy);
+
           logger.Write(nameof(PlayersMatch));
           logger.Write(": Matched player ");
           logger.Write(first.ToString());
@@ -213,7 +216,12 @@ namespace SplatTagCore
           logger.Write(first.Id);
           logger.Write(") with TransformedNames [");
           logger.Write(string.Join(", ", first.TransformedNames));
-          logger.Write("] from player ");
+          logger.Write("] using");
+          logger.Write(" teamMatch=");
+          logger.Write(teamMatch);
+          logger.Write(" battlefyMatch=");
+          logger.Write(battlefyMatch);
+          logger.Write(" from player ");
           logger.Write(second);
           logger.Write(" (Id ");
           logger.Write(second.Id);
@@ -341,30 +349,30 @@ namespace SplatTagCore
     /// <remarks>
     /// This is a lot more performant for lists with 0 or 1 object in it rather than creating Intersect HashMaps.
     /// </remarks>
-    public static bool StructMatch<T>(this IReadOnlyList<T> first, IReadOnlyList<T> second) where T : struct
+    public static bool GenericMatch<T>(this IReadOnlyCollection<T> first, IReadOnlyCollection<T> second) where T : notnull
     {
       int firstCount = first.Count;
       int secondCount = second.Count;
 
-      if (firstCount == 0)
-      {
-        return false;
-      }
-      else if (secondCount == 0)
+      if (firstCount == 0 || secondCount == 0)
       {
         return false;
       }
       else if (firstCount == 1 && secondCount == 1)
       {
-        return first[0].Equals(second[0]);
+        T firstItem = first is IReadOnlyList<T> firstList ? firstList[0] : first.First();
+        T secondItem = second is IReadOnlyList<T> secondList ? secondList[0] : second.First();
+        return firstItem.Equals(secondItem);
       }
       else if (firstCount == 1)
       {
-        return second.Contains(first[0]);
+        T firstItem = first is IReadOnlyList<T> firstList ? firstList[0] : first.First();
+        return second.Contains(firstItem);
       }
       else if (secondCount == 1)
       {
-        return first.Contains(second[0]);
+        T secondItem = second is IReadOnlyList<T> secondList ? secondList[0] : second.First();
+        return first.Contains(secondItem);
       }
       else if (firstCount > 4 || secondCount > 4)
       {

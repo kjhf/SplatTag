@@ -44,7 +44,7 @@ namespace SplatTagCore
     public IReadOnlyList<Name> PersistentIds => persistentIds;
 
     /// <summary>
-    /// Combination of Discord usernames and ids
+    /// Combination of Battlefy slugs and ids
     /// </summary>
     public IReadOnlyList<Name> AllNames => new List<Name>(usernames.Concat(slugs).Concat(persistentIds).Distinct());
 
@@ -54,7 +54,7 @@ namespace SplatTagCore
     /// <param name="ids"></param>
     public void AddSlug(string slug, Source source)
     {
-      SplatTagCommon.InsertFrontUniqueSourced(new BattlefyUserSocial(slug, source), slugs);
+      SplatTagCommon.AddName(new BattlefyUserSocial(slug, source), slugs);
     }
 
     /// <summary>

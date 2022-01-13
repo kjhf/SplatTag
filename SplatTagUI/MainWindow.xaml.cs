@@ -325,8 +325,7 @@ namespace SplatTagUI
       IEnumerable<Team> oldTeams;
       if (value is Player p)
       {
-        // Teams.Skip(1) for the old teams
-        oldTeams = p.Teams.Skip(1).Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
+        oldTeams = p.TeamInformation.GetOldTeamsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
       }
       else if (value is IEnumerable<Team> t)
       {
@@ -494,16 +493,19 @@ namespace SplatTagUI
             continue;
           }
           string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
+          fieldVal = string.Join(separator, ids);
+        }
+        else if (fieldVal is TeamsHandler teams)
+        {
+          int count = teams.Count;
+          if (count == 0)
+          {
+            continue;
+          }
+          string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
 
-          if (fieldName == nameof(Player.Teams))
-          {
-            var oldTeams = ids.Select(id => MainWindow.splatTagController?.GetTeamById(id));
-            fieldVal = string.Join(separator, oldTeams);
-          }
-          else
-          {
-            fieldVal = string.Join(separator, ids);
-          }
+          var oldTeams = teams.GetOldTeamsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id));
+          fieldVal = string.Join(separator, oldTeams);
         }
         else
         {

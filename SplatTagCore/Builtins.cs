@@ -30,12 +30,12 @@ namespace SplatTagCore
     /// <summary>
     /// The built-in source, for use in objects that are pre-defined by the program code.
     /// </summary>
-    public static readonly Source BuiltinSource = new Source("builtin");
+    public static readonly Source BuiltinSource = new Source("0001-01-01-Built-in-Source");
 
     /// <summary>
     /// The manual entry source, for use in objects that are defined by manual user entry.
     /// </summary>
-    public static readonly Source ManualSource = new Source("Manual Entry");
+    public static readonly Source ManualSource = new Source("0001-01-01-Manual-Entry-Source");
 
     /// <summary>
     /// The <see cref="Name"/> object for an <see cref="UNKNOWN_PLAYER"/>.

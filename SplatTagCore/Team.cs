@@ -29,11 +29,6 @@ namespace SplatTagCore
     private readonly List<ClanTag> clanTags = new List<ClanTag>();
 
     /// <summary>
-    /// The division(s) of the team, first is the current.
-    /// </summary>
-    private readonly List<Division> divisions = new List<Division>();
-
-    /// <summary>
     /// Back-store for the names of this team. The first element is the current name.
     /// </summary>
     /// <remarks>
@@ -47,6 +42,11 @@ namespace SplatTagCore
     /// Back-store for the Twitter Profiles of this player.
     /// </summary>
     private readonly List<Twitter> twitterProfiles = new List<Twitter>();
+
+    /// <summary>
+    /// The division information of the team.
+    /// </summary>
+    public DivisionsHandler DivisionInformation { get; } = new DivisionsHandler();
 
     /// <summary>
     /// Default construct a Team
@@ -88,12 +88,7 @@ namespace SplatTagCore
     /// <summary>
     /// The current division of the team
     /// </summary>
-    public Division CurrentDiv => divisions.Count > 0 ? divisions[0] : Division.Unknown;
-
-    /// <summary>
-    /// The divisions of the team
-    /// </summary>
-    public IList<Division> Divisions => divisions;
+    public Division CurrentDiv => DivisionInformation.CurrentDivision ?? Division.Unknown;
 
     /// <summary>
     /// The last known used name for the Team
@@ -153,21 +148,16 @@ namespace SplatTagCore
       SplatTagCommon.AddNames(value, clanTags);
     }
 
-    public void AddDivision(Division division)
+    public void AddDivision(Division division, Source source)
     {
-      if (!division.IsUnknown && (division.DivType != CurrentDiv.DivType || division.Value != CurrentDiv.Value || !division.Season.Equals(CurrentDiv.Season)))
-      {
-        SplatTagCommon.InsertFrontUnique(division, this.divisions);
-      }
+      DivisionInformation.Add(division, source);
     }
 
-    public void AddDivisions(IEnumerable<Division> value)
-    {
-      foreach (var div in value.Reverse())
-      {
-        AddDivision(div);
-      }
-    }
+    public void AddDivisions(Division value, Source source) => DivisionInformation.Add(value, source);
+
+    public void AddDivisions(IList<Division> value, Source source) => DivisionInformation.Add(value, source);
+
+    public void AddDivisions(DivisionsHandler value) => DivisionInformation.Merge(value);
 
     public void AddName(string name, Source source)
     {
@@ -194,7 +184,7 @@ namespace SplatTagCore
     /// </summary>
     public IEnumerable<Player> GetPlayers(IEnumerable<Player> allPlayers)
     {
-      return allPlayers.AsParallel().Where(p => p.Teams.Contains(this.Id));
+      return allPlayers.AsParallel().Where(p => p.TeamInformation.Contains(this.Id));
     }
 
     /// <summary>
@@ -209,7 +199,7 @@ namespace SplatTagCore
       AddTwitterProfiles(newerTeam.twitterProfiles);
 
       // Merge divisions
-      AddDivisions(newerTeam.Divisions);
+      AddDivisions(newerTeam.DivisionInformation);
 
       // Merge the team's name(s).
       AddNames(newerTeam.names);
@@ -219,9 +209,8 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Overridden ToString.
+    /// Overridden ToString, gets the team's tag, name, and div.
     /// </summary>
-    /// <returns></returns>
     public override string ToString()
     {
       return $"{(Tag != null ? Tag.Value + " " : "")}{Name}{(CurrentDiv == Division.Unknown ? "" : $" ({CurrentDiv})")}";
@@ -234,14 +223,14 @@ namespace SplatTagCore
     {
       AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<BattlefyTeamSocial>()));
       AddClanTags(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
-      AddDivisions(info.GetValueOrDefault("Divisions", Array.Empty<Division>()));
+      AddDivisions(info.GetValueOrDefault("Divisions", new DivisionsHandler()));
       AddNames(info.GetValueOrDefault("N", Array.Empty<Name>()));
       AddTwitterProfiles(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
 
       this.Id = info.GetValueOrDefault("Id", Guid.Empty);
       if (this.Id == Guid.Empty)
       {
-        throw new SerializationException("Guid cannot be empty for team: " + this.Name + " from source(s) [" + string.Join(", ", this.Sources) + "].");
+        throw new SerializationException($"Guid cannot be empty for team: {this.Name} from source(s) [{string.Join(", ", this.Sources)}].");
       }
     }
 
@@ -254,8 +243,8 @@ namespace SplatTagCore
       if (clanTags.Count > 0)
         info.AddValue("ClanTags", this.clanTags);
 
-      if (divisions.Count > 0)
-        info.AddValue("Divisions", this.divisions);
+      if (DivisionInformation.Count > 0)
+        info.AddValue("Divisions", this.DivisionInformation);
 
       info.AddValue("Id", this.Id);
 

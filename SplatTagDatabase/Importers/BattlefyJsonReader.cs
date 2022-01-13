@@ -117,7 +117,7 @@ namespace SplatTagDatabase.Importers
 
           // Filter the friend code from the name, if found
           var (parsedFriendCode, strippedName) = FriendCode.ParseAndStripFriendCode(p.Name);
-          if (parsedFriendCode != FriendCode.NO_FRIEND_CODE)
+          if (!parsedFriendCode.NoCode)
           {
             p.Name = strippedName;
           }
@@ -133,7 +133,7 @@ namespace SplatTagDatabase.Importers
 
           if (p.BattlefyName != null && p.BattlefyName == row.Captain.BattlefyName)
           {
-            if (parsedFriendCode == FriendCode.NO_FRIEND_CODE && row.CaptainFriendCode != FriendCode.NO_FRIEND_CODE)
+            if (parsedFriendCode.NoCode && !row.CaptainFriendCode.NoCode)
             {
               parsedFriendCode = row.CaptainFriendCode;
             }
@@ -149,7 +149,7 @@ namespace SplatTagDatabase.Importers
           {
             newPlayer.AddBattlefyInformation(p.BattlefyUserSlug, p.BattlefyName, p.PersistentPlayerId, source);
           }
-          newPlayer.AddFCs(parsedFriendCode.AsEnumerable());
+          newPlayer.AddFCs(parsedFriendCode, source);
           players.Add(newPlayer);
         }
       }

@@ -21,11 +21,6 @@ namespace SplatTagCore
     private string? country;
 
     /// <summary>
-    /// Back-store for player's FCs.
-    /// </summary>
-    private readonly List<FriendCode> friendCodes = new List<FriendCode>();
-
-    /// <summary>
     /// Back-store for the names of this player. The this element is the current name.
     /// </summary>
     private readonly List<Name> names = new List<Name>();
@@ -36,6 +31,11 @@ namespace SplatTagCore
     private readonly List<PlusMembership> plusMembership = new List<PlusMembership>();
 
     /// <summary>
+    /// Player's pronoun(s)
+    /// </summary>
+    private Pronoun? pronoun;
+
+    /// <summary>
     /// Back-store for the Sendou Profiles of this player.
     /// </summary>
     private readonly List<Sendou> sendouProfiles = new List<Sendou>();
@@ -44,12 +44,6 @@ namespace SplatTagCore
     /// Back-store for the skill of this player.
     /// </summary>
     private readonly Skill skill = new Skill();
-
-    /// <summary>
-    /// Back-store for the team GUIDs for this player. The this element is the current team.
-    /// No team represented by <see cref="Team.NoTeam.Id"/>.
-    /// </summary>
-    private readonly List<Guid> teams = new List<Guid>();
 
     /// <summary>
     /// Back-store for the Twitch Profiles of this player.
@@ -88,10 +82,10 @@ namespace SplatTagCore
     /// </summary>
     /// <param name="ign"></param>
     /// <param name="source"></param>
-    public Player(string ign, IEnumerable<Guid> teams, Source source)
+    public Player(string ign, IList<Guid> teams, Source source)
     {
       this.names.Add(new Name(ign, source));
-      this.teams.AddRange(teams);
+      this.TeamInformation.Add(teams, source);
     }
 
     /// <summary>
@@ -142,7 +136,12 @@ namespace SplatTagCore
     /// <summary>
     /// The current team id this player plays for, or <see cref="Team.NoTeam.Id"/> if not set.
     /// </summary>
-    public Guid CurrentTeam => teams.Count > 0 ? teams[0] : Team.NoTeam.Id;
+    public Guid CurrentTeam => TeamInformation.CurrentTeam ?? Team.NoTeam.Id;
+
+    /// <summary>
+    /// Get the information regarding teams for this player.
+    /// </summary>
+    public TeamsHandler TeamInformation { get; } = new TeamsHandler();
 
     /// <summary>
     /// Get the player's Discord profile details.
@@ -160,9 +159,9 @@ namespace SplatTagCore
     public IReadOnlyList<Name> DiscordNames => Discord.Usernames;
 
     /// <summary>
-    /// The known Friend Codes of the player.
+    /// Get the information regarding the friend codes for this player.
     /// </summary>
-    public IReadOnlyList<FriendCode> FriendCodes => friendCodes;
+    public FriendCodesHandler FCInformation { get; } = new FriendCodesHandler();
 
     /// <summary>
     /// The last known used name for the player
@@ -175,9 +174,9 @@ namespace SplatTagCore
     public IReadOnlyList<Name> Names => names;
 
     /// <summary>
-    /// Any names (social or IGN) this player is known by.
+    /// Any names (social or IGN) this player is known by; does NOT include Battlefy.
     /// </summary>
-    public IReadOnlyList<Name> AllKnownNames => new List<Name>(names.Concat(sendouProfiles).Concat(Discord.AllNames).Concat(Battlefy.AllNames).Concat(twitchProfiles).Concat(twitterProfiles).Distinct());
+    public IReadOnlyList<Name> AllKnownNames => new List<Name>(names.Concat(sendouProfiles).Concat(Discord.AllNames).Concat(twitchProfiles).Concat(twitterProfiles).Distinct());
 
     /// <summary>
     /// Get the player's Sendou profile details.
@@ -191,6 +190,7 @@ namespace SplatTagCore
       .Concat(twitterProfiles.SelectMany(s => s.Sources))
       .Concat(Battlefy.PersistentIds.SelectMany(s => s.Sources))
       .Concat(Discord.Usernames.SelectMany(s => s.Sources))
+      .Concat(pronoun?.Sources ?? Array.Empty<Source>())
       .Distinct()
       .OrderByDescending(s => s)
       .ToList()
@@ -201,12 +201,6 @@ namespace SplatTagCore
     /// Null by default.
     /// </summary>
     public string? SplatnetId { get; set; }
-
-    /// <summary>
-    /// The teams this player is played for.
-    /// No Team represented by <see cref="Team.NoTeam.Id"/>
-    /// </summary>
-    public IReadOnlyList<Guid> Teams => teams;
 
     /// <summary>
     /// Get or Set Top 500 flag.
@@ -281,14 +275,11 @@ namespace SplatTagCore
       // AddName(discordNameIncludingDiscrim.Split('#')[0], source);
     }
 
-    public void AddFCs(IEnumerable<FriendCode> value)
-    {
-      if (value != null)
-      {
-        value = value.Where(fc => fc != FriendCode.NO_FRIEND_CODE);
-        SplatTagCommon.InsertFrontUnique(value, friendCodes);
-      }
-    }
+    public void AddFCs(FriendCode value, Source source) => FCInformation.Add(value, source);
+
+    public void AddFCs(IList<FriendCode> value, Source source) => FCInformation.Add(value, source);
+
+    public void AddFCs(FriendCodesHandler value) => FCInformation.Merge(value);
 
     public void AddName(string name, Source source)
     {
@@ -298,6 +289,21 @@ namespace SplatTagCore
     public void AddNames(IEnumerable<Name> value)
     {
       SplatTagCommon.AddNames(value, names);
+    }
+
+    /// <summary>
+    /// Conditionally set the pronouns of this player.
+    /// If NONE is returned from the searcher, it is not set.
+    /// Returns the Pronoun object set (or null).
+    /// </summary>
+    public Pronoun? SetPronoun(string description, Source source)
+    {
+      var incoming = new Pronoun(description, source);
+      if (incoming.value != PronounFlags.NONE)
+      {
+        this.pronoun = incoming;
+      }
+      return this.pronoun;
     }
 
     public void AddPlusServerMembership(int? plusLevel, Source source)
@@ -320,10 +326,11 @@ namespace SplatTagCore
       SplatTagCommon.AddNames(value, sendouProfiles);
     }
 
-    public void AddTeams(IEnumerable<Guid> value)
-    {
-      SplatTagCommon.InsertFrontUnique(value, teams);
-    }
+    public void AddTeams(Guid value, Source source) => TeamInformation.Add(value, source);
+
+    public void AddTeams(IList<Guid> value, Source source) => TeamInformation.Add(value, source);
+
+    public void AddTeams(TeamsHandler value) => TeamInformation.Merge(value);
 
     public void AddTwitch(string handle, Source source)
     {
@@ -351,62 +358,6 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Correct the team ids for this player given a merge result (containing old id --> the replacement id)
-    /// Returns if any work was done.
-    /// </summary>
-    public bool CorrectTeamIds(IDictionary<Guid, Guid> teamsMergeResult)
-    {
-      // Simple cases
-      if (teams.Count == 0)
-      {
-        return false;
-      }
-      else if (teams.Count == 1)
-      {
-        if (teamsMergeResult.ContainsKey(teams[0]))
-        {
-          teams[0] = teamsMergeResult[teams[0]];
-          return true;
-        }
-        else
-        {
-          return false;
-        }
-      }
-      // Otherwise, for each team, correct the team id and de-dupe.
-      else
-      {
-        bool workDone = false;
-        var result = new HashSet<Guid>();
-
-        foreach (var id in teams)
-        {
-          // If the merge result has this id changed
-          if (teamsMergeResult.ContainsKey(id))
-          {
-            // Add the updated id (if not already present).
-            result.Add(teamsMergeResult[id]);
-            workDone = true;
-          }
-          else
-          {
-            // Otherwise take the previous id and add it (if not already present).
-            result.Add(id);
-          }
-        }
-
-        // Set our team ids if any changes were made.
-        if (workDone)
-        {
-          teams.Clear();
-          teams.AddRange(result);
-        }
-
-        return workDone;
-      }
-    }
-
-    /// <summary>
     /// Merge this player with another (newer) player instance
     /// </summary>
     /// <param name="newerPlayer">The new import record</param>
@@ -417,7 +368,7 @@ namespace SplatTagCore
       if (ReferenceEquals(this, newerPlayer)) return;
 
       // Merge the teams.
-      AddTeams(newerPlayer.teams);
+      AddTeams(newerPlayer.TeamInformation);
 
       // Merge the player's name(s).
       AddNames(newerPlayer.names);
@@ -438,7 +389,7 @@ namespace SplatTagCore
       AddTwitter(newerPlayer.twitterProfiles);
 
       // Merge the misc data
-      AddFCs(newerPlayer.friendCodes);
+      AddFCs(newerPlayer.FCInformation);
 
       if (!string.IsNullOrWhiteSpace(newerPlayer.Country))
       {
@@ -449,12 +400,16 @@ namespace SplatTagCore
       {
         this.Top500 = true;
       }
+
+      if (newerPlayer.pronoun != null)
+      {
+        this.pronoun = newerPlayer.pronoun;
+      }
     }
 
     /// <summary>
-    /// Overridden ToString.
+    /// Overridden ToString, returns the player's name.
     /// </summary>
-    /// <returns></returns>
     public override string ToString()
     {
       return Name.Value;
@@ -468,14 +423,15 @@ namespace SplatTagCore
       AddBattlefy(info.GetValueOrDefault("Battlefy", new Battlefy()));
       this.Country = info.GetValueOrDefault("Country", default(string));
       AddDiscord(info.GetValueOrDefault("Discord", new Discord()));
-      AddFCs(info.GetValueOrDefault("FCs", Array.Empty<FriendCode>()));
+      AddFCs(info.GetValueOrDefault("FCs", new FriendCodesHandler()));
       AddNames(info.GetValueOrDefault("N", Array.Empty<Name>()));
       AddPlusServerMembership(info.GetValueOrDefault("Plus", Array.Empty<PlusMembership>()));
+      this.pronoun = info.GetValueOrDefault("Pro", (Pronoun?)null);
       AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
 
       Skill[] skills = info.GetValueOrDefault("Skill", Array.Empty<Skill>());
       this.skill = skills.Length == 1 ? skills[0] : new Skill();
-      AddTeams(info.GetValueOrDefault("Teams", Array.Empty<Guid>()));
+      AddTeams(info.GetValueOrDefault("Teams", new TeamsHandler()));
       this.Top500 = info.GetValueOrDefault("Top500", false);
       AddTwitch(info.GetValueOrDefault("Twitch", Array.Empty<Twitch>()));
       AddTwitter(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
@@ -484,7 +440,7 @@ namespace SplatTagCore
       this.Id = info.GetValueOrDefault("Id", Guid.Empty);
       if (this.Id == Guid.Empty)
       {
-        throw new SerializationException("Guid cannot be empty for player: " + this.Name + " from source(s) [" + string.Join(", ", this.Sources) + "].");
+        throw new SerializationException($"Guid cannot be empty for player: {this.Name} from source(s) [{string.Join(", ", this.Sources)}].");
       }
     }
 
@@ -500,8 +456,8 @@ namespace SplatTagCore
       if (this.DiscordIds.Count > 0 || this.DiscordNames.Count > 0)
         info.AddValue("Discord", this.Discord);
 
-      if (this.friendCodes.Count > 0)
-        info.AddValue("FCs", this.friendCodes);
+      if (this.FCInformation.Count > 0)
+        info.AddValue("FCs", this.FCInformation);
 
       info.AddValue("Id", this.Id);
 
@@ -511,14 +467,17 @@ namespace SplatTagCore
       if (this.plusMembership.Count > 0)
         info.AddValue("Plus", this.plusMembership);
 
+      if (this.pronoun != null)
+        info.AddValue("Pro", this.pronoun);
+
       if (this.sendouProfiles.Count > 0)
         info.AddValue("Sendou", this.sendouProfiles);
 
       if (!this.skill.IsDefault)
         info.AddValue("Skill", this.skill);
 
-      if (this.teams.Count > 0)
-        info.AddValue("Teams", this.teams);
+      if (this.TeamInformation.Count > 0)
+        info.AddValue("Teams", this.TeamInformation);
 
       if (this.Top500)
         info.AddValue("Top500", this.Top500);
@@ -533,12 +492,14 @@ namespace SplatTagCore
         info.AddValue("Weapons", this.weapons);
     }
 
+    /*
     [OnDeserialized]
     private void OnDeserialization(StreamingContext context)
     {
       // Nothing to do yet - versioning information and compatibility may
       // go here in the future.
     }
+    */
 
     #endregion Serialization
   }

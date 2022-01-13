@@ -31,7 +31,7 @@ namespace SplatTagDatabase
       return this;
     }
 
-    public (Player[], Team[], Dictionary<Guid, Source>) Load()
+    public (Player[], Team[], Dictionary<string, Source>) Load()
     {
       // If we need to do our conversion first, do so now.
       List<IImporter> toLoad = new List<IImporter>();
@@ -51,13 +51,13 @@ namespace SplatTagDatabase
         else
         {
           Console.WriteLine("Nothing to load.");
-          return (Array.Empty<Player>(), Array.Empty<Team>(), new Dictionary<Guid, Source>());
+          return (Array.Empty<Player>(), Array.Empty<Team>(), new Dictionary<string, Source>());
         }
       }
 
       Console.WriteLine($"{nameof(MultiDatabase)}.{nameof(Load)} toLoad.Count={toLoad.Count}");
 
-      Dictionary<Guid, Source> databaseSources = new Dictionary<Guid, Source>();
+      Dictionary<string, Source> databaseSources = new Dictionary<string, Source>();
       List<Player> players = new List<Player>();
       List<Team> teams = new List<Team>();
 

@@ -11,63 +11,6 @@ namespace SplatTagCore
   {
     /// <summary>
     /// Add an object to the front of a list if it is not currently contained in the list.
-    /// Note that this does not affect sources.
-    /// </summary>
-    /// <typeparam name="T">The generic type</typeparam>
-    /// <param name="value">The object(s) to add</param>
-    /// <param name="privateList">The list to mutate</param>
-    internal static void InsertFrontUnique<T>(T value, List<T> privateList) where T : notnull
-    {
-      if (privateList.Count == 0)
-      {
-        // Shortcut, just set the value.
-        privateList.Add(value);
-      }
-      else
-      {
-        // If this item is already first, there's nothing to do.
-        if (!value.Equals(privateList[0]))
-        {
-          privateList.Remove(value); // If item isn't found, this just returns false.
-          privateList.Insert(0, value);
-        }
-      }
-    }
-
-    /// <summary>
-    /// Add objects to the front of a list if it is not currently contained in the list.
-    /// </summary>
-    /// <typeparam name="T">The generic type</typeparam>
-    /// <param name="value">The object(s) to add</param>
-    /// <param name="privateList">The list to mutate</param>
-    internal static void InsertFrontUnique<T>(IEnumerable<T> value, List<T> privateList) where T : notnull
-    {
-      if (privateList.Count == 0)
-      {
-        // Shortcut, just set the values.
-        value = value.Distinct();
-        privateList.AddRange(value);
-      }
-      else
-      {
-        // Iterates the other stack in reverse order so older objects are pushed first
-        // so the most recent end up first in the stack.
-        var reversed = value.Distinct().ToList();
-        reversed.Reverse();
-        foreach (var item in reversed)
-        {
-          // If this item is already first, there's nothing to do.
-          if (!item.Equals(privateList[0]))
-          {
-            privateList.Remove(item); // If the item isn't found, this just returns false.
-            privateList.Insert(0, item);
-          }
-        }
-      }
-    }
-
-    /// <summary>
-    /// Add an object to the front of a list if it is not currently contained in the list.
     /// Affects sources.
     /// </summary>
     /// <typeparam name="T">The generic type</typeparam>
@@ -126,16 +69,6 @@ namespace SplatTagCore
       {
         InsertFrontUniqueSourced(name, privateList);
       }
-    }
-
-    /// <summary>
-    /// Add sources to the list if not currently contained.
-    /// </summary>
-    /// <param name="value"></param>
-    /// <param name="privateList"></param>
-    internal static void AddSource(Source value, List<Source> privateList)
-    {
-      AddSources(value.AsEnumerable(), privateList);
     }
 
     /// <summary>
