@@ -188,6 +188,60 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Get the team's best division, or null if not known.
+    /// </summary>
+    /// <param name="lastNDivisions">Limit the search to this many divisions in most-recent chronological order (-1 = no limit)</param>
+    public Division? GetBestDiv(int lastNDivisions = -1)
+    {
+      if (DivisionInformation.CurrentDivision == null)
+      {
+        return null;
+      }
+      // else
+      var bestDiv = Division.Unknown;
+      IEnumerable<Division> divs;
+      if (lastNDivisions == -1)
+      {
+        divs = this.DivisionInformation.OrderedDivisions.Select(pair => pair.Key);
+      }
+      else
+      {
+        // Take is a limit operation (does not throw if limit > count)
+        divs = this.DivisionInformation.OrderedDivisions.Take(lastNDivisions).Select(pair => pair.Key);
+      }
+
+      foreach (var div in divs)
+      {
+        if (div < bestDiv)
+        {
+          bestDiv = div;
+        }
+      }
+      return bestDiv.IsUnknown ? null : bestDiv;
+    }
+
+    public static Team? GetBestTeamByDiv(IEnumerable<Team> teams)
+    {
+      if (teams?.Any() != true)
+      {
+        return null;
+      }
+
+      Team? bestTeam = null;
+      var currentHighestDiv = Division.Unknown;
+      foreach (var team in teams)
+      {
+        var currentDiv = team.GetBestDiv();
+        if (currentDiv != null && currentDiv < currentHighestDiv)
+        {
+          currentHighestDiv = currentDiv;
+          bestTeam = team;
+        }
+      }
+      return bestTeam;
+    }
+
+    /// <summary>
     /// Merge this team with another (newer) team instance
     /// </summary>
     public void Merge(Team newerTeam)

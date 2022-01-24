@@ -129,7 +129,7 @@ namespace SplatTagCore
     /// </summary>
     public Player[] MatchPlayer(string? query, MatchOptions matchOptions, ICollection<Player> playersToSearch)
     {
-      if (query == null || query == string.Empty)
+      if (string.IsNullOrEmpty(query))
       {
         return playersToSearch.ToArray();
       }

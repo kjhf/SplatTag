@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -71,23 +70,8 @@ namespace SplatTagConsole
       if (args.Length > 0)
       {
         var rootCommand = new RootCommand();
-        var command = new Command("Slapp", "Slapp Query")
-        {
-          new Option<string>("--b64", "The team, tag, or player query as a base 64 query"),
-          new Option<string>("--query", "The team, tag, or player query"),
-          new Option<string>("--slappId", "The team or player as an internal Slapp Id"),
-          new Option<bool>("--exactCase", () => false, "Exact Case?"),
-          new Option<bool>("--exactCharacterRecognition", () => false, "Exact Character Recognition?"),
-          new Option<bool>("--queryIsRegex", () => false, "Exact Character Recognition?"),
-          new Option<string>("--rebuild", "Rebuilds the database"),
-          new Option<string>("--patch", "Patches the database with new sources"),
-          new Option<bool>("--keepOpen", () => false, "Keep the console open?"),
-          new Option<int>("--limit", () => 20, "The number of results, maximum, to retrieve. Default 20."),
-          new Option<bool>("--verbose", () => false, "Verbose output"),
-          new Option<bool>("--queryIsClanTag", () => false, "The specified query is a Clan Tag?"),
-          new Option<bool>("--queryIsTeam", () => false, "The specified query is a Team"),
-          new Option<bool>("--queryIsPlayer", () => false, "The specified query is a Player"),
-        };
+        var command = new Command("Slapp", "Slapp Query");
+        Array.ForEach(GetOptions(), o => command.AddGlobalOption(o));
         rootCommand.Add(command);
 
         // Note that the parameter names must match the --option name
@@ -100,12 +84,12 @@ namespace SplatTagConsole
             obj.SlappId,
             obj.ExactCase,
             obj.ExactCharacterRecognition,
-            obj.QueryIsRegex,
             obj.Rebuild,
             obj.Patch,
             obj.KeepOpen,
             obj.Limit,
             obj.Verbose,
+            obj.QueryIsRegex,
             obj.QueryIsClanTag,
             obj.QueryIsTeam,
             obj.QueryIsPlayer);
@@ -178,12 +162,12 @@ namespace SplatTagConsole
       string? slappId,
       bool exactCase,
       bool exactCharacterRecognition,
-      bool queryIsRegex,
       string? rebuild,
       string? patch,
       bool keepOpen,
       int limit,
       bool verbose,
+      bool queryIsRegex,
       bool queryIsClanTag,
       bool queryIsTeam,
       bool queryIsPlayer)
@@ -485,6 +469,22 @@ namespace SplatTagConsole
           splatTagController.LoadDatabase();
         }
       }
+    }
+
+    private static Option[] GetOptions()
+    {
+      List<Option> options = new List<Option>();
+      foreach (var (optionType, flagName, description, getDefaultValue) in ConsoleOptions.GetOptionsAsTuple())
+      {
+        var arg = new Argument { ArgumentType = optionType };
+        if (getDefaultValue != null)
+        {
+          arg.SetDefaultValueFactory(getDefaultValue);
+        }
+        var option = new Option(flagName, description) { Argument = arg };
+        options.Add(option);
+      }
+      return options.ToArray();
     }
   }
 }

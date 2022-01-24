@@ -166,6 +166,16 @@ namespace SplatTagCore
       return !outFriendCode.NoCode;
     }
 
+    /// <summary>
+    /// Take a string and parse a friend code from it, returning it or null.
+    /// </summary>
+    /// <param name="value">The string to search</param>
+    public static FriendCode? Parse(string value)
+    {
+      var (result, _) = ParseAndStripFriendCode(value);
+      return result.NoCode ? null : result;
+    }
+
     public void Add(short item)
     {
       throw new InvalidOperationException();
