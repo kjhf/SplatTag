@@ -177,7 +177,7 @@ namespace SplatTagCore
     public IReadOnlyDictionary<Guid, IReadOnlyList<Source>> GetTeamsSourcedUnordered()
     {
       if (mostRecentTeam == null) return new Dictionary<Guid, IReadOnlyList<Source>>();
-      return (IReadOnlyDictionary<Guid, IReadOnlyList<Source>>)teams.ToDictionary(pair => pair.Key, pair => pair.Value.AsReadOnly());
+      return teams.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<Source>)pair.Value.AsReadOnly());
     }
 
     /// <summary>

@@ -68,7 +68,7 @@ namespace SplatTagCore
     /// <summary>
     /// The last known Battlefy Persistent Ids of the team.
     /// </summary>
-    public Name? BattlefyPersistentTeamId => battlefyPersistentTeamIds.Count > 0 ? battlefyPersistentTeamIds[0] : null;
+    public BattlefyTeamSocial? BattlefyPersistentTeamId => battlefyPersistentTeamIds.Count > 0 ? battlefyPersistentTeamIds[0] : null;
 
     /// <summary>
     /// The known Battlefy Persistent Ids of the team.
@@ -159,25 +159,13 @@ namespace SplatTagCore
 
     public void AddDivisions(DivisionsHandler value) => DivisionInformation.Merge(value);
 
-    public void AddName(string name, Source source)
-    {
-      SplatTagCommon.AddName(new Name(name, source), names);
-    }
+    public void AddName(string name, Source source) => SplatTagCommon.AddName(new Name(name, source), names);
 
-    public void AddNames(IEnumerable<Name> value)
-    {
-      SplatTagCommon.AddNames(value, names);
-    }
+    public void AddNames(IEnumerable<Name> value) => SplatTagCommon.AddNames(value, names);
 
-    public Twitter AddTwitter(string handle, Source source)
-    {
-      return SplatTagCommon.AddName(new Twitter(handle, source), twitterProfiles);
-    }
+    public Twitter AddTwitter(string handle, Source source) => SplatTagCommon.AddName(new Twitter(handle, source), twitterProfiles);
 
-    public void AddTwitterProfiles(IEnumerable<Twitter> value)
-    {
-      SplatTagCommon.AddNames(value, twitterProfiles);
-    }
+    public void AddTwitterProfiles(IEnumerable<Twitter> value) => SplatTagCommon.AddNames(value, twitterProfiles);
 
     /// <summary>
     /// Filter all players to return only those in this team.

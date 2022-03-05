@@ -42,6 +42,11 @@ namespace SplatTagCore
     public static int Count(this string s, string other) => Regex.Matches(s, Regex.Escape(other)).Count;
 
     /// <summary>
+    /// Get the number of times a string contains a character.
+    /// </summary>
+    public static int Count(this string s, char other) => s.Count(c => c == other);
+
+    /// <summary>
     /// Searches for an element that matches the conditions defined by the specified
     /// predicate, and returns the first occurrence within the entire List.
     /// </summary>

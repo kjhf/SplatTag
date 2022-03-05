@@ -297,7 +297,7 @@ namespace SplatTagCore
       }
       else
       {
-        stringComparison ??= StringComparer.Ordinal;
+        stringComparison ??= StringComparer.OrdinalIgnoreCase;
 
         if (firstCount == 1 && secondCount == 1)
         {

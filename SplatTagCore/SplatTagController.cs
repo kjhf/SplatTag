@@ -18,14 +18,15 @@ namespace SplatTagCore
     /// </summary>
     public static bool Verbose { get; set; }
 
-    private readonly ISplatTagDatabase database;
+    private readonly ISplatTagDatabase? database;
     private Player[] players;
     private Dictionary<Guid, Team> teams;
     private Dictionary<string, Source> sources;
     private Task? cachingTask;
     private readonly ConcurrentDictionary<Team, (Player, bool)[]> playersForTeam;
+    public bool CachingDone => cachingTask?.IsCompleted == true;
 
-    public SplatTagController(ISplatTagDatabase database)
+    public SplatTagController(ISplatTagDatabase? database = null)
     {
       Console.WriteLine("Creating SplatTagController. Debugger.IsAttached=" + Debugger.IsAttached);
 #if DEBUG
@@ -49,6 +50,14 @@ namespace SplatTagCore
     public void LoadDatabase()
     {
       Console.WriteLine("Loading Database... ");
+
+      if (database == null)
+      {
+        Console.Error.WriteLine($"ERROR: No database attached to this {nameof(SplatTagController)}.");
+        Console.WriteLine("... nothing loaded.");
+        return;
+      }
+
       var start = DateTime.Now;
       var (loadedPlayers, loadedTeams, loadedSources) = database.Load();
       if (loadedPlayers == null || loadedTeams == null)
@@ -89,10 +98,10 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Get all players associated with a team.
-    /// The tuple represents the Player and if they are a current player of the team (true) or not (false).
+    /// Get the players that played on team <paramref name="t"/>, as a list of tuples, containing the player and if
+    /// that player still plays for the team (true) or is no longer the most recent team (false).
     /// </summary>
-    public (Player, bool)[] GetPlayersForTeam(Team t)
+    public IReadOnlyList<(Player player, bool mostRecent)> GetPlayersForTeam(Team t)
     {
       if (cachingTask?.IsCompleted == true)
       {
@@ -709,19 +718,32 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Match a <see cref="Team"/> by its id.
-    /// Returns <see cref="Team.UnlinkedTeam"/> if not found.
+    /// Match a Team by its id.
     /// </summary>
+    /// <returns>
+    /// Non-null team, which defaults to <see cref="Team.UnlinkedTeam"/> if not found.
+    /// </returns>
     public Team GetTeamById(Guid id)
     {
-      if (id == Team.NoTeam.Id)
-      {
-        return Team.NoTeam;
-      }
-      return teams.ContainsKey(id) ? teams[id] : Team.UnlinkedTeam;
+      return (id == Team.NoTeam.Id) ? Team.NoTeam :
+        (teams.TryGetValue(id, out Team team) ? team :
+        Team.UnlinkedTeam);
     }
 
-    /// <summary> Launch an address in a separate internet browser. </summary>
+    /// <summary>
+    /// Match a <see cref="Team"/> by its id.
+    /// Sets <paramref name="team"/> to <see cref="Team.UnlinkedTeam"/> if not found.
+    /// Returns if team returns is not the unlinked team (was found).
+    /// </summary>
+    public bool GetTeamById(Guid id, out Team team)
+    {
+      team = GetTeamById(id);
+      return !team.Equals(Team.UnlinkedTeam);
+    }
+
+    /// <summary>
+    /// Launch an address in a separate internet browser.
+    /// </summary>
     public bool TryLaunchAddress(string? link)
     {
       if (!string.IsNullOrEmpty(link))

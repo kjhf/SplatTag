@@ -26,7 +26,7 @@ namespace SplatTagCore
     private readonly List<Name> names = new List<Name>();
 
     /// <summary>
-    /// Back-store for the names of this player. The this element is the current name.
+    /// Back-store for the plus membership this player belongs to.
     /// </summary>
     private readonly List<PlusMembership> plusMembership = new List<PlusMembership>();
 
@@ -39,11 +39,6 @@ namespace SplatTagCore
     /// Back-store for the Sendou Profiles of this player.
     /// </summary>
     private readonly List<Sendou> sendouProfiles = new List<Sendou>();
-
-    /// <summary>
-    /// Back-store for the skill of this player.
-    /// </summary>
-    private readonly Skill skill = new Skill();
 
     /// <summary>
     /// Back-store for the Twitch Profiles of this player.
@@ -179,18 +174,30 @@ namespace SplatTagCore
     public IReadOnlyList<Name> AllKnownNames => new List<Name>(names.Concat(sendouProfiles).Concat(Discord.AllNames).Concat(twitchProfiles).Concat(twitterProfiles).Distinct());
 
     /// <summary>
+    /// The plus membership(s) this player belongs to.
+    /// </summary>
+    public IReadOnlyList<PlusMembership> PlusMembership => plusMembership;
+
+    /// <summary>
     /// Get the player's Sendou profile details.
     /// </summary>
     public IReadOnlyList<Sendou> SendouProfiles => sendouProfiles;
 
+    /// <summary>
+    /// Get the player's Skill/clout.
+    /// </summary>
+    public Skill Skill { get; } = new Skill();
+
     public IReadOnlyList<Source> Sources =>
       names.SelectMany(n => n.Sources)
+      .Concat(Battlefy.PersistentIds.SelectMany(s => s.Sources))
+      .Concat(Discord.Usernames.SelectMany(s => s.Sources))
+      .Concat(FCInformation.Sources)
+      .Concat(plusMembership.SelectMany(s => s.Sources))
+      .Concat(pronoun?.Sources ?? Array.Empty<Source>())
       .Concat(sendouProfiles.SelectMany(s => s.Sources))
       .Concat(twitchProfiles.SelectMany(s => s.Sources))
       .Concat(twitterProfiles.SelectMany(s => s.Sources))
-      .Concat(Battlefy.PersistentIds.SelectMany(s => s.Sources))
-      .Concat(Discord.Usernames.SelectMany(s => s.Sources))
-      .Concat(pronoun?.Sources ?? Array.Empty<Source>())
       .Distinct()
       .OrderByDescending(s => s)
       .ToList()
@@ -430,7 +437,7 @@ namespace SplatTagCore
       AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
 
       Skill[] skills = info.GetValueOrDefault("Skill", Array.Empty<Skill>());
-      this.skill = skills.Length == 1 ? skills[0] : new Skill();
+      this.Skill = skills.Length == 1 ? skills[0] : new Skill();
       AddTeams(info.GetValueOrDefault("Teams", new TeamsHandler()));
       this.Top500 = info.GetValueOrDefault("Top500", false);
       AddTwitch(info.GetValueOrDefault("Twitch", Array.Empty<Twitch>()));
@@ -473,8 +480,8 @@ namespace SplatTagCore
       if (this.sendouProfiles.Count > 0)
         info.AddValue("Sendou", this.sendouProfiles);
 
-      if (!this.skill.IsDefault)
-        info.AddValue("Skill", this.skill);
+      if (!this.Skill.IsDefault)
+        info.AddValue("Skill", this.Skill);
 
       if (this.TeamInformation.Count > 0)
         info.AddValue("Teams", this.TeamInformation);

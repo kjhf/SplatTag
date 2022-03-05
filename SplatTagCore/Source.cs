@@ -1,12 +1,71 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Source : ISerializable, ITeamResolver, IComparable<Source>
+  public class Source : ISerializable, /*ITeamResolver,*/ IComparable<Source>, IEquatable<Source?>
   {
+    private static readonly Regex TOURNAMENT_ID_REGEX = new("-+([0-9a-fA-F]{18,})$");
+
+    private string? battlefyId;
+    private string? strippedTournamentName;
+
+    /// <summary>
+    /// Construct a source with a name and optional date.
+    /// Date will be inferred if not specified, or set to Builtins.UnknownDateTime.
+    /// </summary>
+    public Source(string name = Builtins.UNKNOWN_SOURCE, DateTime? start = null)
+    {
+      Name = name;
+
+      int dataStrLength = "yyyy-mm-dd-".Length;
+      if (Name.Length > dataStrLength && Name.Count('-') > 2)
+      {
+        var dateStr = Name.Substring(0, dataStrLength).Trim('-');
+
+        // If start wasn't specified, set from the name.
+        if (start == null && DateTime.TryParse(dateStr, out var temp))
+        {
+          start = temp;
+        }
+      }
+
+      Start = start ?? Builtins.UnknownDateTime;
+    }
+
+    /// <summary>
+    /// The Battlefy Id, if applicable.
+    /// </summary>
+    public string? BattlefyId
+    {
+      get
+      {
+        if (battlefyId == null)
+        {
+          LazyCalculateSourceName();
+        }
+        return battlefyId?.Length == 0 ? null : battlefyId;
+      }
+    }
+
+    /// <summary>
+    /// Get the Battlefy URL for this tournament, if it has a battlefy id associated with it.
+    /// </summary>
+    public string? BattlefyUri
+    {
+      get
+      {
+        if (battlefyId == null)
+        {
+          LazyCalculateSourceName();
+        }
+        return battlefyId?.Length == 0 ? null : $"https://battlefy.com/_/_/{BattlefyId}/info";
+      }
+    }
+
     /// <summary>
     /// The brackets that make up the source.
     /// </summary>
@@ -18,7 +77,7 @@ namespace SplatTagCore
     public string Id => Name;
 
     /// <summary>
-    /// The friendly name for the source
+    /// The filename for the source
     /// </summary>
     public string Name { get; }
 
@@ -36,6 +95,21 @@ namespace SplatTagCore
     public DateTime Start { get; set; }
 
     /// <summary>
+    /// Get the stripped tournament name, which excludes the id and date.
+    /// </summary>
+    public string StrippedTournamentName
+    {
+      get
+      {
+        if (strippedTournamentName == null)
+        {
+          LazyCalculateSourceName();
+        }
+        return strippedTournamentName!;
+      }
+    }
+
+    /// <summary>
     /// The teams that this source represents
     /// e.g. all teams that have signed up to this tournament
     /// </summary>
@@ -47,46 +121,98 @@ namespace SplatTagCore
     public Uri[] Uris { get; set; } = Array.Empty<Uri>();
 
     /// <summary>
-    /// Construct a source with a name and optional date.
-    /// Date will be inferred if not specified, or set to Builtins.UnknownDateTime.
-    /// </summary>
-    public Source(string name = Builtins.UNKNOWN_SOURCE, DateTime? start = null)
-    {
-      Name = name;
-      if (start == null && name.Length > "yyyy-mm-dd".Length)
-      {
-        string dateStr = name.Substring(0, "yyyy-mm-dd".Length);
-        if (DateTime.TryParse(dateStr, out var temp))
-        {
-          start = temp;
-        }
-      }
-
-      Start = start ?? Builtins.UnknownDateTime;
-    }
-
-    /// <summary>
     /// Compare start time to another Source's start time.
     /// 0 is same, &lt; 0 is earlier, &gt; 0 is later.
     /// </summary>
     public int CompareTo(Source other) => Start.CompareTo(other.Start);
 
-    /// <summary>
-    /// Match a Team by its id.
-    /// Returns <see cref="Team.UnlinkedTeam"/> if not found.
-    /// </summary>
-    public Team GetTeamById(Guid id)
-    {
-      if (id == Team.NoTeam.Id)
-      {
-        return Team.NoTeam;
-      }
-      return Array.Find(Teams, t => t.Id == id) ?? Team.UnlinkedTeam;
-    }
+    ///// <summary>
+    ///// Match a <see cref="Team"/> by its id.
+    ///// Sets <paramref name="team"/> to <see cref="Team.UnlinkedTeam"/> if not found.
+    ///// </summary>
+    //public bool GetTeamById(Guid id, out Team team)
+    //{
+    //  if (id == Team.NoTeam.Id)
+    //  {
+    //    team = Team.NoTeam;
+    //    return true;
+    //  }
+
+    //  var findResult = Array.Find(Teams, t => t.Id == id);
+    //  if (findResult != null)
+    //  {
+    //    team = findResult;
+    //    return true;
+    //  }
+    //  else
+    //  {
+    //    team = Team.UnlinkedTeam;
+    //    return false;
+    //  }
+    //}
+
+    ///// <summary>
+    ///// Match a Team by its id.
+    ///// </summary>
+    ///// <returns>
+    ///// Non-null team, which defaults to <see cref="Team.UnlinkedTeam"/> if not found.
+    ///// </returns>
+    //public Team GetTeamById(Guid id)
+    //{
+    //  GetTeamById(id, out Team team);
+    //  return team;
+    //}
 
     public override string ToString()
     {
       return Name ?? base.ToString();
+    }
+
+    private void LazyCalculateSourceName()
+    {
+      int dataStrLength = "yyyy-mm-dd-".Length;
+      if (Name.Length > dataStrLength && Name.Count('-') > 2)
+      {
+        strippedTournamentName = Name.Substring(dataStrLength).Trim('-');
+      }
+      else
+      {
+        strippedTournamentName = Name;
+      }
+
+      // Too many tourneys have this at the start of the name and it's completely redundant and screws up the grouping majority calc.
+      if (strippedTournamentName.StartsWith("splatoon-2-"))
+      {
+        strippedTournamentName = strippedTournamentName["splatoon-2-".Length..];
+      }
+
+      var idAtNameEndMatch = TOURNAMENT_ID_REGEX.Match(Name);
+      if (idAtNameEndMatch.Success)
+      {
+        // We always want to grab the last match as the id is at the end of the source name.
+        battlefyId = idAtNameEndMatch.Groups[^1].Value;
+        strippedTournamentName = strippedTournamentName.Substring(0, TOURNAMENT_ID_REGEX.Match(strippedTournamentName).Index);
+      }
+      else
+      {
+        battlefyId = "";
+      }
+    }
+
+    public override bool Equals(object? obj)
+    {
+      return Equals(obj as Source);
+    }
+
+    public bool Equals(Source? other)
+    {
+      return other != null &&
+             Id == other.Id;
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCode.Combine(Id);
     }
 
     #region Serialization
@@ -103,27 +229,6 @@ namespace SplatTagCore
     }
 
     // Serialize
-
-    public class GuidToSourceConverter
-    {
-      private readonly Dictionary<string, Source> lookup;
-
-      public GuidToSourceConverter(Dictionary<string, Source> lookup)
-      {
-        this.lookup = lookup;
-      }
-
-      public IEnumerable<Source> Convert(IEnumerable<string> names)
-      {
-        foreach (var id in names)
-          yield return Convert(id);
-      }
-
-      public Source Convert(string name)
-      {
-        return lookup.ContainsKey(name) ? lookup[name] : Builtins.BuiltinSource;
-      }
-    }
 
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
@@ -144,6 +249,27 @@ namespace SplatTagCore
 
       if (this.Uris.Length > 0)
         info.AddValue("Uris", this.Uris);
+    }
+
+    public class GuidToSourceConverter
+    {
+      private readonly Dictionary<string, Source> lookup;
+
+      public GuidToSourceConverter(Dictionary<string, Source> lookup)
+      {
+        this.lookup = lookup;
+      }
+
+      public IEnumerable<Source> Convert(IEnumerable<string> names)
+      {
+        foreach (var id in names)
+          yield return Convert(id);
+      }
+
+      public Source Convert(string name)
+      {
+        return lookup.ContainsKey(name) ? lookup[name] : Builtins.BuiltinSource;
+      }
     }
 
     #endregion Serialization

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
@@ -83,6 +84,9 @@ namespace SplatTagDatabase
       try
       {
         WinApi.TryTimeBeginPeriod(1);
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
 
         // Invoked from command line
         if (JsonConvert.DefaultSettings == null)
@@ -105,17 +109,20 @@ namespace SplatTagDatabase
         var settings = JsonConvert.DefaultSettings();
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading sourcesSnapshotFile from {sourcesSnapshotFile}... ");
-        Source[] sources = LoadSnapshot<Source>(sourcesSnapshotFile, settings);
+        Source[] sources = LoadSnapshot<Source>(sourcesSnapshotFile, settings, capacityHint: 1024);
         var lookup = sources.ToDictionary(s => s.Id, s => s);
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {lookup.Count} sources transformed. ");
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {lookup.Count} sources transformed.");
         GC.Collect();
+        GC.WaitForPendingFinalizers();
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading playersSnapshotFile from {playersSnapshotFile}... ");
         settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
-        Player[] players = LoadSnapshot<Player>(playersSnapshotFile, settings);
+        Player[] players = LoadSnapshot<Player>(playersSnapshotFile, settings, capacityHint: 65536);
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {players.Length} players loaded.");
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading teamsSnapshotFile from {teamsSnapshotFile}... ");
-        Team[] teams = LoadSnapshot<Team>(teamsSnapshotFile, settings);
+        Team[] teams = LoadSnapshot<Team>(teamsSnapshotFile, settings, capacityHint: 16384);
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {teams.Length} teams loaded.");
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
         return (players, teams, lookup);
@@ -128,19 +135,19 @@ namespace SplatTagDatabase
       }
       finally
       {
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.Default;
         WinApi.TryTimeEndPeriod(1);
       }
     }
 
-    private static T[] LoadSnapshot<T>(string filePath, JsonSerializerSettings settings) where T : class
+    private static T[] LoadSnapshot<T>(string filePath, JsonSerializerSettings settings, int capacityHint) where T : class
     {
-      List<T> result = new List<T>();
+      List<T> result = new List<T>(capacityHint);
+      var serializer = JsonSerializer.Create(settings);
       using (StreamReader file = File.OpenText(filePath))
       using (JsonTextReader reader = new JsonTextReader(file))
       {
-        reader.SupportMultipleContent = true;
-
-        var serializer = JsonSerializer.Create(settings);
+        // reader.SupportMultipleContent = true;
         while (reader.Read())
         {
           if (reader.TokenType == JsonToken.StartObject)

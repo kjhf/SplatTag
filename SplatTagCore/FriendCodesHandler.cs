@@ -6,12 +6,14 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class FriendCodesHandler : ISerializable
+  public class FriendCodesHandler : ISerializable, IReadonlySourceable
   {
     /// <summary>
     /// Back-store for the friend codes
     /// </summary>
     private readonly Dictionary<FriendCode, List<Source>> codes = new();
+
+    public IReadOnlyList<Source> Sources => codes.Values.SelectMany(x => x).Distinct().ToList();
 
     public FriendCodesHandler()
     {

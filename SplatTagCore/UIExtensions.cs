@@ -15,21 +15,21 @@ namespace SplatTagCore
       return controller.GetPlayersForTeam(t).Select(tuple => tuple.Item1.Name + " " + (tuple.Item2 ? "(Current)" : "(Ex)")).ToArray();
     }
 
-    public static string GetBestTeamPlayerDivString(this Team t, SplatTagController splatTagController)
+    public static string GetBestTeamPlayerDivString(this Team t, ITeamResolver splatTagController)
     {
-      (Player, bool)[] playersForTeam = splatTagController.GetPlayersForTeam(t);
+      var playersForTeam = splatTagController.GetPlayersForTeam(t);
       Division highestDiv = t.CurrentDiv;
       Player? bestPlayer = null;
-      foreach ((Player, bool) pair in playersForTeam)
+      foreach (var (player, mostRecent) in playersForTeam)
       {
-        if (pair.Item2 && pair.Item1.TeamInformation.Count > 1)
+        if (mostRecent && player.TeamInformation.Count > 1)
         {
-          foreach (Team playerTeam in pair.Item1.TeamInformation.GetTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
+          foreach (Team playerTeam in player.TeamInformation.GetTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
           {
             if (playerTeam.CurrentDiv < highestDiv)
             {
               highestDiv = playerTeam.CurrentDiv;
-              bestPlayer = pair.Item1;
+              bestPlayer = player;
             }
           }
         }
