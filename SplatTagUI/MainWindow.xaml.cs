@@ -114,7 +114,7 @@ namespace SplatTagUI
       searchInput.Focus();
     }
 
-    private void TimerExpired(object state)
+    private void TimerExpired(object? state)
     {
       this.context?.Post((_) => Search(), this);
     }
@@ -325,7 +325,7 @@ namespace SplatTagUI
       IEnumerable<Team> oldTeams;
       if (value is Player p)
       {
-        oldTeams = p.TeamInformation.GetOldTeamsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
+        oldTeams = p.TeamInformation.GetOldItemsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
       }
       else if (value is IEnumerable<Team> t)
       {
@@ -414,9 +414,10 @@ namespace SplatTagUI
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
       string separator = ", ";
-      if (parameter != null)
+      string? pString = parameter?.ToString();
+      if (pString != null)
       {
-        separator = parameter.ToString();
+        separator = pString;
       }
 
       if (value is string[] values1)
@@ -504,7 +505,7 @@ namespace SplatTagUI
           }
           string separator = (count > MAX_ELEMENTS_UNTIL_LINE_BREAKS) ? "\n" : ", ";
 
-          var oldTeams = teams.GetOldTeamsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id));
+          var oldTeams = teams.GetOldItemsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id));
           fieldVal = string.Join(separator, oldTeams);
         }
         else
@@ -521,7 +522,7 @@ namespace SplatTagUI
             fieldVal = string.Join(separator, objects);
           }
         }
-        tuples.Add(new Tuple<string, string>(fieldName, fieldVal.ToString()));
+        tuples.Add(new Tuple<string, string>(fieldName, fieldVal?.ToString() ?? "<null>"));
       }
       return tuples;
     }
