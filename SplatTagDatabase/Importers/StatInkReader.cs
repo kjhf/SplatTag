@@ -614,14 +614,14 @@ namespace SplatTagDatabase.Importers
     {
       public override bool CanConvert(Type t) => t == typeof(long) || t == typeof(long?);
 
-      public override object? ReadJson(JsonReader reader, Type t, object existingValue, JsonSerializer serializer)
+      public override object? ReadJson(JsonReader reader, Type t, object? existingValue, JsonSerializer serializer)
       {
         if (reader.TokenType == JsonToken.Null) return null;
         var value = serializer.Deserialize<string>(reader);
         return long.Parse(value);
       }
 
-      public override void WriteJson(JsonWriter writer, object untypedValue, JsonSerializer serializer)
+      public override void WriteJson(JsonWriter writer, object? untypedValue, JsonSerializer serializer)
       {
         if (untypedValue == null)
         {
@@ -644,17 +644,28 @@ namespace SplatTagDatabase.Importers
       this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
     }
 
+    public override bool Equals(object? obj)
+    {
+      return obj is StatInkReader reader &&
+             source.Equals(reader.source);
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCode.Combine(nameof(StatInkReader), source);
+    }
+
     public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
-      StatInkRoot root = JsonConvert.DeserializeObject<StatInkRoot>(json);
+      StatInkRoot root = JsonConvert.DeserializeObject<StatInkRoot>(json) ?? new StatInkRoot();
       source.Start = new DateTime(root.EndAt?.Time ?? Builtins.UNKNOWN_DATE_TIME_TICKS);
 
-      List<Player> players = new List<Player>();
+      List<Player> players = new();
 
       // Don't load the details if they are manual entries.
-      if (!root.Automated || root.Players == null)
+      if (!root.Automated || root.Players == default)
       {
         return source;
       }

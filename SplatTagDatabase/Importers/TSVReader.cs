@@ -145,6 +145,17 @@ namespace SplatTagDatabase.Importers
       return Path.GetExtension(input).Equals(".tsv", StringComparison.OrdinalIgnoreCase);
     }
 
+    public override bool Equals(object? obj)
+    {
+      return obj is TSVReader reader &&
+             source.Equals(reader.source);
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCode.Combine(nameof(TSVReader), source);
+    }
+
     public Source Load()
     {
       Debug.WriteLine("Loading " + tsvFile);

@@ -97,11 +97,22 @@ namespace SplatTagDatabase.Importers
       }
     }
 
+    public override bool Equals(object? obj)
+    {
+      return obj is LUTIJsonReader reader &&
+             source.Equals(reader.source);
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCode.Combine(nameof(LUTIJsonReader), source);
+    }
+
     public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile); // N.B. by default this reads UTF-8.
-      LUTIJsonRow[] rows = JsonConvert.DeserializeObject<LUTIJsonRow[]>(json);
+      LUTIJsonRow[] rows = JsonConvert.DeserializeObject<LUTIJsonRow[]>(json) ?? Array.Empty<LUTIJsonRow>();
 
       var teams = new ConcurrentBag<Team>();
       var players = new ConcurrentBag<Player>();

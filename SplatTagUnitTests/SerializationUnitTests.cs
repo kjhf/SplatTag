@@ -38,45 +38,46 @@ namespace SplatTagUnitTests
       };
       settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
 
-      return JsonConvert.DeserializeObject<T>(json, settings);
+      return JsonConvert.DeserializeObject<T>(json, settings) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object of type {typeof(T).Name} (json.Length={json.Length})");
     }
 
     [TestMethod]
     public void SerializeBattlefy()
     {
       Dictionary<string, Source> sources = new Dictionary<string, Source>();
-      var h2 = new Source("h2");
-      var u2 = new Source("u2");
-      var h1 = new Source("h1");
-      var u1 = new Source("u1");
-      sources.Add(h2.Id, h2);
-      sources.Add(u2.Id, u2);
+      var h1 = new Source("h1", DateTime.Now.AddDays(1));
+      var u1 = new Source("u1", DateTime.Now.AddDays(1));
+      var h2 = new Source("h2", DateTime.Now);
+      var u2 = new Source("u2", DateTime.Now);
       sources.Add(h1.Id, h1);
       sources.Add(u1.Id, u1);
+      sources.Add(h2.Id, h2);
+      sources.Add(u2.Id, u2);
 
       Battlefy battlefy = new Battlefy();
-      // Remember adding first = back of the list
-      battlefy.AddSlug("kjhf", h2);
-      battlefy.AddUsername("username2", u2);
       battlefy.AddSlug("handle1", h1);
       battlefy.AddUsername("username1", u1);
+      battlefy.AddSlug("kjhf", h2);
+      battlefy.AddUsername("username2", u2);
 
       string json = Serialize(battlefy);
       Console.WriteLine(nameof(SerializeBattlefy) + ": ");
       Console.WriteLine(json);
       Battlefy deserialized = Deserialize<Battlefy>(json, sources);
 
-      Assert.AreEqual(2, deserialized.Slugs.Count, "Unexpected number of slugs");
-      Assert.AreEqual(2, deserialized.Usernames.Count, "Unexpected number of usernames");
-      Assert.AreEqual("handle1", deserialized.Slugs[0].Value, "Slug [0] unexpected handle");
-      Assert.AreEqual("h1", deserialized.Slugs[0].Sources.First().Name, "Slug [0] unexpected source");
-      Assert.AreEqual("kjhf", deserialized.Slugs[1].Value, "Slug [1] unexpected handle");
-      Assert.AreEqual("h2", deserialized.Slugs[1].Sources.First().Name, "Slug [1] unexpected source");
-      Assert.AreEqual("https://battlefy.com/users/kjhf", deserialized.Slugs[1].Uri?.AbsoluteUri, "Slug [1] unexpected uri");
-      Assert.AreEqual("username1", deserialized.Usernames[0].Value, "Usernames [0] unexpected handle");
-      Assert.AreEqual("u1", deserialized.Usernames[0].Sources.First().Name, "Usernames [0] unexpected source");
-      Assert.AreEqual("username2", deserialized.Usernames[1].Value, "Usernames [1] unexpected handle");
-      Assert.AreEqual("u2", deserialized.Usernames[1].Sources.First().Name, "Usernames [1] unexpected source");
+      var orderedSlugs = deserialized.SlugsHandler.GetItemsOrdered();
+      var orderedUsernames = deserialized.UsernamesHandler.GetItemsOrdered();
+      Assert.AreEqual(2, orderedSlugs.Count, "Unexpected number of slugs");
+      Assert.AreEqual(2, orderedUsernames.Count, "Unexpected number of usernames");
+      Assert.AreEqual("handle1", orderedSlugs[0].Value, "Slug [0] unexpected handle");
+      Assert.AreEqual("h1", orderedSlugs[0].Sources[0].Name, "Slug [0] unexpected source");
+      Assert.AreEqual("kjhf", orderedSlugs[1].Value, "Slug [1] unexpected handle");
+      Assert.AreEqual("h2", orderedSlugs[1].Sources[0].Name, "Slug [1] unexpected source");
+      Assert.AreEqual("https://battlefy.com/users/kjhf", orderedSlugs[1].Uri?.AbsoluteUri, "Slug [1] unexpected uri");
+      Assert.AreEqual("username1", orderedUsernames[0].Value, "Usernames [0] unexpected handle");
+      Assert.AreEqual("u1", orderedUsernames[0].Sources[0].Name, "Usernames [0] unexpected source");
+      Assert.AreEqual("username2", orderedUsernames[1].Value, "Usernames [1] unexpected handle");
+      Assert.AreEqual("u2", orderedUsernames[1].Sources[0].Name, "Usernames [1] unexpected source");
     }
 
     [TestMethod]
@@ -107,13 +108,13 @@ namespace SplatTagUnitTests
       Assert.AreEqual(2, deserialized.Ids.Count, "Unexpected number of ids");
       Assert.AreEqual(2, deserialized.Usernames.Count, "Unexpected number of usernames");
       Assert.AreEqual("4444", deserialized.Ids[0].Value, "Id [0] unexpected handle");
-      Assert.AreEqual("source1", deserialized.Ids[0].Sources.First().Name, "Id [0] unexpected source");
+      Assert.AreEqual("source1", deserialized.Ids[0].Sources[0].Name, "Id [0] unexpected source");
       Assert.AreEqual("123456789", deserialized.Ids[1].Value, "Id [1] unexpected handle");
-      Assert.AreEqual("source2", deserialized.Ids[1].Sources.First().Name, "Id [1] unexpected source");
+      Assert.AreEqual("source2", deserialized.Ids[1].Sources[0].Name, "Id [1] unexpected source");
       Assert.AreEqual("username1", deserialized.Usernames[0].Value, "Usernames [0] unexpected handle");
-      Assert.AreEqual("u1", deserialized.Usernames[0].Sources.First().Name, "Usernames [0] unexpected source");
+      Assert.AreEqual("u1", deserialized.Usernames[0].Sources[0].Name, "Usernames [0] unexpected source");
       Assert.AreEqual("username2", deserialized.Usernames[1].Value, "Usernames [1] unexpected handle");
-      Assert.AreEqual("u2", deserialized.Usernames[1].Sources.First().Name, "Usernames [1] unexpected source");
+      Assert.AreEqual("u2", deserialized.Usernames[1].Sources[0].Name, "Usernames [1] unexpected source");
     }
 
     [TestMethod]
@@ -144,23 +145,22 @@ namespace SplatTagUnitTests
     public void SerializePlayer()
     {
       var sources = new Dictionary<string, Source>();
+      var source1 = new Source("source1", DateTime.Now.AddDays(1));
       var source2 = new Source("source2");
+      var u1 = new Source("u1", DateTime.Now.AddDays(1));
       var u2 = new Source("u2");
-      var source1 = new Source("source1");
-      var u1 = new Source("u1");
+      var h1 = new Source("h1", DateTime.Now.AddDays(1));
       var h2 = new Source("h2");
-      var h1 = new Source("h1");
-      var s1 = new Source("s1");
-      sources.Add(h2.Id, h2);
+      var s1 = new Source("s1", DateTime.Now.AddDays(1));
       sources.Add(h1.Id, h1);
-      sources.Add(source2.Id, source2);
-      sources.Add(u2.Id, u2);
+      sources.Add(h2.Id, h2);
       sources.Add(source1.Id, source1);
+      sources.Add(source2.Id, source2);
       sources.Add(u1.Id, u1);
+      sources.Add(u2.Id, u2);
       sources.Add(s1.Id, s1);
 
       Player player = new Player();
-      // Remember adding first = back of the list
       player.AddBattlefySlug("kjhf", h2);
       player.AddBattlefyUsername("username2", u2);
       player.AddBattlefySlug("handle1", h1);
@@ -179,31 +179,33 @@ namespace SplatTagUnitTests
       Console.WriteLine(json);
       Player deserialized = Deserialize<Player>(json, sources);
 
-      var battlefy = deserialized.Battlefy;
-      Assert.AreEqual(2, battlefy.Slugs.Count, "Unexpected number of slugs");
-      Assert.AreEqual(2, battlefy.Usernames.Count, "Unexpected number of usernames");
-      Assert.AreEqual("handle1", battlefy.Slugs[0].Value, "Slug [0] unexpected handle");
-      Assert.AreEqual("h1", battlefy.Slugs[0].Sources.First().Name, "Slug [0] unexpected source");
-      Assert.AreEqual("kjhf", battlefy.Slugs[1].Value, "Slug [1] unexpected handle");
-      Assert.AreEqual("h2", battlefy.Slugs[1].Sources.First().Name, "Slug [1] unexpected source");
-      Assert.AreEqual("https://battlefy.com/users/kjhf", battlefy.Slugs[1].Uri?.AbsoluteUri, "Slug [1] unexpected uri");
-      Assert.AreEqual("username1", battlefy.Usernames[0].Value, "Usernames [0] unexpected handle");
-      Assert.AreEqual("u1", battlefy.Usernames[0].Sources.First().Name, "Usernames [0] unexpected source");
-      Assert.AreEqual("username2", battlefy.Usernames[1].Value, "Usernames [1] unexpected handle");
-      Assert.AreEqual("u2", battlefy.Usernames[1].Sources.First().Name, "Usernames [1] unexpected source");
-      Assert.AreEqual("0000-1111-2222-3333", battlefy.PersistentIds[0].Value, "PersistentIds [0] unexpected id");
+      var orderedSlugs = deserialized.Battlefy.SlugsHandler.GetItemsOrdered();
+      var orderedUsernames = deserialized.Battlefy.UsernamesHandler.GetItemsOrdered();
+      var orderedPesistentIds = deserialized.Battlefy.PersistentIdsHandler.GetItemsOrdered();
+      Assert.AreEqual(2, orderedSlugs.Count, "Unexpected number of slugs");
+      Assert.AreEqual(2, orderedUsernames.Count, "Unexpected number of usernames");
+      Assert.AreEqual("handle1", orderedSlugs[0].Value, "Slug [0] unexpected handle");
+      Assert.AreEqual("h1", orderedSlugs[0].Sources[0].Name, "Slug [0] unexpected source");
+      Assert.AreEqual("kjhf", orderedSlugs[1].Value, "Slug [1] unexpected handle");
+      Assert.AreEqual("h2", orderedSlugs[1].Sources[0].Name, "Slug [1] unexpected source");
+      Assert.AreEqual("https://battlefy.com/users/kjhf", orderedSlugs[1].Uri?.AbsoluteUri, "Slug [1] unexpected uri");
+      Assert.AreEqual("username1", orderedUsernames[0].Value, "Usernames [0] unexpected handle");
+      Assert.AreEqual("u1", orderedUsernames[0].Sources[0].Name, "Usernames [0] unexpected source");
+      Assert.AreEqual("username2", orderedUsernames[1].Value, "Usernames [1] unexpected handle");
+      Assert.AreEqual("u2", orderedUsernames[1].Sources[0].Name, "Usernames [1] unexpected source");
+      Assert.AreEqual("0000-1111-2222-3333", orderedPesistentIds[0].Value, "PersistentIds [0] unexpected id");
 
       var discord = deserialized.Discord;
       Assert.AreEqual(2, discord.Ids.Count, "Unexpected number of ids");
       Assert.AreEqual(2, discord.Usernames.Count, "Unexpected number of usernames");
       Assert.AreEqual("4444", discord.Ids[0].Value, "Id [0] unexpected handle");
-      Assert.AreEqual("source1", discord.Ids[0].Sources.First().Name, "Id [0] unexpected source");
+      Assert.AreEqual("source1", discord.Ids[0].Sources[0].Name, "Id [0] unexpected source");
       Assert.AreEqual("123456789", discord.Ids[1].Value, "Id [1] unexpected handle");
-      Assert.AreEqual("source2", discord.Ids[1].Sources.First().Name, "Id [1] unexpected source");
+      Assert.AreEqual("source2", discord.Ids[1].Sources[0].Name, "Id [1] unexpected source");
       Assert.AreEqual("username1", discord.Usernames[0].Value, "Usernames [0] unexpected handle");
-      Assert.AreEqual("u1", discord.Usernames[0].Sources.First().Name, "Usernames [0] unexpected source");
+      Assert.AreEqual("u1", discord.Usernames[0].Sources[0].Name, "Usernames [0] unexpected source");
       Assert.AreEqual("username2", discord.Usernames[1].Value, "Usernames [1] unexpected handle");
-      Assert.AreEqual("u2", discord.Usernames[1].Sources.First().Name, "Usernames [1] unexpected source");
+      Assert.AreEqual("u2", discord.Usernames[1].Sources[0].Name, "Usernames [1] unexpected source");
 
       var sendou = deserialized.SendouProfiles[0];
       Assert.AreEqual("https://sendou.ink/u/slate", sendou.Uri?.AbsoluteUri, "Unexpected Uri");
@@ -251,15 +253,15 @@ namespace SplatTagUnitTests
       Assert.AreEqual(2, battlefy.Count, "Unexpected number of team battlefy slugs");
       Assert.AreEqual("1teamid1", battlefy[0].Value, "Slug [0] unexpected handle");
       Assert.AreEqual("2teamid2", battlefy[1].Value, "Slug [1] unexpected handle");
-      Assert.AreEqual("u1", battlefy[0].Sources.First().Name, "Slug [0] unexpected source");
-      Assert.AreEqual("u2", battlefy[1].Sources.First().Name, "Slug [1] unexpected source");
+      Assert.AreEqual("u1", battlefy[0].Sources[0].Name, "Slug [0] unexpected source");
+      Assert.AreEqual("u2", battlefy[1].Sources[0].Name, "Slug [1] unexpected source");
 
       var clanTags = deserialized.ClanTags;
       Assert.AreEqual(2, clanTags.Count, "Unexpected number of clanTags");
       Assert.AreEqual("new", clanTags[0].Value, "clanTags[0] Unexpected Value");
       Assert.AreEqual("old", clanTags[1].Value, "clanTags[1] Unexpected Value");
-      Assert.AreEqual("source3", clanTags[0].Sources.First().Name, "clanTags[0] unexpected source");
-      Assert.AreEqual("source2", clanTags[1].Sources.First().Name, "clanTags[1] unexpected source");
+      Assert.AreEqual("source3", clanTags[0].Sources[0].Name, "clanTags[0] unexpected source");
+      Assert.AreEqual("source2", clanTags[1].Sources[0].Name, "clanTags[1] unexpected source");
 
       var divisions = deserialized.DivisionInformation.GetDivisionsOrdered();
       Assert.AreEqual(2, divisions.Count, "Unexpected number of divisions");
@@ -274,8 +276,8 @@ namespace SplatTagUnitTests
       Assert.AreEqual(2, names.Count, "Unexpected number of team names");
       Assert.AreEqual("team1", names[0].Value, "Names [0] unexpected handle");
       Assert.AreEqual("team2", names[1].Value, "Names [1] unexpected handle");
-      Assert.AreEqual("t1", names[0].Sources.First().Name, "Names [0] unexpected source");
-      Assert.AreEqual("t2", names[1].Sources.First().Name, "Names [1] unexpected source");
+      Assert.AreEqual("t1", names[0].Sources[0].Name, "Names [0] unexpected source");
+      Assert.AreEqual("t2", names[1].Sources[0].Name, "Names [1] unexpected source");
     }
 
     [TestMethod]

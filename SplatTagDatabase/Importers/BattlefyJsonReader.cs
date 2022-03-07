@@ -25,14 +25,25 @@ namespace SplatTagDatabase.Importers
       return Path.GetExtension(input).Equals(".json", StringComparison.OrdinalIgnoreCase);
     }
 
+    public override bool Equals(object? obj)
+    {
+      return obj is BattlefyJsonReader reader &&
+             source.Equals(reader.source);
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCode.Combine(nameof(BattlefyJsonReader), source);
+    }
+
     public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
-      BattlefyJsonTeam[] rows = JsonConvert.DeserializeObject<BattlefyJsonTeam[]>(json);
+      BattlefyJsonTeam[] rows = JsonConvert.DeserializeObject<BattlefyJsonTeam[]>(json) ?? Array.Empty<BattlefyJsonTeam>();
 
-      List<Team> teams = new List<Team>();
-      List<Player> players = new List<Player>();
+      List<Team> teams = new();
+      List<Player> players = new();
       foreach (BattlefyJsonTeam row in rows)
       {
         if (row.TeamName == null || row.Players == null)
@@ -72,7 +83,7 @@ namespace SplatTagDatabase.Importers
         // Attempt to resolve the team tags
         ClanTag? teamTag = ClanTag.CalculateTagFromNames(row.Players.Select(p => p.Name).Where(name => name != null && !string.IsNullOrWhiteSpace(name)).ToArray()!, source);
 
-        Team newTeam = new Team(row.TeamName, source);
+        Team newTeam = new(row.TeamName, source);
         if (teamTag != null)
         {
           newTeam.AddClanTags(new[] { teamTag });

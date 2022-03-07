@@ -18,15 +18,27 @@ namespace SplatTagDatabase.Importers
       this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
     }
 
+    public override bool Equals(object? obj)
+    {
+      return obj is TwitterReader reader &&
+             source.Equals(reader.source);
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCode.Combine(nameof(TwitterReader), source);
+    }
+
     public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
 
-      List<Team> teams = new List<Team>();
-      foreach (var pair in JsonConvert.DeserializeObject<Dictionary<string, string>>(json))
+      var teams = new List<Team>();
+      var teamTwitters = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+      foreach (var pair in teamTwitters)
       {
-        Team newTeam = new Team(pair.Key, source);
+        var newTeam = new Team(pair.Key, source);
         newTeam.AddTwitter(pair.Value, source);
         teams.Add(newTeam);
       }

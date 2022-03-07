@@ -288,7 +288,7 @@ namespace SplatTagConsole
             {
               result.AdditionalTeams =
                 result.Players
-                .SelectMany(p => p.TeamInformation.GetTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
+                .SelectMany(p => p.TeamInformation.GetAllTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
                 .Distinct()
                 .ToDictionary(t => t.Id, t => t);
               result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
@@ -296,13 +296,13 @@ namespace SplatTagConsole
 
               result.PlayersForTeams =
                 result.Teams
-                .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t));
+                .ToDictionary(t => t.Id, t => splatTagController.GetPlayersForTeam(t).ToArray());
 
               foreach (var pair in result.PlayersForTeams)
               {
                 foreach ((Player, bool) tuple in pair.Value)
                 {
-                  foreach (Guid t in tuple.Item1.TeamInformation.GetTeamsUnordered())
+                  foreach (Guid t in tuple.Item1.TeamInformation.GetAllTeamsUnordered())
                   {
                     result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
                   }

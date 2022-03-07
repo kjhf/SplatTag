@@ -172,7 +172,7 @@ namespace SplatTagCore
     /// </summary>
     public IEnumerable<Player> GetPlayers(IEnumerable<Player> allPlayers)
     {
-      return allPlayers.AsParallel().Where(p => p.TeamInformation.Contains(this.Id));
+      return allPlayers.Where(p => p.TeamInformation.Contains(this.Id));
     }
 
     /// <summary>
@@ -186,25 +186,13 @@ namespace SplatTagCore
         return null;
       }
       // else
-      var bestDiv = Division.Unknown;
-      IEnumerable<Division> divs;
-      if (lastNDivisions == -1)
-      {
-        divs = this.DivisionInformation.OrderedDivisions.Select(pair => pair.Key);
-      }
-      else
-      {
-        // Take is a limit operation (does not throw if limit > count)
-        divs = this.DivisionInformation.OrderedDivisions.Take(lastNDivisions).Select(pair => pair.Key);
-      }
+      IEnumerable<Division> divs =
+        (lastNDivisions == -1) ?
+          this.DivisionInformation.GetDivisionsOrdered() :
+          // Take is a limit operation (does not throw if limit > count)
+          this.DivisionInformation.GetDivisionsOrdered().Take(lastNDivisions);
 
-      foreach (var div in divs)
-      {
-        if (div < bestDiv)
-        {
-          bestDiv = div;
-        }
-      }
+      var bestDiv = divs.Min();
       return bestDiv.IsUnknown ? null : bestDiv;
     }
 

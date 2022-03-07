@@ -49,21 +49,17 @@ namespace SplatTagDatabase
 
     public IImporter[] Load()
     {
-      List<IImporter> importers = new List<IImporter>();
       // Make sure that relative paths are correctly defined.
       var currentDirectory = Directory.GetCurrentDirectory();
       Directory.SetCurrentDirectory(this.saveDirectory);
 
-      for (int i = 0; i < paths.Count; i++)
-      {
-        string file = paths[i];
-        importers.AddRange(PathToIImporter(file));
-      }
+      // Convert each path to an importer
+      IImporter[] importers = paths.SelectMany(file => PathToIImporter(file)).ToArray();
 
       // Re-set the current directory.
       Directory.SetCurrentDirectory(currentDirectory);
 
-      return importers.ToArray();
+      return importers;
     }
 
     public void SetSingleSource(string source)

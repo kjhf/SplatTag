@@ -18,19 +18,30 @@ namespace SplatTagDatabase.Importers
       this.source = new Source(Path.GetFileNameWithoutExtension(jsonFile));
     }
 
+    public override bool Equals(object? obj)
+    {
+      return obj is SendouReader reader &&
+             source.Equals(reader.source);
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCode.Combine(nameof(SendouReader), source);
+    }
+
     public Source Load()
     {
       Debug.WriteLine("Loading " + jsonFile);
       JToken json = JToken.Parse(File.ReadAllText(jsonFile));
-      if (!(json is JArray))
+      if (json is not JArray)
       {
-        json = json["users"];
+        json = json?.GetValue<JToken>("users", null) ?? new JArray();
       }
 
-      List<Player> players = new List<Player>();
+      var players = new List<Player>();
       foreach (JToken userToken in json)
       {
-        Player player = new Player();
+        var player = new Player();
         var name = userToken.GetValue<string>("username");
         if (name != null)
         {
@@ -56,10 +67,10 @@ namespace SplatTagDatabase.Importers
         {
           player.Country = country;
         }
-        var weapons = userToken["weapons"]?.HasValues == true ? userToken["weapons"].Values<string>() : null;
+        var weapons = userToken["weapons"]?.HasValues == true ? userToken["weapons"]?.Values<string>() : null;
         if (weapons != null)
         {
-          player.AddWeapons(weapons);
+          player.AddWeapons(weapons!);
         }
         var top500 = userToken.GetValue("top500", false);
         if (top500)
@@ -69,15 +80,15 @@ namespace SplatTagDatabase.Importers
         JToken discord = userToken["discord"] ?? userToken;
         if (discord != null)
         {
-          player.AddDiscordUsername($"{discord["username"].Value<string>()}#{discord["discriminator"].Value<string>()}", source);
-          var discordId = discord["discordId"].Value<string>();
+          player.AddDiscordUsername($"{discord["username"]?.Value<string>()}#{discord["discriminator"]?.Value<string>()}", source);
+          var discordId = discord["discordId"]?.Value<string>();
           if (discordId != null)
           {
             player.AddDiscordId(discordId, source);
           }
         }
         JToken profile = userToken["profile"] ?? userToken;
-        if (profile != null && profile.HasValues)
+        if (profile?.HasValues == true)
         {
           name = profile.GetValue<string>("twitchName");
           if (name != null)

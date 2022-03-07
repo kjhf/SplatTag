@@ -7,11 +7,6 @@ using System.Text;
 namespace SplatTagCore
 {
   [Serializable]
-  /// <summary>
-  /// A Division.
-  /// For LUTI, X is div 0. X+ is div -1.
-  /// Higher divs are LOWER in number.
-  /// </summary>
   public class Division : ISerializable, IComparable<Division>, IEquatable<Division?>
   {
     public const string UNKNOWN_STR = "Div Unknown";
@@ -26,7 +21,7 @@ namespace SplatTagCore
     public readonly string Season = "";
     public readonly int Value = UNKNOWN;
 
-    /// <summary>s
+    /// <summary>
     /// Get if a division is unknown.
     /// </summary>
     public bool IsUnknown => this.Value == UNKNOWN || this.DivType == DivType.Unknown;

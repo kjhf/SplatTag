@@ -9,19 +9,18 @@ namespace SplatTagDatabase
 {
   public class MultiDatabase : ISplatTagDatabase
   {
-    private IImporter[] importers = Array.Empty<IImporter>();
-    private GenericFilesToIImporters? converter;
+    private HashSet<IImporter> importers = new();
     private SplatTagJsonSnapshotDatabase? jsonDatabase;
 
     public MultiDatabase With(params IImporter[] importers)
     {
-      this.importers = importers;
+      this.importers = importers.ToHashSet();
       return this;
     }
 
     public MultiDatabase With(GenericFilesToIImporters converter)
     {
-      this.converter = converter;
+      StageSourcesFile(converter);
       return this;
     }
 
@@ -34,14 +33,9 @@ namespace SplatTagDatabase
     public (Player[], Team[], Dictionary<string, Source>) Load()
     {
       // If we need to do our conversion first, do so now.
-      List<IImporter> toLoad = new List<IImporter>();
-      if (converter != null)
-      {
-        toLoad.AddRange(converter.Load());
-      }
-      toLoad.AddRange(importers);
+      IImporter[] toLoad = importers.ToArray();
 
-      if (toLoad.Count == 0)
+      if (toLoad.Length == 0)
       {
         if (jsonDatabase != null)
         {
@@ -55,11 +49,11 @@ namespace SplatTagDatabase
         }
       }
 
-      Console.WriteLine($"{nameof(MultiDatabase)}.{nameof(Load)} toLoad.Count={toLoad.Count}");
+      Console.WriteLine($"{nameof(MultiDatabase)}.{nameof(Load)} toLoad.Length={toLoad.Length}");
 
-      Dictionary<string, Source> databaseSources = new Dictionary<string, Source>();
-      List<Player> players = new List<Player>();
-      List<Team> teams = new List<Team>();
+      var databaseSources = new Dictionary<string, Source>();
+      var players = new List<Player>();
+      var teams = new List<Team>();
 
       if (jsonDatabase != null)
       {
@@ -74,12 +68,12 @@ namespace SplatTagDatabase
       // Offset by the sources that we've already loaded from the current database.
       Source[] importedSources = databaseSources.Values.ToArray();
       int offset = importedSources.Length;
-      Array.Resize(ref importedSources, offset + toLoad.Count);
+      Array.Resize(ref importedSources, offset + toLoad.Length);
 
-      Console.WriteLine($"Reading {toLoad.Count} additional sources, " +
+      Console.WriteLine($"Reading {toLoad.Length} additional sources, " +
         $"{importedSources.Length} total sources to merge from {players.Count} players, {teams.Count} teams, {databaseSources.Count} sources pre-known...");
       bool filterSourcesForNull = false;
-      Parallel.For(0, toLoad.Count, i =>
+      Parallel.For(0, toLoad.Length, i =>
       {
         try
         {
@@ -101,7 +95,8 @@ namespace SplatTagDatabase
       // (But start from the sources not yet merged).
       TextWriter? logger = SplatTagController.Verbose ? Console.Out : null;
 
-      Console.WriteLine($"Merging {importedSources.Length - offset} sources beginning with {importedSources[offset]} and ending with {importedSources[importedSources.Length - 1].Name}...");
+      Console.WriteLine($"Merging {importedSources.Length - offset} sources beginning with {importedSources[offset]} and ending with {importedSources[^1].Name}...");
+
       int lastProgressBars = -1;
       for (int i = offset; i < importedSources.Length; i++)
       {
@@ -130,6 +125,29 @@ namespace SplatTagDatabase
 
       Merger.FinalMerge(players, teams, logger);
       return (players.ToArray(), teams.ToArray(), importedSources.ToDictionary(s => s.Id, s => s));
+    }
+
+    /// <summary>
+    /// Takes a sources file and stages its importer files contents ready for a load.
+    /// Returns the old and new count.
+    /// </summary>
+    public (int oldCount, int newCount) StageSourcesFile(string saveDirectory, string sourcesFile = "sources.yaml")
+      => StageSourcesFile(new GenericFilesToIImporters(saveDirectory, sourcesFile));
+
+    /// <summary>
+    /// Takes a GenericFilesToIImporters and stages its importer files contents ready for a load.
+    /// Returns the old and new count.
+    /// </summary>
+    public (int oldCount, int newCount) StageSourcesFile(GenericFilesToIImporters converter)
+    {
+      var newList = converter.Load();
+      int oldCount = importers.Count;
+      int newCount = newList.Length;
+      if (oldCount != newCount)
+      {
+        importers.UnionWith(newList);
+      }
+      return (oldCount, newCount);
     }
   }
 }

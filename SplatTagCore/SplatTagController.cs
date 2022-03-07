@@ -19,7 +19,7 @@ namespace SplatTagCore
     public static bool Verbose { get; set; }
 
     private readonly ISplatTagDatabase? database;
-    private Player[] players;
+    private IReadOnlyList<Player> players;
     private Dictionary<Guid, Team> teams;
     private Dictionary<string, Source> sources;
     private Task? cachingTask;
@@ -77,16 +77,13 @@ namespace SplatTagCore
         cachingTask = Task.Run(() =>
         {
           // Cache the players and their teams.
-          Parallel.ForEach(teams.Values, t =>
+          Parallel.ForEach(teams.Values.Where(t => t != null), t =>
           {
-            if (t != null)
-            {
-              var teamPlayers =
+            var teamPlayers =
                 t.GetPlayers(players)
                 .Select(p => (p, p.CurrentTeam == t.Id))
                 .ToArray();
-              playersForTeam.TryAdd(t, teamPlayers);
-            }
+            playersForTeam.TryAdd(t, teamPlayers);
           });
           Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Caching task done.");
         });
@@ -136,7 +133,7 @@ namespace SplatTagCore
     /// <summary>
     /// Match a query to players with given options from a set of players.
     /// </summary>
-    public Player[] MatchPlayer(string? query, MatchOptions matchOptions, ICollection<Player> playersToSearch)
+    public Player[] MatchPlayer(string? query, MatchOptions matchOptions, IReadOnlyCollection<Player> playersToSearch)
     {
       if (string.IsNullOrEmpty(query))
       {

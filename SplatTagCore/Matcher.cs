@@ -239,7 +239,7 @@ namespace SplatTagCore
     /// Get if this collection matches a second by the Name.
     /// Matches by Ordinal Ignore Case by default.
     /// </summary>
-    public static bool NamesMatch(this IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
+    public static bool NamesMatch(this IReadOnlyCollection<Name> first, IReadOnlyCollection<Name> second, StringComparer? stringComparison = null)
     {
       int firstCount = first.Count;
       int secondCount = second.Count;
@@ -258,15 +258,15 @@ namespace SplatTagCore
 
         if (firstCount == 1 && secondCount == 1)
         {
-          return stringComparison.Equals(first[0].Value, second[0].Value);
+          return stringComparison.Equals(first.First().Value, second.First().Value);
         }
         else if (firstCount == 1)
         {
-          return second.Select(n => n.Value).Contains(first[0].Value, stringComparison);
+          return second.Select(n => n.Value).Contains(first.First().Value, stringComparison);
         }
         else if (secondCount == 1)
         {
-          return first.Select(n => n.Value).Contains(second[0].Value, stringComparison);
+          return first.Select(n => n.Value).Contains(second.First().Value, stringComparison);
         }
         else
         {
@@ -322,20 +322,21 @@ namespace SplatTagCore
     /// Count matches between <see cref="Name"/>s of first and second.
     /// Matches by Ordinal Ignore Case by default.
     /// </summary>
-    public static int NamesMatchCount(IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
+    public static int NamesMatchCount(IReadOnlyCollection<Name> first, IReadOnlyCollection<Name> second, StringComparer? stringComparison = null)
     {
       if (first.Count == 0 || second.Count == 0) return 0;
 
       stringComparison ??= StringComparer.OrdinalIgnoreCase;
       if (first.Count == 1)
       {
+        // Note - IEnuerable has a optimisation where First() will use [0] if the collection is an IList. No harm no foul.
         return (second.Count == 1)
-          ? stringComparison.Equals(first[0].Value, second[0].Value) ? 1 : 0
-          : second.Select(n => n.Value).Contains(first[0].Value, stringComparison) ? 1 : 0;
+          ? stringComparison.Equals(first.First().Value, second.First().Value) ? 1 : 0
+          : second.Select(n => n.Value).Contains(first.First().Value, stringComparison) ? 1 : 0;
       }
       else if (second.Count == 1)
       {
-        return first.Select(n => n.Value).Contains(second[0].Value, stringComparison) ? 1 : 0;
+        return first.Select(n => n.Value).Contains(second.First().Value, stringComparison) ? 1 : 0;
       }
       else
       {

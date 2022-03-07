@@ -71,10 +71,10 @@ namespace SplatTagUnitTests
       Assert.IsTrue(team1.CurrentDiv.DivType == DivType.DSB);
 
       // Verify getting the players for that team returns our player
-      (Player, bool)[] playersForExampleTeam = controller.GetPlayersForTeam(exampleTeam);
+      var playersForExampleTeam = controller.GetPlayersForTeam(exampleTeam);
       Assert.IsNotNull(playersForExampleTeam);
-      Assert.IsTrue(playersForExampleTeam.Length == 1);
-      Assert.IsTrue(playersForExampleTeam[0].Item1.Equals(player1));
+      Assert.IsTrue(playersForExampleTeam.Count == 1);
+      Assert.IsTrue(playersForExampleTeam[0].player.Equals(player1));
     }
 
     /// <summary>

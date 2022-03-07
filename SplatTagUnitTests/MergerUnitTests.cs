@@ -73,13 +73,13 @@ namespace SplatTagUnitTests
       Assert.AreEqual(expectedP1IGNs.Length, Matcher.NamesMatchCount(dict[id1].Names, Name.FromStrings(expectedP1IGNs, Builtins.ManualSource)),
         "Expected names to be merged.");
       Assert.IsTrue(dict[id1].TeamInformation.Contains(team1) && dict[id1].TeamInformation.Contains(team2),
-        "Expected teams to be merged. Teams: [" + string.Join(", ", dict[id1].TeamInformation.GetTeamsUnordered()) + "]");
+        "Expected teams to be merged. Teams: [" + string.Join(", ", dict[id1].TeamInformation.GetAllTeamsUnordered()) + "]");
 
       Assert.IsTrue(dict.ContainsKey(id3), "Expected id3.");
       Assert.AreEqual(1, Matcher.NamesMatchCount(dict[id3].Names, Name.FromStrings(new[] { "player_ign_team" }, Builtins.ManualSource)),
         "Expected names to be merged.");
-      Assert.AreEqual(team1, dict[id3].CurrentTeam, "Expected current team (p4 -> p3). p3 Teams: [" + string.Join(", ", dict[id3].TeamInformation.GetTeamsUnordered()) + "]");
-      Assert.AreEqual(1, dict[id3].TeamInformation.Count, "Expected current team to be merged. p3 Teams: [" + string.Join(", ", dict[id3].TeamInformation.GetTeamsUnordered()) + "]");
+      Assert.AreEqual(team1, dict[id3].CurrentTeam, "Expected current team (p4 -> p3). p3 Teams: [" + string.Join(", ", dict[id3].TeamInformation.GetAllTeamsUnordered()) + "]");
+      Assert.AreEqual(1, dict[id3].TeamInformation.Count, "Expected current team to be merged. p3 Teams: [" + string.Join(", ", dict[id3].TeamInformation.GetAllTeamsUnordered()) + "]");
     }
 
     /// <summary>
@@ -152,10 +152,10 @@ namespace SplatTagUnitTests
       // Fix the players.
       Merger.CorrectTeamIdsForPlayers(players, result, Console.Out);
       Assert.AreEqual(p1.CurrentTeam, t1.Id, "Expected p1's current team to still be team 1");
-      Assert.AreEqual(2, p1.TeamInformation.Count, $"Expected p1's number of teams to now be 2, actually: {IdsToString(p1.TeamInformation.GetTeamsUnordered())}");
-      Assert.AreEqual(1, p4.TeamInformation.Count, $"Expected p4's number of teams to now be 1, actually: {IdsToString(p4.TeamInformation.GetTeamsUnordered())}");
+      Assert.AreEqual(2, p1.TeamInformation.Count, $"Expected p1's number of teams to now be 2, actually: {IdsToString(p1.TeamInformation.GetAllTeamsUnordered())}");
+      Assert.AreEqual(1, p4.TeamInformation.Count, $"Expected p4's number of teams to now be 1, actually: {IdsToString(p4.TeamInformation.GetAllTeamsUnordered())}");
       Assert.AreEqual(p4.CurrentTeam, t5.Id, "Expected p4's current team to now be t5");
-      Assert.AreEqual(1, p5.TeamInformation.Count, $"Expected p5's number of teams to now be 1, actually: {IdsToString(p5.TeamInformation.GetTeamsUnordered())}");
+      Assert.AreEqual(1, p5.TeamInformation.Count, $"Expected p5's number of teams to now be 1, actually: {IdsToString(p5.TeamInformation.GetAllTeamsUnordered())}");
       Assert.AreEqual(p5.CurrentTeam, t5.Id, "Expected p5's current team to now be t5");
     }
 

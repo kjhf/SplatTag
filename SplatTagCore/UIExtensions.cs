@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -19,17 +20,19 @@ namespace SplatTagCore
     {
       var playersForTeam = splatTagController.GetPlayersForTeam(t);
       Division highestDiv = t.CurrentDiv;
+      Team? highestDivTeam = null;
       Player? bestPlayer = null;
       foreach (var (player, mostRecent) in playersForTeam)
       {
         if (mostRecent && player.TeamInformation.Count > 1)
         {
-          foreach (Team playerTeam in player.TeamInformation.GetTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
+          foreach (Team playerTeam in player.TeamInformation.GetAllTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
           {
             if (playerTeam.CurrentDiv < highestDiv)
             {
               highestDiv = playerTeam.CurrentDiv;
               bestPlayer = player;
+              highestDivTeam = playerTeam;
             }
           }
         }
@@ -46,7 +49,8 @@ namespace SplatTagCore
       }
       else
       {
-        return $"Highest div'd player is {bestPlayer.Name} at {highestDiv}.";
+        Debug.Assert(bestPlayer != null && highestDivTeam != null);
+        return $"Highest div'd player is {bestPlayer.Name} at {highestDiv} playing for {highestDivTeam.Name}.";
       }
     }
   }
