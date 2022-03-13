@@ -55,7 +55,7 @@ namespace SplatTagUnitTests
 
       // Perform the merge
       DumpSourceable("Players before merge:", players);
-      Merger.FinalisePlayers(players, Console.Out);
+      Merger.FinalisePlayers(players);
       DumpSourceable("Players after merge:", players);
 
       // Transform into a dictionary...
@@ -130,7 +130,7 @@ namespace SplatTagUnitTests
 
       DumpSourceable("Players before merge:", players);
       DumpSourceable("Teams before merge:", teams);
-      var result = Merger.FinaliseTeams(players, teams, Console.Out);
+      var result = Merger.FinaliseTeams(players, teams);
       DumpSourceable("Players after merge:", players);
       DumpSourceable("Teams after merge:", teams);
 
@@ -150,7 +150,7 @@ namespace SplatTagUnitTests
       Assert.AreEqual(3, teams.Count, "3 teams should be left.");
 
       // Fix the players.
-      Merger.CorrectTeamIdsForPlayers(players, result, Console.Out);
+      Merger.CorrectTeamIdsForPlayers(players, result);
       Assert.AreEqual(p1.CurrentTeam, t1.Id, "Expected p1's current team to still be team 1");
       Assert.AreEqual(2, p1.TeamInformation.Count, $"Expected p1's number of teams to now be 2, actually: {IdsToString(p1.TeamInformation.GetAllTeamsUnordered())}");
       Assert.AreEqual(1, p4.TeamInformation.Count, $"Expected p4's number of teams to now be 1, actually: {IdsToString(p4.TeamInformation.GetAllTeamsUnordered())}");

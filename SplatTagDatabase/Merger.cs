@@ -1,4 +1,5 @@
-﻿using SplatTagCore;
+﻿using NLog;
+using SplatTagCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,10 +14,12 @@ namespace SplatTagDatabase
   /// </summary>
   internal static class Merger
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     /// <summary>
     /// Perform the final merge.
     /// </summary>
-    internal static void FinalMerge(List<Player> players, List<Team> teams, TextWriter? logger = null)
+    internal static void FinalMerge(List<Player> players, List<Team> teams)
     {
       try
       {
@@ -24,9 +27,9 @@ namespace SplatTagDatabase
         for (int iteration = 1; workDone && iteration < 20; iteration++)
         {
           Console.WriteLine($"Performing final merge (iteration #{iteration})...");
-          workDone = FinalisePlayers(players, logger);
-          var mergeResult = FinaliseTeams(players, teams, logger);
-          CorrectTeamIdsForPlayers(players, mergeResult, logger);
+          workDone = FinalisePlayers(players);
+          var mergeResult = FinaliseTeams(players, teams);
+          CorrectTeamIdsForPlayers(players, mergeResult);
           workDone |= mergeResult.Count != 0;
         }
       }
@@ -36,24 +39,16 @@ namespace SplatTagDatabase
       }
     }
 
-    public static void CorrectTeamIdsForPlayers(ICollection<Player> incomingPlayers, IDictionary<Guid, Guid> teamsMergeResult, TextWriter? logger = null)
+    public static void CorrectTeamIdsForPlayers(ICollection<Player> incomingPlayers, IDictionary<Guid, Guid> teamsMergeResult)
     {
       if (incomingPlayers == null || teamsMergeResult == null || incomingPlayers.Count == 0 || teamsMergeResult.Count == 0) return;
 
-      if (logger != null)
+      if (logger.IsDebugEnabled)
       {
-        logger.Write(nameof(CorrectTeamIdsForPlayers));
-        logger.Write(" called with ");
-        logger.Write(incomingPlayers.Count);
-        logger.WriteLine(" entries.");
-        logger.WriteLine("Entries: ");
+        logger.ConditionalDebug($"{nameof(CorrectTeamIdsForPlayers)}: {incomingPlayers.Count} entries: ");
         foreach (var resultPair in teamsMergeResult)
         {
-          logger.Write('[');
-          logger.Write(resultPair.Key);
-          logger.Write("] --> ");
-          logger.Write(resultPair.Value);
-          logger.WriteLine();
+          logger.ConditionalDebug($"[{resultPair.Key}] --> {resultPair.Value}");
         }
       }
 
@@ -77,7 +72,7 @@ namespace SplatTagDatabase
     /// </summary>
     /// <param name="playersToMutate">List of players to change</param>
     /// <returns>Any work done (true, should loop) or No work done (false, can stop)</returns>
-    public static bool FinalisePlayers(List<Player> playersToMutate, TextWriter? logger = null)
+    public static bool FinalisePlayers(List<Player> playersToMutate)
     {
       bool workDone = false;
       if (playersToMutate == null) return workDone;
@@ -85,7 +80,7 @@ namespace SplatTagDatabase
       var indexesToRemove = new List<int>();
 
       string logMessage = $"Beginning {nameof(FinalisePlayers)} on {playersToMutate.Count} entries.";
-      logger?.WriteLine(logMessage);
+      logger.ConditionalDebug(logMessage);
 
       int lastProgressBars = -1;
       int length = playersToMutate.Count - 1;
@@ -102,14 +97,14 @@ namespace SplatTagDatabase
           // This is the player record that we are checking against.
           var olderPlayerRecord = playersToMutate[j];
 
-          if (Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Persistent, logger))
+          if (Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.Persistent))
           {
             // Quick check that the player is definitely older
             // This happens when a merge has already happened, but the dates then go out of order.
             if (olderPlayerRecord.CompareToBySourceAscending(newerPlayerRecord) == 1)
             {
               // Swap the instances round
-              logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord} (Persistent).");
+              logger.ConditionalDebug($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord} (Persistent).");
               (newerPlayerRecord, olderPlayerRecord) = (playersToMutate[i], playersToMutate[j]) = (olderPlayerRecord, newerPlayerRecord);
             }
 
@@ -118,11 +113,11 @@ namespace SplatTagDatabase
           }
           // else
           // If that doesn't work, try and match a name and same team.
-          if (foundOlderPlayerRecord == null && Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.PlayerName, logger))
+          if (foundOlderPlayerRecord == null && Matcher.PlayersMatch(olderPlayerRecord, newerPlayerRecord, FilterOptions.PlayerName))
           {
             if (olderPlayerRecord.CompareToBySourceAscending(newerPlayerRecord) == 1)
             {
-              logger?.WriteLine($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord} (PlayerName).");
+              logger.ConditionalDebug($"Newer player is not newer, swapping {newerPlayerRecord} with {olderPlayerRecord} (PlayerName).");
               (newerPlayerRecord, olderPlayerRecord) = (playersToMutate[i], playersToMutate[j]) = (olderPlayerRecord, newerPlayerRecord);
             }
 
@@ -135,7 +130,7 @@ namespace SplatTagDatabase
         // If a player has now been found, merge it.
         if (foundOlderPlayerRecord != null)
         {
-          logger?.WriteLine($"Merging player {newerPlayerRecord} from sources [{string.Join(", ", newerPlayerRecord.Sources)}] into {foundOlderPlayerRecord} from sources [{string.Join(", ", foundOlderPlayerRecord.Sources)}].");
+          logger.ConditionalDebug($"Merging player {newerPlayerRecord} from sources [{string.Join(", ", newerPlayerRecord.Sources)}] into {foundOlderPlayerRecord} from sources [{string.Join(", ", foundOlderPlayerRecord.Sources)}].");
           foundOlderPlayerRecord.Merge(newerPlayerRecord);
           indexesToRemove.Add(i);
           workDone = true;
@@ -146,19 +141,12 @@ namespace SplatTagDatabase
         if (progressBars != lastProgressBars)
         {
           string progressBar = ProgressBar.GetProgressBar(progressBars, 100, false) + " " + i + "/" + playersToMutate.Count;
-          if (logger != null)
-          {
-            logger.WriteLine(progressBar);
-          }
-          else
-          {
-            Console.WriteLine(progressBar);
-          }
+          logger.Info(progressBar);
           lastProgressBars = progressBars;
         }
       }
 
-      logger?.WriteLine($"{nameof(FinalisePlayers)}: Remaking players list {playersToMutate.Count} --> {playersToMutate.Count - indexesToRemove.Count} entries.");
+      logger.ConditionalDebug($"{nameof(FinalisePlayers)}: Remaking players list {playersToMutate.Count} --> {playersToMutate.Count - indexesToRemove.Count} entries.");
       playersToMutate.RemoveAtRange(indexesToRemove);
       return workDone;
     }
@@ -170,12 +158,12 @@ namespace SplatTagDatabase
     /// A dictionary of merged team ids keyed by the newest id to become the value of the pre-known id.
     /// Empty dictionary = no work done.
     /// </returns>
-    public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, List<Team> teamsToMutate, TextWriter? logger = null)
+    public static IDictionary<Guid, Guid> FinaliseTeams(IReadOnlyCollection<Player> allPlayers, List<Team> teamsToMutate)
     {
       var mergeResult = new Dictionary<Guid, Guid>();
       var indexesToRemove = new List<int>();
 
-      logger?.WriteLine($"Beginning {nameof(FinaliseTeams)} on {teamsToMutate.Count} entries.");
+      logger.ConditionalDebug($"Beginning {nameof(FinaliseTeams)} on {teamsToMutate.Count} entries.");
 
       int lastProgressBars = -1;
       for (int i = teamsToMutate.Count - 1; i >= 0; --i)
@@ -188,13 +176,13 @@ namespace SplatTagDatabase
         {
           var olderTeamRecord = teamsToMutate[j];
 
-          if (Matcher.TeamsMatch(allPlayers, olderTeamRecord, newerTeamRecord, logger))
+          if (Matcher.TeamsMatch(allPlayers, olderTeamRecord, newerTeamRecord))
           {
             // Quick check that the team is definitely older
             if (olderTeamRecord.CompareToBySourceAscending(newerTeamRecord) == 1)
             {
               // Swap the instances round
-              logger?.WriteLine($"Newer team is not newer, swapping {newerTeamRecord} with {olderTeamRecord}.");
+              logger.ConditionalDebug($"Newer team is not newer, swapping {newerTeamRecord} with {olderTeamRecord}.");
               (newerTeamRecord, olderTeamRecord) = (teamsToMutate[i], teamsToMutate[j]) = (olderTeamRecord, newerTeamRecord);
             }
 
@@ -206,34 +194,27 @@ namespace SplatTagDatabase
         // If an older team was found, merge it.
         if (foundOlderTeamRecord != null)
         {
-          logger?.WriteLine($"Merging newer team {newerTeamRecord} into {foundOlderTeamRecord} and deleting index [{i}].");
+          logger.ConditionalDebug($"Merging newer team {newerTeamRecord} into {foundOlderTeamRecord} and deleting index [{i}].");
           MergeExistingTeam(mergeResult, newerTeamRecord, foundOlderTeamRecord);
 
           // Remove the newer record (the older record persists)
           indexesToRemove.Add(i);
-          logger?.WriteLine($"Resultant team: {foundOlderTeamRecord}.");
+          logger.ConditionalDebug($"Resultant team: {foundOlderTeamRecord}.");
         }
 
         int progressBars = ProgressBar.CalculateProgressBars(teamsToMutate.Count - i, teamsToMutate.Count, 100);
         if (progressBars != lastProgressBars)
         {
           string progressBar = ProgressBar.GetProgressBar(progressBars, 100, false) + " " + i + "/" + teamsToMutate.Count;
-          if (logger != null)
-          {
-            logger.WriteLine(progressBar);
-          }
-          else
-          {
-            Console.WriteLine(progressBar);
-          }
+          logger.Info(progressBar);
           lastProgressBars = progressBars;
         }
       }
 
-      logger?.WriteLine($"{nameof(FinaliseTeams)}: Remaking teams list {teamsToMutate.Count} --> {teamsToMutate.Count - indexesToRemove.Count} entries.");
+      logger.ConditionalDebug($"{nameof(FinaliseTeams)}: Remaking teams list {teamsToMutate.Count} --> {teamsToMutate.Count - indexesToRemove.Count} entries.");
       teamsToMutate.RemoveAtRange(indexesToRemove);
 
-      logger?.WriteLine($"Finished {nameof(FinaliseTeams)} with {teamsToMutate.Count} entries.");
+      logger.ConditionalDebug($"Finished {nameof(FinaliseTeams)} with {teamsToMutate.Count} entries.");
       return mergeResult;
     }
 
@@ -295,7 +276,7 @@ namespace SplatTagDatabase
     /// <summary>
     /// Merge the loaded players into the current players list.
     /// </summary>
-    internal static void MergePlayers(List<Player> playersToMutate, IReadOnlyCollection<Player> incomingPlayers, TextWriter? logger = null)
+    internal static void MergePlayers(List<Player> playersToMutate, IReadOnlyCollection<Player> incomingPlayers)
     {
       if (playersToMutate == null || incomingPlayers == null) return;
 
@@ -303,17 +284,17 @@ namespace SplatTagDatabase
       // Otherwise, match the found team with its id, based on name.
       if (incomingPlayers.Count > 15)
       {
-        logger?.WriteLine($"Merging {incomingPlayers.Count} Players in parallel.");
-        MergePlayersParallel(playersToMutate, incomingPlayers, logger);
+        logger.ConditionalDebug($"Merging {incomingPlayers.Count} Players in parallel.");
+        MergePlayersParallel(playersToMutate, incomingPlayers);
       }
       else
       {
-        logger?.WriteLine($"Merging {incomingPlayers.Count} Players in series.");
-        MergePlayersSerial(playersToMutate, incomingPlayers, logger);
+        logger.ConditionalDebug($"Merging {incomingPlayers.Count} Players in series.");
+        MergePlayersSerial(playersToMutate, incomingPlayers);
       }
     }
 
-    private static void MergePlayersParallel(List<Player> playersToMutate, IReadOnlyCollection<Player> incomingPlayers, TextWriter? logger)
+    private static void MergePlayersParallel(List<Player> playersToMutate, IReadOnlyCollection<Player> incomingPlayers)
     {
       ConcurrentBag<Player> concurrentPlayersToAdd = new ConcurrentBag<Player>();
       ConcurrentBag<(Player, Player)> concurrentPlayersToMerge = new ConcurrentBag<(Player, Player)>();
@@ -325,8 +306,8 @@ namespace SplatTagDatabase
           // First, try match through persistent information only.
           // If that doesn't work, try and match a name and same team.
           Player foundPlayer =
-              playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent, logger))
-              ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.PlayerName, logger));
+              playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent))
+              ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.PlayerName));
 
           if (foundPlayer == null)
           {
@@ -351,7 +332,7 @@ namespace SplatTagDatabase
       }
     }
 
-    private static void MergePlayersSerial(List<Player> playersToMutate, IReadOnlyCollection<Player> incomingPlayers, TextWriter? logger)
+    private static void MergePlayersSerial(List<Player> playersToMutate, IReadOnlyCollection<Player> incomingPlayers)
     {
       List<Player> playersToAdd = new List<Player>();
       List<(Player, Player)> playersToMerge = new List<(Player, Player)>();
@@ -363,8 +344,8 @@ namespace SplatTagDatabase
           // First, try match through persistent information only.
           // If that doesn't work, try and match a name and same team.
           Player foundPlayer =
-              playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent, logger))
-              ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.PlayerName, logger));
+              playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.Persistent))
+              ?? playersToMutate.Find(p => Matcher.PlayersMatch(importPlayer, p, FilterOptions.PlayerName));
 
           if (foundPlayer == null)
           {

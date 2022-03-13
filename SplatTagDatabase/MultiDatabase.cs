@@ -111,8 +111,8 @@ namespace SplatTagDatabase
           Console.WriteLine($"Merging {source.Name}...");
 
           var mergeResult = Merger.MergeTeamsByPersistentIds(teams, source.Teams);
-          Merger.MergePlayers(players, source.Players, logger);
-          Merger.CorrectTeamIdsForPlayers(players, mergeResult, logger);
+          Merger.MergePlayers(players, source.Players);
+          Merger.CorrectTeamIdsForPlayers(players, mergeResult);
         }
         catch (Exception ex)
         {
@@ -128,7 +128,7 @@ namespace SplatTagDatabase
         }
       }
 
-      Merger.FinalMerge(players, teams, logger);
+      Merger.FinalMerge(players, teams);
       _players = players;
       _teams = teams.ToDictionary(t => t.Id, t => t);
       _sources = importedSources.ToDictionary(s => s.Id, s => s);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,15 +14,17 @@ namespace SplatTagCore
   /// </remarks>
   public static class Matcher
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     /// <summary>
     /// Get if two Players match.
     /// </summary>
     /// <param name="first">First Player to match</param>
     /// <param name="second">Second Player to match</param>
     /// <param name="matchOptions">How to match</param>
-    /// <param name="logger">Logger to write to (or null to not write)</param>
+    ///
     /// <returns>Players are equal based on the match options</returns>
-    public static bool PlayersMatch(Player first, Player second, FilterOptions matchOptions, TextWriter? logger = null)
+    public static bool PlayersMatch(Player first, Player second, FilterOptions matchOptions)
     {
       // Quick out if they're literally the same.
       if (first.Id == second.Id) return true;
@@ -30,21 +33,7 @@ namespace SplatTagCore
       if ((matchOptions & FilterOptions.BattlefyPersistentIds) != 0 && first.Battlefy.MatchPersistent(second.Battlefy))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with Battlefy Persistent Id(s) [");
-          logger.Write(string.Join(", ", first.Battlefy.PersistentIds));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Persistent Id(s) [{string.Join(", ", first.Battlefy.PersistentIds)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -52,21 +41,7 @@ namespace SplatTagCore
       if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && first.Battlefy.MatchUsernames(second.Battlefy))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with BattlefyUsername(s) [");
-          logger.Write(string.Join(", ", first.Battlefy.Usernames));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with BattlefyUsername(s) [{string.Join(", ", first.Battlefy.Usernames)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -74,21 +49,7 @@ namespace SplatTagCore
       if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && first.Battlefy.MatchSlugs(second.Battlefy))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with Battlefy Slugs(s) [");
-          logger.Write(string.Join(", ", first.Battlefy.Slugs));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Slug(s) [{string.Join(", ", first.Battlefy.Slugs)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -96,21 +57,7 @@ namespace SplatTagCore
       if ((matchOptions & FilterOptions.FriendCode) != 0 && first.FCInformation.Match(second.FCInformation))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with Friend Code(s) [");
-          logger.Write(string.Join(", ", first.FCInformation.GetCodesUnordered()));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Friend Code(s) [{string.Join(", ", first.FCInformation.GetCodesUnordered())}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -118,21 +65,7 @@ namespace SplatTagCore
       if ((matchOptions & FilterOptions.Twitch) != 0 && first.TwitchInformation.Match(second.TwitchInformation))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with Twitch(es) [");
-          logger.Write(string.Join(", ", first.TwitchInformation.GetItemsUnordered()));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Twitch(es) [{string.Join(", ", first.TwitchInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -140,21 +73,7 @@ namespace SplatTagCore
       if ((matchOptions & FilterOptions.Twitter) != 0 && first.TwitterInformation.Match(second.TwitterInformation))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with Twitter(s) [");
-          logger.Write(string.Join(", ", first.TwitterInformation.GetItemsUnordered()));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Twitter(es) [{string.Join(", ", first.TwitterInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -162,21 +81,7 @@ namespace SplatTagCore
       if ((matchOptions & FilterOptions.DiscordId) != 0 && first.Discord.MatchPersistent(second.Discord))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with Discord Id(s) [");
-          logger.Write(string.Join(", ", first.DiscordIds));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Discord Id(s) [{string.Join(", ", first.DiscordIds)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -184,21 +89,7 @@ namespace SplatTagCore
       if ((matchOptions & FilterOptions.DiscordName) != 0 && first.Discord.MatchUsernames(second.Discord))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with Discord Names [");
-          logger.Write(string.Join(", ", first.DiscordNames));
-          logger.Write("] from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Discord Name(s) [{string.Join(", ", first.DiscordNames)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -212,25 +103,9 @@ namespace SplatTagCore
           var teamMatch = first.TeamInformation.Match(second.TeamInformation);
           var battlefyMatch = first.Battlefy.MatchSlugs(second.Battlefy);
 
-          logger.Write(nameof(PlayersMatch));
-          logger.Write(": Matched player ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with TransformedNames [");
-          logger.Write(string.Join(", ", first.NamesInformation.TransformedNames));
-          logger.Write("] using");
-          logger.Write(" teamMatch=");
-          logger.Write(teamMatch);
-          logger.Write(" battlefyMatch=");
-          logger.Write(battlefyMatch);
-          logger.Write(" from player ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.Write(") with TransformedNames [");
-          logger.Write(string.Join(", ", second.NamesInformation.TransformedNames));
-          logger.WriteLine("].");
+          logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with TransformedName(s) [{string.Join(", ", first.NamesInformation.TransformedNames)}] " +
+            $"using teamMatch={teamMatch} battlefyMatch={battlefyMatch} " +
+            $"from player {second} (Id {second.Id}) with TransformedName(s) [{string.Join(", ", second.NamesInformation.TransformedNames)}]. ");
         }
         return true;
       }
@@ -438,9 +313,9 @@ namespace SplatTagCore
     /// </summary>
     /// <param name="first">First Team to match</param>
     /// <param name="second">Second Team to match</param>
-    /// <param name="logger">Logger to write to (or null to not write)</param>
+    ///
     /// <returns>Teams match</returns>
-    public static bool TeamsMatch(Team first, Team second, TextWriter? logger = null)
+    public static bool TeamsMatch(Team first, Team second)
     {
       // Quick out if they're literally the same.
       if (first.Id == second.Id) return true;
@@ -449,21 +324,8 @@ namespace SplatTagCore
       if (first.BattlefyPersistentTeamId != null && first.BattlefyPersistentTeamIds.NamesMatch(second.BattlefyPersistentTeamIds))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(TeamsMatch));
-          logger.Write(": Matched team ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") with BattlefyPersistentTeamIds e.g. ");
-          logger.Write(first.BattlefyPersistentTeamId);
-          logger.Write(" from team ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(").");
-        }
+        logger.ConditionalDebug($"{nameof(TeamsMatch)}: Matched team {first} (Id {first.Id}) with Battlefy Persistent Id(s) [{string.Join(", ", first.BattlefyPersistentTeamIdInformation.GetItemsUnordered())}] " +
+          $"from team {second} (Id {second.Id}).");
         return true;
       }
 
@@ -479,30 +341,18 @@ namespace SplatTagCore
     /// <param name="allPlayers">Collection of all players to help base team equality</param>
     /// <param name="first">First Team to match</param>
     /// <param name="second">Second Team to match</param>
-    /// <param name="logger">Logger to write to (or null to not write)</param>
+    ///
     /// <returns>Teams match</returns>
-    public static bool TeamsMatch(IReadOnlyCollection<Player> allPlayers, Team first, Team second, TextWriter? logger = null)
+    public static bool TeamsMatch(IReadOnlyCollection<Player> allPlayers, Team first, Team second)
     {
       // Get if ids match first.
-      if (TeamsMatch(first, second, logger)) return true;
+      if (TeamsMatch(first, second)) return true;
 
       // Otherwise, test if players match.
       if (first.NamesInformation.TransformedNamesMatch(second.NamesInformation))
       {
         // They do.
-        if (logger != null)
-        {
-          logger.Write(nameof(TeamsMatch));
-          logger.Write(": Matched team ");
-          logger.Write(first.ToString());
-          logger.Write(" (Id ");
-          logger.Write(first.Id);
-          logger.Write(") from its TransformedNames from team ");
-          logger.Write(second);
-          logger.Write(" (Id ");
-          logger.Write(second.Id);
-          logger.WriteLine(")");
-        }
+        logger.ConditionalDebug($"{nameof(TeamsMatch)}: Matched team {first} (Id {first.Id}) with TransformedNames(s) [{string.Join(", ", first.NamesInformation.TransformedNames)}] from team {second} (Id {second.Id}).");
 
         int sharedPlayersCount = 0;
         var firstPlayers = first.GetPlayers(allPlayers);
@@ -521,14 +371,14 @@ namespace SplatTagCore
 
               if (sharedPlayersCount >= 2)
               {
-                logger?.WriteLine("Shared players requirement met.");
+                logger.ConditionalDebug("Shared players requirement met.");
                 return true;
               }
             }
           }
         }
 
-        logger?.WriteLine($"Shared players requirement NOT met.\nFirst: {first}, with players: {string.Join(", ", firstPlayers)}  [{string.Join(", ", first.Sources)}]\nSecond: {second}, with players: {string.Join(", ", secondPlayers)}  [{string.Join(", ", second.Sources)}]");
+        logger.ConditionalDebug($"Shared players requirement NOT met.\nFirst: {first}, with players: {string.Join(", ", firstPlayers)}  [{string.Join(", ", first.Sources)}]\nSecond: {second}, with players: {string.Join(", ", secondPlayers)}  [{string.Join(", ", second.Sources)}]");
       }
 
       return false;
