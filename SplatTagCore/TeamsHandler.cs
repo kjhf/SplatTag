@@ -7,7 +7,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class TeamsHandler : SourcedItemHandlerBase<Guid>, ISerializable
+  public class TeamsHandler : SourcedItemHandler<Guid>, ISerializable
   {
     public TeamsHandler()
     {

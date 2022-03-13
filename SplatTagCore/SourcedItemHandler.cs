@@ -9,9 +9,9 @@ namespace SplatTagCore
   /// Base class for Handler classes that define the functionality of sorting and ordering sourced data.
   /// </summary>
   /// <typeparam name="T"></typeparam>
-  public abstract class SourcedItemHandlerBase<T> :
+  public class SourcedItemHandler<T> :
     SourcedHandlerBase,
-    IMergable<SourcedItemHandlerBase<T>>
+    IMergable<SourcedItemHandler<T>>
     where T : notnull
   {
     /// <summary>
@@ -177,7 +177,7 @@ namespace SplatTagCore
     /// <summary>
     /// Return if this handler matches another.
     /// </summary>
-    public virtual bool Match(SourcedItemHandlerBase<T> other) => GetItemsUnordered().GenericMatch(other.GetItemsUnordered());
+    public virtual bool Match(SourcedItemHandler<T> other) => GetItemsUnordered().GenericMatch(other.GetItemsUnordered());
 
     public override string ToString()
     {
@@ -188,7 +188,7 @@ namespace SplatTagCore
     /// Merge this team handler with another.
     /// Handles sources and timing.
     /// </summary>
-    public void Merge(SourcedItemHandlerBase<T> other) => Merge(other.items);
+    public void Merge(SourcedItemHandler<T> other) => Merge(other.items);
 
     /// <summary>
     /// Merge this team handler with another.

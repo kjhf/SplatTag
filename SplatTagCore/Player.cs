@@ -26,11 +26,6 @@ namespace SplatTagCore
     private string? country;
 
     /// <summary>
-    /// Player's pronoun(s)
-    /// </summary>
-    private Pronoun? pronoun;
-
-    /// <summary>
     /// Default construct a player
     /// </summary>
     public Player()
@@ -160,6 +155,11 @@ namespace SplatTagCore
     public NamesHandler<PlusMembership> PlusMembershipInformation { get; } = new();
 
     /// <summary>
+    /// Player's pronoun(s)
+    /// </summary>
+    public PronounsHandler PronounInformation { get; } = new();
+
+    /// <summary>
     /// The Sendou social information this player belongs to.
     /// </summary>
     public NamesHandler<Sendou> SendouInformation { get; } = new();
@@ -200,7 +200,7 @@ namespace SplatTagCore
         .Concat(Discord.Sources)
         .Concat(FCInformation.Sources)
         .Concat(PlusMembershipInformation.Sources)
-        .Concat(pronoun?.Sources ?? Array.Empty<Source>())
+        .Concat(PronounInformation.Sources)
         .Concat(SendouInformation.Sources)
         .Concat(TeamInformation.Sources)
         .Concat(TwitchInformation.Sources)
@@ -254,12 +254,6 @@ namespace SplatTagCore
       Battlefy.AddUsername(username, source);
     }
 
-    public void AddDiscord(Discord value)
-    {
-      Discord.AddIds(value.Ids);
-      Discord.AddUsernames(value.Usernames);
-    }
-
     public void AddDiscordId(string id, Source source)
     {
       Discord.AddId(id, source);
@@ -271,9 +265,11 @@ namespace SplatTagCore
       Discord.AddUsername(discordNameIncludingDiscrim, source);
     }
 
-    public void AddFCs(FriendCode value, Source source) => FCInformation.Add(value, source);
+    public void AddFCs(FriendCode value, Source source)
+      => FCInformation.Add(value, source);
 
-    public void AddFCs(IList<FriendCode> value, Source source) => FCInformation.Add(value, source);
+    public void AddFCs(IList<FriendCode> value, Source source)
+      => FCInformation.Add(value, source);
 
     public void AddName(string name, Source source)
       => NamesInformation.Add(new Name(name, source));
@@ -293,74 +289,54 @@ namespace SplatTagCore
     public void AddTwitter(string handle, Source source)
       => TwitterInformation.Add(new Twitter(handle, source));
 
-    public void AddWeapons(IEnumerable<string> value)
+    public void AddWeapons(IEnumerable<string> incoming)
     {
-      SplatTagCommon.AddStrings(value, weapons);
+      weapons.AddUnique(incoming.Distinct());
     }
 
     /// <summary>
-    /// Merge this player with another (newer) player instance
+    /// Merge this player with another player instance.
+    /// Chronology safe.
     /// </summary>
-    /// <param name="newerPlayer">The new import record</param>
-    /// <exception cref="ArgumentNullException"><paramref name="newerPlayer"/> is <c>null</c>.</exception>
-    public void Merge(Player newerPlayer)
+    public void Merge(Player other)
     {
-      if (newerPlayer == null) throw new ArgumentNullException(nameof(newerPlayer));
-      if (ReferenceEquals(this, newerPlayer)) return;
+      if (other == null) throw new ArgumentNullException(nameof(other));
+      if (ReferenceEquals(this, other)) return;
 
       // Merge the teams.
-      TeamInformation.Merge(newerPlayer.TeamInformation);
+      TeamInformation.Merge(other.TeamInformation);
 
       // Merge the player's name(s).
-      NamesInformation.Merge(newerPlayer.NamesInformation);
+      NamesInformation.Merge(other.NamesInformation);
 
       // Merge the weapons.
-      AddWeapons(newerPlayer.weapons);
+      AddWeapons(other.weapons);
 
       // Merge the Battlefy Slugs and usernames.
-      Battlefy.Merge(newerPlayer.Battlefy);
+      Battlefy.Merge(other.Battlefy);
 
       // Merge the Discord Slugs and usernames.
-      Discord.Merge(newerPlayer.Discord);
+      Discord.Merge(other.Discord);
 
       // Merge the Social Data.
-      PlusMembershipInformation.Merge(newerPlayer.PlusMembershipInformation);
-      SendouInformation.Merge(newerPlayer.SendouInformation);
-      TwitchInformation.Merge(newerPlayer.TwitchInformation);
-      TwitterInformation.Merge(newerPlayer.TwitterInformation);
+      PlusMembershipInformation.Merge(other.PlusMembershipInformation);
+      SendouInformation.Merge(other.SendouInformation);
+      TwitchInformation.Merge(other.TwitchInformation);
+      TwitterInformation.Merge(other.TwitterInformation);
 
       // Merge the misc data
-      FCInformation.Merge(newerPlayer.FCInformation);
+      FCInformation.Merge(other.FCInformation);
+      PronounInformation.Merge(other.PronounInformation);
 
-      if (!string.IsNullOrWhiteSpace(newerPlayer.Country))
+      if (!string.IsNullOrWhiteSpace(other.Country))
       {
-        this.Country = newerPlayer.Country;
+        this.Country = other.Country;
       }
 
-      if (newerPlayer.Top500)
+      if (other.Top500)
       {
         this.Top500 = true;
       }
-
-      if (newerPlayer.pronoun != null)
-      {
-        this.pronoun = newerPlayer.pronoun;
-      }
-    }
-
-    /// <summary>
-    /// Conditionally set the pronouns of this player.
-    /// If NONE is returned from the searcher, it is not set.
-    /// Returns the Pronoun object set (or null).
-    /// </summary>
-    public Pronoun? SetPronoun(string description, Source source)
-    {
-      var incoming = new Pronoun(description, source);
-      if (incoming.value != PronounFlags.NONE)
-      {
-        this.pronoun = incoming;
-      }
-      return this.pronoun;
     }
 
     /// <summary>
@@ -382,7 +358,7 @@ namespace SplatTagCore
       this.FCInformation = info.GetValueOrDefault("FCs", new FriendCodesHandler());
       this.NamesInformation.Add(info.GetValueOrDefault("N", Array.Empty<Name>()));
       this.PlusMembershipInformation.Add(info.GetValueOrDefault("Plus", Array.Empty<PlusMembership>()));
-      this.pronoun = info.GetValueOrDefault("Pro", (Pronoun?)null);
+      this.PronounInformation = info.GetValueOrDefault("Pro", new PronounsHandler());
       this.SendouInformation.Add(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
       this.TeamInformation = info.GetValueOrDefault("Teams", new TeamsHandler());
       this.Top500 = info.GetValueOrDefault("Top500", false);
@@ -422,8 +398,8 @@ namespace SplatTagCore
       if (this.PlusMembershipInformation.Count > 0)
         info.AddValue("Plus", this.PlusMembership);
 
-      if (this.pronoun != null)
-        info.AddValue("Pro", this.pronoun);
+      if (this.PronounInformation.Count > 0)
+        info.AddValue("Pro", this.PronounInformation);
 
       if (this.SendouInformation.Count > 0)
         info.AddValue("Sendou", this.SendouProfiles);

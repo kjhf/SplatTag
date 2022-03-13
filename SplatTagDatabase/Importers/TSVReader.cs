@@ -410,7 +410,7 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.Pronouns:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.SetPronoun(value, source);
+              p.PronounInformation.SetPronoun(value, source);
               break;
             }
 

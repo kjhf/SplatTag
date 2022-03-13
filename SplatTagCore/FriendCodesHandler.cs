@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class FriendCodesHandler : SourcedItemHandlerBase<FriendCode>, ISerializable
+  public class FriendCodesHandler : SourcedItemHandler<FriendCode>, ISerializable
   {
     public FriendCodesHandler()
     {

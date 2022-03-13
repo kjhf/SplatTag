@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class DivisionsHandler : SourcedItemHandlerBase<Division>, ISerializable
+  public class DivisionsHandler : SourcedItemHandler<Division>, ISerializable
   {
     public DivisionsHandler()
     {

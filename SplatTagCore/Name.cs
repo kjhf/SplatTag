@@ -88,11 +88,6 @@ namespace SplatTagCore
               select new Name(s, source)).ToList();
     }
 
-    public void AddSources(IEnumerable<Source> sources)
-    {
-      SplatTagCommon.AddSources(sources, this.sources);
-    }
-
     public override bool Equals(object? obj)
     {
       return Equals(obj as Name);
@@ -124,14 +119,9 @@ namespace SplatTagCore
     {
       this.Value = info.GetString("N");
       var sourceIds = info.GetValueOrDefault("S", Array.Empty<string>());
-      if (context.Context is Source.GuidToSourceConverter converter)
-      {
-        AddSources(converter.Convert(sourceIds));
-      }
-      else
-      {
-        AddSources(sourceIds.Select(s => new Source(s)));
-      }
+      this.sources = (context.Context is Source.GuidToSourceConverter converter)
+        ? converter.Convert(sourceIds).Distinct().ToList()
+        : sourceIds.Select(s => new Source(s)).Distinct().ToList();
     }
 
     // Serialize as dict

@@ -27,13 +27,13 @@ namespace SplatTagCore
   public class Pronoun : IReadonlySourceable
   {
     public const string NEO_PLACEHOLDER = "(neo)";
-    private static readonly Regex heRegex = new Regex(@"(^|\W)(he)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
-    private static readonly Regex sheRegex = new Regex(@"(^|\W)(she)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
-    private static readonly Regex theyRegex = new Regex(@"(^|\W)(they)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
-    private static readonly Regex itRegex = new Regex(@"(^|\W)(it)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
-    private static readonly Regex neoRegex = new Regex(@"(^|\W)(em|([censvxz])([iey])+r?m?|xyr)s?(elf)?(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
-    private static readonly Regex allRegex = new Regex(@"^all$|(^|\W)((pronouns? ?([ :]) ?(all|any))|((all|any) pronouns?))(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
-    private static readonly Regex askRegex = new Regex(@"^ask$|(^|\W)((pronouns? ?([ :]) ?(ask))|(ask (for )?pronouns?))(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex heRegex = new(@"(^|\W)(he)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex sheRegex = new(@"(^|\W)(she)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex theyRegex = new(@"(^|\W)(they)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex itRegex = new(@"(^|\W)(it)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex neoRegex = new(@"(^|\W)(em|([censvxz])([iey])+r?m?|xyr)s?(elf)?(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex allRegex = new(@"^all$|(^|\W)((pronouns? ?([ :]) ?(all|any))|((all|any) pronouns?))(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+    private static readonly Regex askRegex = new(@"^ask$|(^|\W)((pronouns? ?([ :]) ?(ask))|(ask (for )?pronouns?))(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
 
     public readonly PronounFlags value;
     public readonly Source source;

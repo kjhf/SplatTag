@@ -21,6 +21,17 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Add an element to the list if it does not already contain the element.
+    /// </summary>
+    public static void AddUnique<T>(this IList<T> list, IEnumerable<T> elements)
+    {
+      foreach (T element in elements)
+      {
+        AddUnique(list, element);
+      }
+    }
+
+    /// <summary>
     /// Get if a string contains another by <see cref="StringComparison"/>.
     /// </summary>
     public static bool Contains(this string s, string other, StringComparison comp)

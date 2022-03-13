@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace SplatTagCore
 {
-  public class NamesHandler<T> : SourcedItemHandlerBase<T> where T : Name
+  public class NamesHandler<T> : SourcedItemHandler<T> where T : Name
   {
     public IEnumerable<string> TransformedNames => GetItemsUnordered().Select(n => n.Transformed);
 
@@ -27,7 +27,7 @@ namespace SplatTagCore
     /// <summary>
     /// Return if this names handler matches another by any of its names.
     /// </summary>
-    public override bool Match(SourcedItemHandlerBase<T> other)
+    public override bool Match(SourcedItemHandler<T> other)
     {
       if (other is NamesHandler<T> otherNameHandler)
       {
