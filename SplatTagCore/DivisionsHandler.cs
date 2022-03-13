@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class DivisionsHandler : SourcedHandlerBase<Division>, ISerializable
+  public class DivisionsHandler : SourcedItemHandlerBase<Division>, ISerializable
   {
     public DivisionsHandler()
     {
@@ -23,6 +23,34 @@ namespace SplatTagCore
     public IReadOnlyList<Division> GetDivisionsOrdered() => GetItemsOrdered();
 
     public IReadOnlyCollection<Division> GetDivisionsUnordered() => GetItemsUnordered();
+
+    public static Team? GetBestByDiv(IEnumerable<Team> teams)
+    {
+      return (teams?.Any() != true)
+        ? null
+        : teams.OrderBy(t => t.GetBestDiv() ?? Division.Unknown).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Get the best division, or null if not known.
+    /// </summary>
+    /// <param name="lastNDivisions">Limit the search to this many divisions in most-recent chronological order (-1 = no limit)</param>
+    public Division? GetBestDiv(int lastNDivisions = -1)
+    {
+      if (CurrentDivision == null)
+      {
+        return null;
+      }
+      // else
+      IEnumerable<Division> divs =
+        (lastNDivisions == -1) ?
+          this.GetDivisionsUnordered() :
+          // Take is a limit operation (does not throw if limit > count)
+          this.GetDivisionsOrdered().Take(lastNDivisions);
+
+      var bestDiv = divs.Min();
+      return bestDiv.IsUnknown ? null : bestDiv;
+    }
 
     #region Serialization
 

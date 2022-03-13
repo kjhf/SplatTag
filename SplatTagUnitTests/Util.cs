@@ -8,7 +8,7 @@ namespace SplatTagUnitTests
     public static object? GetPrivateMember<T>(T instance, string memberName)
     {
       return typeof(T)
-        .GetField(memberName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+        .GetField(memberName, BindingFlags.Instance | BindingFlags.GetField | BindingFlags.GetProperty | BindingFlags.NonPublic | BindingFlags.Public)
         ?.GetValue(instance);
     }
   }

@@ -8,6 +8,9 @@ namespace SplatTagCore
   /// <summary>
   /// Matching and equality functions
   /// </summary>
+  /// <remarks>
+  /// Note that IEnuerable has a optimisation where First() will use [0] if the collection is an IList.
+  /// </remarks>
   public static class Matcher
   {
     /// <summary>
@@ -112,7 +115,7 @@ namespace SplatTagCore
       }
 
       // Test if the Twitches match.
-      if ((matchOptions & FilterOptions.Twitch) != 0 && first.Twitch.NamesMatch(second.Twitch))
+      if ((matchOptions & FilterOptions.Twitch) != 0 && first.TwitchInformation.Match(second.TwitchInformation))
       {
         // They do.
         if (logger != null)
@@ -123,7 +126,7 @@ namespace SplatTagCore
           logger.Write(" (Id ");
           logger.Write(first.Id);
           logger.Write(") with Twitch(es) [");
-          logger.Write(string.Join(", ", first.Twitch));
+          logger.Write(string.Join(", ", first.TwitchInformation.GetItemsUnordered()));
           logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
@@ -134,7 +137,7 @@ namespace SplatTagCore
       }
 
       // Test if the Twitters match.
-      if ((matchOptions & FilterOptions.Twitter) != 0 && first.Twitter.NamesMatch(second.Twitter))
+      if ((matchOptions & FilterOptions.Twitter) != 0 && first.TwitterInformation.Match(second.TwitterInformation))
       {
         // They do.
         if (logger != null)
@@ -145,7 +148,7 @@ namespace SplatTagCore
           logger.Write(" (Id ");
           logger.Write(first.Id);
           logger.Write(") with Twitter(s) [");
-          logger.Write(string.Join(", ", first.Twitter));
+          logger.Write(string.Join(", ", first.TwitterInformation.GetItemsUnordered()));
           logger.Write("] from player ");
           logger.Write(second);
           logger.Write(" (Id ");
@@ -215,7 +218,7 @@ namespace SplatTagCore
           logger.Write(" (Id ");
           logger.Write(first.Id);
           logger.Write(") with TransformedNames [");
-          logger.Write(string.Join(", ", first.TransformedNames));
+          logger.Write(string.Join(", ", first.NamesInformation.TransformedNames));
           logger.Write("] using");
           logger.Write(" teamMatch=");
           logger.Write(teamMatch);
@@ -226,7 +229,7 @@ namespace SplatTagCore
           logger.Write(" (Id ");
           logger.Write(second.Id);
           logger.Write(") with TransformedNames [");
-          logger.Write(string.Join(", ", second.TransformedNames));
+          logger.Write(string.Join(", ", second.NamesInformation.TransformedNames));
           logger.WriteLine("].");
         }
         return true;
@@ -282,7 +285,7 @@ namespace SplatTagCore
     /// <remarks>
     /// Highly optimised method as this is called literally millions of times during matching
     /// </remarks>
-    public static bool TransformedNamesMatch(this IReadOnlyList<Name> first, IReadOnlyList<Name> second, StringComparer? stringComparison = null)
+    public static bool TransformedNamesMatch(this IReadOnlyCollection<Name> first, IReadOnlyCollection<Name> second, StringComparer? stringComparison = null)
     {
       int firstCount = first.Count;
       int secondCount = second.Count;
@@ -301,15 +304,15 @@ namespace SplatTagCore
 
         if (firstCount == 1 && secondCount == 1)
         {
-          return stringComparison.Equals(first[0].Transformed, second[0].Transformed);
+          return stringComparison.Equals(first.First().Transformed, second.First().Transformed);
         }
         else if (firstCount == 1)
         {
-          return second.Select(n => n.Transformed).Contains(first[0].Transformed, stringComparison);
+          return second.Select(n => n.Transformed).Contains(first.First().Transformed, stringComparison);
         }
         else if (secondCount == 1)
         {
-          return first.Select(n => n.Transformed).Contains(second[0].Transformed, stringComparison);
+          return first.Select(n => n.Transformed).Contains(second.First().Transformed, stringComparison);
         }
         else
         {
@@ -329,7 +332,6 @@ namespace SplatTagCore
       stringComparison ??= StringComparer.OrdinalIgnoreCase;
       if (first.Count == 1)
       {
-        // Note - IEnuerable has a optimisation where First() will use [0] if the collection is an IList. No harm no foul.
         return (second.Count == 1)
           ? stringComparison.Equals(first.First().Value, second.First().Value) ? 1 : 0
           : second.Select(n => n.Value).Contains(first.First().Value, stringComparison) ? 1 : 0;
@@ -361,19 +363,15 @@ namespace SplatTagCore
       }
       else if (firstCount == 1 && secondCount == 1)
       {
-        T firstItem = first is IReadOnlyList<T> firstList ? firstList[0] : first.First();
-        T secondItem = second is IReadOnlyList<T> secondList ? secondList[0] : second.First();
-        return firstItem.Equals(secondItem);
+        return first.First().Equals(second.First());
       }
       else if (firstCount == 1)
       {
-        T firstItem = first is IReadOnlyList<T> firstList ? firstList[0] : first.First();
-        return second.Contains(firstItem);
+        return second.Contains(first.First());
       }
       else if (secondCount == 1)
       {
-        T secondItem = second is IReadOnlyList<T> secondList ? secondList[0] : second.First();
-        return first.Contains(secondItem);
+        return first.Contains(second.First());
       }
       else if (firstCount > 4 || secondCount > 4)
       {
@@ -394,22 +392,22 @@ namespace SplatTagCore
 
     /// <summary>
     /// Get if any matches between <see cref="string"/>s of first and second.
-    /// Matches by Ordinal by default.
+    /// Matches by OrdinalIgnoreCase by default.
     /// </summary>
-    public static bool StringMatch(this IReadOnlyList<string> first, IReadOnlyList<string> second, StringComparer? stringComparison = null)
+    public static bool StringMatch(this IReadOnlyCollection<string> first, IReadOnlyCollection<string> second, StringComparer? stringComparison = null)
     {
       if (first.Count == 0 || second.Count == 0) return false;
 
-      stringComparison ??= StringComparer.Ordinal;
+      stringComparison ??= StringComparer.OrdinalIgnoreCase;
       if (first.Count == 1)
       {
         return (second.Count == 1)
-          ? stringComparison.Equals(first[0], second[0])
-          : second.Contains(first[0], stringComparison);
+          ? stringComparison.Equals(first.First(), second.First())
+          : second.Contains(first.First(), stringComparison);
       }
       else if (second.Count == 1)
       {
-        return first.Contains(second[0], stringComparison);
+        return first.Contains(second.First(), stringComparison);
       }
       else if (first.Count > 4 || second.Count > 4)
       {
@@ -489,7 +487,7 @@ namespace SplatTagCore
       if (TeamsMatch(first, second, logger)) return true;
 
       // Otherwise, test if players match.
-      if (first.Names.TransformedNamesMatch(second.Names))
+      if (first.NamesInformation.TransformedNamesMatch(second.NamesInformation))
       {
         // They do.
         if (logger != null)
@@ -511,13 +509,13 @@ namespace SplatTagCore
         var secondPlayers = second.GetPlayers(allPlayers);
         foreach (var firstPlayer in firstPlayers)
         {
-          string[] firstPlayerNamesWithTag = first.ClanTags.SelectMany(tag => firstPlayer.TransformedNames.Select(n => tag.CombineToPlayer(n))).ToArray();
+          string[] firstPlayerNamesWithTag = first.ClanTags.SelectMany(tag => firstPlayer.NamesInformation.TransformedNames.Select(n => tag.CombineToPlayer(n))).ToArray();
 
           foreach (var secondPlayer in secondPlayers)
           {
-            var secondPlayerNamesWithTag = second.ClanTags.SelectMany(tag => secondPlayer.TransformedNames.Select(n => tag.CombineToPlayer(n)));
+            var secondPlayerNamesWithTag = second.ClanTags.SelectMany(tag => secondPlayer.NamesInformation.TransformedNames.Select(n => tag.CombineToPlayer(n)));
 
-            if (StringMatch(firstPlayer.TransformedNames.Concat(firstPlayerNamesWithTag), secondPlayer.TransformedNames.Concat(secondPlayerNamesWithTag), StringComparer.OrdinalIgnoreCase))
+            if (StringMatch(firstPlayer.NamesInformation.TransformedNames.Concat(firstPlayerNamesWithTag), secondPlayer.NamesInformation.TransformedNames.Concat(secondPlayerNamesWithTag), StringComparer.OrdinalIgnoreCase))
             {
               ++sharedPlayersCount;
 

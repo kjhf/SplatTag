@@ -36,15 +36,16 @@ namespace SplatTagUnitTests
       Assert.IsTrue(database.loadCalled);
 
       database.loadCalled = false;
-      Team exampleTeam = controller.CreateTeam("Example Team");
+      Team exampleTeam = new Team("Example Team", Builtins.ManualSource);
       exampleTeam.AddClanTag("e.g", Builtins.ManualSource, TagOption.Front);
       exampleTeam.AddDivision(new Division(1, DivType.DSB), Builtins.ManualSource);
       var TEAM_ID = exampleTeam.Id;
 
       database.expectedTeams = new List<Team> { exampleTeam };
+      var PLAYER_NAME = "Example Name";
       database.expectedPlayers = new List<Player>
       {
-        new Player("Example Name", new Guid[] { TEAM_ID }, Builtins.ManualSource)
+        new Player(PLAYER_NAME, new Guid[] { TEAM_ID }, Builtins.ManualSource)
       };
       var PLAYER_ID = database.expectedPlayers[0].Id;
 
@@ -52,61 +53,22 @@ namespace SplatTagUnitTests
       Assert.IsTrue(database.loadCalled);
 
       // Also check the player and team is now in the controller
-      object? playersDict = Util.GetPrivateMember(controller, "players");
-      Assert.IsNotNull(playersDict);
-      var players = (IList<Player>)playersDict;
-      Assert.IsNotNull(players);
-      Player? player1 = players.FirstOrDefault(p => p.Id == PLAYER_ID);
-      Assert.IsNotNull(player1);
-      Assert.IsTrue(player1.Id == PLAYER_ID);
+      var players = controller.MatchPlayer(PLAYER_ID.ToString(), new MatchOptions { FilterOptions = FilterOptions.SlappId });
+      Assert.IsNotNull(players.FirstOrDefault());
+      var player = players[0];
+      Assert.IsTrue(player.Name.Value == PLAYER_NAME);
 
-      object? teamsDict = Util.GetPrivateMember(controller, "teams");
-      Assert.IsNotNull(teamsDict);
-      var teams = (IDictionary<Guid, Team>)teamsDict;
-      Assert.IsNotNull(teams);
-      Team? team1 = teams[TEAM_ID];
-      Assert.IsNotNull(team1);
-      Assert.IsTrue(team1.Id == TEAM_ID);
-      Assert.IsTrue(team1.CurrentDiv.Value == 1);
-      Assert.IsTrue(team1.CurrentDiv.DivType == DivType.DSB);
+      var teams = controller.MatchTeam(TEAM_ID.ToString(), new MatchOptions { FilterOptions = FilterOptions.SlappId });
+      Assert.IsNotNull(teams.FirstOrDefault());
+      var team = teams[0];
+      Assert.IsTrue(team.CurrentDiv.Value == 1);
+      Assert.IsTrue(team.CurrentDiv.DivType == DivType.DSB);
 
       // Verify getting the players for that team returns our player
       var playersForExampleTeam = controller.GetPlayersForTeam(exampleTeam);
       Assert.IsNotNull(playersForExampleTeam);
       Assert.IsTrue(playersForExampleTeam.Count == 1);
-      Assert.IsTrue(playersForExampleTeam[0].player.Equals(player1));
-    }
-
-    /// <summary>
-    /// Create a player.
-    /// </summary>
-    [TestMethod]
-    public void CreatePlayerTest()
-    {
-      UnitTestDatabase database = new UnitTestDatabase();
-      SplatTagController controller = new SplatTagController(database);
-      controller.Initialise();
-
-      Player p = controller.CreatePlayer("");
-      Assert.IsNotNull(p);
-      object? players = Util.GetPrivateMember(controller, "players");
-      Assert.IsNotNull(players);
-    }
-
-    /// <summary>
-    /// Create a team.
-    /// </summary>
-    [TestMethod]
-    public void CreateTeamTest()
-    {
-      UnitTestDatabase database = new UnitTestDatabase();
-      SplatTagController controller = new SplatTagController(database);
-      controller.Initialise();
-
-      Team t = controller.CreateTeam("");
-      Assert.IsNotNull(t);
-      object? teams = Util.GetPrivateMember(controller, "teams");
-      Assert.IsNotNull(teams);
+      Assert.IsTrue(playersForExampleTeam[0].player.Equals(player));
     }
   }
 }

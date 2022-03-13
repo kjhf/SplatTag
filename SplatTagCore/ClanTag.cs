@@ -18,25 +18,15 @@ namespace SplatTagCore
     /// </summary>
     /// <param name="tag"></param>
     /// <param name="source"></param>
-    public ClanTag(string tag, Source source)
-      : this(tag, TagOption.Unknown, source.AsEnumerable())
-    {
-    }
-
-    /// <summary>
-    /// Construct a ClanTag based on the tag and the source
-    /// </summary>
-    /// <param name="tag"></param>
-    /// <param name="sources"></param>
-    public ClanTag(string tag, IEnumerable<Source> sources)
-      : this(tag, TagOption.Unknown, sources)
+    public ClanTag(string tag, Source source, TagOption tagOption = TagOption.Unknown)
+      : this(tag, source.AsEnumerable(), tagOption)
     {
     }
 
     /// <summary>
     /// Constructor for ClanTag
     /// </summary>
-    public ClanTag(string tag, TagOption tagOption, IEnumerable<Source> sources)
+    public ClanTag(string tag, IEnumerable<Source> sources, TagOption tagOption = TagOption.Unknown)
       : base(tag, sources)
     {
       LayoutOption = tagOption;
@@ -137,7 +127,7 @@ namespace SplatTagCore
         {
           Console.WriteLine($"Tag deduced! tag={bestCandidate.Key.Item1} option={bestCandidate.Key.Item2} counted {bestCandidate.Value} times!");
         }
-        return new ClanTag(tag: bestCandidate.Key.Item1, tagOption: bestCandidate.Key.Item2, sources: new[] { source });
+        return new ClanTag(tag: bestCandidate.Key.Item1, sources: new[] { source }, tagOption: bestCandidate.Key.Item2);
       }
       else
       {

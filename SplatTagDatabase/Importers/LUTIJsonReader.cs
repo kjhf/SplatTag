@@ -140,7 +140,7 @@ namespace SplatTagDatabase.Importers
 
           if (newTag != null)
           {
-            newTeam.AddClanTags(new[] { newTag });
+            newTeam.AddClanTag(newTag);
           }
         }
 

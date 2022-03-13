@@ -81,17 +81,17 @@ namespace SplatTagUnitTests
         Assert.AreEqual(18, loadedPlayers.Length);
 
         int indexOfExampleTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Example Team"));
-        Assert.AreEqual<string>("ex", loadedTeams[indexOfExampleTeam].ClanTags[0].Value);
+        Assert.AreEqual("ex", loadedTeams[indexOfExampleTeam].ClanTagInformation.MostRecent?.Value);
 
         int indexOfAnotherTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Another Team"));
-        Assert.AreEqual<string>("AT", loadedTeams[indexOfAnotherTeam].ClanTags[0].Value);
+        Assert.AreEqual("AT", loadedTeams[indexOfAnotherTeam].ClanTagInformation.MostRecent?.Value);
 
         int indexOfOhNoTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Oh No"));
-        Assert.AreEqual<string>("/", loadedTeams[indexOfOhNoTeam].ClanTags[0].Value);
+        Assert.AreEqual("/", loadedTeams[indexOfOhNoTeam].ClanTagInformation.MostRecent?.Value);
 
-        Assert.AreEqual(TagOption.Back, loadedTeams[indexOfExampleTeam].ClanTagOption);
-        Assert.AreEqual(TagOption.Front, loadedTeams[indexOfAnotherTeam].ClanTagOption);
-        Assert.AreEqual(TagOption.Surrounding, loadedTeams[indexOfOhNoTeam].ClanTagOption);
+        Assert.AreEqual(TagOption.Back, loadedTeams[indexOfExampleTeam].Tag?.LayoutOption);
+        Assert.AreEqual(TagOption.Front, loadedTeams[indexOfAnotherTeam].Tag?.LayoutOption);
+        Assert.AreEqual(TagOption.Surrounding, loadedTeams[indexOfOhNoTeam].Tag?.LayoutOption);
 
         Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "Cap 1")); // Assert name was loaded without the tag.
         Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "P2")); // Assert name was loaded without the tag.

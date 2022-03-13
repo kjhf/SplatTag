@@ -8,7 +8,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Player : ISerializable, IReadonlySourceable
+  public class Player : IMergable<Player>, IReadonlySourceable, ISerializable
   {
     /// <summary>
     /// The database Id of the player.
@@ -16,44 +16,19 @@ namespace SplatTagCore
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
+    /// Back-store for the weapons that the player uses (if any).
+    /// </summary>
+    private readonly List<string> weapons = new();
+
+    /// <summary>
     /// Back-store for the two-letter country abbreviation.
     /// </summary>
     private string? country;
 
     /// <summary>
-    /// Back-store for the names of this player. The this element is the current name.
-    /// </summary>
-    private readonly List<Name> names = new List<Name>();
-
-    /// <summary>
-    /// Back-store for the plus membership this player belongs to.
-    /// </summary>
-    private readonly List<PlusMembership> plusMembership = new List<PlusMembership>();
-
-    /// <summary>
     /// Player's pronoun(s)
     /// </summary>
     private Pronoun? pronoun;
-
-    /// <summary>
-    /// Back-store for the Sendou Profiles of this player.
-    /// </summary>
-    private readonly List<Sendou> sendouProfiles = new List<Sendou>();
-
-    /// <summary>
-    /// Back-store for the Twitch Profiles of this player.
-    /// </summary>
-    private readonly List<Twitch> twitchProfiles = new List<Twitch>();
-
-    /// <summary>
-    /// Back-store for the Twitter Profiles of this player.
-    /// </summary>
-    private readonly List<Twitter> twitterProfiles = new List<Twitter>();
-
-    /// <summary>
-    /// Back-store for the weapons that the player uses (if any).
-    /// </summary>
-    private readonly List<string> weapons = new List<string>();
 
     /// <summary>
     /// Default construct a player
@@ -69,7 +44,7 @@ namespace SplatTagCore
     /// <param name="source"></param>
     public Player(string ign, Source source)
     {
-      this.names.Add(new Name(ign, source));
+      this.NamesInformation.Add(new Name(ign, source));
     }
 
     /// <summary>
@@ -79,9 +54,15 @@ namespace SplatTagCore
     /// <param name="source"></param>
     public Player(string ign, IList<Guid> teams, Source source)
     {
-      this.names.Add(new Name(ign, source));
+      this.NamesInformation.Add(new Name(ign, source));
       this.TeamInformation.Add(teams, source);
     }
+
+    /// <summary>
+    /// Any names (social or IGN) this player is known by; does NOT include Battlefy.
+    /// </summary>
+    public IReadOnlyList<Name> AllKnownNames
+      => new List<Name>(Names.Concat(SendouProfiles).Concat(Discord.Ids).Concat(Discord.Usernames).Concat(TwitchProfiles).Concat(TwitterProfiles).Distinct());
 
     /// <summary>
     /// Get the player's Battlefy profile details.
@@ -134,11 +115,6 @@ namespace SplatTagCore
     public Guid CurrentTeam => TeamInformation.CurrentTeam ?? Team.NoTeam.Id;
 
     /// <summary>
-    /// Get the information regarding teams for this player.
-    /// </summary>
-    public TeamsHandler TeamInformation { get; } = new TeamsHandler();
-
-    /// <summary>
     /// Get the player's Discord profile details.
     /// </summary>
     public Discord Discord { get; } = new Discord();
@@ -146,12 +122,12 @@ namespace SplatTagCore
     /// <summary>
     /// The known Discord Ids of the player.
     /// </summary>
-    public IReadOnlyList<Name> DiscordIds => Discord.Ids;
+    public IReadOnlyCollection<Name> DiscordIds => Discord.Ids;
 
     /// <summary>
     /// The known Discord usernames of the player.
     /// </summary>
-    public IReadOnlyList<Name> DiscordNames => Discord.Usernames;
+    public IReadOnlyCollection<Name> DiscordNames => Discord.Usernames;
 
     /// <summary>
     /// Get the information regarding the friend codes for this player.
@@ -161,27 +137,57 @@ namespace SplatTagCore
     /// <summary>
     /// The last known used name for the player
     /// </summary>
-    public Name Name => names.Count > 0 ? names[0] : Builtins.UnknownPlayerName;
+    public Name Name => NamesInformation.MostRecent ?? Builtins.UnknownPlayerName;
 
     /// <summary>
     /// The in-game or registered names this player is known by.
     /// </summary>
-    public IReadOnlyList<Name> Names => names;
+    public IReadOnlyCollection<Name> Names => NamesInformation.GetItemsUnordered();
 
     /// <summary>
-    /// Any names (social or IGN) this player is known by; does NOT include Battlefy.
+    /// The in-game or registered names this player is known by.
     /// </summary>
-    public IReadOnlyList<Name> AllKnownNames => new List<Name>(names.Concat(sendouProfiles).Concat(Discord.AllNames).Concat(twitchProfiles).Concat(twitterProfiles).Distinct());
+    public NamesHandler<Name> NamesInformation { get; } = new();
 
     /// <summary>
     /// The plus membership(s) this player belongs to.
     /// </summary>
-    public IReadOnlyList<PlusMembership> PlusMembership => plusMembership;
+    public IReadOnlyCollection<PlusMembership> PlusMembership => PlusMembershipInformation.GetItemsUnordered();
+
+    /// <summary>
+    /// The plus membership(s) this player belongs to.
+    /// </summary>
+    public NamesHandler<PlusMembership> PlusMembershipInformation { get; } = new();
+
+    /// <summary>
+    /// The Sendou social information this player belongs to.
+    /// </summary>
+    public NamesHandler<Sendou> SendouInformation { get; } = new();
 
     /// <summary>
     /// Get the player's Sendou profile details.
     /// </summary>
-    public IReadOnlyList<Sendou> SendouProfiles => sendouProfiles;
+    public IReadOnlyCollection<Sendou> SendouProfiles => SendouInformation.GetItemsUnordered();
+
+    /// <summary>
+    /// The Twitch social information this player belongs to.
+    /// </summary>
+    public NamesHandler<Twitch> TwitchInformation { get; } = new();
+
+    /// <summary>
+    /// The Twitch social information this player belongs to.
+    /// </summary>
+    public IReadOnlyCollection<Twitch> TwitchProfiles => TwitchInformation.GetItemsUnordered();
+
+    /// <summary>
+    /// The Twitter social information this player belongs to.
+    /// </summary>
+    public NamesHandler<Twitter> TwitterInformation { get; } = new();
+
+    /// <summary>
+    /// The Twitter social information this player belongs to.
+    /// </summary>
+    public IReadOnlyCollection<Twitter> TwitterProfiles => TwitterInformation.GetItemsUnordered();
 
     /// <summary>
     /// Get the player's Skill/clout.
@@ -189,19 +195,20 @@ namespace SplatTagCore
     public Skill Skill { get; } = new Skill();
 
     public IReadOnlyList<Source> Sources =>
-      names.SelectMany(n => n.Sources)
-      .Concat(Battlefy.PersistentIds.SelectMany(s => s.Sources))
-      .Concat(Discord.Usernames.SelectMany(s => s.Sources))
-      .Concat(FCInformation.Sources)
-      .Concat(plusMembership.SelectMany(s => s.Sources))
-      .Concat(pronoun?.Sources ?? Array.Empty<Source>())
-      .Concat(sendouProfiles.SelectMany(s => s.Sources))
-      .Concat(twitchProfiles.SelectMany(s => s.Sources))
-      .Concat(twitterProfiles.SelectMany(s => s.Sources))
-      .Distinct()
-      .OrderByDescending(s => s)
-      .ToList()
-      ;
+      NamesInformation.Sources
+        .Concat(Battlefy.Sources)
+        .Concat(Discord.Sources)
+        .Concat(FCInformation.Sources)
+        .Concat(PlusMembershipInformation.Sources)
+        .Concat(pronoun?.Sources ?? Array.Empty<Source>())
+        .Concat(SendouInformation.Sources)
+        .Concat(TeamInformation.Sources)
+        .Concat(TwitchInformation.Sources)
+        .Concat(TwitterInformation.Sources)
+        .Distinct()
+        .OrderByDescending(s => s)
+        .ToList()
+        ;
 
     /// <summary>
     /// The Splatnet database Id of the player (a hex string).
@@ -210,43 +217,31 @@ namespace SplatTagCore
     public string? SplatnetId { get; set; }
 
     /// <summary>
+    /// Get the information regarding teams for this player.
+    /// </summary>
+    public TeamsHandler TeamInformation { get; } = new TeamsHandler();
+
+    /// <summary>
     /// Get or Set Top 500 flag.
     /// False by default.
     /// </summary>
     public bool Top500 { get; set; }
 
     /// <summary>
-    /// The Names of this Player transformed.
-    /// </summary>
-    public IEnumerable<string> TransformedNames => Names.Select(n => n.Transformed);
-
-    /// <summary>
-    /// Get the player's Twitch profile details.
-    /// </summary>
-    public IReadOnlyList<Twitch> Twitch => twitchProfiles;
-
-    /// <summary>
-    /// Get the player's Twitter profile details.
-    /// </summary>
-    public IReadOnlyList<Twitter> Twitter => twitterProfiles;
-
-    /// <summary>
     /// The weapons this player uses.
     /// </summary>
     public IReadOnlyList<string> Weapons => weapons;
-
-    public void AddBattlefy(Battlefy value)
-    {
-      Battlefy.AddSlugs(value.Slugs);
-      Battlefy.AddUsernames(value.Usernames);
-      Battlefy.AddPersistentIds(value.PersistentIds);
-    }
 
     public void AddBattlefyInformation(string slug, string username, string persistentId, Source source)
     {
       AddBattlefySlug(slug, source);
       AddBattlefyUsername(username, source);
       AddBattlefyPersistentId(persistentId, source);
+    }
+
+    public void AddBattlefyPersistentId(string persistentId, Source source)
+    {
+      Battlefy.AddPersistentId(persistentId, source);
     }
 
     public void AddBattlefySlug(string slug, Source source)
@@ -257,11 +252,6 @@ namespace SplatTagCore
     public void AddBattlefyUsername(string username, Source source)
     {
       Battlefy.AddUsername(username, source);
-    }
-
-    public void AddBattlefyPersistentId(string persistentId, Source source)
-    {
-      Battlefy.AddPersistentId(persistentId, source);
     }
 
     public void AddDiscord(Discord value)
@@ -279,85 +269,29 @@ namespace SplatTagCore
     {
       Debug.WriteLineIf(!discordNameIncludingDiscrim.Contains("#"), $"Added Discord name to player {this.Name} but it does not have a #!");
       Discord.AddUsername(discordNameIncludingDiscrim, source);
-      // AddName(discordNameIncludingDiscrim.Split('#')[0], source);
     }
 
     public void AddFCs(FriendCode value, Source source) => FCInformation.Add(value, source);
 
     public void AddFCs(IList<FriendCode> value, Source source) => FCInformation.Add(value, source);
 
-    public void AddFCs(FriendCodesHandler value) => FCInformation.Merge(value);
-
     public void AddName(string name, Source source)
-    {
-      SplatTagCommon.AddName(new Name(name, source), names);
-    }
-
-    public void AddNames(IEnumerable<Name> value)
-    {
-      SplatTagCommon.AddNames(value, names);
-    }
-
-    /// <summary>
-    /// Conditionally set the pronouns of this player.
-    /// If NONE is returned from the searcher, it is not set.
-    /// Returns the Pronoun object set (or null).
-    /// </summary>
-    public Pronoun? SetPronoun(string description, Source source)
-    {
-      var incoming = new Pronoun(description, source);
-      if (incoming.value != PronounFlags.NONE)
-      {
-        this.pronoun = incoming;
-      }
-      return this.pronoun;
-    }
+      => NamesInformation.Add(new Name(name, source));
 
     public void AddPlusServerMembership(int? plusLevel, Source source)
-    {
-      SplatTagCommon.AddName(new PlusMembership(plusLevel, source), plusMembership);
-    }
-
-    public void AddPlusServerMembership(IEnumerable<PlusMembership> value)
-    {
-      SplatTagCommon.AddNames(value, plusMembership);
-    }
+      => PlusMembershipInformation.Add(new PlusMembership(plusLevel, source));
 
     public void AddSendou(string handle, Source source)
-    {
-      SplatTagCommon.AddName(new Sendou(handle, source), sendouProfiles);
-    }
+      => SendouInformation.Add(new Sendou(handle, source));
 
-    public void AddSendou(IEnumerable<Sendou> value)
-    {
-      SplatTagCommon.AddNames(value, sendouProfiles);
-    }
-
-    public void AddTeams(Guid value, Source source) => TeamInformation.Add(value, source);
-
-    public void AddTeams(IList<Guid> value, Source source) => TeamInformation.Add(value, source);
-
-    public void AddTeams(TeamsHandler value) => TeamInformation.Merge(value);
+    public void AddTeams(Guid value, Source source)
+      => TeamInformation.Add(value, source);
 
     public void AddTwitch(string handle, Source source)
-    {
-      SplatTagCommon.AddName(new Twitch(handle, source), twitchProfiles);
-    }
-
-    public void AddTwitch(IEnumerable<Twitch> value)
-    {
-      SplatTagCommon.AddNames(value, twitchProfiles);
-    }
+      => TwitchInformation.Add(new Twitch(handle, source));
 
     public void AddTwitter(string handle, Source source)
-    {
-      SplatTagCommon.AddName(new Twitter(handle, source), twitterProfiles);
-    }
-
-    public void AddTwitter(IEnumerable<Twitter> value)
-    {
-      SplatTagCommon.AddNames(value, twitterProfiles);
-    }
+      => TwitterInformation.Add(new Twitter(handle, source));
 
     public void AddWeapons(IEnumerable<string> value)
     {
@@ -375,28 +309,28 @@ namespace SplatTagCore
       if (ReferenceEquals(this, newerPlayer)) return;
 
       // Merge the teams.
-      AddTeams(newerPlayer.TeamInformation);
+      TeamInformation.Merge(newerPlayer.TeamInformation);
 
       // Merge the player's name(s).
-      AddNames(newerPlayer.names);
+      NamesInformation.Merge(newerPlayer.NamesInformation);
 
       // Merge the weapons.
       AddWeapons(newerPlayer.weapons);
 
       // Merge the Battlefy Slugs and usernames.
-      AddBattlefy(newerPlayer.Battlefy);
+      Battlefy.Merge(newerPlayer.Battlefy);
 
       // Merge the Discord Slugs and usernames.
-      AddDiscord(newerPlayer.Discord);
+      Discord.Merge(newerPlayer.Discord);
 
       // Merge the Social Data.
-      AddPlusServerMembership(newerPlayer.plusMembership);
-      AddSendou(newerPlayer.SendouProfiles);
-      AddTwitch(newerPlayer.twitchProfiles);
-      AddTwitter(newerPlayer.twitterProfiles);
+      PlusMembershipInformation.Merge(newerPlayer.PlusMembershipInformation);
+      SendouInformation.Merge(newerPlayer.SendouInformation);
+      TwitchInformation.Merge(newerPlayer.TwitchInformation);
+      TwitterInformation.Merge(newerPlayer.TwitterInformation);
 
       // Merge the misc data
-      AddFCs(newerPlayer.FCInformation);
+      FCInformation.Merge(newerPlayer.FCInformation);
 
       if (!string.IsNullOrWhiteSpace(newerPlayer.Country))
       {
@@ -415,6 +349,21 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Conditionally set the pronouns of this player.
+    /// If NONE is returned from the searcher, it is not set.
+    /// Returns the Pronoun object set (or null).
+    /// </summary>
+    public Pronoun? SetPronoun(string description, Source source)
+    {
+      var incoming = new Pronoun(description, source);
+      if (incoming.value != PronounFlags.NONE)
+      {
+        this.pronoun = incoming;
+      }
+      return this.pronoun;
+    }
+
+    /// <summary>
     /// Overridden ToString, returns the player's name.
     /// </summary>
     public override string ToString()
@@ -427,23 +376,22 @@ namespace SplatTagCore
     // Deserialize
     protected Player(SerializationInfo info, StreamingContext context)
     {
-      AddBattlefy(info.GetValueOrDefault("Battlefy", new Battlefy()));
+      this.Battlefy = info.GetValueOrDefault("Battlefy", new Battlefy());
       this.Country = info.GetValueOrDefault("Country", default(string));
-      AddDiscord(info.GetValueOrDefault("Discord", new Discord()));
-      AddFCs(info.GetValueOrDefault("FCs", new FriendCodesHandler()));
-      AddNames(info.GetValueOrDefault("N", Array.Empty<Name>()));
-      AddPlusServerMembership(info.GetValueOrDefault("Plus", Array.Empty<PlusMembership>()));
+      this.Discord = info.GetValueOrDefault("Discord", new Discord());
+      this.FCInformation = info.GetValueOrDefault("FCs", new FriendCodesHandler());
+      this.NamesInformation.Add(info.GetValueOrDefault("N", Array.Empty<Name>()));
+      this.PlusMembershipInformation.Add(info.GetValueOrDefault("Plus", Array.Empty<PlusMembership>()));
       this.pronoun = info.GetValueOrDefault("Pro", (Pronoun?)null);
-      AddSendou(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
+      this.SendouInformation.Add(info.GetValueOrDefault("Sendou", Array.Empty<Sendou>()));
+      this.TeamInformation = info.GetValueOrDefault("Teams", new TeamsHandler());
+      this.Top500 = info.GetValueOrDefault("Top500", false);
+      this.TwitchInformation.Add(info.GetValueOrDefault("Twitch", Array.Empty<Twitch>()));
+      this.TwitterInformation.Add(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
+      AddWeapons(info.GetValueOrDefault("Weapons", Array.Empty<string>()));
 
       Skill[] skills = info.GetValueOrDefault("Skill", Array.Empty<Skill>());
       this.Skill = skills.Length == 1 ? skills[0] : new Skill();
-      AddTeams(info.GetValueOrDefault("Teams", new TeamsHandler()));
-      this.Top500 = info.GetValueOrDefault("Top500", false);
-      AddTwitch(info.GetValueOrDefault("Twitch", Array.Empty<Twitch>()));
-      AddTwitter(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
-      AddWeapons(info.GetValueOrDefault("Weapons", Array.Empty<string>()));
-
       this.Id = info.GetValueOrDefault("Id", Guid.Empty);
       if (this.Id == Guid.Empty)
       {
@@ -468,17 +416,17 @@ namespace SplatTagCore
 
       info.AddValue("Id", this.Id);
 
-      if (this.names.Count > 0)
-        info.AddValue("N", this.names);
+      if (this.NamesInformation.Count > 0)
+        info.AddValue("N", this.Names);
 
-      if (this.plusMembership.Count > 0)
-        info.AddValue("Plus", this.plusMembership);
+      if (this.PlusMembershipInformation.Count > 0)
+        info.AddValue("Plus", this.PlusMembership);
 
       if (this.pronoun != null)
         info.AddValue("Pro", this.pronoun);
 
-      if (this.sendouProfiles.Count > 0)
-        info.AddValue("Sendou", this.sendouProfiles);
+      if (this.SendouInformation.Count > 0)
+        info.AddValue("Sendou", this.SendouProfiles);
 
       if (!this.Skill.IsDefault)
         info.AddValue("Skill", this.Skill);
@@ -489,11 +437,11 @@ namespace SplatTagCore
       if (this.Top500)
         info.AddValue("Top500", this.Top500);
 
-      if (this.twitchProfiles.Count > 0)
-        info.AddValue("Twitch", this.twitchProfiles);
+      if (this.TwitchInformation.Count > 0)
+        info.AddValue("Twitch", this.TwitchProfiles);
 
-      if (this.twitterProfiles.Count > 0)
-        info.AddValue("Twitter", this.twitterProfiles);
+      if (this.TwitterInformation.Count > 0)
+        info.AddValue("Twitter", this.TwitterProfiles);
 
       if (this.weapons.Count > 0)
         info.AddValue("Weapons", this.weapons);

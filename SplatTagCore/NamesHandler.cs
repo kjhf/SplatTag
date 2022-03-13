@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
-  public class NamesHandler<T> : SourcedHandlerBase<T> where T : Name
+  public class NamesHandler<T> : SourcedItemHandlerBase<T> where T : Name
   {
-    public NamesHandler()
-    {
-    }
+    public IEnumerable<string> TransformedNames => GetItemsUnordered().Select(n => n.Transformed);
 
     public void Add(T item)
       => Add(item, item.Sources);
@@ -22,10 +19,15 @@ namespace SplatTagCore
       }
     }
 
+    public bool Contains(string nameValue, StringComparison stringComparison = StringComparison.OrdinalIgnoreCase)
+    {
+      return GetItemsUnordered().Any(n => n.Value.Equals(nameValue, stringComparison));
+    }
+
     /// <summary>
-    /// Return if this handler matches another.
+    /// Return if this names handler matches another by any of its names.
     /// </summary>
-    public override bool Match(SourcedHandlerBase<T> other)
+    public override bool Match(SourcedItemHandlerBase<T> other)
     {
       if (other is NamesHandler<T> otherNameHandler)
       {
@@ -35,6 +37,11 @@ namespace SplatTagCore
       {
         return base.Match(other);
       }
+    }
+
+    public bool TransformedNamesMatch(NamesHandler<T> other)
+    {
+      return GetItemsUnordered().TransformedNamesMatch(other.GetItemsUnordered());
     }
   }
 }

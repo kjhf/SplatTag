@@ -83,12 +83,12 @@ namespace SplatTagUnitTests
         Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "!Username!"));
         Assert.IsTrue(loadedPlayers.Any(p => p.Discord.Ids.FirstOrDefault()?.Value == "85179121671364608"));
         Assert.IsTrue(loadedPlayers.Any(p => p.Discord.Usernames.FirstOrDefault()?.Value == "!A_DISCORD_USERNAME!#2227"));
-        Assert.IsTrue(loadedPlayers.Any(p => p.Twitter.FirstOrDefault()?.Value == "Twitter_Name"));
-        Assert.IsTrue(loadedPlayers.Any(p => p.Twitch.FirstOrDefault()?.Value == "Twitch_Name"));
+        Assert.IsTrue(loadedPlayers.Any(p => p.TwitterProfiles.FirstOrDefault()?.Value == "Twitter_Name"));
+        Assert.IsTrue(loadedPlayers.Any(p => p.TwitchProfiles.FirstOrDefault()?.Value == "Twitch_Name"));
         Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "AnotherPlayer"));
         Assert.IsTrue(loadedPlayers.Any(p => p.Discord.Ids.FirstOrDefault()?.Value == "346383172986208256"));
         Assert.IsTrue(loadedPlayers.Any(p => p.Discord.Usernames.FirstOrDefault()?.Value == "!AnotherPlayerDiscord#1783"));
-        Assert.IsTrue(loadedPlayers.Any(p => p.Twitter.FirstOrDefault()?.Value == "AnotherPlayerTwitter"));
+        Assert.IsTrue(loadedPlayers.Any(p => p.TwitterProfiles.FirstOrDefault()?.Value == "AnotherPlayerTwitter"));
         Assert.IsTrue(loadedPlayers.Count(p => p.Top500) == 1);
       }
       finally
@@ -143,7 +143,7 @@ namespace SplatTagUnitTests
         Assert.IsTrue(loadedPlayers.Any(p => p.Name.Value == "AnotherPlayer"));
         Assert.IsTrue(loadedPlayers.Any(p => p.Discord.Ids.FirstOrDefault()?.Value == "98746624112599040"));
         Assert.IsTrue(loadedPlayers.Any(p => p.Discord.Usernames.FirstOrDefault()?.Value == "AnotherPlayer#6667"));
-        Assert.IsTrue(loadedPlayers.Any(p => p.Twitter.FirstOrDefault()?.Value == "ATwitter"));
+        Assert.IsTrue(loadedPlayers.Any(p => p.TwitterProfiles.FirstOrDefault()?.Value == "ATwitter"));
       }
       finally
       {

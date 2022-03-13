@@ -76,7 +76,7 @@ namespace SplatTagUnitTests
 
       // Load.
       SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(current);
-      (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.Load();
+      (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.LoadInline();
       Assert.IsNotNull(players, "Not expecting null return for players");
       Assert.IsNotNull(teams, "Not expecting null return for teams");
       Assert.IsNotNull(sources, "Not expecting null return for sources");
@@ -89,7 +89,7 @@ namespace SplatTagUnitTests
           .Where(p => p.Name.Value.Contains("Slate"))
           .Select(p => new StringBuilder()
                   .Append('[')
-                  .AppendJoin(", ", p.Names)
+                  .AppendJoin(", ", p.NamesInformation)
                   .Append(']')
                   .Append(" -- Sourced from [")
                   .AppendJoin(", ", p.Sources)
@@ -142,7 +142,7 @@ namespace SplatTagUnitTests
       Assert.IsTrue(actual.Contains(MESSAGE_PATCHED), "Database patched message not found.");
 
       SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(current);
-      (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.Load();
+      (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.LoadInline();
 
       var slates = players.Where(p => p.AllKnownNames.NamesMatch(new[] { new Name("Slate", Builtins.ManualSource) }));
 

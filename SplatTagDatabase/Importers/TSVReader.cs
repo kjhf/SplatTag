@@ -486,7 +486,7 @@ namespace SplatTagDatabase.Importers
 
               if (newTag != null)
               {
-                t.AddClanTags(new[] { newTag });
+                t.AddClanTag(newTag);
               }
             }
             teams.Add(t);
@@ -507,7 +507,7 @@ namespace SplatTagDatabase.Importers
       }
       else
       {
-        Player p = new Player();
+        Player p = new();
         rowPlayers.Add(playerNum, p);
         return p;
       }

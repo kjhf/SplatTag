@@ -21,6 +21,14 @@ namespace SplatTagDatabase
     private string? teamsSnapshotFile = null;
     private string? sourcesSnapshotFile = null;
 
+    private List<Player> _players = new();
+    private Dictionary<Guid, Team> _teams = new();
+    private Dictionary<string, Source> _sources = new();
+
+    public IReadOnlyList<Player> Players => _players.Count == 0 ? Array.Empty<Player>() : _players;
+    public IReadOnlyDictionary<Guid, Team> Teams => _teams;
+    public IReadOnlyDictionary<string, Source> Sources => _sources;
+
     public SplatTagJsonSnapshotDatabase(string saveDirectory)
     {
       this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
@@ -42,7 +50,23 @@ namespace SplatTagDatabase
       return new DirectoryInfo(dir).GetFiles(SNAPSHOT_FORMAT).OrderByDescending(f => f.LastWriteTime);
     }
 
-    public (Player[], Team[], Dictionary<string, Source>) Load()
+    /// <summary>
+    /// Loads the database and saves the results to the DB's fields.
+    /// Returns if anything was loaded.
+    /// </summary>
+    public bool Load()
+    {
+      var (players, teams, importedSources) = LoadInline();
+      _players = players.ToList();
+      _teams = teams.ToDictionary(t => t.Id, t => t);
+      _sources = importedSources;
+      return players.Length != 0 || teams.Length != 0 || importedSources.Count != 0;
+    }
+
+    /// <summary>
+    /// Loads the database but bypasses saving the fields, instead passes the result as return tuple.
+    /// </summary>
+    public (Player[], Team[], Dictionary<string, Source>) LoadInline()
     {
       if (playersSnapshotFile != null && teamsSnapshotFile != null && sourcesSnapshotFile != null)
       {

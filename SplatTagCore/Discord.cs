@@ -7,108 +7,97 @@ using System.Text.RegularExpressions;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Discord : ISerializable
+  public class Discord : IMergable<Discord>, IReadonlySourceable, ISerializable
   {
-    public static readonly Regex DISCORD_NAME_REGEX = new Regex(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
-
-    /// <summary>
-    /// Back-store for the Discord ids
-    /// </summary>
-    private readonly List<Name> ids = new List<Name>();
-
-    /// <summary>
-    /// Back-store for the Discord usernames
-    /// </summary>
-    private readonly List<Name> usernames = new List<Name>();
-
+    /// <summary>Parameterless constructor</summary>
+    /// <remarks>Required for serialization - do not delete.</remarks>
     public Discord()
     {
     }
 
+    public static readonly Regex DISCORD_NAME_REGEX = new(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
     /// <summary>
-    /// The persistent Discord ids
+    /// The Discord ids
     /// </summary>
-    public IReadOnlyList<Name> Ids => ids;
+    public IReadOnlyCollection<Name> Ids => IdsHandler.GetItemsUnordered();
+
+    /// <summary>
+    /// The Discord ids
+    /// </summary>
+    public NamesHandler<Name> IdsHandler { get; } = new();
 
     /// <summary>
     /// The Discord usernames
     /// </summary>
-    public IReadOnlyList<Name> Usernames => usernames;
+    public IReadOnlyCollection<Name> Usernames => UsernamesHandler.GetItemsUnordered();
 
     /// <summary>
-    /// Combination of Discord usernames and ids
+    /// The Discord usernames
     /// </summary>
-    public IReadOnlyList<Name> AllNames => new List<Name>(ids.Concat(usernames).Distinct());
+    public NamesHandler<Name> UsernamesHandler { get; } = new();
+
+    public IReadOnlyList<Source> Sources
+    {
+      get
+      {
+        var sources = new HashSet<Source>(IdsHandler.Sources);
+        sources.UnionWith(UsernamesHandler.Sources);
+        return sources.ToList();
+      }
+    }
 
     /// <summary>
     /// Add a new Discord id to the front of this profile
     /// </summary>
     public void AddId(string slug, Source source)
-    {
-      SplatTagCommon.AddName(new Name(slug, source), ids);
-    }
+      => IdsHandler.Add(new Name(slug, source));
 
     /// <summary>
     /// Add Discord ids to this Discord profile
     /// </summary>
     /// <param name="ids"></param>
     public void AddIds(IEnumerable<Name> ids)
-    {
-      SplatTagCommon.AddNames(ids, this.ids);
-    }
+      => IdsHandler.Add(ids);
 
     /// <summary>
     /// Add a new Discord name to the front of this profile
     /// </summary>
     /// <param name="ids"></param>
     public void AddUsername(string username, Source source)
-    {
-      SplatTagCommon.AddName(new Name(username, source), usernames);
-    }
+      => UsernamesHandler.Add(new Name(username, source));
 
     /// <summary>
     /// Add Discord usernames to this Discord profile
     /// </summary>
-    public void AddUsernames(IEnumerable<Name> usernames)
-    {
-      SplatTagCommon.AddNames(usernames, this.usernames);
-    }
-
-    /// <summary>
-    /// Return if this Discord matches by username
-    /// </summary>
-    public bool MatchUsernames(Discord other)
-    {
-      return usernames.NamesMatch(other.usernames);
-    }
-
-    /// <summary>
-    /// Return if this Discord matches another by username.
-    /// </summary>
-    public bool MatchUsername(string name)
-    {
-      return usernames.Cast<string>().Contains(name, StringComparison.OrdinalIgnoreCase);
-    }
+    public void AddUsernames(IEnumerable<Name> incoming)
+      => UsernamesHandler.Add(incoming);
 
     /// <summary>
     /// Return if this Discord matches another by persistent data (ids).
     /// </summary>
     public bool MatchPersistent(Discord other)
-    {
-      return ids.NamesMatch(other.ids);
-    }
+      => IdsHandler.Match(other.IdsHandler);
 
     /// <summary>
-    /// Return if this Discord matches another by persistent data (ids).
+    /// Return if this Discord matches by username
     /// </summary>
-    public bool MatchPersistent(string id)
+    public bool MatchUsernames(Discord other)
+      => UsernamesHandler.Match(other.UsernamesHandler);
+
+    /// <summary>
+    /// Merge this <see cref="Discord"/> instance with another.
+    /// Handles Sources and timings.
+    /// </summary>
+    public void Merge(Discord other)
     {
-      return ids.Cast<string>().Contains(id, StringComparison.OrdinalIgnoreCase);
+      this.IdsHandler.Merge(other.IdsHandler);
+      this.UsernamesHandler.Merge(other.UsernamesHandler);
     }
 
     public override string ToString()
     {
-      return $"Ids: [{string.Join(", ", ids)}], Usernames: [{string.Join(", ", usernames)}]";
+      return $"Ids: [{string.Join(", ", Ids)}], Usernames: [{string.Join(", ", Usernames)}]";
     }
 
     #region Serialization
@@ -116,18 +105,18 @@ namespace SplatTagCore
     // Deserialize
     protected Discord(SerializationInfo info, StreamingContext context)
     {
-      AddIds(info.GetValueOrDefault("Ids", Array.Empty<Name>()));
-      AddUsernames(info.GetValueOrDefault("Usernames", Array.Empty<Name>()));
+      IdsHandler.Add(info.GetValueOrDefault("Ids", Array.Empty<Name>()));
+      UsernamesHandler.Add(info.GetValueOrDefault("Usernames", Array.Empty<Name>()));
     }
 
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (Ids.Count > 0)
-        info.AddValue("Ids", ids);
+      if (IdsHandler.Count > 0)
+        info.AddValue("Ids", Ids);
 
-      if (Usernames.Count > 0)
-        info.AddValue("Usernames", usernames);
+      if (UsernamesHandler.Count > 0)
+        info.AddValue("Usernames", Usernames);
     }
 
     #endregion Serialization

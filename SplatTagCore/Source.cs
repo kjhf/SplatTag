@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Source : ISerializable, /*ITeamResolver,*/ IComparable<Source>, IEquatable<Source?>
+  public class Source : ISerializable, IComparable<Source>, IEquatable<Source?>
   {
     private static readonly Regex TOURNAMENT_ID_REGEX = new("-+([0-9a-fA-F]{18,})$");
 
@@ -126,43 +126,6 @@ namespace SplatTagCore
     /// </summary>
     public int CompareTo(Source other) => Start.CompareTo(other.Start);
 
-    ///// <summary>
-    ///// Match a <see cref="Team"/> by its id.
-    ///// Sets <paramref name="team"/> to <see cref="Team.UnlinkedTeam"/> if not found.
-    ///// </summary>
-    //public bool GetTeamById(Guid id, out Team team)
-    //{
-    //  if (id == Team.NoTeam.Id)
-    //  {
-    //    team = Team.NoTeam;
-    //    return true;
-    //  }
-
-    //  var findResult = Array.Find(Teams, t => t.Id == id);
-    //  if (findResult != null)
-    //  {
-    //    team = findResult;
-    //    return true;
-    //  }
-    //  else
-    //  {
-    //    team = Team.UnlinkedTeam;
-    //    return false;
-    //  }
-    //}
-
-    ///// <summary>
-    ///// Match a Team by its id.
-    ///// </summary>
-    ///// <returns>
-    ///// Non-null team, which defaults to <see cref="Team.UnlinkedTeam"/> if not found.
-    ///// </returns>
-    //public Team GetTeamById(Guid id)
-    //{
-    //  GetTeamById(id, out Team team);
-    //  return team;
-    //}
-
     public override string ToString()
     {
       return Name ?? base.ToString();
@@ -173,7 +136,7 @@ namespace SplatTagCore
       int dataStrLength = "yyyy-mm-dd-".Length;
       if (Name.Length > dataStrLength && Name.Count('-') > 2)
       {
-        strippedTournamentName = Name.Substring(dataStrLength).Trim('-');
+        strippedTournamentName = Name[dataStrLength..].Trim('-');
       }
       else
       {
@@ -191,7 +154,7 @@ namespace SplatTagCore
       {
         // We always want to grab the last match as the id is at the end of the source name.
         battlefyId = idAtNameEndMatch.Groups[^1].Value;
-        strippedTournamentName = strippedTournamentName.Substring(0, TOURNAMENT_ID_REGEX.Match(strippedTournamentName).Index);
+        strippedTournamentName = strippedTournamentName[..TOURNAMENT_ID_REGEX.Match(strippedTournamentName).Index];
       }
       else
       {

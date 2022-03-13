@@ -207,11 +207,11 @@ namespace SplatTagUI
       }
       else if (b.DataContext is Team t)
       {
-        splatTagController.TryLaunchAddress(t.Twitter.FirstOrDefault()?.Uri?.AbsoluteUri);
+        splatTagController.TryLaunchAddress(t.TwitterProfiles.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchAddress(p.Twitter.FirstOrDefault()?.Uri?.AbsoluteUri);
+        splatTagController.TryLaunchAddress(p.TwitterProfiles.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Social s)
       {
@@ -232,7 +232,7 @@ namespace SplatTagUI
       }
       else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchAddress(p.Twitch.FirstOrDefault()?.Uri?.AbsoluteUri);
+        splatTagController.TryLaunchAddress(p.TwitchProfiles.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Social s)
       {

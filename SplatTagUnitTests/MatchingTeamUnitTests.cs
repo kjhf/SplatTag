@@ -19,10 +19,10 @@ namespace SplatTagUnitTests
       UnitTestDatabase database = new UnitTestDatabase();
       SplatTagController controller = new SplatTagController(database);
 
-      Team t1 = controller.CreateTeam("Team 17");
+      Team t1 = CreateTeam("Team 17");
       t1.AddClanTag("x", Builtins.ManualSource, TagOption.Front);
 
-      Team t2 = controller.CreateTeam("Example 18");
+      Team t2 = CreateTeam("Example 18");
       t2.AddClanTag("e", Builtins.ManualSource, TagOption.Front);
 
       database.expectedTeams = new List<Team> { t1, t2 };
@@ -48,7 +48,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Team 17"); // Purposefully mixed case
+      Team t = CreateTeam("Team 17"); // Purposefully mixed case
       t.AddClanTag("WO", Builtins.ManualSource, TagOption.Front); // Purposefully upper-case
       database.expectedTeams = new List<Team> { t };
 
@@ -68,10 +68,10 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t1 = controller.CreateTeam("Inkology");
+      Team t1 = CreateTeam("Inkology");
       t1.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
 
-      Team t2 = controller.CreateTeam("Inkfected");
+      Team t2 = CreateTeam("Inkfected");
       t2.AddClanTag("τイ", Builtins.ManualSource, TagOption.Front);
 
       database.expectedTeams = new List<Team> { t1, t2 };
@@ -92,13 +92,13 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t1 = controller.CreateTeam("Inkology");
+      Team t1 = CreateTeam("Inkology");
       t1.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
 
-      Team t2 = controller.CreateTeam("Inkfected");
+      Team t2 = CreateTeam("Inkfected");
       t2.AddClanTag("τイ", Builtins.ManualSource, TagOption.Front);
 
-      Team t3 = controller.CreateTeam("Inky Sirens");
+      Team t3 = CreateTeam("Inky Sirens");
       t3.AddClanTag("InkS", Builtins.ManualSource, TagOption.Front);
 
       database.expectedTeams = new List<Team> { t1, t2, t3 };
@@ -120,7 +120,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Inkology");
+      Team t = CreateTeam("Inkology");
       t.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
       database.expectedTeams = new List<Team> { t };
 
@@ -140,7 +140,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Inkology");
+      Team t = CreateTeam("Inkology");
       t.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
       database.expectedTeams = new List<Team> { t };
 
@@ -160,7 +160,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Inkology");
+      Team t = CreateTeam("Inkology");
       t.AddClanTag("¡g", Builtins.ManualSource, TagOption.Front);
       database.expectedTeams = new List<Team> { t };
 
@@ -180,7 +180,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Team t = controller.CreateTeam("Team 17");
+      Team t = CreateTeam("Team 17");
       t.AddClanTag("WO", Builtins.ManualSource, TagOption.Front); // Purposefully upper-case
       database.expectedTeams = new List<Team> { t };
 
@@ -203,6 +203,17 @@ namespace SplatTagUnitTests
       Team[] matched = controller.MatchTeam("WO");
       Assert.IsNotNull(matched);
       Assert.IsTrue(matched.Length == 0);
+    }
+
+    /// <summary>
+    /// Create a new Team object.
+    /// This does NOT save to a database.
+    /// </summary>
+    /// <param name="source">Specified source of the addition, else null to default to Manual add</param>
+    /// <returns></returns>
+    public static Team CreateTeam(string name, Source? source = null)
+    {
+      return new Team(name, source ?? Builtins.ManualSource);
     }
   }
 }

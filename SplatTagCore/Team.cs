@@ -9,44 +9,13 @@ namespace SplatTagCore
   [Serializable]
   public class Team : ISerializable, IReadonlySourceable
   {
-    public static readonly Team NoTeam = new Team("(Free Agent)", Builtins.BuiltinSource);
-    public static readonly Team UnlinkedTeam = new Team("(UNLINKED TEAM)", Builtins.BuiltinSource);
+    public static readonly Team NoTeam = new("(Free Agent)", Builtins.BuiltinSource);
+    public static readonly Team UnlinkedTeam = new("(UNLINKED TEAM)", Builtins.BuiltinSource);
 
     /// <summary>
     /// The GUID of the team.
     /// </summary>
     public readonly Guid Id = Guid.NewGuid();
-
-    /// <summary>
-    /// Back-store for the persistent ids of this team.
-    /// </summary>
-    /// <remarks>
-    private readonly List<BattlefyTeamSocial> battlefyPersistentTeamIds = new List<BattlefyTeamSocial>();
-
-    /// <summary>
-    /// The tag(s) of the team, first is the current tag.
-    /// </summary>
-    private readonly List<ClanTag> clanTags = new List<ClanTag>();
-
-    /// <summary>
-    /// Back-store for the names of this team. The first element is the current name.
-    /// </summary>
-    /// <remarks>
-    /// Though a HashSet may seem more performant, for collections with
-    /// a small number of elements (under 20), List is actually better
-    /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
-    /// </remarks>
-    private readonly List<Name> names = new List<Name>();
-
-    /// <summary>
-    /// Back-store for the Twitter Profiles of this player.
-    /// </summary>
-    private readonly List<Twitter> twitterProfiles = new List<Twitter>();
-
-    /// <summary>
-    /// The division information of the team.
-    /// </summary>
-    public DivisionsHandler DivisionInformation { get; } = new DivisionsHandler();
 
     /// <summary>
     /// Default construct a Team
@@ -58,32 +27,35 @@ namespace SplatTagCore
     /// <summary>
     /// Construct a Team with their name and source
     /// </summary>
-    /// <param name="ign"></param>
-    /// <param name="source"></param>
     public Team(string ign, Source source)
     {
-      this.names.Add(new Name(ign, source));
+      AddName(ign, source);
     }
 
     /// <summary>
     /// The last known Battlefy Persistent Ids of the team.
     /// </summary>
-    public BattlefyTeamSocial? BattlefyPersistentTeamId => battlefyPersistentTeamIds.Count > 0 ? battlefyPersistentTeamIds[0] : null;
+    public BattlefyTeamSocial? BattlefyPersistentTeamId => BattlefyPersistentTeamIdInformation.MostRecent;
 
     /// <summary>
     /// The known Battlefy Persistent Ids of the team.
     /// </summary>
-    public IReadOnlyList<Name> BattlefyPersistentTeamIds => battlefyPersistentTeamIds;
+    public NamesHandler<BattlefyTeamSocial> BattlefyPersistentTeamIdInformation { get; } = new();
 
     /// <summary>
-    /// The placement of the current tag (null if the team does not have a tag)
+    /// The known Battlefy Persistent Ids of the team.
     /// </summary>
-    public TagOption? ClanTagOption => Tag?.LayoutOption;
+    public IReadOnlyCollection<BattlefyTeamSocial> BattlefyPersistentTeamIds => BattlefyPersistentTeamIdInformation.GetItemsUnordered();
 
     /// <summary>
-    /// The tag(s) of the team
+    /// The team tag(s) of the team
     /// </summary>
-    public IReadOnlyList<ClanTag> ClanTags => clanTags;
+    public NamesHandler<ClanTag> ClanTagInformation { get; } = new();
+
+    /// <summary>
+    /// The team tag(s) of the team
+    /// </summary>
+    public IReadOnlyCollection<ClanTag> ClanTags => ClanTagInformation.GetItemsUnordered();
 
     /// <summary>
     /// The current division of the team
@@ -91,23 +63,33 @@ namespace SplatTagCore
     public Division CurrentDiv => DivisionInformation.CurrentDivision ?? Division.Unknown;
 
     /// <summary>
-    /// The last known used name for the Team
+    /// The division information of the team.
     /// </summary>
-    public Name Name => names.Count > 0 ? names[0] : Builtins.UnknownTeamName;
+    public DivisionsHandler DivisionInformation { get; } = new DivisionsHandler();
 
     /// <summary>
-    /// The names this player is known by.
+    /// The last known used name for the team
     /// </summary>
-    public IReadOnlyList<Name> Names => names;
+    public Name Name => NamesInformation.MostRecent ?? Builtins.UnknownPlayerName;
+
+    /// <summary>
+    /// The registered names this team is known by.
+    /// </summary>
+    public IReadOnlyCollection<Name> Names => NamesInformation.GetItemsUnordered();
+
+    /// <summary>
+    /// The in-game or registered names this team is known by.
+    /// </summary>
+    public NamesHandler<Name> NamesInformation { get; } = new();
 
     /// <summary>
     /// Get the current sources that make up this Team instance.
     /// </summary>
     public IReadOnlyList<Source> Sources =>
-      names.SelectMany(n => n.Sources)
-      .Concat(battlefyPersistentTeamIds.SelectMany(s => s.Sources))
-      .Concat(clanTags.SelectMany(s => s.Sources))
-      .Concat(twitterProfiles.SelectMany(s => s.Sources))
+      NamesInformation.Sources
+      .Concat(BattlefyPersistentTeamIdInformation.Sources)
+      .Concat(ClanTagInformation.Sources)
+      .Concat(TwitterInformation.Sources)
       .Distinct()
       .OrderByDescending(s => s)
       .ToList()
@@ -116,56 +98,45 @@ namespace SplatTagCore
     /// <summary>
     /// The most recent tag of the team
     /// </summary>
-    public ClanTag? Tag => ClanTags.Count > 0 ? ClanTags[0] : null;
+    public ClanTag? Tag => ClanTagInformation.MostRecent;
 
     /// <summary>
-    /// The names this player is known by transformed into searchable query.
+    /// The Twitter social information this team belongs to.
     /// </summary>
-    public IEnumerable<string> TransformedNames => Names.Select(n => n.Transformed);
+    public NamesHandler<Twitter> TwitterInformation { get; } = new();
 
     /// <summary>
-    /// Get the team's Twitter profile details.
+    /// The Twitter social information this team belongs to.
     /// </summary>
-    public IReadOnlyList<Twitter> Twitter => twitterProfiles;
+    public IReadOnlyCollection<Twitter> TwitterProfiles => TwitterInformation.GetItemsUnordered();
 
-    public void AddBattlefyIds(IEnumerable<BattlefyTeamSocial> value)
-    {
-      SplatTagCommon.AddNames(value, battlefyPersistentTeamIds);
-    }
+    public void AddBattlefyId(string id, Source source)
+      => BattlefyPersistentTeamIdInformation.Add(new BattlefyTeamSocial(id, source));
 
-    public BattlefyTeamSocial AddBattlefyId(string id, Source source)
-    {
-      return SplatTagCommon.AddName(new BattlefyTeamSocial(id, source), battlefyPersistentTeamIds);
-    }
+    public void AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
+      => ClanTagInformation.Add(new ClanTag(tag, source, option));
 
-    public ClanTag AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
-    {
-      return SplatTagCommon.AddName(new ClanTag(tag, option, source.AsEnumerable()), clanTags);
-    }
-
-    public void AddClanTags(IEnumerable<ClanTag> value)
-    {
-      SplatTagCommon.AddNames(value, clanTags);
-    }
+    public void AddClanTag(ClanTag tag)
+      => ClanTagInformation.Add(tag);
 
     public void AddDivision(Division division, Source source)
-    {
-      DivisionInformation.Add(division, source);
-    }
+      => DivisionInformation.Add(division, source);
 
-    public void AddDivisions(Division value, Source source) => DivisionInformation.Add(value, source);
+    public void AddDivisions(DivisionsHandler value)
+      => DivisionInformation.Merge(value);
 
-    public void AddDivisions(IList<Division> value, Source source) => DivisionInformation.Add(value, source);
+    public void AddName(string name, Source source)
+      => NamesInformation.Add(new Name(name, source));
 
-    public void AddDivisions(DivisionsHandler value) => DivisionInformation.Merge(value);
+    public void AddTwitter(string handle, Source source)
+      => TwitterInformation.Add(new Twitter(handle, source));
 
-    public void AddName(string name, Source source) => SplatTagCommon.AddName(new Name(name, source), names);
-
-    public void AddNames(IEnumerable<Name> value) => SplatTagCommon.AddNames(value, names);
-
-    public Twitter AddTwitter(string handle, Source source) => SplatTagCommon.AddName(new Twitter(handle, source), twitterProfiles);
-
-    public void AddTwitterProfiles(IEnumerable<Twitter> value) => SplatTagCommon.AddNames(value, twitterProfiles);
+    /// <summary>
+    /// Get the team's best division, or null if not known.
+    /// </summary>
+    /// <param name="lastNDivisions">Limit the search to this many divisions in most-recent chronological order (-1 = no limit)</param>
+    public Division? GetBestDiv(int lastNDivisions = -1)
+      => DivisionInformation.GetBestDiv(lastNDivisions);
 
     /// <summary>
     /// Filter all players to return only those in this team.
@@ -176,66 +147,25 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Get the team's best division, or null if not known.
+    /// Merge this team with another team instance.
+    /// Chronology safe.
     /// </summary>
-    /// <param name="lastNDivisions">Limit the search to this many divisions in most-recent chronological order (-1 = no limit)</param>
-    public Division? GetBestDiv(int lastNDivisions = -1)
-    {
-      if (DivisionInformation.CurrentDivision == null)
-      {
-        return null;
-      }
-      // else
-      IEnumerable<Division> divs =
-        (lastNDivisions == -1) ?
-          this.DivisionInformation.GetDivisionsOrdered() :
-          // Take is a limit operation (does not throw if limit > count)
-          this.DivisionInformation.GetDivisionsOrdered().Take(lastNDivisions);
-
-      var bestDiv = divs.Min();
-      return bestDiv.IsUnknown ? null : bestDiv;
-    }
-
-    public static Team? GetBestTeamByDiv(IEnumerable<Team> teams)
-    {
-      if (teams?.Any() != true)
-      {
-        return null;
-      }
-
-      Team? bestTeam = null;
-      var currentHighestDiv = Division.Unknown;
-      foreach (var team in teams)
-      {
-        var currentDiv = team.GetBestDiv();
-        if (currentDiv != null && currentDiv < currentHighestDiv)
-        {
-          currentHighestDiv = currentDiv;
-          bestTeam = team;
-        }
-      }
-      return bestTeam;
-    }
-
-    /// <summary>
-    /// Merge this team with another (newer) team instance
-    /// </summary>
-    public void Merge(Team newerTeam)
+    public void Merge(Team other)
     {
       // Merge the tags.
-      AddClanTags(newerTeam.clanTags);
+      ClanTagInformation.Merge(other.ClanTagInformation);
 
       // Merge Twitter
-      AddTwitterProfiles(newerTeam.twitterProfiles);
+      TwitterInformation.Merge(other.TwitterInformation);
 
       // Merge divisions
-      AddDivisions(newerTeam.DivisionInformation);
+      DivisionInformation.Merge(other.DivisionInformation);
 
       // Merge the team's name(s).
-      AddNames(newerTeam.names);
+      NamesInformation.Merge(other.NamesInformation);
 
       // Merge the team's persistent battlefy id(s).
-      AddBattlefyIds(newerTeam.battlefyPersistentTeamIds);
+      BattlefyPersistentTeamIdInformation.Merge(other.BattlefyPersistentTeamIdInformation);
     }
 
     /// <summary>
@@ -251,11 +181,11 @@ namespace SplatTagCore
     // Deserialize
     protected Team(SerializationInfo info, StreamingContext context)
     {
-      AddBattlefyIds(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<BattlefyTeamSocial>()));
-      AddClanTags(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
-      AddDivisions(info.GetValueOrDefault("Divisions", new DivisionsHandler()));
-      AddNames(info.GetValueOrDefault("N", Array.Empty<Name>()));
-      AddTwitterProfiles(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
+      this.BattlefyPersistentTeamIdInformation.Add(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<BattlefyTeamSocial>()));
+      this.ClanTagInformation.Add(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
+      this.DivisionInformation = info.GetValueOrDefault("Divisions", new DivisionsHandler());
+      this.NamesInformation.Add(info.GetValueOrDefault("N", Array.Empty<Name>()));
+      this.TwitterInformation.Add(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
 
       this.Id = info.GetValueOrDefault("Id", Guid.Empty);
       if (this.Id == Guid.Empty)
@@ -267,22 +197,22 @@ namespace SplatTagCore
     // Serialize
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (battlefyPersistentTeamIds.Count > 0)
-        info.AddValue("BattlefyPersistentTeamIds", this.battlefyPersistentTeamIds);
+      if (BattlefyPersistentTeamIdInformation.Count > 0)
+        info.AddValue("BattlefyPersistentTeamIds", this.BattlefyPersistentTeamIds);
 
-      if (clanTags.Count > 0)
-        info.AddValue("ClanTags", this.clanTags);
+      if (ClanTagInformation.Count > 0)
+        info.AddValue("ClanTags", this.ClanTags);
 
       if (DivisionInformation.Count > 0)
         info.AddValue("Divisions", this.DivisionInformation);
 
       info.AddValue("Id", this.Id);
 
-      if (names.Count > 0)
-        info.AddValue("N", this.names);
+      if (NamesInformation.Count > 0)
+        info.AddValue("N", this.Names);
 
-      if (twitterProfiles.Count > 0)
-        info.AddValue("Twitter", this.twitterProfiles);
+      if (TwitterInformation.Count > 0)
+        info.AddValue("Twitter", this.TwitterProfiles);
     }
 
     #endregion Serialization

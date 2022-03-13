@@ -7,8 +7,10 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Battlefy : ISerializable
+  public class Battlefy : IMergable<Battlefy>, IReadonlySourceable, ISerializable
   {
+    /// <summary>Parameterless constructor</summary>
+    /// <remarks>Required for serialization - do not delete.</remarks>
     public Battlefy()
     {
     }
@@ -47,6 +49,17 @@ namespace SplatTagCore
     /// Combination of Battlefy slugs and ids
     /// </summary>
     public IReadOnlyCollection<Name> AllNames => new List<Name>(Usernames.Concat(Slugs).Concat(PersistentIds).Distinct());
+
+    public IReadOnlyList<Source> Sources
+    {
+      get
+      {
+        var sources = new HashSet<Source>(UsernamesHandler.Sources);
+        sources.UnionWith(SlugsHandler.Sources);
+        sources.UnionWith(PersistentIdsHandler.Sources);
+        return sources.ToList();
+      }
+    }
 
     /// <summary>
     /// Add a new Battlefy slug to the Battlefy profile
@@ -105,6 +118,17 @@ namespace SplatTagCore
     public override string ToString()
     {
       return $"Slugs: [{string.Join(", ", SlugsHandler)}], Usernames: [{string.Join(", ", UsernamesHandler)}], Ids: [{string.Join(", ", PersistentIdsHandler)}]";
+    }
+
+    /// <summary>
+    /// Merge this <see cref="Battlefy"/> instance with another.
+    /// Handles Sources and timings.
+    /// </summary>
+    public void Merge(Battlefy other)
+    {
+      this.PersistentIdsHandler.Merge(other.PersistentIdsHandler);
+      this.SlugsHandler.Merge(other.SlugsHandler);
+      this.UsernamesHandler.Merge(other.UsernamesHandler);
     }
 
     #region Serialization

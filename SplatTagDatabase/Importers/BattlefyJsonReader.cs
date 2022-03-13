@@ -86,7 +86,7 @@ namespace SplatTagDatabase.Importers
         Team newTeam = new(row.TeamName, source);
         if (teamTag != null)
         {
-          newTeam.AddClanTags(new[] { teamTag });
+          newTeam.AddClanTag(teamTag);
         }
 
         if (row.BattlefyPersistentTeamId != null)

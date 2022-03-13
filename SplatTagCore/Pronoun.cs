@@ -57,7 +57,7 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Contruct a Pronoun object with the given pronoun string.
+    /// Construct a Pronoun object with the given pronoun string.
     /// The constructor will parse the entire message and will positively match contained pronouns.
     /// </summary>
     /// <remarks>

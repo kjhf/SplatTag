@@ -35,7 +35,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Player p1 = controller.CreatePlayer("Player 17"); // Purposefully mixed case
+      Player p1 = CreatePlayer("Player 17"); // Purposefully mixed case
       database.expectedPlayers = new List<Player> { p1 };
 
       controller.LoadDatabase();
@@ -54,8 +54,8 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Player p1 = controller.CreatePlayer("Player 17");
-      Player p2 = controller.CreatePlayer("Player 18");
+      Player p1 = CreatePlayer("Player 17");
+      Player p2 = CreatePlayer("Player 18");
       database.expectedPlayers = new List<Player> { p1, p2 };
 
       controller.LoadDatabase();
@@ -74,7 +74,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Player p1 = controller.CreatePlayer("BΛÐ SΛVΛGΞ");
+      Player p1 = CreatePlayer("BΛÐ SΛVΛGΞ");
       database.expectedPlayers = new List<Player> { p1 };
 
       controller.LoadDatabase();
@@ -93,7 +93,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Player p1 = controller.CreatePlayer("BΛÐ SΛVΛGΞ");
+      Player p1 = CreatePlayer("BΛÐ SΛVΛGΞ");
       database.expectedPlayers = new List<Player> { p1 };
 
       controller.LoadDatabase();
@@ -112,7 +112,7 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Player p1 = controller.CreatePlayer("BΛÐ SΛVΛGΞ");
+      Player p1 = CreatePlayer("BΛÐ SΛVΛGΞ");
       database.expectedPlayers = new List<Player> { p1 };
 
       controller.LoadDatabase();
@@ -131,8 +131,8 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Player p1 = controller.CreatePlayer("¡g Slate");
-      Player p2 = controller.CreatePlayer("Slate*NBF");
+      Player p1 = CreatePlayer("¡g Slate");
+      Player p2 = CreatePlayer("Slate*NBF");
       database.expectedPlayers = new List<Player> { p1, p2 };
 
       controller.LoadDatabase();
@@ -152,14 +152,25 @@ namespace SplatTagUnitTests
       SplatTagController controller = new SplatTagController(database);
       controller.Initialise();
 
-      Player p1 = controller.CreatePlayer("¡g Slate");
-      Player p2 = controller.CreatePlayer("Slate*NBF");
+      Player p1 = CreatePlayer("¡g Slate");
+      Player p2 = CreatePlayer("Slate*NBF");
       database.expectedPlayers = new List<Player> { p1, p2 };
 
       controller.LoadDatabase();
       Player[] matched = controller.MatchPlayer("[", new MatchOptions { IgnoreCase = true, QueryIsRegex = true });
       Assert.IsNotNull(matched);
       Assert.AreEqual(0, matched.Length);
+    }
+
+    /// <summary>
+    /// Create a new Player object.
+    /// This does NOT save to a database.
+    /// </summary>
+    /// <param name="source">Specified source of the addition, else null to default to Manual add</param>
+    /// <returns></returns>
+    public static Player CreatePlayer(string ign, Source? source = null)
+    {
+      return new Player(ign, source ?? Builtins.ManualSource);
     }
   }
 }

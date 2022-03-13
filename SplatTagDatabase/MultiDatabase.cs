@@ -11,6 +11,13 @@ namespace SplatTagDatabase
   {
     private HashSet<IImporter> importers = new();
     private SplatTagJsonSnapshotDatabase? jsonDatabase;
+    private List<Player> _players = new();
+    private Dictionary<Guid, Team> _teams = new();
+    private Dictionary<string, Source> _sources = new();
+
+    public IReadOnlyList<Player> Players => _players.Count == 0 ? Array.Empty<Player>() : _players;
+    public IReadOnlyDictionary<Guid, Team> Teams => _teams;
+    public IReadOnlyDictionary<string, Source> Sources => _sources;
 
     public MultiDatabase With(params IImporter[] importers)
     {
@@ -30,23 +37,15 @@ namespace SplatTagDatabase
       return this;
     }
 
-    public (Player[], Team[], Dictionary<string, Source>) Load()
+    public bool Load()
     {
       // If we need to do our conversion first, do so now.
       IImporter[] toLoad = importers.ToArray();
 
-      if (toLoad.Length == 0)
+      if (toLoad.Length == 0 && jsonDatabase == null)
       {
-        if (jsonDatabase != null)
-        {
-          Console.WriteLine("MultiDatabase: Loading JSON Database only.");
-          return jsonDatabase.Load();
-        }
-        else
-        {
-          Console.WriteLine("Nothing to load.");
-          return (Array.Empty<Player>(), Array.Empty<Team>(), new Dictionary<string, Source>());
-        }
+        Console.WriteLine("Nothing to load.");
+        return false;
       }
 
       Console.WriteLine($"{nameof(MultiDatabase)}.{nameof(Load)} toLoad.Length={toLoad.Length}");
@@ -57,10 +56,16 @@ namespace SplatTagDatabase
 
       if (jsonDatabase != null)
       {
-        var (newPlayers, newTeams, newSources) = jsonDatabase.Load();
+        var (newPlayers, newTeams, newSources) = jsonDatabase.LoadInline();
         players.AddRange(newPlayers);
         teams.AddRange(newTeams);
         databaseSources = newSources;
+
+        if (toLoad.Length == 0)
+        {
+          Console.WriteLine("MultiDatabase: Loaded JSON Database only.");
+          return true;
+        }
       }
 
       // Load each importer into a Source
@@ -124,7 +129,10 @@ namespace SplatTagDatabase
       }
 
       Merger.FinalMerge(players, teams, logger);
-      return (players.ToArray(), teams.ToArray(), importedSources.ToDictionary(s => s.Id, s => s));
+      _players = players;
+      _teams = teams.ToDictionary(t => t.Id, t => t);
+      _sources = importedSources.ToDictionary(s => s.Id, s => s);
+      return true;
     }
 
     /// <summary>

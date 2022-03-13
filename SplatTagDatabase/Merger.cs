@@ -397,7 +397,7 @@ namespace SplatTagDatabase
     /// </returns>
     public static IDictionary<Guid, Guid> MergeTeamsByPersistentIds(List<Team> teamsToMutate, IList<Team> incomingTeams)
     {
-      ConcurrentDictionary<Guid, Guid> mergeResult = new ConcurrentDictionary<Guid, Guid>();
+      ConcurrentDictionary<Guid, Guid> mergeResult = new();
 
       if (incomingTeams == null || incomingTeams.Count == 0)
       {
@@ -408,14 +408,14 @@ namespace SplatTagDatabase
 
       if (teamsToMutate.Count > 0)
       {
-        ConcurrentBag<Team> concurrentTeamsToAdd = new ConcurrentBag<Team>();
+        ConcurrentBag<Team> concurrentTeamsToAdd = new();
 
         // Merge teams based on the Battlefy Persistent Id.
         Parallel.ForEach(incomingTeams, importTeam =>
         {
           if (importTeam.BattlefyPersistentTeamId != null)
           {
-            var foundTeam = teamsToMutate.Find(t => importTeam.BattlefyPersistentTeamId.Value.Equals(t?.BattlefyPersistentTeamId?.Value));
+            var foundTeam = teamsToMutate.Find(t => importTeam.BattlefyPersistentTeamIdInformation.Match(t.BattlefyPersistentTeamIdInformation));
             if (foundTeam != null)
             {
               MergeExistingTeam(mergeResult, importTeam, foundTeam);

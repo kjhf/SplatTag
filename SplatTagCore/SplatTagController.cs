@@ -19,9 +19,10 @@ namespace SplatTagCore
     public static bool Verbose { get; set; }
 
     private readonly ISplatTagDatabase? database;
-    private IReadOnlyList<Player> players;
-    private Dictionary<Guid, Team> teams;
-    private Dictionary<string, Source> sources;
+    private IReadOnlyList<Player> Players => database?.Players ?? Array.Empty<Player>();
+    private IReadOnlyDictionary<Guid, Team> Teams => database?.Teams ?? new Dictionary<Guid, Team>();
+    private IReadOnlyDictionary<string, Source> Sources => database?.Sources ?? new Dictionary<string, Source>();
+
     private Task? cachingTask;
     private readonly ConcurrentDictionary<Team, (Player, bool)[]> playersForTeam;
     public bool CachingDone => cachingTask?.IsCompleted == true;
@@ -36,9 +37,6 @@ namespace SplatTagCore
 #endif // DEBUG
 
       this.database = database;
-      this.players = Array.Empty<Player>();
-      this.teams = new Dictionary<Guid, Team>();
-      this.sources = new Dictionary<string, Source>();
       this.playersForTeam = new ConcurrentDictionary<Team, (Player, bool)[]>();
     }
 
@@ -59,28 +57,20 @@ namespace SplatTagCore
       }
 
       var start = DateTime.Now;
-      var (loadedPlayers, loadedTeams, loadedSources) = database.Load();
-      if (loadedPlayers == null || loadedTeams == null)
-      {
-        Console.Error.WriteLine("ERROR: Failed to load.");
-      }
-      else if (loadedPlayers.Length == 0 && loadedTeams.Length == 0)
+      bool loaded = database.Load();
+      if (!loaded)
       {
         Console.WriteLine("... nothing loaded.");
       }
       else
       {
-        players = loadedPlayers;
-        teams = loadedTeams?.ToDictionary(t => t.Id, t => t) ?? new Dictionary<Guid, Team>();
-        sources = loadedSources;
-
         cachingTask = Task.Run(() =>
         {
           // Cache the players and their teams.
-          Parallel.ForEach(teams.Values.Where(t => t != null), t =>
+          Parallel.ForEach(Teams.Values.Where(t => t != null), t =>
           {
             var teamPlayers =
-                t.GetPlayers(players)
+                t.GetPlayers(Players)
                 .Select(p => (p, p.CurrentTeam == t.Id))
                 .ToArray();
             playersForTeam.TryAdd(t, teamPlayers);
@@ -106,7 +96,7 @@ namespace SplatTagCore
       }
       else
       {
-        return t.GetPlayers(players)
+        return t.GetPlayers(Players)
           .AsParallel()
           .Select(p => (p, p.CurrentTeam == t.Id))
           .ToArray();
@@ -127,7 +117,7 @@ namespace SplatTagCore
     /// <param name="limit">Limit number of results, or -1 to not set.</param>
     public Player[] MatchPlayer(string? query, MatchOptions matchOptions)
     {
-      return MatchPlayer(query, matchOptions, players);
+      return MatchPlayer(query, matchOptions, Players);
     }
 
     /// <summary>
@@ -265,7 +255,7 @@ namespace SplatTagCore
 
             if ((filterOptions & FilterOptions.Twitch) != 0)
             {
-              foreach (var toMatch in from Twitch twitch in p.Twitch
+              foreach (var toMatch in from Twitch twitch in p.TwitchProfiles
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? twitch.Transformed : twitch.Value
                                       select toMatch)
               {
@@ -278,7 +268,7 @@ namespace SplatTagCore
 
             if ((filterOptions & FilterOptions.Twitter) != 0)
             {
-              foreach (var toMatch in from Twitter twitter in p.Twitter
+              foreach (var toMatch in from Twitter twitter in p.TwitterProfiles
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? twitter.Transformed : twitter.Value
                                       select toMatch)
               {
@@ -422,7 +412,7 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.Twitch) != 0)
           {
-            foreach (var toMatch in from Name name in p.Twitch
+            foreach (var toMatch in from Name name in p.TwitchProfiles
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -432,7 +422,7 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.Twitter) != 0)
           {
-            foreach (var toMatch in from Name name in p.Twitter
+            foreach (var toMatch in from Name name in p.TwitterProfiles
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -494,15 +484,15 @@ namespace SplatTagCore
     /// </summary>
     public Team[] MatchTeam(string? query, MatchOptions matchOptions)
     {
-      return MatchTeam(query, matchOptions, teams.Values);
+      return MatchTeam(query, matchOptions, Teams.Values);
     }
 
     /// <summary>
     /// Match a query to teams with given options with all known teams.
     /// </summary>
-    public Team[] MatchTeam(string? query, MatchOptions matchOptions, ICollection<Team> teamsToSearch)
+    public Team[] MatchTeam(string? query, MatchOptions matchOptions, IEnumerable<Team> teamsToSearch)
     {
-      if (query == null || query == string.Empty)
+      if (string.IsNullOrEmpty(query))
       {
         return teamsToSearch.ToArray();
       }
@@ -569,7 +559,7 @@ namespace SplatTagCore
 
             if ((filterOptions & FilterOptions.Twitter) != 0)
             {
-              foreach (var toMatch in from Twitter twitter in t.Twitter
+              foreach (var toMatch in from Twitter twitter in t.TwitterProfiles
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? twitter.Transformed : twitter.Value
                                       select toMatch)
               {
@@ -664,7 +654,7 @@ namespace SplatTagCore
 
           if ((filterOptions & FilterOptions.Twitter) != 0)
           {
-            foreach (var toMatch in from Name name in t.Twitter
+            foreach (var toMatch in from Name name in t.TwitterProfiles
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -689,29 +679,7 @@ namespace SplatTagCore
 
     public Source[] GetSources()
     {
-      return sources.Values.ToArray();
-    }
-
-    /// <summary>
-    /// Create a new Player object.
-    /// This does NOT save to a database.
-    /// </summary>
-    /// <param name="source">Specified source of the addition, else null to default to Manual add</param>
-    /// <returns></returns>
-    public Player CreatePlayer(string ign, Source? source = null)
-    {
-      return new Player(ign, source ?? Builtins.ManualSource);
-    }
-
-    /// <summary>
-    /// Create a new Team object.
-    /// This does NOT save to a database.
-    /// </summary>
-    /// <param name="source">Specified source of the addition, else null to default to Manual add</param>
-    /// <returns></returns>
-    public Team CreateTeam(string name, Source? source = null)
-    {
-      return new Team(name, source ?? Builtins.ManualSource);
+      return Sources.Values.ToArray();
     }
 
     /// <summary>
@@ -723,7 +691,7 @@ namespace SplatTagCore
     public Team GetTeamById(Guid id)
     {
       return (id == Team.NoTeam.Id) ? Team.NoTeam :
-        (teams.TryGetValue(id, out Team team) ? team :
+        (Teams.TryGetValue(id, out Team team) ? team :
         Team.UnlinkedTeam);
     }
 

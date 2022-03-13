@@ -6,8 +6,23 @@ namespace SplatTagCore
   public interface ISplatTagDatabase
   {
     /// <summary>
-    /// Load the database and return the merged Players, merged Teams, and Sources.
+    /// Load the database. Returns if anything was loaded.
     /// </summary>
-    (Player[], Team[], Dictionary<string, Source>) Load();
+    bool Load();
+
+    /// <summary>
+    /// Get the loaded players.
+    /// </summary>
+    IReadOnlyList<Player> Players { get; }
+
+    /// <summary>
+    /// Get the loaded teams.
+    /// </summary>
+    IReadOnlyDictionary<Guid, Team> Teams { get; }
+
+    /// <summary>
+    /// Get the loaded sources.
+    /// </summary>
+    IReadOnlyDictionary<string, Source> Sources { get; }
   }
 }
