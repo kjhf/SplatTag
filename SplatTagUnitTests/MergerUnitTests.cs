@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NLog;
 using SplatTagCore;
 using SplatTagDatabase;
 using System;
@@ -14,6 +15,14 @@ namespace SplatTagUnitTests
   [TestClass]
   public class MergerUnitTests
   {
+    [TestInitialize]
+    public void TestInitialize()
+    {
+      LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration(PathUtils.FindFileUpToRoot("nlog.config"));
+    }
+
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     /// <summary>
     /// Test the <see cref="Merger.FinalisePlayers(IDictionary{uint, Player})"/> function.
     /// </summary>
@@ -24,39 +33,39 @@ namespace SplatTagUnitTests
       var team2 = Guid.NewGuid();
 
       // p1
-      Player p1 = new Player("p1_username", new[] { team1 }, new Source("p1"));
+      Player p1 = new("p1_username", new[] { team1 }, new Source("p1"));
       p1.AddBattlefyInformation("user", "user", "p_persis_id", Builtins.ManualSource);
       p1.AddBattlefyInformation("p1_slug", "z", "p_persis_id", Builtins.ManualSource);
       p1.AddDiscordId("p_discord_id", Builtins.ManualSource);
       var id1 = p1.Id;
 
       // p2 -> p1 (persistent id match)
-      Player p2 = new Player("p2_person", new[] { team1 }, new Source("p2"));
+      Player p2 = new("p2_person", new[] { team1 }, new Source("p2"));
       p2.AddBattlefyInformation("unrelated", "unrelated", "p_persis_id", Builtins.ManualSource);
       p2.AddBattlefyInformation("p2_slug", "x", "p_persis_id", Builtins.ManualSource);
 
       // p3
-      Player p3 = new Player("player_ign_team", new[] { team1 }, new Source("p3"));
+      Player p3 = new("player_ign_team", new[] { team1 }, new Source("p3"));
       var id3 = p3.Id;
 
       // p4 -> p3 (name and team matches)
-      Player p4 = new Player("player_ign_team", new[] { team1 }, new Source("p4"));
+      Player p4 = new("player_ign_team", new[] { team1 }, new Source("p4"));
 
       // p5 -> p1 (slug match)
-      Player p5 = new Player("p5_name", new[] { team2 }, new Source("p5"));
+      Player p5 = new("p5_name", new[] { team2 }, new Source("p5"));
       p5.AddBattlefyInformation("another", "another", "p_persis_id", Builtins.ManualSource);
       p5.AddBattlefyInformation("p5_slug", "y", "p_persis_id", Builtins.ManualSource);
 
       // p6 -> p1 (discord id)
-      Player p6 = new Player("p6_username", new[] { team2 }, new Source("p6"));
+      Player p6 = new("p6_username", new[] { team2 }, new Source("p6"));
       p6.AddDiscordId("p_discord_id", Builtins.ManualSource);
 
       var players = new List<Player>() { p1, p2, p3, p4, p5, p6 };
 
       // Perform the merge
-      DumpSourceable("Players before merge:", players);
-      Merger.FinalisePlayers(players);
-      DumpSourceable("Players after merge:", players);
+      DumpCoreObj("Players before merge:", players);
+      Merger.MergeSerialInPlace(players, ref players, players);
+      DumpCoreObj("Players after merge:", players);
 
       // Transform into a dictionary...
       var dict = players.ToDictionary(p => p.Id, p => p);
@@ -68,8 +77,8 @@ namespace SplatTagUnitTests
 
       var expectedP1BattlefyNames = new[] { "user", "unrelated", "another", "x", "y", "z" };
       var expectedP1IGNs = new[] { "p1_username", "p2_person", "p5_name", "p6_username" };
-      Assert.AreEqual(expectedP1BattlefyNames.Length, Matcher.NamesMatchCount(dict[id1].Battlefy.Usernames, Name.FromStrings(expectedP1BattlefyNames, Builtins.ManualSource)),
-        $"Expected usernames to be merged, actually: {string.Join("\n", dict[id1].Battlefy.Usernames)}");
+      Assert.AreEqual(expectedP1BattlefyNames.Length, Matcher.NamesMatchCount(dict[id1].BattlefyInformation.Usernames, Name.FromStrings(expectedP1BattlefyNames, Builtins.ManualSource)),
+        $"Expected usernames to be merged, actually: {string.Join("\n", dict[id1].BattlefyInformation.Usernames)}");
       Assert.AreEqual(expectedP1IGNs.Length, Matcher.NamesMatchCount(dict[id1].NamesInformation.GetItemsUnordered(), Name.FromStrings(expectedP1IGNs, Builtins.ManualSource)),
         "Expected names to be merged.");
       Assert.IsTrue(dict[id1].TeamInformation.Contains(team1) && dict[id1].TeamInformation.Contains(team2),
@@ -92,47 +101,68 @@ namespace SplatTagUnitTests
       const string T2_STRING = "deadb33f";
       const string T4_STRING = "b335";
 
-      Team t1 = new Team("Shared Name", new Source("t1", DateTime.Now.AddDays(1)));
+      Team t1 = new("Shared Name", new Source("t1_source", DateTime.Now.AddDays(1)));
       t1.AddBattlefyId(T1_STRING, Builtins.ManualSource);
 
-      Team t2 = new Team("TeamB", new Source("t2", DateTime.Now.AddDays(2)));
+      Team t2 = new("TeamB", new Source("t2_source", DateTime.Now.AddDays(2)));
       t2.AddBattlefyId(T2_STRING, Builtins.ManualSource);
 
       // t3 -> t2
-      Team t3 = new Team("AnotherTeam", new Source("t3", DateTime.Now.AddDays(3)));
+      Team t3 = new("AnotherTeam", new Source("t3_source", DateTime.Now.AddDays(3)));
       t3.AddBattlefyId(T2_STRING, Builtins.ManualSource);
 
       // t4 -> t1
-      Team t4 = new Team("Shared Name", new Source("t4", DateTime.Now.AddDays(4)));
+      Team t4 = new("Shared Name", new Source("t4_source", DateTime.Now.AddDays(4)));
       t4.AddBattlefyId(T4_STRING, Builtins.ManualSource);
 
       // t5 should NOT merge into t1 because it has no players in common despite sharing a name.
-      Team t5 = new Team("Shared Name", new Source("t5", DateTime.UtcNow.AddDays(-1)));
-      t5.AddDivision(new Division(5, DivType.LUTI, "FirstSeason"), t5.Sources[0]);
+      Source t5Source = new("t5_source", DateTime.UtcNow.AddDays(-1));
+      Team t5 = new("Shared Name", t5Source);
+      t5.AddDivision(new Division(5, DivType.LUTI, "FirstSeason"), t5Source);
 
-      // t6 -> t5
-      Team t6 = new Team("Shared Name", new Source("t6", DateTime.UtcNow));
-      t6.AddDivision(new Division(4, DivType.LUTI, "LaterSeason"), t6.Sources[0]);
+      // t6 -> t5 (shared names and players)
+      Source t6Source = new("t6_source", DateTime.UtcNow.AddDays(1));
+      Team t6 = new("Shared Name", t6Source);
+      t6.AddDivision(new Division(4, DivType.LUTI, "LaterSeason"), t6Source);
 
-      Player p1 = new Player("username", new[] { t1.Id, t2.Id, t4.Id }, new Source("p1"));
+      Player p1 = new("username", new[] { t1.Id, t2.Id, t4.Id }, new Source("p1_source"));
       p1.AddBattlefyInformation("user", "user", "p1id", Builtins.ManualSource);
       Assert.IsNotNull(t1.BattlefyPersistentTeamId);
       p1.AddBattlefyInformation("slug", "user", "p1id2", Builtins.ManualSource);
 
-      Player p2 = new Player("player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p2"));
-      Player p3 = new Player("another player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p3"));
-      Player p4 = new Player("player 4", new[] { t6.Id, t5.Id }, new Source("p4"));
-      Player p5 = new Player("player 5", new[] { t6.Id, t5.Id }, new Source("p5"));
+      Player p2 = new("player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p2_source"));
+      Player p3 = new("another player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p3_source"));
+      Player p4 = new("player 4", new[] { t6.Id, t5.Id }, new Source("p4_source"));
+      Player p5 = new("player 5", new[] { t6.Id, t5.Id }, new Source("p5_source"));
 
       // Perform the merge
       var players = new List<Player>() { p1, p2, p3, p4, p5 };
       var teams = new List<Team>() { t1, t2, t3, t4, t5, t6 };
 
-      DumpSourceable("Players before merge:", players);
-      DumpSourceable("Teams before merge:", teams);
-      var result = Merger.FinaliseTeams(players, teams);
-      DumpSourceable("Players after merge:", players);
-      DumpSourceable("Teams after merge:", teams);
+      DumpCoreObj("Players before merge:", players);
+      DumpCoreObj("Teams before merge:", teams);
+      MergeRecordHandler playerMergeResult = Merger.MergeIntoList(players, ref players, players);
+      MergeRecordHandler teamMergeResult = Merger.MergeIntoList(teams, ref teams, players);
+      var result = teamMergeResult.FinalMergedIds;
+      Merger.CorrectTeamIdsForPlayers(players, teamMergeResult.FinalMergedIds);
+
+      logger.Info("Players merge reasons:");
+      playerMergeResult.ToLog();
+
+      DumpCoreObj("Players from MergeHandler after merge:", playerMergeResult.FinalItems);
+      logger.Info(IdsToString(playerMergeResult.FinalMergedIds));
+
+      logger.Info("Teams merge reasons:");
+      playerMergeResult.ToLog();
+
+      DumpCoreObj("Teams from MergeHandler after merge:", teamMergeResult.FinalItems);
+      logger.Info(IdsToString(teamMergeResult.FinalMergedIds));
+
+      DumpCoreObj("Players after merge:", players);
+      DumpCoreObj("Teams after merge:", teams);
+
+      Assert.IsTrue(playerMergeResult.FinalItems.SequenceEqual(players), "As merge into list was specified, the final players should be equal to the specified list.");
+      Assert.IsTrue(teamMergeResult.FinalItems.SequenceEqual(teams), "As merge into list was specified, the final teams should be equal to the specified list.");
 
       Assert.IsTrue(result.ContainsKey(t6.Id), "Expected t6 to be merged");
       Assert.AreEqual(t5.Id, result[t6.Id], "Expected t6 to be merged --> t5");
@@ -159,22 +189,25 @@ namespace SplatTagUnitTests
       Assert.AreEqual(p5.CurrentTeam, t5.Id, "Expected p5's current team to now be t5");
     }
 
-    private static void DumpSourceable(string label, IEnumerable<IReadonlySourceable> sourceable)
+    private static void DumpCoreObj(string label, IEnumerable<ISplatTagCoreObject> sourceable)
     {
-      Console.WriteLine(label);
-      Console.WriteLine(SourceablesToString(sourceable));
+      logger.Info(label);
+      logger.Info(CoreObjToString(sourceable));
     }
 
-    private static string SourceablesToString(IEnumerable<IReadonlySourceable> sourceable)
+    private static string CoreObjToString(IEnumerable<ISplatTagCoreObject> sourceable)
     {
-      StringBuilder sb = new StringBuilder();
+      StringBuilder sb = new();
       foreach (var s in sourceable)
       {
         sb
-          .Append('[')
+          .Append(s.ToString())
+          .Append(" (")
+          .Append(s.Id)
+          .Append("): [")
           .AppendJoin(", ", s.Sources)
-          .Append("]: ")
-          .AppendLine(s.ToString());
+          .Append(']')
+          .AppendLine();
       }
       return sb.ToString();
     }
@@ -183,6 +216,15 @@ namespace SplatTagUnitTests
     {
       return new StringBuilder()
         .AppendJoin("\n", ids)
+        .AppendLine()
+        .ToString();
+    }
+
+    private static string IdsToString(IReadOnlyDictionary<Guid, Guid> ids)
+    {
+      return new StringBuilder()
+        .AppendJoin("\n", ids.Select(resultPair => $"[{resultPair.Key}] --> {resultPair.Value}"))
+        .AppendLine()
         .ToString();
     }
   }

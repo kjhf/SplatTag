@@ -682,6 +682,7 @@ namespace SplatTagDatabase.Importers
           SplatnetId = p.SplatnetId,
           Top500 = p.Top500 == true,
         };
+
         if (p.IsMe)
         {
           if (root.User?.Profile?.Twitter != null)
@@ -698,7 +699,7 @@ namespace SplatTagDatabase.Importers
         }
         if (p.Weapon?.MainRef != null)
         {
-          newPlayer.AddWeapons(new string[] { p.Weapon.MainRef });
+          newPlayer.AddWeapons(new string[] { p.Weapon.MainRef }, source);
         }
         players.Add(newPlayer);
       }

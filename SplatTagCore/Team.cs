@@ -1,4 +1,5 @@
-﻿using SplatTagCore.Social;
+﻿using NLog;
+using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,20 +8,23 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Team : ISerializable, IReadonlySourceable
+  public class Team : BaseSplatTagCoreObject<Team>
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     public static readonly Team NoTeam = new("(Free Agent)", Builtins.BuiltinSource);
     public static readonly Team UnlinkedTeam = new("(UNLINKED TEAM)", Builtins.BuiltinSource);
 
-    /// <summary>
-    /// The GUID of the team.
-    /// </summary>
-    public readonly Guid Id = Guid.NewGuid();
+    private const string BattlefyPersistentTeamIdsSerialization = "BattlefyPersistentTeamIds";
+    private const string ClanTagsSerialization = "ClanTags";
+    private const string DivisionsSerialization = "Divisions";
+    private const string NamesSerialization = "N";
+    private const string TwitterSerialization = "Twitter";
 
     /// <summary>
     /// Default construct a Team
     /// </summary>
     public Team()
+      : base()
     {
     }
 
@@ -28,8 +32,20 @@ namespace SplatTagCore
     /// Construct a Team with their name and source
     /// </summary>
     public Team(string ign, Source source)
+      : base()
     {
       AddName(ign, source);
+    }
+
+    protected override void InitialiseHandlers()
+    {
+      handlers.Clear();
+      handlers.Add(BattlefyPersistentTeamIdsSerialization, new NamesHandler<BattlefyTeamSocial>(FilterOptions.BattlefyPersistentIds, BattlefyPersistentTeamIdsSerialization));
+      handlers.Add(ClanTagsSerialization, new NamesHandler<ClanTag>(FilterOptions.ClanTag, ClanTagsSerialization));
+      handlers.Add(DivisionsSerialization, new DivisionsHandler());
+      handlers.Add(NamesSerialization, new NamesHandler<Name>(FilterOptions.TeamName, NamesSerialization));
+      handlers.Add(TwitterSerialization, new NamesHandler<Twitter>(FilterOptions.Twitter, TwitterSerialization));
+      handlers.Add(IdHandler.IdSerialization, IdHandler);
     }
 
     /// <summary>
@@ -40,7 +56,7 @@ namespace SplatTagCore
     /// <summary>
     /// The known Battlefy Persistent Ids of the team.
     /// </summary>
-    public NamesHandler<BattlefyTeamSocial> BattlefyPersistentTeamIdInformation { get; } = new();
+    public NamesHandler<BattlefyTeamSocial> BattlefyPersistentTeamIdInformation => (NamesHandler<BattlefyTeamSocial>)this[BattlefyPersistentTeamIdsSerialization];
 
     /// <summary>
     /// The known Battlefy Persistent Ids of the team.
@@ -50,7 +66,7 @@ namespace SplatTagCore
     /// <summary>
     /// The team tag(s) of the team
     /// </summary>
-    public NamesHandler<ClanTag> ClanTagInformation { get; } = new();
+    public NamesHandler<ClanTag> ClanTagInformation => (NamesHandler<ClanTag>)this[ClanTagsSerialization];
 
     /// <summary>
     /// The team tag(s) of the team
@@ -65,7 +81,7 @@ namespace SplatTagCore
     /// <summary>
     /// The division information of the team.
     /// </summary>
-    public DivisionsHandler DivisionInformation { get; } = new DivisionsHandler();
+    public DivisionsHandler DivisionInformation => (DivisionsHandler)this[DivisionsSerialization];
 
     /// <summary>
     /// The last known used name for the team
@@ -80,20 +96,7 @@ namespace SplatTagCore
     /// <summary>
     /// The in-game or registered names this team is known by.
     /// </summary>
-    public NamesHandler<Name> NamesInformation { get; } = new();
-
-    /// <summary>
-    /// Get the current sources that make up this Team instance.
-    /// </summary>
-    public IReadOnlyList<Source> Sources =>
-      NamesInformation.Sources
-      .Concat(BattlefyPersistentTeamIdInformation.Sources)
-      .Concat(ClanTagInformation.Sources)
-      .Concat(TwitterInformation.Sources)
-      .Distinct()
-      .OrderByDescending(s => s)
-      .ToList()
-      ;
+    public NamesHandler<Name> NamesInformation => (NamesHandler<Name>)this[NamesSerialization];
 
     /// <summary>
     /// The most recent tag of the team
@@ -103,7 +106,7 @@ namespace SplatTagCore
     /// <summary>
     /// The Twitter social information this team belongs to.
     /// </summary>
-    public NamesHandler<Twitter> TwitterInformation { get; } = new();
+    public NamesHandler<Twitter> TwitterInformation => (NamesHandler<Twitter>)this[TwitterSerialization];
 
     /// <summary>
     /// The Twitter social information this team belongs to.
@@ -147,28 +150,6 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Merge this team with another team instance.
-    /// Chronology safe.
-    /// </summary>
-    public void Merge(Team other)
-    {
-      // Merge the tags.
-      ClanTagInformation.Merge(other.ClanTagInformation);
-
-      // Merge Twitter
-      TwitterInformation.Merge(other.TwitterInformation);
-
-      // Merge divisions
-      DivisionInformation.Merge(other.DivisionInformation);
-
-      // Merge the team's name(s).
-      NamesInformation.Merge(other.NamesInformation);
-
-      // Merge the team's persistent battlefy id(s).
-      BattlefyPersistentTeamIdInformation.Merge(other.BattlefyPersistentTeamIdInformation);
-    }
-
-    /// <summary>
     /// Overridden ToString, gets the team's tag, name, and div.
     /// </summary>
     public override string ToString()
@@ -180,39 +161,15 @@ namespace SplatTagCore
 
     // Deserialize
     protected Team(SerializationInfo info, StreamingContext context)
+      : base(info, context)
     {
-      this.BattlefyPersistentTeamIdInformation.Add(info.GetValueOrDefault("BattlefyPersistentTeamIds", Array.Empty<BattlefyTeamSocial>()));
-      this.ClanTagInformation.Add(info.GetValueOrDefault("ClanTags", Array.Empty<ClanTag>()));
-      this.DivisionInformation = info.GetValueOrDefault("Divisions", new DivisionsHandler());
-      this.NamesInformation.Add(info.GetValueOrDefault("N", Array.Empty<Name>()));
-      this.TwitterInformation.Add(info.GetValueOrDefault("Twitter", Array.Empty<Twitter>()));
-
-      this.Id = info.GetValueOrDefault("Id", Guid.Empty);
-      if (this.Id == Guid.Empty)
-      {
-        throw new SerializationException($"Guid cannot be empty for team: {this.Name} from source(s) [{string.Join(", ", this.Sources)}].");
-      }
+      DeserializeHandlers(info, context);
     }
 
     // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (BattlefyPersistentTeamIdInformation.Count > 0)
-        info.AddValue("BattlefyPersistentTeamIds", this.BattlefyPersistentTeamIds);
-
-      if (ClanTagInformation.Count > 0)
-        info.AddValue("ClanTags", this.ClanTags);
-
-      if (DivisionInformation.Count > 0)
-        info.AddValue("Divisions", this.DivisionInformation);
-
-      info.AddValue("Id", this.Id);
-
-      if (NamesInformation.Count > 0)
-        info.AddValue("N", this.Names);
-
-      if (TwitterInformation.Count > 0)
-        info.AddValue("Twitter", this.TwitterProfiles);
+      SerializeHandlers(info, context);
     }
 
     #endregion Serialization

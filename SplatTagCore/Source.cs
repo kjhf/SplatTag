@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
@@ -8,6 +9,8 @@ namespace SplatTagCore
   [Serializable]
   public class Source : ISerializable, IComparable<Source>, IEquatable<Source?>
   {
+    private const string SOURCE_DATE_FORMAT = "yyyy-mm-dd-";
+    private static readonly int SOURCE_DATE_FORMAT_LEN = SOURCE_DATE_FORMAT.Length;
     private static readonly Regex TOURNAMENT_ID_REGEX = new("-+([0-9a-fA-F]{18,})$");
 
     private string? battlefyId;
@@ -21,10 +24,9 @@ namespace SplatTagCore
     {
       Name = name;
 
-      int dataStrLength = "yyyy-mm-dd-".Length;
-      if (Name.Length > dataStrLength && Name.Count('-') > 2)
+      if (Name.Length > SOURCE_DATE_FORMAT_LEN && Name.Count('-') > 2)
       {
-        var dateStr = Name.Substring(0, dataStrLength).Trim('-');
+        var dateStr = Name[..SOURCE_DATE_FORMAT_LEN].Trim('-');
 
         // If start wasn't specified, set from the name.
         if (start == null && DateTime.TryParse(dateStr, out var temp))
@@ -126,6 +128,22 @@ namespace SplatTagCore
     /// </summary>
     public int CompareTo(Source other) => Start.CompareTo(other.Start);
 
+    public override bool Equals(object? obj)
+    {
+      return Equals(obj as Source);
+    }
+
+    public bool Equals(Source? other)
+    {
+      return other != null &&
+             Id == other.Id;
+    }
+
+    public override int GetHashCode()
+    {
+      return HashCode.Combine(Id);
+    }
+
     public override string ToString()
     {
       return Name ?? base.ToString();
@@ -133,10 +151,9 @@ namespace SplatTagCore
 
     private void LazyCalculateSourceName()
     {
-      int dataStrLength = "yyyy-mm-dd-".Length;
-      if (Name.Length > dataStrLength && Name.Count('-') > 2)
+      if (Name.Length > SOURCE_DATE_FORMAT_LEN && Name.Count('-') > 2)
       {
-        strippedTournamentName = Name[dataStrLength..].Trim('-');
+        strippedTournamentName = Name[SOURCE_DATE_FORMAT_LEN..].Trim('-');
       }
       else
       {
@@ -160,22 +177,6 @@ namespace SplatTagCore
       {
         battlefyId = "";
       }
-    }
-
-    public override bool Equals(object? obj)
-    {
-      return Equals(obj as Source);
-    }
-
-    public bool Equals(Source? other)
-    {
-      return other != null &&
-             Id == other.Id;
-    }
-
-    public override int GetHashCode()
-    {
-      return HashCode.Combine(Id);
     }
 
     #region Serialization
@@ -214,24 +215,44 @@ namespace SplatTagCore
         info.AddValue("Uris", this.Uris);
     }
 
-    public class GuidToSourceConverter
+    public class SourceStringConverter
     {
+      public static readonly Func<string, Source> ConstructSource = (name) => new Source(name);
+      public static readonly Func<string, Source> UseBuiltIn = (_) => Builtins.BuiltinSource;
+      public static readonly Func<string, Source> UseManual = (_) => Builtins.ManualSource;
       private readonly Dictionary<string, Source> lookup;
 
-      public GuidToSourceConverter(Dictionary<string, Source> lookup)
+      public SourceStringConverter(Dictionary<string, Source>? lookup = null)
       {
-        this.lookup = lookup;
+        this.lookup = lookup ?? new Dictionary<string, Source>();
       }
 
-      public IEnumerable<Source> Convert(IEnumerable<string> names)
+      /// <summary>
+      /// Convert multiple source strings into their Source objects.
+      /// Optionally specify the sourceResolverFunction to change the resolving of non-existent Sources (by default it uses the Built-in Source).
+      /// </summary>
+      /// <param name="names"></param>
+      /// <param name="sourceResolverFunction"></param>
+      /// <returns></returns>
+      [return: NotNullIfNotNull("sourceResolverFunction")]
+      public IEnumerable<Source> Convert(IEnumerable<string> names, Func<string, Source>? sourceResolverFunction = null)
       {
+        if (sourceResolverFunction == null)
+          sourceResolverFunction = UseBuiltIn;
+
         foreach (var id in names)
-          yield return Convert(id);
+          yield return Convert(id, sourceResolverFunction);
       }
 
-      public Source Convert(string name)
+      [return: NotNullIfNotNull("sourceResolverFunction")]
+      public Source? Convert(string name, Func<string, Source>? sourceResolverFunction)
       {
-        return lookup.ContainsKey(name) ? lookup[name] : Builtins.BuiltinSource;
+        var source = lookup.Get(name);
+        if (source == null && sourceResolverFunction != null)
+        {
+          source = sourceResolverFunction(name);
+        }
+        return source;
       }
     }
 

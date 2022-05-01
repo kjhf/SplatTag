@@ -7,13 +7,16 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class TeamsHandler : SourcedItemHandler<Guid>, ISerializable
+  public class TeamsHandler : BaseSourcedItemHandler<Guid>, ISerializable
   {
     public TeamsHandler()
     {
     }
 
     public Guid? CurrentTeam => mostRecentItem == default ? null : mostRecentItem;
+
+    private const string TeamsSerialization = "T";
+    public override string SerializedHandlerName => TeamsSerialization;
 
     /// <summary>
     /// Get a collection of all teams, unordered.
@@ -37,7 +40,7 @@ namespace SplatTagCore
     /// Correct the item ids for this player given a merge result (containing old id --> the replacement id)
     /// Returns if any work was done.
     /// </summary>
-    public bool CorrectTeamIds(IDictionary<Guid, Guid> teamsMergeResult)
+    public bool CorrectTeamIds(IReadOnlyDictionary<Guid, Guid> teamsMergeResult)
     {
       // Quick out for 0 count
       if (items.Count == 0 || teamsMergeResult.Count == 0 || mostRecentItem == default)
@@ -68,13 +71,17 @@ namespace SplatTagCore
       return workDone;
     }
 
+    public override FilterOptions GetMatchReason() => FilterOptions.TeamName;
+
     // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext _)
+    public override void GetObjectData(SerializationInfo info, StreamingContext _)
     {
-      if (Count > 0)
-      {
-        info.AddValue("T", this.GetItemsSourcedUnordered().ToDictionary(pair => pair.Key, pair => pair.Value.Select(s => s.Id)));
-      }
+      SerializeBaseSourcedItems(info, _);
+
+      //if (HasDataToSerialize)
+      //{
+      //  info.AddValue(TeamsSerialization, this.GetItemsSourcedUnordered().ToDictionary(pair => pair.Key, pair => pair.Value.Select(s => s.Id)));
+      //}
     }
 
     #region Serialization
@@ -82,9 +89,11 @@ namespace SplatTagCore
     // Deserialize
     protected TeamsHandler(SerializationInfo info, StreamingContext context)
     {
-      Source.GuidToSourceConverter? converter = context.Context as Source.GuidToSourceConverter;
-      var val = info.GetValueOrDefault("T", new Dictionary<Guid, List<string>>());
-      Merge(val.ToDictionary(pair => pair.Key, pair => (converter?.Convert(pair.Value) ?? pair.Value.Select(s => new Source(s))).ToList()));
+      DeserializeBaseSourcedItems(info, context);
+
+      //Source.SourceStringConverter? converter = context.Context as Source.SourceStringConverter;
+      //var val = info.GetValueOrDefault(TeamsSerialization, new Dictionary<Guid, List<string>>());
+      //Merge(val.ToDictionary(pair => pair.Key, pair => (converter?.Convert(pair.Value) ?? pair.Value.Select(s => new Source(s))).ToList()));
     }
 
     #endregion Serialization

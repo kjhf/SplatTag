@@ -1,7 +1,6 @@
 ﻿using NLog;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace SplatTagCore
@@ -30,26 +29,26 @@ namespace SplatTagCore
       if (first.Id == second.Id) return true;
 
       // Test if any of the Battlefy Persistent Ids match.
-      if ((matchOptions & FilterOptions.BattlefyPersistentIds) != 0 && first.Battlefy.MatchPersistent(second.Battlefy))
+      if ((matchOptions & FilterOptions.BattlefyPersistentIds) != 0 && first.BattlefyInformation.MatchPersistent(second.BattlefyInformation))
       {
         // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Persistent Id(s) [{string.Join(", ", first.Battlefy.PersistentIds)}] from player {second} (Id {second.Id}).");
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Persistent Id(s) [{string.Join(", ", first.BattlefyInformation.PersistentIds)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
       // Test if the Battlefy Usernames match.
-      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && first.Battlefy.MatchUsernames(second.Battlefy))
+      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && first.BattlefyInformation.MatchUsernames(second.BattlefyInformation))
       {
         // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with BattlefyUsername(s) [{string.Join(", ", first.Battlefy.Usernames)}] from player {second} (Id {second.Id}).");
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with BattlefyUsername(s) [{string.Join(", ", first.BattlefyInformation.Usernames)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
       // Test if any of the Battlefy Slugs match.
-      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && first.Battlefy.MatchSlugs(second.Battlefy))
+      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && first.BattlefyInformation.MatchSlugs(second.BattlefyInformation))
       {
         // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Slug(s) [{string.Join(", ", first.Battlefy.Slugs)}] from player {second} (Id {second.Id}).");
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Slug(s) [{string.Join(", ", first.BattlefyInformation.Slugs)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
@@ -77,8 +76,16 @@ namespace SplatTagCore
         return true;
       }
 
+      // Test if the Sendous match.
+      if ((matchOptions & FilterOptions.PlayerSendou) != 0 && first.SendouInformation.Match(second.SendouInformation))
+      {
+        // They do.
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Sendou(s) [{string.Join(", ", first.SendouInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
+        return true;
+      }
+
       // Test if the Discord Ids match.
-      if ((matchOptions & FilterOptions.DiscordId) != 0 && first.Discord.MatchPersistent(second.Discord))
+      if ((matchOptions & FilterOptions.DiscordId) != 0 && first.DiscordInformation.MatchPersistent(second.DiscordInformation))
       {
         // They do.
         logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Discord Id(s) [{string.Join(", ", first.DiscordIds)}] from player {second} (Id {second.Id}).");
@@ -86,22 +93,30 @@ namespace SplatTagCore
       }
 
       // Test if the Discord names match.
-      if ((matchOptions & FilterOptions.DiscordName) != 0 && first.Discord.MatchUsernames(second.Discord))
+      if ((matchOptions & FilterOptions.DiscordName) != 0 && first.DiscordInformation.MatchUsernames(second.DiscordInformation))
       {
         // They do.
         logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Discord Name(s) [{string.Join(", ", first.DiscordNames)}] from player {second} (Id {second.Id}).");
         return true;
       }
 
+      // Test if the weapons match.
+      if ((matchOptions & FilterOptions.Weapon) != 0 && first.WeaponsInformation.Match(second.WeaponsInformation))
+      {
+        // They do.
+        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Weapon(s) [{string.Join(", ", first.WeaponsInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
+        return true;
+      }
+
       // If we're matching by name, then the player must also have a matching battlefy slug, or matching team.
       if ((matchOptions & FilterOptions.PlayerName) != 0
-        && (first.TeamInformation.Match(second.TeamInformation) || first.Battlefy.MatchSlugs(second.Battlefy))
+        && (first.TeamInformation.Match(second.TeamInformation) || first.BattlefyInformation.MatchSlugs(second.BattlefyInformation))
         && first.AllKnownNames.TransformedNamesMatch(second.AllKnownNames))
       {
         if (logger != null)
         {
           var teamMatch = first.TeamInformation.Match(second.TeamInformation);
-          var battlefyMatch = first.Battlefy.MatchSlugs(second.Battlefy);
+          var battlefyMatch = first.BattlefyInformation.MatchSlugs(second.BattlefyInformation);
 
           logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with TransformedName(s) [{string.Join(", ", first.NamesInformation.TransformedNames)}] " +
             $"using teamMatch={teamMatch} battlefyMatch={battlefyMatch} " +
@@ -315,16 +330,17 @@ namespace SplatTagCore
     /// <param name="second">Second Team to match</param>
     ///
     /// <returns>Teams match</returns>
-    public static bool TeamsMatch(Team first, Team second)
+    public static bool TeamsMatchById(Team first, Team second)
     {
       // Quick out if they're literally the same.
       if (first.Id == second.Id) return true;
 
       // Get if the Battlefy Ids match.
-      if (first.BattlefyPersistentTeamId != null && first.BattlefyPersistentTeamIds.NamesMatch(second.BattlefyPersistentTeamIds))
+      if (first.BattlefyPersistentTeamIdInformation.Match(second.BattlefyPersistentTeamIdInformation))
       {
         // They do.
-        logger.ConditionalDebug($"{nameof(TeamsMatch)}: Matched team {first} (Id {first.Id}) with Battlefy Persistent Id(s) [{string.Join(", ", first.BattlefyPersistentTeamIdInformation.GetItemsUnordered())}] " +
+        logger.ConditionalDebug($"{nameof(TeamsMatchById)}: Matched team {first} (Id {first.Id}) with Battlefy Persistent Id(s) " +
+          $"[{string.Join(", ", first.BattlefyPersistentTeamIdInformation.GetItemsUnordered())}] " +
           $"from team {second} (Id {second.Id}).");
         return true;
       }
@@ -345,8 +361,8 @@ namespace SplatTagCore
     /// <returns>Teams match</returns>
     public static bool TeamsMatch(IReadOnlyCollection<Player> allPlayers, Team first, Team second)
     {
-      // Get if ids match first.
-      if (TeamsMatch(first, second)) return true;
+      // Get if ids or BattlefyPersistentIds match first.
+      if (TeamsMatchById(first, second)) return true;
 
       // Otherwise, test if players match.
       if (first.NamesInformation.TransformedNamesMatch(second.NamesInformation))
@@ -356,7 +372,18 @@ namespace SplatTagCore
 
         int sharedPlayersCount = 0;
         var firstPlayers = first.GetPlayers(allPlayers);
+        if (firstPlayers.Count() <= 1)
+        {
+          logger.ConditionalDebug($"Shared players requirement NOT met.\nFirst: {first} does not have enough players: {string.Join(", ", firstPlayers)}  [{string.Join(", ", first.Sources)}]");
+          return false;
+        }
         var secondPlayers = second.GetPlayers(allPlayers);
+        if (secondPlayers.Count() <= 1)
+        {
+          logger.ConditionalDebug($"Shared players requirement NOT met.\nSecond: {second} does not have enough players: {string.Join(", ", secondPlayers)}  [{string.Join(", ", second.Sources)}]");
+          return false;
+        }
+
         foreach (var firstPlayer in firstPlayers)
         {
           string[] firstPlayerNamesWithTag = first.ClanTags.SelectMany(tag => firstPlayer.NamesInformation.TransformedNames.Select(n => tag.CombineToPlayer(n))).ToArray();

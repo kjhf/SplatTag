@@ -16,11 +16,19 @@ namespace SplatTagUnitTests
   [TestClass]
   public class SerializationUnitTests
   {
+    private static readonly Func<JsonSerializerSettings> JsonConvertDefaultSettings =
+      () =>
+        new JsonSerializerSettings
+        {
+          DefaultValueHandling = DefaultValueHandling.Ignore,
+          TypeNameHandling = TypeNameHandling.Auto
+        };
+
     private static string Serialize(object obj)
     {
       if (JsonConvert.DefaultSettings == null)
       {
-        JsonConvert.DefaultSettings = () => new JsonSerializerSettings();
+        JsonConvert.DefaultSettings = JsonConvertDefaultSettings;
       }
       var settings = JsonConvert.DefaultSettings();
       settings.DefaultValueHandling = DefaultValueHandling.Ignore;
@@ -32,11 +40,12 @@ namespace SplatTagUnitTests
 
     private static T Deserialize<T>(string json, Dictionary<string, Source> lookup)
     {
-      var settings = new JsonSerializerSettings
+      if (JsonConvert.DefaultSettings == null)
       {
-        DefaultValueHandling = DefaultValueHandling.Ignore
-      };
-      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
+        JsonConvert.DefaultSettings = JsonConvertDefaultSettings;
+      }
+      var settings = JsonConvert.DefaultSettings();
+      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.SourceStringConverter(lookup));
 
       return JsonConvert.DeserializeObject<T>(json, settings) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object of type {typeof(T).Name} (json.Length={json.Length})");
     }
@@ -54,16 +63,16 @@ namespace SplatTagUnitTests
       sources.Add(h2.Id, h2);
       sources.Add(u2.Id, u2);
 
-      Battlefy battlefy = new Battlefy();
+      BattlefyHandler battlefy = new BattlefyHandler();
       battlefy.AddSlug("handle1", h1);
       battlefy.AddUsername("username1", u1);
-      battlefy.AddSlug("kjhf", h2);
+      battlefy.AddSlug("anonymous", h2);
       battlefy.AddUsername("username2", u2);
 
       string json = Serialize(battlefy);
       Console.WriteLine(nameof(SerializeBattlefy) + ": ");
       Console.WriteLine(json);
-      Battlefy deserialized = Deserialize<Battlefy>(json, sources);
+      BattlefyHandler deserialized = Deserialize<BattlefyHandler>(json, sources);
 
       var orderedSlugs = deserialized.SlugsHandler.GetItemsOrdered();
       var orderedUsernames = deserialized.UsernamesHandler.GetItemsOrdered();
@@ -71,9 +80,9 @@ namespace SplatTagUnitTests
       Assert.AreEqual(2, orderedUsernames.Count, "Unexpected number of usernames");
       Assert.AreEqual("handle1", orderedSlugs[0].Value, "Slug [0] unexpected handle");
       Assert.AreEqual("h1", orderedSlugs[0].Sources[0].Name, "Slug [0] unexpected source");
-      Assert.AreEqual("kjhf", orderedSlugs[1].Value, "Slug [1] unexpected handle");
+      Assert.AreEqual("anonymous", orderedSlugs[1].Value, "Slug [1] unexpected handle");
       Assert.AreEqual("h2", orderedSlugs[1].Sources[0].Name, "Slug [1] unexpected source");
-      Assert.AreEqual("https://battlefy.com/users/kjhf", orderedSlugs[1].Uri?.AbsoluteUri, "Slug [1] unexpected uri");
+      Assert.AreEqual("https://battlefy.com/users/anonymous", orderedSlugs[1].Uri?.AbsoluteUri, "Slug [1] unexpected uri");
       Assert.AreEqual("username1", orderedUsernames[0].Value, "Usernames [0] unexpected handle");
       Assert.AreEqual("u1", orderedUsernames[0].Sources[0].Name, "Usernames [0] unexpected source");
       Assert.AreEqual("username2", orderedUsernames[1].Value, "Usernames [1] unexpected handle");
@@ -93,8 +102,7 @@ namespace SplatTagUnitTests
       sources.Add(source1.Id, source1);
       sources.Add(u1.Id, u1);
 
-      Discord discord = new Discord();
-      // Remember adding first = back of the list
+      DiscordHandler discord = new DiscordHandler();
       discord.AddId("123456789", source2);
       discord.AddUsername("username2", u2);
       discord.AddId("4444", source1);
@@ -103,7 +111,7 @@ namespace SplatTagUnitTests
       string json = Serialize(discord);
       Console.WriteLine(nameof(SerializeDiscord) + ": ");
       Console.WriteLine(json);
-      Discord deserialized = Deserialize<Discord>(json, sources);
+      DiscordHandler deserialized = Deserialize<DiscordHandler>(json, sources);
       var orderedIds = deserialized.IdsHandler.GetItemsOrdered();
       var orderedUsernames = deserialized.UsernamesHandler.GetItemsOrdered();
 
@@ -163,7 +171,7 @@ namespace SplatTagUnitTests
       sources.Add(s1.Id, s1);
 
       Player player = new Player();
-      player.AddBattlefySlug("kjhf", h2);
+      player.AddBattlefySlug("anonymous", h2);
       player.AddBattlefyUsername("username2", u2);
       player.AddBattlefySlug("handle1", h1);
       player.AddBattlefyUsername("username1", u1);
@@ -181,23 +189,23 @@ namespace SplatTagUnitTests
       Console.WriteLine(json);
       Player deserialized = Deserialize<Player>(json, sources);
 
-      var orderedSlugs = deserialized.Battlefy.SlugsHandler.GetItemsOrdered();
-      var orderedUsernames = deserialized.Battlefy.UsernamesHandler.GetItemsOrdered();
-      var orderedPesistentIds = deserialized.Battlefy.PersistentIdsHandler.GetItemsOrdered();
+      var orderedSlugs = deserialized.BattlefyInformation.SlugsHandler.GetItemsOrdered();
+      var orderedUsernames = deserialized.BattlefyInformation.UsernamesHandler.GetItemsOrdered();
+      var orderedPesistentIds = deserialized.BattlefyInformation.PersistentIdsHandler.GetItemsOrdered();
       Assert.AreEqual(2, orderedSlugs.Count, "Unexpected number of slugs");
       Assert.AreEqual(2, orderedUsernames.Count, "Unexpected number of usernames");
       Assert.AreEqual("handle1", orderedSlugs[0].Value, "Slug [0] unexpected handle");
       Assert.AreEqual("h1", orderedSlugs[0].Sources[0].Name, "Slug [0] unexpected source");
-      Assert.AreEqual("kjhf", orderedSlugs[1].Value, "Slug [1] unexpected handle");
+      Assert.AreEqual("anonymous", orderedSlugs[1].Value, "Slug [1] unexpected handle");
       Assert.AreEqual("h2", orderedSlugs[1].Sources[0].Name, "Slug [1] unexpected source");
-      Assert.AreEqual("https://battlefy.com/users/kjhf", orderedSlugs[1].Uri?.AbsoluteUri, "Slug [1] unexpected uri");
+      Assert.AreEqual("https://battlefy.com/users/anonymous", orderedSlugs[1].Uri?.AbsoluteUri, "Slug [1] unexpected uri");
       Assert.AreEqual("username1", orderedUsernames[0].Value, "Usernames [0] unexpected handle");
       Assert.AreEqual("u1", orderedUsernames[0].Sources[0].Name, "Usernames [0] unexpected source");
       Assert.AreEqual("username2", orderedUsernames[1].Value, "Usernames [1] unexpected handle");
       Assert.AreEqual("u2", orderedUsernames[1].Sources[0].Name, "Usernames [1] unexpected source");
       Assert.AreEqual("0000-1111-2222-3333", orderedPesistentIds[0].Value, "PersistentIds [0] unexpected id");
 
-      var discord = deserialized.Discord;
+      var discord = deserialized.DiscordInformation;
       var orderedDiscordIds = discord.IdsHandler.GetItemsOrdered();
       var orderedDiscordUsernames = discord.UsernamesHandler.GetItemsOrdered();
       Assert.AreEqual(2, orderedDiscordIds.Count, "Unexpected number of discord ids");
@@ -333,6 +341,59 @@ namespace SplatTagUnitTests
       Player player = new Player();
       player.AddFCs(fcs, Builtins.ManualSource);
       Assert.AreEqual(1, player.FCInformation.Count, "Expected only 1 FC as the values are equal.");
+    }
+
+    [TestMethod]
+    public void SerializationInfoAsKeyPairs()
+    {
+      var testCases = new Dictionary<string, KeyPairTestClass>();
+      var source1 = new KeyPairTestClass
+      {
+        Name = "test_name",
+        Value = 10
+      };
+
+      string json = Serialize(source1);
+      Console.WriteLine(nameof(SerializationInfoAsKeyPairs) + ": ");
+      Console.WriteLine(json);
+      KeyPairTestClass deserialized = JsonConvert.DeserializeObject<KeyPairTestClass>(json) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object of type {typeof(KeyPairTestClass).Name} (json.Length={json.Length})");
+      Assert.IsNotNull(deserialized);
+      Assert.AreEqual(source1.Name, deserialized.Name);
+      Assert.AreEqual(source1.Value, deserialized.Value);
+    }
+
+    [Serializable]
+    private class KeyPairTestClass : ISerializable
+    {
+      private const string NameSerialization = "N";
+      private const string ValueSerialization = "V";
+
+      public string Name { get; internal set; } = "name";
+      public int Value { get; internal set; } = 1;
+
+      public KeyPairTestClass()
+      {
+      }
+
+      protected KeyPairTestClass(SerializationInfo info, StreamingContext context)
+      {
+        var kvs = info.AsKeyValuePairs();
+        foreach (var pair in kvs)
+        {
+          switch (pair.Key)
+          {
+            case NameSerialization: Name = Convert.ToString(pair.Value) ?? ""; break;
+            case ValueSerialization: Value = Convert.ToInt32(pair.Value); break;
+            default: throw new SerializationException($"Unknown key: {pair.Key}");
+          }
+        }
+      }
+
+      public void GetObjectData(SerializationInfo info, StreamingContext context)
+      {
+        info.AddValue(NameSerialization, Name);
+        info.AddValue(ValueSerialization, Value);
+      }
     }
   }
 }

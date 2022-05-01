@@ -253,7 +253,7 @@ namespace SplatTagUI
       }
       else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchAddress(p.Battlefy.Slugs.FirstOrDefault()?.Uri?.AbsoluteUri);
+        splatTagController.TryLaunchAddress(p.BattlefyInformation.Slugs.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Social s)
       {

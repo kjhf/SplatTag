@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace SplatTagDatabase.Importers
 {
@@ -67,12 +68,15 @@ namespace SplatTagDatabase.Importers
         {
           player.Country = country;
         }
-        var weapons = userToken["weapons"]?.HasValues == true ? userToken["weapons"]?.Values<string>() : null;
-        if (weapons != null)
+        if (userToken["weapons"]?.HasValues == true)
         {
-          player.AddWeapons(weapons!);
+          var weapons = userToken["weapons"]?.Values<string>();
+          if (weapons != null)
+          {
+            player.AddWeapons(weapons.OfType<string>(), source);
+          }
         }
-        var top500 = userToken.GetValue("top500", false);
+        var top500 = userToken.GetValue<bool>("top500", false);
         if (top500)
         {
           player.Top500 = true;

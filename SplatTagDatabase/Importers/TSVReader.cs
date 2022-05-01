@@ -320,7 +320,7 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.DiscordName:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              if (Discord.DISCORD_NAME_REGEX.IsMatch(value))
+              if (DiscordHandler.DISCORD_NAME_REGEX.IsMatch(value))
               {
                 p.AddDiscordUsername(value, source);
               }
@@ -403,7 +403,7 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.Role:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.AddWeapons(value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)));
+              p.AddWeapons(value.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)), source);
               break;
             }
 

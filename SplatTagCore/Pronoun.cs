@@ -24,7 +24,7 @@ namespace SplatTagCore
   }
 
   [Serializable]
-  public class Pronoun : IReadonlySourceable
+  public class Pronoun : ISerializable, IReadonlySourceable
   {
     public const string NEO_PLACEHOLDER = "(neo)";
     private static readonly Regex heRegex = new(@"(^|\W)(he)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
@@ -245,7 +245,7 @@ namespace SplatTagCore
           {
             sb.Remove(0, 1);
           }
-          if (sb[sb.Length - 1] == '/')
+          if (sb[^1] == '/')
           {
             sb.Remove(sb.Length - 1, 1);
           }
@@ -260,14 +260,8 @@ namespace SplatTagCore
     {
       this.value = (PronounFlags)info.GetByte("P");
       var source = (string)info.GetValue("S", typeof(string));
-      if (context.Context is Source.GuidToSourceConverter converter)
-      {
-        this.source = converter.Convert(source);
-      }
-      else
-      {
-        this.source = new Source(source);
-      }
+      var converter = context.Context as Source.SourceStringConverter ?? new Source.SourceStringConverter();
+      this.source = converter.Convert(source, Source.SourceStringConverter.ConstructSource);
     }
 
     // Serialize as dict

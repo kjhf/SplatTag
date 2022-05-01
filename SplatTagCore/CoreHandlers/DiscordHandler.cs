@@ -1,18 +1,30 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Discord : IMergable<Discord>, IReadonlySourceable, ISerializable
+  public class DiscordHandler : BaseHandlerCollectionSourced<DiscordHandler>, ISerializable
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+    private const string DiscordIdsSerialization = "Ids";
+    private const string DiscordUsernameSerialization = "Usernames";
+
     /// <summary>Parameterless constructor</summary>
     /// <remarks>Required for serialization - do not delete.</remarks>
-    public Discord()
+    public DiscordHandler()
+      : base()
     {
+    }
+
+    protected override void InitialiseHandlers()
+    {
+      handlers.Clear();
+      handlers.Add(DiscordIdsSerialization, new NamesHandler<Name>(FilterOptions.DiscordId, DiscordIdsSerialization));
+      handlers.Add(DiscordUsernameSerialization, new NamesHandler<Name>(FilterOptions.DiscordName, DiscordUsernameSerialization));
     }
 
     public static readonly Regex DISCORD_NAME_REGEX = new(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
@@ -25,7 +37,7 @@ namespace SplatTagCore
     /// <summary>
     /// The Discord ids
     /// </summary>
-    public NamesHandler<Name> IdsHandler { get; } = new();
+    public NamesHandler<Name> IdsHandler => (NamesHandler<Name>)this[DiscordIdsSerialization];
 
     /// <summary>
     /// The Discord usernames
@@ -35,17 +47,7 @@ namespace SplatTagCore
     /// <summary>
     /// The Discord usernames
     /// </summary>
-    public NamesHandler<Name> UsernamesHandler { get; } = new();
-
-    public IReadOnlyList<Source> Sources
-    {
-      get
-      {
-        var sources = new HashSet<Source>(IdsHandler.Sources);
-        sources.UnionWith(UsernamesHandler.Sources);
-        return sources.ToList();
-      }
-    }
+    public NamesHandler<Name> UsernamesHandler => (NamesHandler<Name>)this[DiscordUsernameSerialization];
 
     /// <summary>
     /// Add a new Discord id to the front of this profile
@@ -76,47 +78,28 @@ namespace SplatTagCore
     /// <summary>
     /// Return if this Discord matches another by persistent data (ids).
     /// </summary>
-    public bool MatchPersistent(Discord other)
+    public bool MatchPersistent(DiscordHandler other)
       => IdsHandler.Match(other.IdsHandler);
 
     /// <summary>
     /// Return if this Discord matches by username
     /// </summary>
-    public bool MatchUsernames(Discord other)
+    public bool MatchUsernames(DiscordHandler other)
       => UsernamesHandler.Match(other.UsernamesHandler);
-
-    /// <summary>
-    /// Merge this <see cref="Discord"/> instance with another.
-    /// Handles Sources and timings.
-    /// </summary>
-    public void Merge(Discord other)
-    {
-      this.IdsHandler.Merge(other.IdsHandler);
-      this.UsernamesHandler.Merge(other.UsernamesHandler);
-    }
-
-    public override string ToString()
-    {
-      return $"Ids: [{string.Join(", ", Ids)}], Usernames: [{string.Join(", ", Usernames)}]";
-    }
 
     #region Serialization
 
     // Deserialize
-    protected Discord(SerializationInfo info, StreamingContext context)
+    protected DiscordHandler(SerializationInfo info, StreamingContext context)
+      : base()
     {
-      IdsHandler.Add(info.GetValueOrDefault("Ids", Array.Empty<Name>()));
-      UsernamesHandler.Add(info.GetValueOrDefault("Usernames", Array.Empty<Name>()));
+      DeserializeHandlers(info, context);
     }
 
     // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      if (IdsHandler.Count > 0)
-        info.AddValue("Ids", Ids);
-
-      if (UsernamesHandler.Count > 0)
-        info.AddValue("Usernames", Usernames);
+      SerializeHandlers(info, context);
     }
 
     #endregion Serialization

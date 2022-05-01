@@ -45,7 +45,7 @@ namespace SplatTagUnitTests
       var PLAYER_NAME = "Example Name";
       database.expectedPlayers = new List<Player>
       {
-        new Player(PLAYER_NAME, new Guid[] { TEAM_ID }, Builtins.ManualSource)
+        new Player(PLAYER_NAME, new[] { TEAM_ID }, Builtins.ManualSource)
       };
       var PLAYER_ID = database.expectedPlayers[0].Id;
 

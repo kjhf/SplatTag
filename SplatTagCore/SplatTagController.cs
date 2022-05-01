@@ -173,7 +173,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
             {
               // If the battlefy slugs match, return top match.
-              foreach (var toMatch in from Name name in p.Battlefy.Slugs
+              foreach (var toMatch in from Name name in p.BattlefyInformation.Slugs
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                       select toMatch)
               {
@@ -187,7 +187,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0)
             {
               // If the battlefy persistent ids match, return top match.
-              foreach (var toMatch in from Name name in p.Battlefy.PersistentIds
+              foreach (var toMatch in from Name name in p.BattlefyInformation.PersistentIds
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                       select toMatch)
               {
@@ -216,7 +216,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
             {
               // Look through the battlefy usernames.
-              foreach (var toMatch in from Name name in p.Battlefy.Usernames
+              foreach (var toMatch in from Name name in p.BattlefyInformation.Usernames
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                       select toMatch)
               {
@@ -271,6 +271,31 @@ namespace SplatTagCore
               foreach (var toMatch in from Twitter twitter in p.TwitterProfiles
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? twitter.Transformed : twitter.Value
                                       select toMatch)
+              {
+                if (regex.IsMatch(toMatch))
+                {
+                  relevance += 20;
+                }
+              }
+            }
+
+            if ((filterOptions & FilterOptions.PlayerSendou) != 0)
+            {
+              foreach (var toMatch in from Sendou sendou in p.SendouProfiles
+                                      let toMatch = (matchOptions.NearCharacterRecognition) ? sendou.Transformed : sendou.Value
+                                      select toMatch)
+              {
+                if (regex.IsMatch(toMatch))
+                {
+                  relevance += 20;
+                }
+              }
+            }
+
+            if ((filterOptions & FilterOptions.Weapon) != 0)
+            {
+              foreach (var toMatch in from string wep in p.Weapons
+                                      select wep)
               {
                 if (regex.IsMatch(toMatch))
                 {
@@ -336,7 +361,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
           {
             // If the battlefy slugs match, return top match.
-            foreach (var toMatch in from Name name in p.Battlefy.Slugs
+            foreach (var toMatch in from Name name in p.BattlefyInformation.Slugs
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -354,7 +379,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0)
           {
             // If the battlefy persistent ids match, return top match.
-            foreach (var toMatch in from Name name in p.Battlefy.PersistentIds
+            foreach (var toMatch in from Name name in p.BattlefyInformation.PersistentIds
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -372,7 +397,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
           {
             // Look through the battlefy usernames.
-            foreach (var toMatch in from Name name in p.Battlefy.Usernames
+            foreach (var toMatch in from Name name in p.BattlefyInformation.Usernames
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -425,6 +450,25 @@ namespace SplatTagCore
             foreach (var toMatch in from Name name in p.TwitterProfiles
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
+            {
+              AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
+            }
+          }
+
+          if ((filterOptions & FilterOptions.PlayerSendou) != 0)
+          {
+            foreach (var toMatch in from Name name in p.SendouProfiles
+                                    let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
+                                    select toMatch)
+            {
+              AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
+            }
+          }
+
+          if ((filterOptions & FilterOptions.Weapon) != 0)
+          {
+            foreach (var toMatch in from string wep in p.Weapons
+                                    select wep)
             {
               AdjustRelevanceForStringComparison(ref relevance, toMatch, query, comparison);
             }

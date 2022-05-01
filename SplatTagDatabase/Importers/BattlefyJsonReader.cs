@@ -219,13 +219,13 @@ namespace SplatTagDatabase.Importers
         {
           if (CustomFields?.Length > 0)
           {
-            if (Discord.DISCORD_NAME_REGEX.IsMatch(CustomFields[0]["value"]))
+            if (DiscordHandler.DISCORD_NAME_REGEX.IsMatch(CustomFields[0]["value"]))
             {
               return CustomFields[0]["value"];
             }
             else if (CustomFields.Length > 1)
             {
-              if (Discord.DISCORD_NAME_REGEX.IsMatch(CustomFields[1]["value"]))
+              if (DiscordHandler.DISCORD_NAME_REGEX.IsMatch(CustomFields[1]["value"]))
               {
                 return CustomFields[1]["value"];
               }

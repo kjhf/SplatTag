@@ -6,8 +6,12 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class DivisionsHandler : SourcedItemHandler<Division>, ISerializable
+  public class DivisionsHandler : BaseSourcedItemHandler<Division>, ISerializable
   {
+    private const string SerializedDivName = "D";
+
+    public override string SerializedHandlerName => SerializedDivName;
+
     public DivisionsHandler()
     {
     }
@@ -52,23 +56,34 @@ namespace SplatTagCore
       return bestDiv.IsUnknown ? null : bestDiv;
     }
 
+    /// <summary>
+    /// If the Sourced Item Handler generic matches in the <see cref="BaseSourcedItemHandler{T}.MatchWithReason(object)"/> function, get the reason why.
+    /// </summary>
+    public override FilterOptions GetMatchReason()
+    {
+      // Matching by division has no bearing on the equality
+      return FilterOptions.None;
+    }
+
     #region Serialization
 
     // Deserialize
     protected DivisionsHandler(SerializationInfo info, StreamingContext context)
     {
-      Source.GuidToSourceConverter? converter = context.Context as Source.GuidToSourceConverter;
-      var val = info.GetValueOrDefault("D", new Dictionary<string, List<string>>());
-      Merge(val.ToDictionary(pair => new Division(pair.Key), pair => (converter?.Convert(pair.Value) ?? pair.Value.Select(s => new Source(s))).ToList()));
+      DeserializeBaseSourcedItems(info, context);
+      //Source.SourceStringConverter? converter = context.Context as Source.SourceStringConverter;
+      //var val = info.GetValueOrDefault(SerializedDivName, new Dictionary<string, List<string>>());
+      //Merge(val.ToDictionary(pair => new Division(pair.Key), pair => (converter?.Convert(pair.Value) ?? pair.Value.Select(s => new Source(s))).ToList()));
     }
 
     // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext _)
+    public override void GetObjectData(SerializationInfo info, StreamingContext _)
     {
-      if (Count > 0)
-      {
-        info.AddValue("D", OrderedItems.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value.Select(s => s.Id)));
-      }
+      SerializeBaseSourcedItems(info, _);
+      //if (HasDataToSerialize)
+      //{
+      //info.AddValue(SerializedDivName, OrderedItems.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value.Select(s => s.Id)));
+      //}
     }
 
     #endregion Serialization

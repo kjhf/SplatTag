@@ -15,9 +15,9 @@ namespace SplatTagCore
     /// <summary>
     /// We have exactly 12 digits, or we have 3 lots of 4 digits separated by - or . or space or =. The code may be wrapped in brackets ().
     /// </summary>
-    private static readonly Regex FRIEND_CODE_REGEX = new Regex(@"\(?(SW|FC|sw|fc)?\s*(:|-|=)?\s?(\d{4})\s*(-| |\.|_|/|=)\s*(\d{4})\s*(-| |\.|_|/|=)\s*(\d{4})\s*\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+    private static readonly Regex FRIEND_CODE_REGEX = new(@"\(?(SW|FC|sw|fc)?\s*(:|-|=)?\s?(\d{4})\s*(-| |\.|_|/|=)\s*(\d{4})\s*(-| |\.|_|/|=)\s*(\d{4})\s*\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
-    private static readonly Regex TWELVE_DIGITS_REGEX = new Regex(@"(\D|^)(\d{12})(\D|$)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+    private static readonly Regex TWELVE_DIGITS_REGEX = new(@"(\D|^)(\d{12})(\D|$)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
     private readonly short FCShort1;
     private readonly short FCShort2;
     private readonly short FCShort3;
@@ -42,8 +42,18 @@ namespace SplatTagCore
     [JsonConstructor]
     internal FriendCode(ICollection<short> fc)
     {
-      if (fc == null)
-        throw new ArgumentNullException(nameof(fc));
+      if (fc == null || fc.Count == 0)
+      {
+        FCShort1 = FCShort2 = FCShort3 = 0;
+        return;
+      }
+
+      if (fc.Count != 3)
+      {
+        throw new ArgumentException($"FC is not length 3 (actually {fc} == {fc.Count})", nameof(fc));
+      }
+
+      // else
 
       short[] x = fc switch
       {
@@ -51,8 +61,6 @@ namespace SplatTagCore
         _ => fc.ToArray(),
       };
 
-      if (x.Length != 3)
-        throw new ArgumentException($"FC is not length 3 (actually {fc} == {x.Length})", nameof(fc));
       FCShort1 = x[0];
       FCShort2 = x[1];
       FCShort3 = x[2];

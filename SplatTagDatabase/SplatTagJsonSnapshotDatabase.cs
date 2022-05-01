@@ -140,7 +140,7 @@ namespace SplatTagDatabase
         GC.WaitForPendingFinalizers();
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading playersSnapshotFile from {playersSnapshotFile}... ");
-        settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
+        settings.Context = new StreamingContext(StreamingContextStates.All, new Source.SourceStringConverter(lookup));
         Player[] players = LoadSnapshot<Player>(playersSnapshotFile, settings, capacityHint: 65536);
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {players.Length} players loaded.");
 

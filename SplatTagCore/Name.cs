@@ -11,7 +11,7 @@ namespace SplatTagCore
     /// <summary>
     /// List of sources that this name has been used under
     /// </summary>
-    private readonly List<Source> sources = new List<Source>();
+    private readonly List<Source> sources = new();
 
     /// <summary>
     /// Cached transformed name
@@ -119,7 +119,7 @@ namespace SplatTagCore
     {
       this.Value = info.GetString("N");
       var sourceIds = info.GetValueOrDefault("S", Array.Empty<string>());
-      this.sources = (context.Context is Source.GuidToSourceConverter converter)
+      this.sources = (context.Context is Source.SourceStringConverter converter)
         ? converter.Convert(sourceIds).Distinct().ToList()
         : sourceIds.Select(s => new Source(s)).Distinct().ToList();
     }
@@ -130,7 +130,7 @@ namespace SplatTagCore
       info.AddValue("N", this.Value);
       if (this.sources.Count > 0)
       {
-        info.AddValue("S", this.sources.Select(s => s.Id));
+        info.AddValue("S", this.sources.Select(s => s.Id).ToArray());
       }
     }
 

@@ -11,11 +11,11 @@ namespace SplatTagDatabase
   {
     private HashSet<IImporter> importers = new();
     private SplatTagJsonSnapshotDatabase? jsonDatabase;
-    private List<Player> _players = new();
+    private Player[] _players = Array.Empty<Player>();
     private Dictionary<Guid, Team> _teams = new();
     private Dictionary<string, Source> _sources = new();
 
-    public IReadOnlyList<Player> Players => _players.Count == 0 ? Array.Empty<Player>() : _players;
+    public IReadOnlyList<Player> Players => _players.Length == 0 ? Array.Empty<Player>() : _players;
     public IReadOnlyDictionary<Guid, Team> Teams => _teams;
     public IReadOnlyDictionary<string, Source> Sources => _sources;
 
@@ -109,10 +109,7 @@ namespace SplatTagDatabase
         {
           Source source = importedSources[i];
           Console.WriteLine($"Merging {source.Name}...");
-
-          var mergeResult = Merger.MergeTeamsByPersistentIds(teams, source.Teams);
-          Merger.MergePlayers(players, source.Players);
-          Merger.CorrectTeamIdsForPlayers(players, mergeResult);
+          Merger.MergeSource(players, teams, source.Players, source.Teams);
         }
         catch (Exception ex)
         {
@@ -128,9 +125,9 @@ namespace SplatTagDatabase
         }
       }
 
-      Merger.FinalMerge(players, teams);
-      _players = players;
-      _teams = teams.ToDictionary(t => t.Id, t => t);
+      var (finalPlayers, finalTeams) = Merger.MergeAllInParallel(players, teams);
+      _players = finalPlayers;
+      _teams = finalTeams.ToDictionary(t => t.Id, t => t);
       _sources = importedSources.ToDictionary(s => s.Id, s => s);
       return true;
     }
