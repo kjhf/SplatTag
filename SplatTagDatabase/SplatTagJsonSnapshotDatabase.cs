@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using NLog;
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
@@ -13,8 +14,28 @@ namespace SplatTagDatabase
 {
   public class SplatTagJsonSnapshotDatabase : ISplatTagDatabase
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+    private static readonly HashSet<string> errorMessagesReported = new();
+
+    public static readonly Func<JsonSerializerSettings> JsonConvertDefaultSettings =
+      () =>
+        new JsonSerializerSettings
+        {
+          DefaultValueHandling = DefaultValueHandling.Ignore,
+          Error = (sender, args) =>
+          {
+            string m = args.ErrorContext.Error.Message;
+            if (!errorMessagesReported.Contains(m))
+            {
+              logger.Error(m);
+              errorMessagesReported.Add(m);
+            }
+            args.ErrorContext.Handled = true;
+          },
+          TypeNameHandling = TypeNameHandling.Auto
+        };
+
     private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
-    private static readonly HashSet<string> errorMessagesReported = new HashSet<string>();
 
     private readonly string saveDirectory;
     private string? playersSnapshotFile = null;
@@ -113,48 +134,31 @@ namespace SplatTagDatabase
         GC.WaitForPendingFinalizers();
 
         // Invoked from command line
-        if (JsonConvert.DefaultSettings == null)
-        {
-          JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-          {
-            DefaultValueHandling = DefaultValueHandling.Ignore,
-            Error = (sender, args) =>
-            {
-              string m = args.ErrorContext.Error.Message;
-              if (!errorMessagesReported.Contains(m))
-              {
-                Console.Error.WriteLine(m);
-                errorMessagesReported.Add(m);
-              }
-              args.ErrorContext.Handled = true;
-            }
-          };
-        }
+        JsonConvert.DefaultSettings ??= JsonConvertDefaultSettings;
         var settings = JsonConvert.DefaultSettings();
 
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading sourcesSnapshotFile from {sourcesSnapshotFile}... ");
+        logger.Info($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading sourcesSnapshotFile from {sourcesSnapshotFile}... ");
         Source[] sources = LoadSnapshot<Source>(sourcesSnapshotFile, settings, capacityHint: 1024);
         var lookup = sources.ToDictionary(s => s.Id, s => s);
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {lookup.Count} sources transformed.");
+        logger.Info($"[{DateTime.Now:HH:mm:ss.fffffff}] {lookup.Count} sources transformed.");
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading playersSnapshotFile from {playersSnapshotFile}... ");
+        logger.Info($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading playersSnapshotFile from {playersSnapshotFile}... ");
         settings.Context = new StreamingContext(StreamingContextStates.All, new Source.SourceStringConverter(lookup));
         Player[] players = LoadSnapshot<Player>(playersSnapshotFile, settings, capacityHint: 65536);
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {players.Length} players loaded.");
+        logger.Info($"[{DateTime.Now:HH:mm:ss.fffffff}] {players.Length} players loaded.");
 
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading teamsSnapshotFile from {teamsSnapshotFile}... ");
+        logger.Info($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading teamsSnapshotFile from {teamsSnapshotFile}... ");
         Team[] teams = LoadSnapshot<Team>(teamsSnapshotFile, settings, capacityHint: 16384);
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {teams.Length} teams loaded.");
+        logger.Info($"[{DateTime.Now:HH:mm:ss.fffffff}] {teams.Length} teams loaded.");
 
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
+        logger.Info($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
         return (players, teams, lookup);
       }
       catch (Exception ex)
       {
-        Console.Error.WriteLine("An error occurred in loading the Snapshot Database.");
-        Console.Error.WriteLine(ex);
+        logger.Error(ex, "An error occurred in loading the Snapshot Database.");
         throw;
       }
       finally
@@ -171,6 +175,11 @@ namespace SplatTagDatabase
       using (StreamReader file = File.OpenText(filePath))
       using (JsonTextReader reader = new JsonTextReader(file))
       {
+        if (file.BaseStream.Length <= 2) // Empty file or [] or {}
+        {
+          logger.Warn("Nothing to load from this file.");
+        }
+
         // reader.SupportMultipleContent = true;
         while (reader.Read())
         {
@@ -187,12 +196,9 @@ namespace SplatTagDatabase
             }
             catch (Exception ex)
             {
-              var restore = Console.BackgroundColor;
-              Console.BackgroundColor = ConsoleColor.Red;
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + reader.LineNumber + ".");
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + reader);
-              Console.BackgroundColor = restore;
+              logger.Error($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + reader.LineNumber + ".");
+              logger.Error($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
+              logger.Error($"[{DateTime.Now:HH:mm:ss.fffffff}] " + reader);
             }
           }
         }
@@ -217,8 +223,7 @@ namespace SplatTagDatabase
         catch (Exception ex)
         {
           string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} players because of an exception: {ex}";
-          Console.Error.WriteLine(error);
-          Console.WriteLine(error);
+          logger.Error(ex, error);
         }
       });
 
@@ -236,8 +241,7 @@ namespace SplatTagDatabase
         catch (Exception ex)
         {
           string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} teams because of an exception: {ex}";
-          Console.Error.WriteLine(error);
-          Console.WriteLine(error);
+          logger.Error(ex, error);
         }
       });
 
@@ -255,8 +259,7 @@ namespace SplatTagDatabase
         catch (Exception ex)
         {
           string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} sources because of an exception: {ex}";
-          Console.Error.WriteLine(error);
-          Console.WriteLine(error);
+          logger.Error(ex, error);
         }
       });
 

@@ -1,4 +1,5 @@
-﻿using SplatTagCore;
+﻿using NLog;
+using SplatTagCore;
 using System;
 using System.IO;
 
@@ -6,6 +7,13 @@ namespace SplatTagDatabase
 {
   public static class SplatTagControllerFactory
   {
+    static SplatTagControllerFactory()
+    {
+      LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration(PathUtils.FindFileUpToRoot("nlog.config"));
+    }
+
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     /// <summary>
     /// Get the SplatTag application data folder
     /// </summary>
@@ -51,9 +59,7 @@ namespace SplatTagDatabase
       }
       catch (Exception ex)
       {
-        string error = $"Unable to initialise the {nameof(SplatTagController)} because of an exception:\n {ex} \n";
-        Console.Error.WriteLine(error);
-        Console.WriteLine(error);
+        logger.Error(ex, $"Unable to initialise the {nameof(SplatTagController)} because of an exception");
       }
 
       return (splatTagController, sourcesImporter);
@@ -69,7 +75,7 @@ namespace SplatTagDatabase
       string patchFile,
       string? saveFolder = null)
     {
-      Console.WriteLine($"GenerateDatabasePatch called with patchFile={patchFile}, saveFolder={saveFolder}...");
+      logger.Info($"GenerateDatabasePatch called with patchFile={patchFile}, saveFolder={saveFolder}...");
 
       if (saveFolder == null)
       {
@@ -110,7 +116,7 @@ namespace SplatTagDatabase
       string? saveFolder = null,
       string? sourcesFile = null)
     {
-      Console.WriteLine($"GenerateNewDatabase called with saveFolder={saveFolder}, sourcesFile={sourcesFile}...");
+      logger.Info($"GenerateNewDatabase called with saveFolder={saveFolder}, sourcesFile={sourcesFile}...");
 
       if (sourcesFile == null)
       {
@@ -134,7 +140,7 @@ namespace SplatTagDatabase
         GenericFilesToIImporters sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
         MultiDatabase splatTagDatabase = new MultiDatabase().With(sourcesImporter);
         SplatTagController splatTagController = new SplatTagController(splatTagDatabase);
-        Console.WriteLine($"Full load of {sourcesImporter.Sources.Count} files from dir {Path.GetFullPath(saveFolder)}...");
+        logger.Info($"Full load of {sourcesImporter.Sources.Count} files from dir {Path.GetFullPath(saveFolder)}...");
         splatTagController.Initialise();
 
         // Now that we've initialised, take a snapshot of everything.

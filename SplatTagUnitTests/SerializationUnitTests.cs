@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using SplatTagCore;
 using SplatTagCore.Social;
+using SplatTagDatabase;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,37 +17,26 @@ namespace SplatTagUnitTests
   [TestClass]
   public class SerializationUnitTests
   {
-    private static readonly Func<JsonSerializerSettings> JsonConvertDefaultSettings =
-      () =>
-        new JsonSerializerSettings
-        {
-          DefaultValueHandling = DefaultValueHandling.Ignore,
-          TypeNameHandling = TypeNameHandling.Auto
-        };
-
     private static string Serialize(object obj)
     {
-      if (JsonConvert.DefaultSettings == null)
-      {
-        JsonConvert.DefaultSettings = JsonConvertDefaultSettings;
-      }
-      var settings = JsonConvert.DefaultSettings();
-      settings.DefaultValueHandling = DefaultValueHandling.Ignore;
-      var serializer = JsonSerializer.Create(settings);
-      StringWriter sw = new StringWriter();
+      JsonConvert.DefaultSettings ??= SplatTagJsonSnapshotDatabase.JsonConvertDefaultSettings;
+      var serializer = JsonSerializer.Create(JsonConvert.DefaultSettings());
+      StringWriter sw = new();
       serializer.Serialize(sw, obj);
       return sw.ToString();
     }
 
-    private static T Deserialize<T>(string json, Dictionary<string, Source> lookup)
+    private static T Deserialize<T>(string json, Dictionary<string, Source>? lookup)
     {
       if (JsonConvert.DefaultSettings == null)
       {
-        JsonConvert.DefaultSettings = JsonConvertDefaultSettings;
+        JsonConvert.DefaultSettings = SplatTagJsonSnapshotDatabase.JsonConvertDefaultSettings;
       }
       var settings = JsonConvert.DefaultSettings();
-      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.SourceStringConverter(lookup));
-
+      if (lookup != null)
+      {
+        settings.Context = new StreamingContext(StreamingContextStates.All, new Source.SourceStringConverter(lookup));
+      }
       return JsonConvert.DeserializeObject<T>(json, settings) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object of type {typeof(T).Name} (json.Length={json.Length})");
     }
 
@@ -328,6 +318,16 @@ namespace SplatTagUnitTests
       Assert.AreEqual(player1.Id, deserialized.Brackets[0].Placements.PlayersByPlacement[2][0]);
       Assert.AreEqual(team2.Id, deserialized.Brackets[0].Placements.TeamsByPlacement[1][0]);
       Assert.AreEqual(team1.Id, deserialized.Brackets[0].Placements.TeamsByPlacement[2][0]);
+    }
+
+    [TestMethod]
+    public void SerializeSource()
+    {
+      Source source = ArbitraryDataExtensions.GetRandomSource(true);
+      string json = Serialize(source);
+      Console.WriteLine(nameof(SerializeSource) + ": ");
+      Console.WriteLine(json);
+      Source deserialized = Deserialize<Source>(json, null);
     }
 
     [TestMethod]

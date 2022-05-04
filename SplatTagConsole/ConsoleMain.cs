@@ -27,23 +27,7 @@ namespace SplatTagConsole
       errorMessagesReported = new HashSet<string>();
 
       // Invoked from command line
-      if (JsonConvert.DefaultSettings == null)
-      {
-        JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-        {
-          DefaultValueHandling = DefaultValueHandling.Ignore,
-          Error = (sender, args) =>
-          {
-            string m = args.ErrorContext.Error.Message;
-            if (!errorMessagesReported.Contains(m))
-            {
-              Console.Error.WriteLine(m);
-              errorMessagesReported.Add(m);
-            }
-            args.ErrorContext.Handled = true;
-          }
-        };
-      }
+      JsonConvert.DefaultSettings ??= SplatTagJsonSnapshotDatabase.JsonConvertDefaultSettings;
       serializer = JsonSerializer.Create(JsonConvert.DefaultSettings());
 
       if (Environment.GetCommandLineArgs().Length > 0)

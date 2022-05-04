@@ -18,7 +18,7 @@ namespace SplatTagCore
     /// <summary>
     /// Dictionary of handlers, keyed by its serialization name.
     /// </summary>
-    protected readonly Dictionary<string, BaseHandler> handlers = new();
+    protected internal readonly Dictionary<string, BaseHandler> handlers = new();
 
     protected BaseHandlerCollectionSourced()
     {

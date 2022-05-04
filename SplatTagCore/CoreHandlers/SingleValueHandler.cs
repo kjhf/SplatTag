@@ -25,7 +25,7 @@ namespace SplatTagCore
     public override bool HasDataToSerialize => Value != null && !Value.Equals(default(T));
 
     public abstract string SerializedName { get; }
-    protected T? Value { get; set; }
+    protected internal T? Value { get; set; }
 
     public override FilterOptions MatchWithReason(IMatchable other)
     {

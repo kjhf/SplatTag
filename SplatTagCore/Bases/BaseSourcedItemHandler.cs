@@ -11,7 +11,8 @@ namespace SplatTagCore
   /// Base class for <see cref="BaseHandlerSourced{T}"/> classes that also have classes that are sourced against it.
   /// </summary>
   public abstract class BaseSourcedItemHandler<T> :
-    BaseHandlerSourced<BaseSourcedItemHandler<T>>
+    BaseHandlerSourced<BaseSourcedItemHandler<T>>,
+    ICollection<T>
     where T : notnull
   {
     /// <summary>
@@ -22,7 +23,7 @@ namespace SplatTagCore
     /// a small number of elements (under 20), List is actually better
     /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
     /// </remarks>
-    protected readonly Dictionary<T, List<Source>> items = new();
+    protected internal readonly Dictionary<T, List<Source>> items = new();
 
     /// <summary>
     /// Back-store for quick access to the most recent item (current).
@@ -63,6 +64,20 @@ namespace SplatTagCore
     /// Get all the items and their sources as an ordered enumerable from most recent item to oldest.
     /// </summary>
     protected IOrderedEnumerable<KeyValuePair<T, List<Source>>> OrderedItems => items.OrderByDescending(pair => pair.Value.Max());
+
+    bool ICollection<T>.IsReadOnly => false;
+
+    void ICollection<T>.Add(T item) => Add(item, Builtins.ManualSource);
+
+    void ICollection<T>.Clear() => items.Clear();
+
+    void ICollection<T>.CopyTo(T[] array, int arrayIndex) => items.Keys.ToArray().CopyTo(array, arrayIndex);
+
+    bool ICollection<T>.Remove(T item) => items.Remove(item);
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => items.Keys.GetEnumerator();
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => items.Keys.GetEnumerator();
 
     /// <summary>
     /// Add an item and its one source to this handler.
