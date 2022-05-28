@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using NLog;
 using SplatTagCore;
 using SplatTagDatabase;
 using System;
@@ -16,9 +17,9 @@ namespace SplatTagConsole
   public static class ConsoleMain
   {
     private static readonly SplatTagController splatTagController;
-    private static readonly GenericFilesToIImporters? importer;
     private static readonly JsonSerializer serializer;
     private static readonly HashSet<string> errorMessagesReported;
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     static ConsoleMain()
     {
@@ -30,27 +31,17 @@ namespace SplatTagConsole
       JsonConvert.DefaultSettings ??= SplatTagJsonSnapshotDatabase.JsonConvertDefaultSettings;
       serializer = JsonSerializer.Create(JsonConvert.DefaultSettings());
 
-      if (Environment.GetCommandLineArgs().Length > 0)
-      {
-        // Check for a rebuild argument
-        string[] args = Environment.GetCommandLineArgs();
-        if (!args.Contains("--rebuild"))
-        {
-          (splatTagController, importer) = SplatTagControllerFactory.CreateController();
-        }
-        else
-        {
-          (splatTagController, importer) = SplatTagControllerFactory.CreateController(suppressLoad: true);
-        }
-      }
-      else
-      {
-        (splatTagController, importer) = SplatTagControllerFactory.CreateController();
-      }
+      splatTagController = SplatTagControllerFactory.CreateControllerNoLoad();
     }
 
     public static async Task Main(string[] args)
     {
+      if (!args.Contains("--rebuild"))
+      {
+        SplatTagControllerFactory.EnsureInitialised(splatTagController);
+      }
+      // Otherwise we'll handle the rebuild shortly
+
       if (args.Length > 0)
       {
         var rootCommand = new RootCommand();
@@ -61,7 +52,7 @@ namespace SplatTagConsole
         // Note that the parameter names must match the --option name
         command.Handler = CommandHandler.Create((CommandLineIn obj) =>
         {
-          // Console.WriteLine("HandleCommandLineQuery: Handler invoked.");
+          logger.Trace("HandleCommandLineQuery: Handler invoked.");
           HandleCommandLineQuery(
             obj.B64,
             obj.Query,
@@ -80,20 +71,20 @@ namespace SplatTagConsole
           return 0;
         });
 
-        // Console.WriteLine("Main: parsing argument...");
+        logger.Trace("Main: parsing argument...");
         var parseResult = command.Parse(args);
         bool keepOpen = parseResult.Tokens.Any(t => t.Value.Contains("keepOpen"));
-        // Console.WriteLine($"Main: arguments parsed, keepOpen={keepOpen}, parseResult={parseResult}...");
+        logger.Trace($"Main: arguments parsed, keepOpen={keepOpen}, parseResult={parseResult}...");
 
-        // Console.WriteLine($"Main: Invoking...");
+        logger.Trace("Main: Invoking...");
         parseResult.Invoke();
-        // Console.WriteLine($"Main: Out of Invoke...");
+        logger.Trace("Main: Out of Invoke...");
 
         while (keepOpen)
         {
           try
           {
-            // Console.WriteLine($"Main (keepOpen): Waiting on stdin data...");
+            logger.Trace("Main (keepOpen): Waiting on stdin data...");
             string? line = Console.ReadLine();
             if (!string.IsNullOrWhiteSpace(line))
             {
@@ -104,8 +95,8 @@ namespace SplatTagConsole
                 line = "--query " + line;
               }
 
-              // Console.WriteLine($"Main (keepOpen): Invoking parse with the line:");
-              // Console.WriteLine(line);
+              logger.Trace("Main (keepOpen): Invoking parse with the line:");
+              logger.Trace(line);
               command.Parse(line).Invoke();
             }
 
@@ -114,17 +105,17 @@ namespace SplatTagConsole
           }
           catch (ObjectDisposedException odex)
           {
-            Console.WriteLine($"Sleeping (input was disposed - {odex.Message}).");
+            logger.Info($"Sleeping (input was disposed - {odex.Message}).");
             await Task.Delay(500).ConfigureAwait(false);
           }
           catch (Exception ex)
           {
-            Console.WriteLine($"Exception in keepOpen: {ex.Message}");
+            logger.Error(ex, $"Exception in keepOpen: {ex.Message}");
           }
           // Loop
         }
 
-        // Console.WriteLine($"Returning from args: [{string.Join(", ", args)}]");
+        logger.Debug($"Returning from args: [{string.Join(", ", args)}]");
       }
       else
       {
@@ -158,6 +149,15 @@ namespace SplatTagConsole
     {
       try
       {
+        if (verbose)
+        {
+          SplatTagControllerFactory.SetNLogLevel();
+        }
+        else
+        {
+          SplatTagControllerFactory.SetNLogLevel(LogLevel.Info);
+        }
+
         var options = new MatchOptions
         {
           IgnoreCase = !exactCase,
@@ -190,7 +190,6 @@ namespace SplatTagConsole
         };
 
         string?[] inputs = new string?[] { b64, query, slappId };
-        SplatTagController.Verbose = verbose;
 
         if (rebuild != null)
         {
@@ -219,7 +218,7 @@ namespace SplatTagConsole
           }
           else if (File.Exists(patch))
           {
-            SplatTagControllerFactory.GenerateDatabasePatch(patchFile: patch);
+            SplatTagControllerFactory.GeneratePatchedDatabaseFromFile(patchFile: patch);
             result.Message = $"Database patched from {patch}!";
           }
           else
@@ -272,7 +271,7 @@ namespace SplatTagConsole
             {
               result.AdditionalTeams =
                 result.Players
-                .SelectMany(p => p.TeamInformation.GetAllTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
+                .SelectMany(p => p.Teams.Select(id => splatTagController.GetTeamById(id)))
                 .Distinct()
                 .ToDictionary(t => t.Id, t => t);
               result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
@@ -286,7 +285,7 @@ namespace SplatTagConsole
               {
                 foreach ((Player, bool) tuple in pair.Value)
                 {
-                  foreach (Guid t in tuple.Item1.TeamInformation.GetAllTeamsUnordered())
+                  foreach (Guid t in tuple.Item1.Teams)
                   {
                     result.AdditionalTeams.TryAdd(t, splatTagController.GetTeamById(t));
                   }
@@ -329,8 +328,7 @@ namespace SplatTagConsole
               catch (OutOfMemoryException oom)
               {
                 const string message = "ERROR: OutOfMemoryException on PlacementsForPlayers. Will continue anyway.";
-                Console.WriteLine(message);
-                Console.WriteLine(oom.ToString());
+                logger.Warn(message, oom);
                 result.PlacementsForPlayers = new Dictionary<Guid, Dictionary<string, Bracket[]>>();
               }
             }
@@ -338,8 +336,7 @@ namespace SplatTagConsole
           catch (Exception ex)
           {
             string message = $"ERROR: {ex.GetType().Name} while compiling data for serialization...";
-            Console.WriteLine(message);
-            Console.WriteLine(ex.ToString());
+            logger.Error(ex, message);
 
             string q = result.Query;
             result = new CommandLineResult
@@ -362,8 +359,8 @@ namespace SplatTagConsole
         catch (Exception ex)
         {
           string message = $"ERROR: {ex.GetType().Name} while serializing result...";
-          Console.WriteLine(message);
-          Console.WriteLine(ex.ToString());
+          logger.Error(ex, message);
+          logger.Error(ex, ex.ToString());
 
           string q = result.Query;
           result = new CommandLineResult
@@ -384,8 +381,8 @@ namespace SplatTagConsole
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"ERROR: Outer Exception handler, caught a {ex.GetType().Name}...");
-        Console.WriteLine(ex.ToString());
+        logger.Error(ex, $"ERROR: Outer Exception handler, caught a {ex.GetType().Name}...");
+        logger.Error(ex, ex.ToString());
       }
       finally
       {
@@ -439,20 +436,7 @@ namespace SplatTagConsole
 
     private static void BeginFetch()
     {
-      if (importer == null)
-      {
-        Console.WriteLine("No can do. Working in Snapshot mode.");
-      }
-      else
-      {
-        Console.WriteLine("File or site to import?");
-        string input = Console.ReadLine() ?? "";
-        if (!string.IsNullOrEmpty(input))
-        {
-          importer.SetSingleSource(input);
-          splatTagController.LoadDatabase();
-        }
-      }
+      Console.WriteLine("TBD!");
     }
 
     private static Option[] GetOptions()

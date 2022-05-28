@@ -8,9 +8,9 @@ namespace SplatTagCore
   [Serializable]
   public class WeaponsHandler : BaseSourcedItemHandler<List<string>>, ISerializable
   {
+    public const string SerializationName = "Weps";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    private const string WeaponsSerialization = "W";
-    public override string SerializedHandlerName => WeaponsSerialization;
+    public override string SerializedHandlerName => SerializationName;
 
     public WeaponsHandler()
       : base()

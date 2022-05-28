@@ -218,6 +218,7 @@ namespace SplatTagCore
     public class SourceStringConverter
     {
       public static readonly Func<string, Source> ConstructSource = (name) => new Source(name);
+      public static readonly Func<string, Source> Throw = (name) => throw new ArgumentException($"Source {name} was not found in the sources list to resolve.");
       public static readonly Func<string, Source> UseBuiltIn = (_) => Builtins.BuiltinSource;
       public static readonly Func<string, Source> UseManual = (_) => Builtins.ManualSource;
       private readonly Dictionary<string, Source> lookup;
@@ -229,7 +230,7 @@ namespace SplatTagCore
 
       /// <summary>
       /// Convert multiple source strings into their Source objects.
-      /// Optionally specify the sourceResolverFunction to change the resolving of non-existent Sources (by default it uses the Built-in Source).
+      /// Optionally specify the sourceResolverFunction to change the resolving of non-existent Sources.
       /// </summary>
       /// <param name="names"></param>
       /// <param name="sourceResolverFunction"></param>
@@ -238,7 +239,7 @@ namespace SplatTagCore
       public IEnumerable<Source> Convert(IEnumerable<string> names, Func<string, Source>? sourceResolverFunction = null)
       {
         if (sourceResolverFunction == null)
-          sourceResolverFunction = UseBuiltIn;
+          sourceResolverFunction = ConstructSource;
 
         foreach (var id in names)
           yield return Convert(id, sourceResolverFunction);

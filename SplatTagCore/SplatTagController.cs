@@ -1,4 +1,5 @@
-﻿using SplatTagCore.Social;
+﻿using NLog;
+using SplatTagCore.Social;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,12 +14,9 @@ namespace SplatTagCore
 {
   public class SplatTagController : ITeamResolver
   {
-    /// <summary>
-    /// Verbose flag
-    /// </summary>
-    public static bool Verbose { get; set; }
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-    private readonly ISplatTagDatabase? database;
+    private ISplatTagDatabase? database;
     private IReadOnlyList<Player> Players => database?.Players ?? Array.Empty<Player>();
     private IReadOnlyDictionary<Guid, Team> Teams => database?.Teams ?? new Dictionary<Guid, Team>();
     private IReadOnlyDictionary<string, Source> Sources => database?.Sources ?? new Dictionary<string, Source>();
@@ -29,59 +27,71 @@ namespace SplatTagCore
 
     public SplatTagController(ISplatTagDatabase? database = null)
     {
-      Console.WriteLine("Creating SplatTagController. Debugger.IsAttached=" + Debugger.IsAttached);
+      logger.Info("Creating SplatTagController. Debugger.IsAttached=" + Debugger.IsAttached);
 #if DEBUG
-      Console.WriteLine("Running in DEBUG.");
+      logger.Info("Running in DEBUG.");
 #else
-      Console.WriteLine("Running in Release.");
+      logger.Info("Running in Release.");
 #endif // DEBUG
 
       this.database = database;
       this.playersForTeam = new ConcurrentDictionary<Team, (Player, bool)[]>();
     }
 
-    public void Initialise()
+    public void SetDatabase(ISplatTagDatabase database)
     {
+      this.database = database;
       LoadDatabase();
     }
 
-    public void LoadDatabase()
+    public bool Initialise() => LoadDatabase();
+
+    public bool LoadDatabase()
     {
-      Console.WriteLine("Loading Database... ");
+      logger.Trace("Loading Database... ");
 
       if (database == null)
       {
-        Console.Error.WriteLine($"ERROR: No database attached to this {nameof(SplatTagController)}.");
-        Console.WriteLine("... nothing loaded.");
-        return;
+        logger.Error($"ERROR: No database attached to this {nameof(SplatTagController)}.");
+        logger.Info("... nothing loaded.");
+        return false;
       }
+
+      if (database.Loaded)
+      {
+        logger.Info("... database already loaded.");
+        return true;
+      }
+
+      this.playersForTeam.Clear();
+      cachingTask = null;
 
       var start = DateTime.Now;
       bool loaded = database.Load();
       if (!loaded)
       {
-        Console.WriteLine("... nothing loaded.");
+        logger.Info("... nothing loaded.");
+        return false;
       }
-      else
-      {
-        cachingTask = Task.Run(() =>
-        {
-          // Cache the players and their teams.
-          Parallel.ForEach(Teams.Values.Where(t => t != null), t =>
-          {
-            var teamPlayers =
-                t.GetPlayers(Players)
-                .Select(p => (p, p.CurrentTeam == t.Id))
-                .ToArray();
-            playersForTeam.TryAdd(t, teamPlayers);
-          });
-          Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Caching task done.");
-        });
 
-        var diff = DateTime.Now - start;
-        Console.WriteLine("Database loaded successfully.");
-        Console.WriteLine($"...Done in {diff.TotalSeconds} seconds.");
-      }
+      cachingTask = Task.Run(() =>
+      {
+        // Cache the players and their teams.
+        Parallel.ForEach(Teams.Values.Where(t => t != null), t =>
+        {
+          var teamPlayers =
+              t.GetPlayers(Players)
+              .Select(p => (p, p.CurrentTeam == t.Id))
+              .ToArray();
+          playersForTeam.TryAdd(t, teamPlayers);
+        });
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Caching task done.");
+      });
+
+      var diff = DateTime.Now - start;
+      logger.Info("Database loaded successfully.");
+      logger.Trace($"...Done in {diff.TotalSeconds} seconds.");
+      return true;
     }
 
     /// <summary>
@@ -159,7 +169,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.FriendCode) != 0)
             {
               // If FC matches, return top match.
-              foreach (var toMatch in from FriendCode code in p.FCInformation.GetCodesUnordered()
+              foreach (var toMatch in from FriendCode code in p.FCs
                                       let toMatch = code.ToString()
                                       select toMatch)
               {
@@ -173,7 +183,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
             {
               // If the battlefy slugs match, return top match.
-              foreach (var toMatch in from Name name in p.BattlefyInformation.Slugs
+              foreach (var toMatch in from Name name in p.BattlefySlugs
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                       select toMatch)
               {
@@ -187,7 +197,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0)
             {
               // If the battlefy persistent ids match, return top match.
-              foreach (var toMatch in from Name name in p.BattlefyInformation.PersistentIds
+              foreach (var toMatch in from Name name in p.BattlefyIds
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                       select toMatch)
               {
@@ -216,7 +226,7 @@ namespace SplatTagCore
             if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
             {
               // Look through the battlefy usernames.
-              foreach (var toMatch in from Name name in p.BattlefyInformation.Usernames
+              foreach (var toMatch in from Name name in p.BattlefyNames
                                       let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                       select toMatch)
               {
@@ -343,7 +353,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.FriendCode) != 0)
           {
             // If FC matches, return top match.
-            foreach (var toMatch in from FriendCode code in p.FCInformation.GetCodesUnordered()
+            foreach (var toMatch in from FriendCode code in p.FCs
                                     let toMatch = code.ToString()
                                     select toMatch)
             {
@@ -361,7 +371,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.BattlefySlugs) != 0)
           {
             // If the battlefy slugs match, return top match.
-            foreach (var toMatch in from Name name in p.BattlefyInformation.Slugs
+            foreach (var toMatch in from Name name in p.BattlefySlugs
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -379,7 +389,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.BattlefyPersistentIds) != 0)
           {
             // If the battlefy persistent ids match, return top match.
-            foreach (var toMatch in from Name name in p.BattlefyInformation.PersistentIds
+            foreach (var toMatch in from Name name in p.BattlefyIds
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -397,7 +407,7 @@ namespace SplatTagCore
           if ((filterOptions & FilterOptions.BattlefyUsername) != 0)
           {
             // Look through the battlefy usernames.
-            foreach (var toMatch in from Name name in p.BattlefyInformation.Usernames
+            foreach (var toMatch in from Name name in p.BattlefyNames
                                     let toMatch = (matchOptions.NearCharacterRecognition) ? name.Transformed : name.Value
                                     select toMatch)
             {
@@ -769,7 +779,7 @@ namespace SplatTagCore
         }
         catch (Exception ex)
         {
-          Console.WriteLine($"Can't start the address at {link}: {ex.Message}");
+          logger.Info($"Can't start the address at {link}: {ex.Message}");
         }
       }
       return false;

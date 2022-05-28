@@ -24,5 +24,10 @@ namespace SplatTagCore
     /// Get the loaded sources.
     /// </summary>
     IReadOnlyDictionary<string, Source> Sources { get; }
+
+    /// <summary>
+    /// Get if the database is loaded.
+    /// </summary>
+    bool Loaded { get; }
   }
 }

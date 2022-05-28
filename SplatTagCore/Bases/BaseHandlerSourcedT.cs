@@ -6,7 +6,9 @@ namespace SplatTagCore
   /// <summary>
   /// Base class for <see cref="BaseHandler{T}"/> classes that are also sourced.
   /// </summary>
-  public abstract class BaseHandlerSourced<T> : BaseHandler<T>, IReadonlySourceable
+  public abstract class BaseHandlerSourced<T> :
+    BaseHandler<T>,
+    IReadonlySourceable
   {
     protected BaseHandlerSourced()
     { }

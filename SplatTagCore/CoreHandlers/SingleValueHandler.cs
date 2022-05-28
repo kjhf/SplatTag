@@ -4,8 +4,7 @@ using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public abstract class SingleValueHandler<T> : BaseHandler<T?>, ISerializable
+  public abstract class SingleValueHandler<T> : BaseHandler<T?>
   {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -15,7 +14,7 @@ namespace SplatTagCore
     /// Construct the SingleValueHandler with the context of the value to serialize.
     /// </summary>
     /// <param name="nameOption"></param>
-    protected SingleValueHandler(FilterOptions? nameOption, T? initialValue = default)
+    protected SingleValueHandler(FilterOptions? nameOption = null, T? initialValue = default)
     {
       this.nameOption = nameOption ?? FilterOptions.None;
       this.Value = initialValue;
@@ -58,33 +57,17 @@ namespace SplatTagCore
       this.Value = other;
     }
 
-    #region Serialization
-
-    protected virtual void DeserialieSingleValue(SerializationInfo info, StreamingContext context)
+    protected virtual void DeserializeSingleValue(SerializationInfo info, StreamingContext context)
     {
       Value = info.GetValueOrDefault(SerializedName, default(T));
     }
 
-    protected virtual void SerialieSingleValue(SerializationInfo info, StreamingContext context)
+    protected virtual void SerializeSingleValue(SerializationInfo info, StreamingContext context)
     {
       if (HasDataToSerialize)
       {
         info.AddValue(SerializedName, Value);
       }
     }
-
-    // Deserialize
-    protected SingleValueHandler(SerializationInfo info, StreamingContext context)
-    {
-      DeserialieSingleValue(info, context);
-    }
-
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerialieSingleValue(info, context);
-    }
-
-    #endregion Serialization
   }
 }

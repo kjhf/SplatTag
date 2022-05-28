@@ -25,6 +25,7 @@ namespace SplatTagDatabase
           Error = (sender, args) =>
           {
             string m = args.ErrorContext.Error.Message;
+            object? original = args.ErrorContext.OriginalObject;
             if (!errorMessagesReported.Contains(m))
             {
               logger.Error(m);
@@ -49,6 +50,7 @@ namespace SplatTagDatabase
     public IReadOnlyList<Player> Players => _players.Count == 0 ? Array.Empty<Player>() : _players;
     public IReadOnlyDictionary<Guid, Team> Teams => _teams;
     public IReadOnlyDictionary<string, Source> Sources => _sources;
+    public bool Loaded => _sources.Count > 0;
 
     public SplatTagJsonSnapshotDatabase(string saveDirectory)
     {
@@ -207,7 +209,31 @@ namespace SplatTagDatabase
       return result.ToArray();
     }
 
+    /// <summary>
+    /// Saves the database using its internal player, team, and source values.
+    /// </summary>
+    internal SplatTagJsonSnapshotDatabase SaveInternal()
+    {
+      if (!Loaded)
+      {
+        throw new InvalidOperationException("Cannot save an unloaded database.");
+      }
+      return Save(_players, _teams.Values, _sources.Values);
+    }
+
+    /// <summary>
+    /// Save the current state of the database to its save directory.
+    /// </summary>
     public SplatTagJsonSnapshotDatabase Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams, IEnumerable<Source> saveSources)
+    {
+      SaveSnapshots(saveDirectory, savePlayers, saveTeams, saveSources);
+      return this;
+    }
+
+    /// <summary>
+    /// Save snapshot files of Players, Teams, and Sources to the given directory.
+    /// </summary>
+    public static void SaveSnapshots(string saveDirectory, IEnumerable<Player> players, IEnumerable<Team> teams, IEnumerable<Source> sources)
     {
       Task savePlayersTask = Task.Run(async () =>
       {
@@ -218,7 +244,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(savePlayers, Formatting.None)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(players, Formatting.None)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -236,7 +262,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(saveTeams, Formatting.None)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(teams, Formatting.None)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -254,7 +280,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(saveSources, Formatting.None)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonConvert.SerializeObject(sources, Formatting.None)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -264,7 +290,6 @@ namespace SplatTagDatabase
       });
 
       Task.WaitAll(savePlayersTask, saveTeamsTask, saveSourcesTask);
-      return this;
     }
   }
 }

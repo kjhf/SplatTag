@@ -5,11 +5,13 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class SkillHandler : SingleValueHandler<Skill?>
+  public class SkillHandler :
+    SingleValueHandler<Skill?>,
+    ISerializable
   {
+    public const string SerializationName = "Skill";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    private const string SkillSerialization = "Skill";
-    public override string SerializedName => SkillSerialization;
+    public override string SerializedName => SerializationName;
 
     public SkillHandler()
       : base(FilterOptions.None)
@@ -33,8 +35,14 @@ namespace SplatTagCore
 
     // Deserialize
     protected SkillHandler(SerializationInfo info, StreamingContext context)
-      : base(info, context)
     {
+      DeserializeSingleValue(info, context);
+    }
+
+    // Serialize
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      SerializeSingleValue(info, context);
     }
 
     #endregion Serialization

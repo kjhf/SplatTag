@@ -155,6 +155,19 @@ namespace SplatTagCore
       => key == null || !dictionary.TryGetValue(key, out var value) ? defaultValue : value;
 
     /// <summary>
+    /// Gets the value associated with the specified key, or returns a default after adding it.
+    /// </summary>
+    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TValue> valueAdder)
+    {
+      if (key == null || !dictionary.TryGetValue(key, out var value))
+      {
+        return dictionary[key] = valueAdder();
+      }
+      // else
+      return value;
+    }
+
+    /// <summary>
     /// Gets the value associated with the specified key and box/un-box correctly.
     /// </summary>
     [return: NotNullIfNotNull("defaultValue")]

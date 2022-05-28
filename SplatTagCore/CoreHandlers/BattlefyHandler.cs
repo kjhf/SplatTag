@@ -10,112 +10,138 @@ namespace SplatTagCore
   [Serializable]
   public class BattlefyHandler : BaseHandlerCollectionSourced<BattlefyHandler>, ISerializable
   {
+    public const string SerializationName = "Bfy";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    private const string BattlefyUsernameSerialization = "Usernames";
-    private const string BattlefySlugsSerialization = "Slugs";
-    private const string BattlefyPersistentIdsSerialization = "PersistentIds";
 
     public BattlefyHandler()
-      : base()
     {
     }
 
-    protected override void InitialiseHandlers()
-    {
-      handlers.Clear();
-      handlers.Add(BattlefyUsernameSerialization, new NamesHandler<Name>(FilterOptions.BattlefyUsername, BattlefyUsernameSerialization));
-      handlers.Add(BattlefySlugsSerialization, new NamesHandler<BattlefyUserSocial>(FilterOptions.BattlefySlugs, BattlefySlugsSerialization));
-      handlers.Add(BattlefyPersistentIdsSerialization, new NamesHandler<Name>(FilterOptions.BattlefyPersistentIds, BattlefyPersistentIdsSerialization));
-    }
-
     /// <summary>
-    /// The persistent Battlefy slugs
-    /// </summary>
-    public IReadOnlyCollection<BattlefyUserSocial> Slugs => SlugsHandler.GetItemsUnordered();
-
-    /// <summary>
-    /// The persistent Battlefy slugs
-    /// </summary>
-    public NamesHandler<BattlefyUserSocial> SlugsHandler => (NamesHandler<BattlefyUserSocial>)this[BattlefySlugsSerialization];
-
-    /// <summary>
-    /// The Battlefy usernames
-    /// </summary>
-    public IReadOnlyCollection<Name> Usernames => UsernamesHandler.GetItemsUnordered();
-
-    /// <summary>
-    /// The Battlefy usernames
-    /// </summary>
-    public NamesHandler<Name> UsernamesHandler => (NamesHandler<Name>)this[BattlefyUsernameSerialization];
-
-    /// <summary>
-    /// The persistent Battlefy ids
-    /// </summary>
-    public IReadOnlyCollection<Name> PersistentIds => PersistentIdsHandler.GetItemsUnordered();
-
-    /// <summary>
-    /// The Battlefy persistent ids
-    /// </summary>
-    public NamesHandler<Name> PersistentIdsHandler => (NamesHandler<Name>)this[BattlefyPersistentIdsSerialization];
-
-    /// <summary>
-    /// Combination of Battlefy slugs and ids
+    /// Combination of Battlefy usernames, slugs and ids
     /// </summary>
     public IReadOnlyCollection<Name> AllNames => new List<Name>(Usernames.Concat(Slugs).Concat(PersistentIds).Distinct());
 
     /// <summary>
-    /// Add a new Battlefy slug to the Battlefy profile
+    /// The persistent Battlefy ids
     /// </summary>
-    public void AddSlug(string slug, Source source)
-      => SlugsHandler.Add(new BattlefyUserSocial(slug, source));
+    public IReadOnlyCollection<Name> PersistentIds => PersistentIdsHandlerNoCreate?.GetItemsUnordered() ?? Array.Empty<Name>();
 
     /// <summary>
-    /// Add new Battlefy slugs to the Battlefy profile
+    /// The persistent Battlefy ids in recent source order
     /// </summary>
-    public void AddSlugs(IEnumerable<BattlefyUserSocial> incoming)
-      => SlugsHandler.Add(incoming);
+    public IReadOnlyList<Name> PersistentIdsOrdered => PersistentIdsHandlerNoCreate?.GetItemsOrdered() ?? Array.Empty<Name>();
 
     /// <summary>
-    /// Add a new Battlefy username to the Battlefy profile
+    /// The persistent Battlefy slugs
     /// </summary>
-    public void AddUsername(string username, Source source)
-      => UsernamesHandler.Add(new Name(username, source));
+    public IReadOnlyCollection<BattlefyUserSocial> Slugs => SlugsHandlerNoCreate?.GetItemsUnordered() ?? Array.Empty<BattlefyUserSocial>();
 
     /// <summary>
-    /// Add new Battlefy usernames to the Battlefy profile
+    /// The persistent Battlefy slugs in recent source order
     /// </summary>
-    public void AddUsernames(IEnumerable<Name> incoming)
-      => UsernamesHandler.Add(incoming);
+    public IReadOnlyList<BattlefyUserSocial> SlugsOrdered => SlugsHandlerNoCreate?.GetItemsOrdered() ?? Array.Empty<BattlefyUserSocial>();
+
+    /// <summary>
+    /// The Battlefy usernames
+    /// </summary>
+    public IReadOnlyCollection<Name> Usernames => UsernamesHandlerNoCreate?.GetItemsUnordered() ?? Array.Empty<Name>();
+
+    /// <summary>
+    /// The Battlefy usernames in recent source order
+    /// </summary>
+    public IReadOnlyList<Name> UsernamesOrdered => UsernamesHandlerNoCreate?.GetItemsOrdered() ?? Array.Empty<Name>();
+
+    protected override IReadOnlyDictionary<string, (Type, Func<BaseHandler>)> SupportedHandlers => new Dictionary<string, (Type, Func<BaseHandler>)>
+    {
+      { BattlefyUsernamesHandler.SerializationName, (typeof(BattlefyUsernamesHandler), () => new BattlefyUsernamesHandler()) },
+      { BattlefySlugsHandler.SerializationName, (typeof(BattlefySlugsHandler), () => new BattlefySlugsHandler()) },
+      { BattlefyIdsHandler.SerializationName, (typeof(BattlefyIdsHandler), () => new BattlefyIdsHandler()) }
+    };
+
+    /// <summary>
+    /// The handler for Battlefy persistent ids
+    /// </summary>
+    private BattlefyIdsHandler PersistentIdsHandlerWithCreate => GetHandler<BattlefyIdsHandler>(BattlefyIdsHandler.SerializationName);
+
+    /// <summary>
+    /// The handler for Battlefy persistent ids
+    /// </summary>
+    private BattlefyIdsHandler? PersistentIdsHandlerNoCreate => GetHandlerNoCreate<BattlefyIdsHandler>(BattlefyIdsHandler.SerializationName);
+
+    /// <summary>
+    /// The handler for persistent Battlefy slugs
+    /// </summary>
+    private BattlefySlugsHandler SlugsHandlerWithCreate => GetHandler<BattlefySlugsHandler>(BattlefySlugsHandler.SerializationName);
+
+    /// <summary>
+    /// The handler for persistent Battlefy slugs
+    /// </summary>
+    private BattlefySlugsHandler? SlugsHandlerNoCreate => GetHandlerNoCreate<BattlefySlugsHandler>(BattlefySlugsHandler.SerializationName);
+
+    /// <summary>
+    /// The handler for Battlefy usernames
+    /// </summary>
+    private BattlefyUsernamesHandler UsernamesHandlerWithCreate => GetHandler<BattlefyUsernamesHandler>(BattlefyUsernamesHandler.SerializationName);
+
+    /// <summary>
+    /// The handler for Battlefy usernames
+    /// </summary>
+    private BattlefyUsernamesHandler? UsernamesHandlerNoCreate => GetHandlerNoCreate<BattlefyUsernamesHandler>(BattlefyUsernamesHandler.SerializationName);
 
     /// <summary>
     /// Add a new Battlefy persistent id to the Battlefy profile
     /// </summary>
     public void AddPersistentId(string persistentId, Source source)
-      => PersistentIdsHandler.Add(new Name(persistentId, source));
+      => PersistentIdsHandlerWithCreate.Add(new Name(persistentId, source));
 
     /// <summary>
     /// Add new Battlefy persistent ids to the Battlefy profile
     /// </summary>
     public void AddPersistentIds(IEnumerable<Name> incoming)
-      => PersistentIdsHandler.Add(incoming);
+      => PersistentIdsHandlerWithCreate.Add(incoming);
 
     /// <summary>
-    /// Return if this Battlefy matches another by slugs.
+    /// Add a new Battlefy slug to the Battlefy profile
     /// </summary>
-    public bool MatchSlugs(BattlefyHandler other)
-      => SlugsHandler.Match(other.SlugsHandler);
+    public void AddSlug(string slug, Source source)
+      => SlugsHandlerWithCreate.Add(new BattlefyUserSocial(slug, source));
 
     /// <summary>
-    /// Return if this Battlefy matches another by usernames.
+    /// Add new Battlefy slugs to the Battlefy profile
     /// </summary>
-    public bool MatchUsernames(BattlefyHandler other)
-      => UsernamesHandler.Match(other.UsernamesHandler);
+    public void AddSlugs(IEnumerable<BattlefyUserSocial> incoming)
+      => SlugsHandlerWithCreate.Add(incoming);
+
+    /// <summary>
+    /// Add a new Battlefy username to the Battlefy profile
+    /// </summary>
+    public void AddUsername(string username, Source source)
+      => UsernamesHandlerWithCreate.Add(new Name(username, source));
+
+    /// <summary>
+    /// Add new Battlefy usernames to the Battlefy profile
+    /// </summary>
+    public void AddUsernames(IEnumerable<Name> incoming)
+      => UsernamesHandlerWithCreate.Add(incoming);
 
     /// <summary>
     /// Return if this Battlefy matches another by persistent data (ids).
     /// </summary>
-    public bool MatchPersistent(BattlefyHandler other)
-      => PersistentIdsHandler.Match(other.PersistentIdsHandler);
+    public bool MatchPersistent(BattlefyHandler? other)
+      => MatchByHandlerName(BattlefyIdsHandler.SerializationName, other);
+
+    /// <summary>
+    /// Return if this Battlefy matches another by slugs.
+    /// </summary>
+    public bool MatchSlugs(BattlefyHandler? other)
+      => MatchByHandlerName(BattlefySlugsHandler.SerializationName, other);
+
+    /// <summary>
+    /// Return if this Battlefy matches another by usernames.
+    /// </summary>
+    public bool MatchUsernames(BattlefyHandler? other)
+      => MatchByHandlerName(BattlefyUsernamesHandler.SerializationName, other);
 
     #region Serialization
 

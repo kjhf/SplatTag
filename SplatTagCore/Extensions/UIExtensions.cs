@@ -24,9 +24,9 @@ namespace SplatTagCore
       Player? bestPlayer = null;
       foreach (var (player, mostRecent) in playersForTeam)
       {
-        if (mostRecent && player.TeamInformation.Count > 1)
+        if (mostRecent && player.Teams.Count > 1)
         {
-          foreach (Team playerTeam in player.TeamInformation.GetAllTeamsUnordered().Select(id => splatTagController.GetTeamById(id)))
+          foreach (Team playerTeam in player.Teams.Select(id => splatTagController.GetTeamById(id)))
           {
             if (playerTeam.CurrentDiv < highestDiv)
             {

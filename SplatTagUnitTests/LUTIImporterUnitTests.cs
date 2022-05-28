@@ -81,13 +81,13 @@ namespace SplatTagUnitTests
         Assert.AreEqual(18, loadedPlayers.Length);
 
         int indexOfExampleTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Example Team"));
-        Assert.AreEqual("ex", loadedTeams[indexOfExampleTeam].ClanTagInformation.MostRecent?.Value);
+        Assert.AreEqual("ex", loadedTeams[indexOfExampleTeam].Tag?.Value);
 
         int indexOfAnotherTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Another Team"));
-        Assert.AreEqual("AT", loadedTeams[indexOfAnotherTeam].ClanTagInformation.MostRecent?.Value);
+        Assert.AreEqual("AT", loadedTeams[indexOfAnotherTeam].Tag?.Value);
 
         int indexOfOhNoTeam = Array.IndexOf(loadedTeams, loadedTeams.First(t => t.Name.Value == "Oh No"));
-        Assert.AreEqual("/", loadedTeams[indexOfOhNoTeam].ClanTagInformation.MostRecent?.Value);
+        Assert.AreEqual("/", loadedTeams[indexOfOhNoTeam].Tag?.Value);
 
         Assert.AreEqual(TagOption.Back, loadedTeams[indexOfExampleTeam].Tag?.LayoutOption);
         Assert.AreEqual(TagOption.Front, loadedTeams[indexOfAnotherTeam].Tag?.LayoutOption);

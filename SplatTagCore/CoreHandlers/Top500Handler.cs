@@ -5,17 +5,19 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Top500Handler : SingleValueHandler<bool?>
+  public class Top500Handler :
+    SingleValueHandler<bool?>,
+    ISerializable
   {
+    public const string SerializationName = "T500";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    private const string Top500Serialization = "Top500";
-    public override string SerializedName => Top500Serialization;
 
     public Top500Handler()
       : base(FilterOptions.None)
     {
     }
 
+    public override string SerializedName => SerializationName;
     public bool Top500 => Value == true;
 
     /// <summary>
@@ -34,8 +36,14 @@ namespace SplatTagCore
 
     // Deserialize
     protected Top500Handler(SerializationInfo info, StreamingContext context)
-      : base(info, context)
     {
+      DeserializeSingleValue(info, context);
+    }
+
+    // Serialize
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      SerializeSingleValue(info, context);
     }
 
     #endregion Serialization

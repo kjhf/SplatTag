@@ -6,11 +6,12 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class PronounsHandler : BaseSourcedItemHandler<Pronoun>, ISerializable
+  public class PronounsHandler :
+    BaseSourcedItemHandler<Pronoun>,
+    ISerializable
   {
-    private const string SerializedPronounName = "P";
-    private const string SerializedSourceName = "S";
-    public override string SerializedHandlerName => SerializedPronounName;
+    public const string SerializationName = "Pro";
+    public override string SerializedHandlerName => SerializationName;
 
     public PronounsHandler()
     {
@@ -59,28 +60,12 @@ namespace SplatTagCore
     protected PronounsHandler(SerializationInfo info, StreamingContext context)
     {
       DeserializeBaseSourcedItems(info, context);
-
-      Source.SourceStringConverter? converter = context.Context as Source.SourceStringConverter ?? new Source.SourceStringConverter();
-      var val = info.GetValueOrDefault(SerializedPronounName, PronounFlags.NONE);
-      var sourceString = info.GetValueOrDefault(SerializedSourceName, string.Empty);
-      var resolver = string.IsNullOrWhiteSpace(sourceString) ? Source.SourceStringConverter.UseManual : Source.SourceStringConverter.ConstructSource;
-      var source = converter.Convert(sourceString, resolver);
-      Pronoun pronoun = new(val, source);
-      Add(pronoun, source);
     }
 
     // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext _)
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      SerializeBaseSourcedItems(info, _);
-
-      if (HasDataToSerialize)
-      {
-        // Only save the most recent.
-        var item = OrderedItems.FirstOrDefault();
-        info.AddValue(SerializedPronounName, item.Key.value);
-        info.AddValue(SerializedSourceName, item.Value.Max(s => s).Id);
-      }
+      SerializeBaseSourcedItems(info, context);
     }
 
     #endregion Serialization

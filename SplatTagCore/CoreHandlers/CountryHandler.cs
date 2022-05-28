@@ -6,11 +6,13 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class CountryHandler : SingleValueHandler<string>
+  public class CountryHandler :
+    SingleValueHandler<string>,
+    ISerializable
   {
+    public const string SerializationName = "Ctry";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    private const string CountrySerialization = "C";
-    public override string SerializedName => CountrySerialization;
+    public override string SerializedName => SerializationName;
 
     public CountryHandler()
       : base(FilterOptions.None)
@@ -67,8 +69,14 @@ namespace SplatTagCore
 
     // Deserialize
     protected CountryHandler(SerializationInfo info, StreamingContext context)
-      : base(info, context)
     {
+      DeserializeSingleValue(info, context);
+    }
+
+    // Serialize
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      SerializeSingleValue(info, context);
     }
 
     #endregion Serialization

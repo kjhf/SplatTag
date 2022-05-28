@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using NLog;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ namespace SplatTagCore
   [Serializable]
   public struct FriendCode : IEquatable<FriendCode>, IReadOnlyCollection<short>, ICollection<short>
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     public static readonly FriendCode NO_FRIEND_CODE = new();
 
     /// <summary>
@@ -28,7 +30,7 @@ namespace SplatTagCore
       if (str.Length < 9 || str.Length > 12)
       {
         string error = $"The stored FC value should be 9-12 characters [it's a friend code of 12 chars as an int without zero pad], actually {str.Length}.";
-        Console.WriteLine(error);
+        logger.Error(error);
         throw new ArgumentException(nameof(fc), error);
       }
 
@@ -155,7 +157,8 @@ namespace SplatTagCore
           if (outFriendCode[outer] == 0)
           {
             // Not expecting the friend code to contain 0000-
-            Console.WriteLine($"Warning: Not accepting FC containing a group with all zeros, value={value}, trimmed={trimmed}");
+            string error = $"Not accepting FC containing a group with all zeros, value={value}, trimmed={trimmed}";
+            logger.Warn(error);
             return (NO_FRIEND_CODE, value);
           }
         }

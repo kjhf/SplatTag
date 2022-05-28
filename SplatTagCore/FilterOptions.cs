@@ -198,7 +198,7 @@ namespace SplatTagCore
       return new(weights);
     }
 
-    public static int ToWeight(this FilterOptions options)
+    public static int ToSummedWeight(this FilterOptions options)
     {
       return Enum.GetValues(typeof(FilterOptions))!
         .Cast<FilterOptions>()

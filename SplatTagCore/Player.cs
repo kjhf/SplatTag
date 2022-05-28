@@ -11,28 +11,12 @@ namespace SplatTagCore
   [Serializable]
   public class Player : BaseSplatTagCoreObject<Player>
   {
-    private const string BattlefySerialization = "Battlefy";
-    private const string CountrySerialization = "Country";
-    private const string DiscordSerialization = "Discord";
-    private const string FCsSerialization = "FCs";
-    private const string NamesSerialization = "N";
-    private const string PlusSerialization = "Plus";
-    private const string PronounSerialization = "Pro";
-    private const string SendouSerialization = "Sendou";
-    private const string TeamSerialization = "Teams";
-    private const string Top500Serialization = "Top500";
-    private const string TwitchSerialization = "Twitch";
-    private const string TwitterSerialization = "Twitter";
-    private const string WeaponsSerialization = "Weapons";
-    private const string SkillSerialization = "Skill";
-
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     /// <summary>
     /// Default construct a player
     /// </summary>
     public Player()
-      : base()
     {
     }
 
@@ -44,7 +28,7 @@ namespace SplatTagCore
     public Player(string ign, Source source)
       : base()
     {
-      this.NamesInformation.Add(new Name(ign, source));
+      this.NamesInformationWithCreate.Add(new Name(ign, source));
     }
 
     /// <summary>
@@ -55,179 +39,310 @@ namespace SplatTagCore
     public Player(string ign, IList<Guid> teams, Source source)
       : base()
     {
-      this.NamesInformation.Add(new Name(ign, source));
-      this.TeamInformation.Add(teams, source);
-    }
-
-    protected override void InitialiseHandlers()
-    {
-      handlers.Clear();
-      handlers.Add(BattlefySerialization, new BattlefyHandler());
-      handlers.Add(CountrySerialization, new CountryHandler());
-      handlers.Add(DiscordSerialization, new DiscordHandler());
-      handlers.Add(FCsSerialization, new FriendCodesHandler());
-      handlers.Add(NamesSerialization, new NamesHandler<Name>(FilterOptions.PlayerName, NamesSerialization));
-      handlers.Add(PlusSerialization, new NamesHandler<PlusMembership>(null, PlusSerialization));
-      handlers.Add(PronounSerialization, new PronounsHandler());
-      handlers.Add(SendouSerialization, new NamesHandler<Sendou>(FilterOptions.PlayerSendou, SendouSerialization));
-      handlers.Add(SkillSerialization, new SkillHandler());
-      handlers.Add(TeamSerialization, new TeamsHandler());
-      handlers.Add(Top500Serialization, new Top500Handler());
-      handlers.Add(TwitchSerialization, new NamesHandler<Twitch>(FilterOptions.Twitch, TwitchSerialization));
-      handlers.Add(TwitterSerialization, new NamesHandler<Twitter>(FilterOptions.Twitter, TwitterSerialization));
-      handlers.Add(WeaponsSerialization, new WeaponsHandler());
-      handlers.Add(IdHandler.IdSerialization, IdHandler);
+      this.NamesInformationWithCreate.Add(new Name(ign, source));
+      this.TeamInformationWithCreate.Add(teams, source);
     }
 
     /// <summary>
     /// Any names (social or IGN) this player is known by; does NOT include Battlefy.
     /// </summary>
     public IReadOnlyList<Name> AllKnownNames
-      => new List<Name>(Names.Concat(SendouProfiles).Concat(DiscordInformation.Ids).Concat(DiscordInformation.Usernames).Concat(TwitchProfiles).Concat(TwitterProfiles).Distinct());
+      => new List<Name>(Names.Concat(SendouProfiles).Concat(DiscordIds).Concat(DiscordNames).Concat(TwitchProfiles).Concat(TwitterProfiles).Distinct());
 
     /// <summary>
-    /// Get the player's Battlefy profile details.
+    /// The known Battlefy Ids of the player.
     /// </summary>
-    public BattlefyHandler BattlefyInformation => (BattlefyHandler)this[BattlefySerialization];
+    public IReadOnlyCollection<Name> BattlefyIds => BattlefyInformationNoCreate?.PersistentIds ?? Array.Empty<Name>();
+
+    /// <summary>
+    /// The known Battlefy Ids of the player in recent source order.
+    /// </summary>
+    public IReadOnlyList<Name> BattlefyIdsOrdered => BattlefyInformationNoCreate?.PersistentIdsOrdered ?? Array.Empty<Name>();
+
+    /// <summary>
+    /// The known Battlefy usernames of the player.
+    /// </summary>
+    public IReadOnlyCollection<Name> BattlefyNames => BattlefyInformationNoCreate?.Usernames ?? Array.Empty<Name>();
+
+    /// <summary>
+    /// The known Battlefy usernames of the player in recent source order.
+    /// </summary>
+    public IReadOnlyList<Name> BattlefyNamesOrdered => BattlefyInformationNoCreate?.UsernamesOrdered ?? Array.Empty<Name>();
+
+    /// <summary>
+    /// The known Battlefy slugs of the player.
+    /// </summary>
+    public IReadOnlyCollection<BattlefyUserSocial> BattlefySlugs => BattlefyInformationNoCreate?.Slugs ?? Array.Empty<BattlefyUserSocial>();
+
+    /// <summary>
+    /// The known Battlefy slugs of the player in recent source order.
+    /// </summary>
+    public IReadOnlyList<BattlefyUserSocial> BattlefySlugsOrdered => BattlefyInformationNoCreate?.SlugsOrdered ?? Array.Empty<BattlefyUserSocial>();
 
     /// <summary>
     /// Get or Set the Country.
     /// Null by default.
     /// To set this field, the value must be a two-letter abbreviation.
     /// </summary>
-    public string? Country { get => CountryInformation.CountryCode; set => CountryInformation.Merge(value); }
-
-    /// <summary>
-    /// Get the player's Country details.
-    /// </summary>
-    public CountryHandler CountryInformation => (CountryHandler)this[CountrySerialization];
+    public string? Country { get => CountryInformationNoCreate?.CountryCode; set => CountryInformation.Merge(value); }
 
     /// <summary>
     /// The current team id this player plays for, or <see cref="Team.NoTeam.Id"/> if not set.
     /// </summary>
-    public Guid CurrentTeam => TeamInformation.CurrentTeam ?? Team.NoTeam.Id;
-
-    /// <summary>
-    /// Get the player's Discord profile details.
-    /// </summary>
-    public DiscordHandler DiscordInformation => (DiscordHandler)this[DiscordSerialization];
+    public Guid CurrentTeam => TeamInformationNoCreate?.CurrentTeam ?? Team.NoTeam.Id;
 
     /// <summary>
     /// The known Discord Ids of the player.
     /// </summary>
-    public IReadOnlyCollection<Name> DiscordIds => DiscordInformation.Ids;
+    public IReadOnlyCollection<Name> DiscordIds => DiscordInformationNoCreate?.Ids ?? Array.Empty<Name>();
 
     /// <summary>
     /// The known Discord usernames of the player.
     /// </summary>
-    public IReadOnlyCollection<Name> DiscordNames => DiscordInformation.Usernames;
+    public IReadOnlyCollection<Name> DiscordNames => DiscordInformationNoCreate?.Usernames ?? Array.Empty<Name>();
 
     /// <summary>
-    /// Get the information regarding the friend codes for this player.
+    /// The known friend codes of the player.
     /// </summary>
-    public FriendCodesHandler FCInformation => (FriendCodesHandler)this[FCsSerialization];
+    public IReadOnlyCollection<FriendCode> FCs => FriendCodesInformationNoCreate?.GetCodesUnordered() ?? Array.Empty<FriendCode>();
 
     /// <summary>
     /// The last known used name for the player
     /// </summary>
-    public Name Name => NamesInformation.MostRecent ?? Builtins.UnknownPlayerName;
+    public Name Name => NamesInformationNoCreate?.MostRecent ?? Builtins.UnknownPlayerName;
 
     /// <summary>
     /// The in-game or registered names this player is known by.
     /// </summary>
-    public IReadOnlyCollection<Name> Names => NamesInformation.GetItemsUnordered();
-
-    /// <summary>
-    /// The in-game or registered names this player is known by.
-    /// </summary>
-    public NamesHandler<Name> NamesInformation => (NamesHandler<Name>)this[NamesSerialization];
+    public IReadOnlyCollection<Name> Names => NamesInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<Name>();
 
     /// <summary>
     /// The plus membership(s) this player belongs to.
     /// </summary>
-    public IReadOnlyCollection<PlusMembership> PlusMembership => PlusMembershipInformation.GetItemsUnordered();
-
-    /// <summary>
-    /// The plus membership(s) this player belongs to.
-    /// </summary>
-    public NamesHandler<PlusMembership> PlusMembershipInformation => (NamesHandler<PlusMembership>)this[PlusSerialization];
-
-    /// <summary>
-    /// Player's pronoun(s)
-    /// </summary>
-    public PronounsHandler PronounInformation => (PronounsHandler)this[PronounSerialization];
-
-    /// <summary>
-    /// The Sendou social information this player belongs to.
-    /// </summary>
-    public NamesHandler<Sendou> SendouInformation => (NamesHandler<Sendou>)this[SendouSerialization];
+    public IReadOnlyCollection<PlusMembership> PlusMembership => PlusMembershipInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<PlusMembership>();
 
     /// <summary>
     /// Get the player's Sendou profile details.
     /// </summary>
-    public IReadOnlyCollection<Sendou> SendouProfiles => SendouInformation.GetItemsUnordered();
+    public IReadOnlyCollection<Sendou> SendouProfiles => SendouInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<Sendou>();
 
     /// <summary>
     /// Get the player's Skill/clout.
     /// </summary>
-    public Skill? Skill { get => SkillInformation.Skill; set => SkillInformation.Merge(value); }
-
-    /// <summary>
-    /// Get the player's Skill/clout.
-    /// </summary>
-    public SkillHandler SkillInformation => (SkillHandler)this[SkillSerialization];
+    public Skill? Skill { get => SkillInformationNoCreate?.Skill; set => SkillInformation.Merge(value); }
 
     /// <summary>
     /// The Splatnet database Id of the player (a hex string).
     /// Null by default.
     /// </summary>
-    public string? SplatnetId { get; set; }
+    public string? SplatnetId { get => SplatnetIdInformationNoCreate?.Value; set => SplatnetIdInformation.Merge(value); }
 
     /// <summary>
-    /// Get the information regarding teams for this player.
+    /// All team ids this player has player for, unordered.
     /// </summary>
-    public TeamsHandler TeamInformation => (TeamsHandler)this[TeamSerialization];
-
-    /// <summary>
-    /// Get the player's top 500 information.
-    /// </summary>
-    public Top500Handler Top500Information => (Top500Handler)this[Top500Serialization];
+    public IReadOnlyCollection<Guid> Teams => TeamInformationNoCreate?.GetAllTeamsUnordered() ?? Array.Empty<Guid>();
 
     /// <summary>
     /// Get if this player is a Top 500.
     /// False by default.
     /// </summary>
-    public bool Top500 { get => Top500Information.Top500; set => Top500Information.Merge(value); }
+    public bool Top500 { get => Top500InformationNoCreate?.Top500 ?? false; set => Top500Information.Merge(value); }
 
     /// <summary>
     /// The Twitch social information this player belongs to.
     /// </summary>
-    public NamesHandler<Twitch> TwitchInformation => (NamesHandler<Twitch>)this[TwitchSerialization];
+    public IReadOnlyCollection<Twitch> TwitchProfiles => TwitchInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<Twitch>();
+
+    /// <summary>
+    /// The Twitter social information this player belongs to.
+    /// </summary>
+    public IReadOnlyCollection<Twitter> TwitterProfiles => TwitterInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<Twitter>();
+
+    /// <summary>
+    /// The weapons this player uses.
+    /// </summary>
+    public IReadOnlyCollection<string> Weapons => WeaponsInformationNoCreate?.MostRecent ?? (IReadOnlyCollection<string>)Array.Empty<string>();
+
+    /// <inheritdoc/>
+    protected override IReadOnlyDictionary<string, (Type, Func<BaseHandler>)> SupportedHandlers => new Dictionary<string, (Type, Func<BaseHandler>)>
+    {
+      { BattlefyHandler.SerializationName, (typeof(BattlefyHandler), () => new BattlefyHandler()) },
+      { CountryHandler.SerializationName, (typeof(CountryHandler), () => new CountryHandler()) },
+      { DiscordHandler.SerializationName, (typeof(DiscordHandler), () => new DiscordHandler()) },
+      { FriendCodesHandler.SerializationName, (typeof(FriendCodesHandler), () => new FriendCodesHandler()) },
+      { PlayerNamesHandler.SerializationName, (typeof(PlayerNamesHandler), () => new PlayerNamesHandler()) },
+      { PlusHandler.SerializationName, (typeof(PlusHandler), () => new PlusHandler()) },
+      { PronounsHandler.SerializationName, (typeof(PronounsHandler), () => new PronounsHandler()) },
+      { SendouNamesHandler.SerializationName, (typeof(SendouNamesHandler), () => new SendouNamesHandler())},
+      { SkillHandler.SerializationName, (typeof(SkillHandler), () => new SkillHandler()) },
+      { SplatnetIdHandler.SerializationName, (typeof(SplatnetIdHandler), () => new SplatnetIdHandler()) },
+      { TeamsHandler.SerializationName, (typeof(TeamsHandler), () => new TeamsHandler()) },
+      { Top500Handler.SerializationName, (typeof(Top500Handler), () => new Top500Handler()) },
+      { TwitchHandler.SerializationName, (typeof(TwitchHandler), () => new TwitchHandler()) },
+      { TwitterHandler.SerializationName, (typeof(TwitterHandler), () => new TwitterHandler()) },
+      { WeaponsHandler.SerializationName, (typeof(WeaponsHandler), () => new WeaponsHandler()) },
+      { IdHandler.SerializationName, (typeof(IdHandler), () => new IdHandler()) },
+    };
+
+    /// <summary>
+    /// Get the player's Battlefy profile details.
+    /// </summary>
+    private BattlefyHandler BattlefyInformation => GetHandler<BattlefyHandler>(BattlefyHandler.SerializationName);
+
+    /// <summary>
+    /// Get the player's Battlefy profile details.
+    /// </summary>
+    private BattlefyHandler? BattlefyInformationNoCreate => GetHandlerNoCreate<BattlefyHandler>(BattlefyHandler.SerializationName);
+
+    /// <summary>
+    /// Get the player's Country details.
+    /// </summary>
+    private CountryHandler CountryInformation => GetHandler<CountryHandler>(CountryHandler.SerializationName);
+
+    /// <summary>
+    /// Get the player's Country details.
+    /// </summary>
+    private CountryHandler? CountryInformationNoCreate => GetHandlerNoCreate<CountryHandler>(CountryHandler.SerializationName);
+
+    /// <summary>
+    /// Get the player's Discord profile details.
+    /// </summary>
+    private DiscordHandler DiscordInformation => GetHandler<DiscordHandler>(DiscordHandler.SerializationName);
+
+    /// <summary>
+    /// Get the player's Discord profile details.
+    /// </summary>
+    internal DiscordHandler? DiscordInformationNoCreate => GetHandlerNoCreate<DiscordHandler>(DiscordHandler.SerializationName);
+
+    /// <summary>
+    /// Get the information regarding the friend codes for this player.
+    /// </summary>
+    private FriendCodesHandler FriendCodesInformation => GetHandler<FriendCodesHandler>(FriendCodesHandler.SerializationName);
+
+    /// <summary>
+    /// Get the information regarding the friend codes for this player.
+    /// </summary>
+    private FriendCodesHandler? FriendCodesInformationNoCreate => GetHandlerNoCreate<FriendCodesHandler>(FriendCodesHandler.SerializationName);
+
+    /// <summary>
+    /// The in-game or registered names this player is known by.
+    /// </summary>
+    public PlayerNamesHandler? NamesInformation => NamesInformationNoCreate;
+
+    /// <summary>
+    /// Get the handler for the in-game or registered names this player is known by or create it if it doesn't exist.
+    /// </summary>
+    private PlayerNamesHandler NamesInformationWithCreate => GetHandler<PlayerNamesHandler>(PlayerNamesHandler.SerializationName);
+
+    /// <summary>
+    /// Get the handler for the in-game or registered names this player is known by or null if it doesn't exist.
+    /// </summary>
+    private PlayerNamesHandler? NamesInformationNoCreate => GetHandlerNoCreate<PlayerNamesHandler>(PlayerNamesHandler.SerializationName);
+
+    /// <summary>
+    /// The plus membership(s) this player belongs to.
+    /// </summary>
+    private PlusHandler PlusMembershipInformation => GetHandler<PlusHandler>(PlusHandler.SerializationName);
+
+    /// <summary>
+    /// The plus membership(s) this player belongs to.
+    /// </summary>
+    private PlusHandler? PlusMembershipInformationNoCreate => GetHandlerNoCreate<PlusHandler>(PlusHandler.SerializationName);
+
+    /// <summary>
+    /// Player's pronoun(s)
+    /// </summary>
+    private PronounsHandler PronounInformation => GetHandler<PronounsHandler>(PronounsHandler.SerializationName);
+
+    /// <summary>
+    /// Player's pronoun(s)
+    /// </summary>
+    private PronounsHandler? PronounInformationNoCreate => GetHandlerNoCreate<PronounsHandler>(PronounsHandler.SerializationName);
+
+    /// <summary>
+    /// The Sendou social information this player belongs to.
+    /// </summary>
+    private SendouNamesHandler SendouInformation => GetHandler<SendouNamesHandler>(SendouNamesHandler.SerializationName);
+
+    /// <summary>
+    /// The Sendou social information this player belongs to.
+    /// </summary>
+    private SendouNamesHandler? SendouInformationNoCreate => GetHandlerNoCreate<SendouNamesHandler>(SendouNamesHandler.SerializationName);
+
+    /// <summary>
+    /// Get the player's Skill/clout.
+    /// </summary>
+    private SkillHandler SkillInformation => GetHandler<SkillHandler>(SkillHandler.SerializationName);
+
+    /// <summary>
+    /// Get the player's Skill/clout.
+    /// </summary>
+    private SkillHandler? SkillInformationNoCreate => GetHandlerNoCreate<SkillHandler>(SkillHandler.SerializationName);
+
+    /// <summary>
+    /// Player's Splatnet Id.
+    /// </summary>
+    private SplatnetIdHandler SplatnetIdInformation => GetHandler<SplatnetIdHandler>(SplatnetIdHandler.SerializationName);
+
+    /// <summary>
+    /// Player's Splatnet Id.
+    /// </summary>
+    private SplatnetIdHandler? SplatnetIdInformationNoCreate => GetHandlerNoCreate<SplatnetIdHandler>(SplatnetIdHandler.SerializationName);
+
+    /// <summary>
+    /// Get the information regarding teams for this player.
+    /// </summary>
+    public TeamsHandler? TeamInformation => TeamInformationNoCreate;
+
+    /// <summary>
+    /// Get the information regarding teams for this player.
+    /// </summary>
+    public TeamsHandler TeamInformationWithCreate => GetHandler<TeamsHandler>(TeamsHandler.SerializationName);
+
+    /// <summary>
+    /// Get the information regarding teams for this player.
+    /// </summary>
+    private TeamsHandler? TeamInformationNoCreate => GetHandlerNoCreate<TeamsHandler>(TeamsHandler.SerializationName);
+
+    /// <summary>
+    /// Get the player's top 500 information.
+    /// </summary>
+    private Top500Handler Top500Information => GetHandler<Top500Handler>(Top500Handler.SerializationName);
+
+    /// <summary>
+    /// Get the player's top 500 information.
+    /// </summary>
+    private Top500Handler? Top500InformationNoCreate => GetHandlerNoCreate<Top500Handler>(Top500Handler.SerializationName);
 
     /// <summary>
     /// The Twitch social information this player belongs to.
     /// </summary>
-    public IReadOnlyCollection<Twitch> TwitchProfiles => TwitchInformation.GetItemsUnordered();
+    private TwitchHandler TwitchInformation => GetHandler<TwitchHandler>(TwitchHandler.SerializationName);
+
+    /// <summary>
+    /// The Twitch social information this player belongs to.
+    /// </summary>
+    private TwitchHandler? TwitchInformationNoCreate => GetHandlerNoCreate<TwitchHandler>(TwitchHandler.SerializationName);
 
     /// <summary>
     /// The Twitter social information this player belongs to.
     /// </summary>
-    public NamesHandler<Twitter> TwitterInformation => (NamesHandler<Twitter>)this[TwitterSerialization];
+    private TwitterHandler TwitterInformation => GetHandler<TwitterHandler>(TwitterHandler.SerializationName);
 
     /// <summary>
     /// The Twitter social information this player belongs to.
     /// </summary>
-    public IReadOnlyCollection<Twitter> TwitterProfiles => TwitterInformation.GetItemsUnordered();
+    private TwitterHandler? TwitterInformationNoCreate => GetHandlerNoCreate<TwitterHandler>(TwitterHandler.SerializationName);
 
     /// <summary>
     /// The weapons this player uses.
     /// </summary>
-    public WeaponsHandler WeaponsInformation => (WeaponsHandler)this[WeaponsSerialization];
+    private WeaponsHandler WeaponsInformation => GetHandler<WeaponsHandler>(WeaponsHandler.SerializationName);
 
     /// <summary>
     /// The weapons this player uses.
     /// </summary>
-    public IReadOnlyCollection<string> Weapons => WeaponsInformation.MostRecent ?? (IReadOnlyCollection<string>)Array.Empty<string>();
+    private WeaponsHandler? WeaponsInformationNoCreate => GetHandlerNoCreate<WeaponsHandler>(WeaponsHandler.SerializationName);
 
     public void AddBattlefyInformation(string slug, string username, string persistentId, Source source)
     {
@@ -255,22 +370,25 @@ namespace SplatTagCore
     }
 
     public void AddFCs(FriendCode value, Source source)
-      => FCInformation.Add(value, source);
+      => FriendCodesInformation.Add(value, source);
 
     public void AddFCs(IList<FriendCode> value, Source source)
-      => FCInformation.Add(value, source);
+      => FriendCodesInformation.Add(value, source);
 
     public void AddName(string name, Source source)
-      => NamesInformation.Add(new Name(name, source));
+      => NamesInformationWithCreate.Add(new Name(name, source));
 
     public void AddPlusServerMembership(int? plusLevel, Source source)
       => PlusMembershipInformation.Add(new PlusMembership(plusLevel, source));
+
+    public void AddPronoun(string description, Source source)
+      => PronounInformation.SetPronoun(description, source);
 
     public void AddSendou(string handle, Source source)
       => SendouInformation.Add(new Sendou(handle, source));
 
     public void AddTeams(Guid value, Source source)
-      => TeamInformation.Add(value, source);
+      => TeamInformationWithCreate.Add(value, source);
 
     public void AddTwitch(string handle, Source source)
       => TwitchInformation.Add(new Twitch(handle, source));
@@ -282,6 +400,12 @@ namespace SplatTagCore
       => WeaponsInformation.Add(incoming.Distinct().ToList(), source);
 
     /// <summary>
+    /// Correct the item ids for this player given a merge result (containing old id --> the replacement id)
+    /// Returns if any work was done.
+    /// </summary>
+    public bool CorrectTeamIds(IReadOnlyDictionary<Guid, Guid> teamsMergeResult) => TeamInformationNoCreate?.CorrectTeamIds(teamsMergeResult) ?? false;
+
+    /// <summary>
     /// Overridden ToString, returns the player's name.
     /// </summary>
     public override string ToString() => Name.Value;
@@ -290,7 +414,6 @@ namespace SplatTagCore
 
     // Deserialize
     protected Player(SerializationInfo info, StreamingContext context)
-      : base(info, context)
     {
       DeserializeHandlers(info, context);
     }

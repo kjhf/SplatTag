@@ -8,9 +8,9 @@ namespace SplatTagCore
   [Serializable]
   public class DivisionsHandler : BaseSourcedItemHandler<Division>, ISerializable
   {
-    private const string SerializedDivName = "D";
+    public const string SerializationName = "Divs";
 
-    public override string SerializedHandlerName => SerializedDivName;
+    public override string SerializedHandlerName => SerializationName;
 
     public DivisionsHandler()
     {
@@ -71,19 +71,12 @@ namespace SplatTagCore
     protected DivisionsHandler(SerializationInfo info, StreamingContext context)
     {
       DeserializeBaseSourcedItems(info, context);
-      //Source.SourceStringConverter? converter = context.Context as Source.SourceStringConverter;
-      //var val = info.GetValueOrDefault(SerializedDivName, new Dictionary<string, List<string>>());
-      //Merge(val.ToDictionary(pair => new Division(pair.Key), pair => (converter?.Convert(pair.Value) ?? pair.Value.Select(s => new Source(s))).ToList()));
     }
 
     // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext _)
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      SerializeBaseSourcedItems(info, _);
-      //if (HasDataToSerialize)
-      //{
-      //info.AddValue(SerializedDivName, OrderedItems.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value.Select(s => s.Id)));
-      //}
+      SerializeBaseSourcedItems(info, context);
     }
 
     #endregion Serialization

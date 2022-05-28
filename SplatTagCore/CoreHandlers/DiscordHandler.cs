@@ -9,83 +9,99 @@ namespace SplatTagCore
   [Serializable]
   public class DiscordHandler : BaseHandlerCollectionSourced<DiscordHandler>, ISerializable
   {
+    public const string SerializationName = "Dis";
+    public static readonly Regex DISCORD_NAME_REGEX = new(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    private const string DiscordIdsSerialization = "Ids";
-    private const string DiscordUsernameSerialization = "Usernames";
 
     /// <summary>Parameterless constructor</summary>
     /// <remarks>Required for serialization - do not delete.</remarks>
     public DiscordHandler()
-      : base()
     {
     }
-
-    protected override void InitialiseHandlers()
-    {
-      handlers.Clear();
-      handlers.Add(DiscordIdsSerialization, new NamesHandler<Name>(FilterOptions.DiscordId, DiscordIdsSerialization));
-      handlers.Add(DiscordUsernameSerialization, new NamesHandler<Name>(FilterOptions.DiscordName, DiscordUsernameSerialization));
-    }
-
-    public static readonly Regex DISCORD_NAME_REGEX = new(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     /// <summary>
     /// The Discord ids
     /// </summary>
-    public IReadOnlyCollection<Name> Ids => IdsHandler.GetItemsUnordered();
+    public IReadOnlyCollection<Name> Ids => IdsHandlerNoCreate?.GetItemsUnordered() ?? Array.Empty<Name>();
 
     /// <summary>
-    /// The Discord ids
+    /// The Discord ids in recent source order
     /// </summary>
-    public NamesHandler<Name> IdsHandler => (NamesHandler<Name>)this[DiscordIdsSerialization];
-
-    /// <summary>
-    /// The Discord usernames
-    /// </summary>
-    public IReadOnlyCollection<Name> Usernames => UsernamesHandler.GetItemsUnordered();
+    public IReadOnlyList<Name> IdsOrdered => IdsHandlerNoCreate?.GetItemsOrdered() ?? Array.Empty<Name>();
 
     /// <summary>
     /// The Discord usernames
     /// </summary>
-    public NamesHandler<Name> UsernamesHandler => (NamesHandler<Name>)this[DiscordUsernameSerialization];
+    public IReadOnlyCollection<Name> Usernames => UsernamesHandlerNoCreate?.GetItemsUnordered() ?? Array.Empty<Name>();
+
+    /// <summary>
+    /// The Discord usernames in recent source order
+    /// </summary>
+    public IReadOnlyList<Name> UsernamesOrdered => UsernamesHandlerNoCreate?.GetItemsOrdered() ?? Array.Empty<Name>();
+
+    protected override IReadOnlyDictionary<string, (Type, Func<BaseHandler>)> SupportedHandlers => new Dictionary<string, (Type, Func<BaseHandler>)>
+    {
+      { DiscordIdsHandler.SerializationName, (typeof(DiscordIdsHandler), () => new DiscordIdsHandler()) },
+      { DiscordUsernamesHandler.SerializationName, (typeof(DiscordUsernamesHandler), () => new DiscordUsernamesHandler()) }
+    };
+
+    /// <summary>
+    /// The handler for Discord ids
+    /// </summary>
+    private DiscordIdsHandler IdsHandlerWithCreate => GetHandler<DiscordIdsHandler>(DiscordIdsHandler.SerializationName);
+
+    /// <summary>
+    /// The handler for Discord usernames
+    /// </summary>
+    private DiscordUsernamesHandler UsernamesHandlerWithCreate => GetHandler<DiscordUsernamesHandler>(DiscordUsernamesHandler.SerializationName);
+
+    /// <summary>
+    /// The handler for Discord ids
+    /// </summary>
+    private DiscordIdsHandler? IdsHandlerNoCreate => GetHandlerNoCreate<DiscordIdsHandler>(DiscordIdsHandler.SerializationName);
+
+    /// <summary>
+    /// The handler for Discord usernames
+    /// </summary>
+    private DiscordUsernamesHandler? UsernamesHandlerNoCreate => GetHandlerNoCreate<DiscordUsernamesHandler>(DiscordUsernamesHandler.SerializationName);
 
     /// <summary>
     /// Add a new Discord id to the front of this profile
     /// </summary>
     public void AddId(string slug, Source source)
-      => IdsHandler.Add(new Name(slug, source));
+      => IdsHandlerWithCreate.Add(new Name(slug, source));
 
     /// <summary>
     /// Add Discord ids to this Discord profile
     /// </summary>
     /// <param name="ids"></param>
     public void AddIds(IEnumerable<Name> ids)
-      => IdsHandler.Add(ids);
+      => IdsHandlerWithCreate.Add(ids);
 
     /// <summary>
     /// Add a new Discord name to the front of this profile
     /// </summary>
     /// <param name="ids"></param>
     public void AddUsername(string username, Source source)
-      => UsernamesHandler.Add(new Name(username, source));
+      => UsernamesHandlerWithCreate.Add(new Name(username, source));
 
     /// <summary>
     /// Add Discord usernames to this Discord profile
     /// </summary>
     public void AddUsernames(IEnumerable<Name> incoming)
-      => UsernamesHandler.Add(incoming);
+      => UsernamesHandlerWithCreate.Add(incoming);
 
     /// <summary>
     /// Return if this Discord matches another by persistent data (ids).
     /// </summary>
     public bool MatchPersistent(DiscordHandler other)
-      => IdsHandler.Match(other.IdsHandler);
+      => MatchByHandlerName(DiscordIdsHandler.SerializationName, other);
 
     /// <summary>
     /// Return if this Discord matches by username
     /// </summary>
     public bool MatchUsernames(DiscordHandler other)
-      => UsernamesHandler.Match(other.UsernamesHandler);
+      => MatchByHandlerName(DiscordUsernamesHandler.SerializationName, other);
 
     #region Serialization
 

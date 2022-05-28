@@ -5,24 +5,19 @@ using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class NamesHandler<T> : BaseSourcedItemHandler<T>, ISerializable where T : Name
+  public abstract class NamesHandler<T> :
+    BaseSourcedItemHandler<T>
+    where T : Name
   {
-    internal readonly string serializedName;
-    private readonly FilterOptions nameOption;
+    protected virtual FilterOptions NameOption { get; } = FilterOptions.None;
 
     public IEnumerable<string> TransformedNames => GetItemsUnordered().Select(n => n.Transformed);
 
-    public override string SerializedHandlerName => serializedName;
-
     /// <summary>
-    /// Construct the NamesHandler with the context of the Name.
+    /// Default constructor for deserialization
     /// </summary>
-    /// <param name="nameOption"></param>
-    public NamesHandler(FilterOptions? nameOption, string serializedName)
+    protected NamesHandler()
     {
-      this.nameOption = nameOption ?? FilterOptions.None;
-      this.serializedName = serializedName;
     }
 
     public void Add(T item)
@@ -44,9 +39,9 @@ namespace SplatTagCore
     /// <summary>
     /// Return if this names handler matches another by any of its names.
     /// </summary>
-    public override bool Match(BaseSourcedItemHandler<T> other)
+    public override bool ItemsMatch(BaseSourcedItemHandler<T>? other)
     {
-      if (MostRecent == null || other.MostRecent == null) return false;
+      if (other == null || MostRecent == null || other.MostRecent == null) return false;
 
       if (other is NamesHandler<T> otherNameHandler)
       {
@@ -54,14 +49,14 @@ namespace SplatTagCore
       }
       else
       {
-        return base.Match(other);
+        return base.ItemsMatch(other);
       }
     }
 
     /// <summary>
     /// If the Sourced Item Handler generic matches in the <see cref="BaseSourcedItemHandler{T}.MatchWithReason(object)"/> function, get the reason why.
     /// </summary>
-    public override FilterOptions GetMatchReason() => nameOption;
+    public override FilterOptions GetMatchReason() => NameOption;
 
     public bool TransformedNamesMatch(BaseSourcedItemHandler<T> other)
     {
@@ -70,15 +65,12 @@ namespace SplatTagCore
 
     #region Serialization
 
-    // Deserialize
-    protected NamesHandler(SerializationInfo info, StreamingContext context)
+    protected virtual void DeserializeNameItems(SerializationInfo info, StreamingContext context)
     {
-      serializedName = ReadSerializedHandlerName(info);
       base.DeserializeBaseSourcedItems(info, context);
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
+    protected virtual void SerializeNameItems(SerializationInfo info, StreamingContext context)
     {
       base.SerializeBaseSourcedItems(info, context);
     }
@@ -88,6 +80,6 @@ namespace SplatTagCore
     /// <summary>
     /// ToString on <see cref="NamesHandler{T}"/> returns the serialized name and its items
     /// </summary>
-    public override string ToString() => $"{serializedName}: [{string.Join(", ", GetItemsUnordered())}]";
+    public override string ToString() => $"{SerializedHandlerName}: [{string.Join(", ", GetItemsUnordered())}]";
   }
 }

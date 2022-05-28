@@ -22,83 +22,116 @@ namespace SplatTagDatabase
     /// <summary>
     /// Create the <see cref="SplatTagController"/> and an optional <see cref="GenericFilesToIImporters"/>.
     /// </summary>
-    /// <param name="suppressLoad">Suppress the initialisation of the database. Can be used for a rebuild.</param>
     /// <param name="saveFolder">Optional save folder. If null, defaults to %appdata%/SplatTag.</param>
-    /// <param name="sourcesFile">Optional sources file. If null, defaults to default sources.yaml</param>
     /// <returns>SplatTagController and GenericFilesImporter if one was created.</returns>
-    public static (SplatTagController, GenericFilesToIImporters?) CreateController(bool suppressLoad = false, string? saveFolder = null, string? sourcesFile = null)
+    public static SplatTagController CreateControllerNoLoad(string? saveFolder = null)
     {
       if (saveFolder == null)
       {
         saveFolder = GetDefaultPath();
       }
+
       Directory.CreateDirectory(saveFolder);
+      return new SplatTagController(new SplatTagJsonSnapshotDatabase(saveFolder));
+    }
 
-      GenericFilesToIImporters? sourcesImporter = null;
-      SplatTagJsonSnapshotDatabase snapshotDatabase = new SplatTagJsonSnapshotDatabase(saveFolder);
-      SplatTagController splatTagController = new SplatTagController(snapshotDatabase);
-
-      if (suppressLoad)
-      {
-        return (splatTagController, sourcesImporter);
-      }
-
-      // Try a load here.
-      // If we were able to load from a snapshot then we don't need the other importers.
-      // Otherwise, do the processing and record the snapshot.
+    /// <summary>
+    /// Initialise the SplatTagController.
+    /// If the database is not found, it will be created and initialised.
+    /// </summary>
+    /// <param name="saveFolder">Optional save folder. If null, defaults to %appdata%/SplatTag.</param>
+    public static void EnsureInitialised(SplatTagController splatTagController, string? saveFolder = null, string? sourcesFile = null)
+    {
       try
       {
-        splatTagController.Initialise();
-        if (splatTagController.MatchPlayer(null).Length == 0)
+        if (!splatTagController.Initialise())
         {
-          (sourcesImporter, splatTagController) =
-            GenerateNewDatabase(
-              saveFolder: saveFolder,
-              sourcesFile: sourcesFile);
+          var database = GenerateNewDatabase(saveFolder, sourcesFile);
+          splatTagController.SetDatabase(database);  // This will kick off another load.
         }
       }
       catch (Exception ex)
       {
         logger.Error(ex, $"Unable to initialise the {nameof(SplatTagController)} because of an exception");
       }
-
-      return (splatTagController, sourcesImporter);
     }
 
     /// <summary>
-    /// Patch the current Database. Optionally save.
+    /// Create the <see cref="SplatTagController"/> and an optional <see cref="GenericFilesToIImporters"/>.
     /// </summary>
-    /// <param name="saveFolder">The working directory of the Controller. Set to null for default handling.</param>
-    /// <returns>The Generic Importer and the Controller.</returns>
-    /// <exception cref="Exception">This method may throw based on the Initialisation method.</exception>
-    public static void GenerateDatabasePatch(
+    /// <param name="suppressLoad">Suppress the initialisation of the database. Can be used for a rebuild.</param>
+    /// <param name="saveFolder">Optional save folder. If null, defaults to %appdata%/SplatTag.</param>
+    /// <param name="sourcesFile">Optional sources file. If null, defaults to default sources.yaml</param>
+    /// <returns>SplatTagController and GenericFilesImporter if one was created.</returns>
+    [Obsolete("Use CreateControllerNoLoad and optionally call EnsureInitialised instead")]
+    public static (SplatTagController, GenericFilesToIImporters?) CreateController(bool suppressLoad = false, string? saveFolder = null, string? sourcesFile = null)
+    {
+      var splatTagController = CreateControllerNoLoad(saveFolder);
+      if (!suppressLoad)
+      {
+        EnsureInitialised(splatTagController, saveFolder, sourcesFile);
+        return (splatTagController, null);
+      }
+      return (splatTagController, null);
+    }
+
+    /// <summary>
+    /// Patch the current Database with a new sources file.
+    /// </summary>
+    public static void GeneratePatchedDatabaseFromFile(
       string patchFile,
       string? saveFolder = null)
     {
-      logger.Info($"GenerateDatabasePatch called with patchFile={patchFile}, saveFolder={saveFolder}...");
+      logger.Info($"{nameof(GeneratePatchedDatabaseFromFile)} called with patchFile={patchFile}, saveFolder={saveFolder}...");
 
       if (saveFolder == null)
       {
         saveFolder = Directory.GetParent(patchFile).FullName;
       }
 
+      GeneratePatchedDatabase(new GenericFilesToIImporters(saveFolder, patchFile), saveFolder);
+    }
+
+    /// <summary>
+    /// Patch the current Database with a new sources file.
+    /// </summary>
+    public static void GeneratePatchedDatabaseFromNewSource(
+      string source,
+      string saveFolder)
+    {
+      logger.Info($"{nameof(GeneratePatchedDatabaseFromNewSource)} called with source={source}, saveFolder={saveFolder}...");
+      var importer = new GenericFilesToIImporters(saveFolder).SetSingleSource(source);
+      GeneratePatchedDatabase(importer, saveFolder);
+
+      // TODO should also handle http sources
+    }
+
+    /// <summary>
+    /// Patch the current Database with a specified importer to merge from.
+    /// </summary>
+    private static void GeneratePatchedDatabase(
+      GenericFilesToIImporters importer,
+      string saveFolder)
+    {
+      logger.Info($"{nameof(GeneratePatchedDatabase)} called, saveFolder={saveFolder}...");
+
       try
       {
         WinApi.TryTimeBeginPeriod(1);
         Directory.CreateDirectory(saveFolder);
 
-        // Load.
+        // Create the things.
         SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(saveFolder);
-        GenericFilesToIImporters iImporters = new GenericFilesToIImporters(saveFolder, patchFile);
         MultiDatabase database = new MultiDatabase()
           .With(splatTagJsonSnapshotDatabase)
-          .With(iImporters);
+          .With(importer);
 
+        // Load the database (and generate)
         SplatTagController splatTagController = new SplatTagController(database);
         splatTagController.Initialise();
 
         // Now that we've initialised, take a snapshot of everything.
-        SaveDatabase(splatTagController, splatTagJsonSnapshotDatabase);
+        database.SaveInternal(saveFolder);
       }
       finally
       {
@@ -112,7 +145,7 @@ namespace SplatTagDatabase
     /// <param name="saveFolder">The working directory of the Controller. Set to null for default handling.</param>
     /// <returns>The Generic Importer and the Controller.</returns>
     /// <exception cref="Exception">This method may throw based on the Initialisation method.</exception>
-    public static (GenericFilesToIImporters, SplatTagController) GenerateNewDatabase(
+    public static MultiDatabase GenerateNewDatabase(
       string? saveFolder = null,
       string? sourcesFile = null)
     {
@@ -137,15 +170,15 @@ namespace SplatTagDatabase
         WinApi.TryTimeBeginPeriod(1);
 
         // Directories created in GenericFilesToIImporters
-        GenericFilesToIImporters sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
-        MultiDatabase splatTagDatabase = new MultiDatabase().With(sourcesImporter);
-        SplatTagController splatTagController = new SplatTagController(splatTagDatabase);
+        var sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
+        var splatTagDatabase = new MultiDatabase().With(sourcesImporter);
+
         logger.Info($"Full load of {sourcesImporter.Sources.Count} files from dir {Path.GetFullPath(saveFolder)}...");
-        splatTagController.Initialise();
+        splatTagDatabase.Load();
 
         // Now that we've initialised, take a snapshot of everything.
-        SaveDatabase(splatTagController, saveFolder);
-        return (sourcesImporter, splatTagController);
+        splatTagDatabase.SaveInternal(saveFolder);
+        return splatTagDatabase;
       }
       finally
       {
@@ -153,18 +186,62 @@ namespace SplatTagDatabase
       }
     }
 
-    public static void SaveDatabase(SplatTagController splatTagController, SplatTagJsonSnapshotDatabase snapshotDatabase)
-    {
-      snapshotDatabase.Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null), splatTagController.GetSources());
-    }
-
-    public static SplatTagJsonSnapshotDatabase SaveDatabase(SplatTagController splatTagController, string? saveFolder = null)
+    /// <summary>
+    /// Save the database to a snapshot. Calls load if the database is not loaded.
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="saveFolder"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public static void SaveDatabase(ISplatTagDatabase database, string? saveFolder = null)
     {
       if (saveFolder == null)
       {
         saveFolder = GetDefaultPath();
       }
-      return new SplatTagJsonSnapshotDatabase(saveFolder).Save(splatTagController.MatchPlayer(null), splatTagController.MatchTeam(null), splatTagController.GetSources());
+
+      if (!database.Loaded)
+      {
+        database.Load();
+      }
+
+      if (database is SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase)
+      {
+        splatTagJsonSnapshotDatabase.SaveInternal();
+      }
+      else if (database is MultiDatabase multiDatabase)
+      {
+        multiDatabase.SaveInternal(saveFolder);
+      }
+      else
+      {
+        throw new NotImplementedException($"Please implement save on {database.GetType()}");
+      }
+    }
+
+    /// <summary>
+    /// Set the NLog level for all logging, from minLevel to maxLevel.
+    /// If minLevel is null, it will be set to the lowest level (Trace).
+    /// If maxLevel is null, it will be set to Fatal (i.e. minLevel and above excluding "Off").
+    /// </summary>
+    /// <param name="minLevel"></param>
+    /// <param name="maxLevel"></param>
+    public static void SetNLogLevel(LogLevel? minLevel = null, LogLevel? maxLevel = null)
+    {
+      if (minLevel == null)
+      {
+        minLevel = LogLevel.Trace;
+      }
+
+      if (maxLevel == null)
+      {
+        maxLevel = LogLevel.Fatal;
+      }
+
+      foreach (var rule in LogManager.Configuration.LoggingRules)
+      {
+        rule.SetLoggingLevels(minLevel, maxLevel);
+      }
+      LogManager.ReconfigExistingLoggers();
     }
   }
 }

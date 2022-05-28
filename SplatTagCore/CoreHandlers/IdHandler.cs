@@ -5,9 +5,11 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class IdHandler : SingleValueHandler<Guid>
+  public class IdHandler :
+    SingleValueHandler<Guid>,
+    ISerializable
   {
-    internal const string IdSerialization = "Id";
+    internal const string SerializationName = "Id";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     /// <summary>
@@ -18,11 +20,19 @@ namespace SplatTagCore
     {
     }
 
+    /// <summary>
+    /// Construct the IdHandler.
+    /// </summary>
+    internal IdHandler(Guid id)
+      : base(FilterOptions.SlappId, id)
+    {
+    }
+
     /// <inheritdoc/>
     public override bool HasDataToSerialize => Id != Guid.Empty;
 
     public Guid Id => base.Value;
-    public override string SerializedName => IdSerialization;
+    public override string SerializedName => SerializationName;
 
     public override void Merge(Guid other)
     {
@@ -33,13 +43,18 @@ namespace SplatTagCore
 
     // Deserialize
     internal IdHandler(SerializationInfo info, StreamingContext context)
-      : base(info, context)
     {
+      DeserializeSingleValue(info, context);
     }
 
-    protected override void DeserialieSingleValue(SerializationInfo info, StreamingContext context)
+    public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      base.DeserialieSingleValue(info, context);
+      SerializeSingleValue(info, context);
+    }
+
+    protected override void DeserializeSingleValue(SerializationInfo info, StreamingContext context)
+    {
+      base.DeserializeSingleValue(info, context);
       if (Value == Guid.Empty)
       {
         const string error = "GUID cannot be empty.";

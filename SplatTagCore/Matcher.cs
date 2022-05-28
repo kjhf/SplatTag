@@ -15,118 +15,118 @@ namespace SplatTagCore
   {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-    /// <summary>
-    /// Get if two Players match.
-    /// </summary>
-    /// <param name="first">First Player to match</param>
-    /// <param name="second">Second Player to match</param>
-    /// <param name="matchOptions">How to match</param>
-    ///
-    /// <returns>Players are equal based on the match options</returns>
-    public static bool PlayersMatch(Player first, Player second, FilterOptions matchOptions)
-    {
-      // Quick out if they're literally the same.
-      if (first.Id == second.Id) return true;
+    ///// <summary>
+    ///// Get if two Players match.
+    ///// </summary>
+    ///// <param name="first">First Player to match</param>
+    ///// <param name="second">Second Player to match</param>
+    ///// <param name="matchOptions">How to match</param>
+    /////
+    ///// <returns>Players are equal based on the match options</returns>
+    //public static bool PlayersMatch(Player first, Player second, FilterOptions matchOptions)
+    //{
+    //  // Quick out if they're literally the same.
+    //  if (first.Id == second.Id) return true;
 
-      // Test if any of the Battlefy Persistent Ids match.
-      if ((matchOptions & FilterOptions.BattlefyPersistentIds) != 0 && first.BattlefyInformation.MatchPersistent(second.BattlefyInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Persistent Id(s) [{string.Join(", ", first.BattlefyInformation.PersistentIds)}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if any of the Battlefy Persistent Ids match.
+    //  if ((matchOptions & FilterOptions.BattlefyPersistentIds) != 0 && first.BattlefyInformation.MatchPersistent(second.BattlefyInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Persistent Id(s) [{string.Join(", ", first.BattlefyInformation.PersistentIds)}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if the Battlefy Usernames match.
-      if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && first.BattlefyInformation.MatchUsernames(second.BattlefyInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with BattlefyUsername(s) [{string.Join(", ", first.BattlefyInformation.Usernames)}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if the Battlefy Usernames match.
+    //  if ((matchOptions & FilterOptions.BattlefyUsername) != 0 && first.BattlefyInformation.MatchUsernames(second.BattlefyInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with BattlefyUsername(s) [{string.Join(", ", first.BattlefyInformation.Usernames)}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if any of the Battlefy Slugs match.
-      if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && first.BattlefyInformation.MatchSlugs(second.BattlefyInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Slug(s) [{string.Join(", ", first.BattlefyInformation.Slugs)}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if any of the Battlefy Slugs match.
+    //  if ((matchOptions & FilterOptions.BattlefySlugs) != 0 && first.BattlefyInformation.MatchSlugs(second.BattlefyInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Battlefy Slug(s) [{string.Join(", ", first.BattlefyInformation.Slugs)}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if the Switch FC's match.
-      if ((matchOptions & FilterOptions.FriendCode) != 0 && first.FCInformation.Match(second.FCInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Friend Code(s) [{string.Join(", ", first.FCInformation.GetCodesUnordered())}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if the Switch FC's match.
+    //  if ((matchOptions & FilterOptions.FriendCode) != 0 && first.FCInformation.ItemsMatch(second.FriendCodesInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Friend Code(s) [{string.Join(", ", first.FCInformation.GetCodesUnordered())}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if the Twitches match.
-      if ((matchOptions & FilterOptions.Twitch) != 0 && first.TwitchInformation.Match(second.TwitchInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Twitch(es) [{string.Join(", ", first.TwitchInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if the Twitches match.
+    //  if ((matchOptions & FilterOptions.Twitch) != 0 && first.TwitchInformation.ItemsMatch(second.TwitchInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Twitch(es) [{string.Join(", ", first.TwitchInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if the Twitters match.
-      if ((matchOptions & FilterOptions.Twitter) != 0 && first.TwitterInformation.Match(second.TwitterInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Twitter(es) [{string.Join(", ", first.TwitterInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if the Twitters match.
+    //  if ((matchOptions & FilterOptions.Twitter) != 0 && first.TwitterInformation.ItemsMatch(second.TwitterInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Twitter(es) [{string.Join(", ", first.TwitterInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if the Sendous match.
-      if ((matchOptions & FilterOptions.PlayerSendou) != 0 && first.SendouInformation.Match(second.SendouInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Sendou(s) [{string.Join(", ", first.SendouInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if the Sendous match.
+    //  if ((matchOptions & FilterOptions.PlayerSendou) != 0 && first.SendouInformation.ItemsMatch(second.SendouInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Sendou(s) [{string.Join(", ", first.SendouInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if the Discord Ids match.
-      if ((matchOptions & FilterOptions.DiscordId) != 0 && first.DiscordInformation.MatchPersistent(second.DiscordInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Discord Id(s) [{string.Join(", ", first.DiscordIds)}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if the Discord Ids match.
+    //  if ((matchOptions & FilterOptions.DiscordId) != 0 && first.DiscordInformation.MatchPersistent(second.DiscordInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Discord Id(s) [{string.Join(", ", first.DiscordIds)}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if the Discord names match.
-      if ((matchOptions & FilterOptions.DiscordName) != 0 && first.DiscordInformation.MatchUsernames(second.DiscordInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Discord Name(s) [{string.Join(", ", first.DiscordNames)}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if the Discord names match.
+    //  if ((matchOptions & FilterOptions.DiscordName) != 0 && first.DiscordInformation.MatchUsernames(second.DiscordInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Discord Name(s) [{string.Join(", ", first.DiscordNames)}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // Test if the weapons match.
-      if ((matchOptions & FilterOptions.Weapon) != 0 && first.WeaponsInformation.Match(second.WeaponsInformation))
-      {
-        // They do.
-        logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Weapon(s) [{string.Join(", ", first.WeaponsInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
-        return true;
-      }
+    //  // Test if the weapons match.
+    //  if ((matchOptions & FilterOptions.Weapon) != 0 && first.WeaponsInformation.ItemsMatch(second.WeaponsInformation))
+    //  {
+    //    // They do.
+    //    logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with Weapon(s) [{string.Join(", ", first.WeaponsInformation.GetItemsUnordered())}] from player {second} (Id {second.Id}).");
+    //    return true;
+    //  }
 
-      // If we're matching by name, then the player must also have a matching battlefy slug, or matching team.
-      if ((matchOptions & FilterOptions.PlayerName) != 0
-        && (first.TeamInformation.Match(second.TeamInformation) || first.BattlefyInformation.MatchSlugs(second.BattlefyInformation))
-        && first.AllKnownNames.TransformedNamesMatch(second.AllKnownNames))
-      {
-        if (logger != null)
-        {
-          var teamMatch = first.TeamInformation.Match(second.TeamInformation);
-          var battlefyMatch = first.BattlefyInformation.MatchSlugs(second.BattlefyInformation);
+    //  // If we're matching by name, then the player must also have a matching battlefy slug, or matching team.
+    //  if ((matchOptions & FilterOptions.PlayerName) != 0
+    //    && (first.TeamInformation.ItemsMatch(second.TeamInformation) || first.BattlefyInformation.MatchSlugs(second.BattlefyInformation))
+    //    && first.AllKnownNames.TransformedNamesMatch(second.AllKnownNames))
+    //  {
+    //    if (logger != null)
+    //    {
+    //      var teamMatch = first.TeamInformation.ItemsMatch(second.TeamInformation);
+    //      var battlefyMatch = first.BattlefyInformation.MatchSlugs(second.BattlefyInformation);
 
-          logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with TransformedName(s) [{string.Join(", ", first.NamesInformation.TransformedNames)}] " +
-            $"using teamMatch={teamMatch} battlefyMatch={battlefyMatch} " +
-            $"from player {second} (Id {second.Id}) with TransformedName(s) [{string.Join(", ", second.NamesInformation.TransformedNames)}]. ");
-        }
-        return true;
-      }
+    //      logger.ConditionalDebug($"{nameof(PlayersMatch)}: Matched player {first} (Id {first.Id}) with TransformedName(s) [{string.Join(", ", first.NamesInformation.TransformedNames)}] " +
+    //        $"using teamMatch={teamMatch} battlefyMatch={battlefyMatch} " +
+    //        $"from player {second} (Id {second.Id}) with TransformedName(s) [{string.Join(", ", second.NamesInformation.TransformedNames)}]. ");
+    //    }
+    //    return true;
+    //  }
 
-      return false;
-    }
+    //  return false;
+    //}
 
     /// <summary>
     /// Get if this collection matches a second by the Name.
@@ -336,11 +336,11 @@ namespace SplatTagCore
       if (first.Id == second.Id) return true;
 
       // Get if the Battlefy Ids match.
-      if (first.BattlefyPersistentTeamIdInformation.Match(second.BattlefyPersistentTeamIdInformation))
+      if (NamesMatch(first.BattlefyPersistentTeamIds, second.BattlefyPersistentTeamIds))
       {
         // They do.
         logger.ConditionalDebug($"{nameof(TeamsMatchById)}: Matched team {first} (Id {first.Id}) with Battlefy Persistent Id(s) " +
-          $"[{string.Join(", ", first.BattlefyPersistentTeamIdInformation.GetItemsUnordered())}] " +
+          $"[{string.Join(", ", first.BattlefyPersistentTeamIds)}] " +
           $"from team {second} (Id {second.Id}).");
         return true;
       }
@@ -365,10 +365,11 @@ namespace SplatTagCore
       if (TeamsMatchById(first, second)) return true;
 
       // Otherwise, test if players match.
-      if (first.NamesInformation.TransformedNamesMatch(second.NamesInformation))
+      if (TransformedNamesMatch(first.Names, second.Names))
       {
         // They do.
-        logger.ConditionalDebug($"{nameof(TeamsMatch)}: Matched team {first} (Id {first.Id}) with TransformedNames(s) [{string.Join(", ", first.NamesInformation.TransformedNames)}] from team {second} (Id {second.Id}).");
+        logger.ConditionalDebug($"{nameof(TeamsMatch)}: Matched team {first} (Id {first.Id}) with TransformedNames(s) " +
+          $"[{string.Join(", ", first.TeamNamesInformation?.TransformedNames ?? Array.Empty<string>())}] from team {second} (Id {second.Id}).");
 
         int sharedPlayersCount = 0;
         var firstPlayers = first.GetPlayers(allPlayers);
@@ -386,13 +387,17 @@ namespace SplatTagCore
 
         foreach (var firstPlayer in firstPlayers)
         {
-          string[] firstPlayerNamesWithTag = first.ClanTags.SelectMany(tag => firstPlayer.NamesInformation.TransformedNames.Select(n => tag.CombineToPlayer(n))).ToArray();
+          string[] firstPlayerNamesWithTag = first.ClanTags.SelectMany(tag =>
+            firstPlayer.NamesInformation?.TransformedNames.Select(n => tag.CombineToPlayer(n)) ?? Array.Empty<string>()).ToArray();
 
           foreach (var secondPlayer in secondPlayers)
           {
-            var secondPlayerNamesWithTag = second.ClanTags.SelectMany(tag => secondPlayer.NamesInformation.TransformedNames.Select(n => tag.CombineToPlayer(n)));
+            var secondPlayerNamesWithTag = second.ClanTags.SelectMany(tag =>
+              secondPlayer.NamesInformation?.TransformedNames.Select(n => tag.CombineToPlayer(n)) ?? Array.Empty<string>()).ToArray();
 
-            if (StringMatch(firstPlayer.NamesInformation.TransformedNames.Concat(firstPlayerNamesWithTag), secondPlayer.NamesInformation.TransformedNames.Concat(secondPlayerNamesWithTag), StringComparer.OrdinalIgnoreCase))
+            if (StringMatch(firstPlayer.NamesInformation?.TransformedNames.Concat(firstPlayerNamesWithTag) ?? Array.Empty<string>(),
+                            secondPlayer.NamesInformation?.TransformedNames.Concat(secondPlayerNamesWithTag) ?? Array.Empty<string>(),
+                            StringComparer.OrdinalIgnoreCase))
             {
               ++sharedPlayersCount;
 

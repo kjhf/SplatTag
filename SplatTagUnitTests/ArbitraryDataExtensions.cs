@@ -1,10 +1,12 @@
-﻿using NLog;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NLog;
 using SplatTagCore;
 using SplatTagCore.Social;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace SplatTagUnitTests
 {
@@ -41,7 +43,7 @@ namespace SplatTagUnitTests
     public static T GetRandomCoreObject<T>() where T : BaseSplatTagCoreObject<T>, new()
     {
       T ob = new();
-      ob.PopulateWithRandomValues();
+      ob.PopulateWithRandomValuesT();
       return ob;
     }
 
@@ -153,9 +155,27 @@ namespace SplatTagUnitTests
 
     public static object GetRandomValue(this Type type)
     {
-      if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+      if (type.IsGenericType)
       {
-        return GetRandomValue(type.GetGenericArguments()[0]);
+        var nullableType = type.GetTypeAssignableToGenericType(typeof(Nullable<>));
+        if (nullableType != null)
+        {
+          return GetRandomValue(nullableType.GetGenericArguments()[0]);
+        }
+
+        var enumerableType = type.GetTypeAssignableToGenericType(typeof(IEnumerable<>));
+        if (enumerableType != null)
+        {
+          var elementType = enumerableType.GetGenericArguments()[0];
+          object? ob = Activator.CreateInstance(typeof(List<>).MakeGenericType(elementType));
+          Assert.IsNotNull(ob);
+          var list = (IList)ob;
+          for (int i = 0; i < rand.Next(2, 10); i++)
+          {
+            list.Add(GetRandomValue(elementType));
+          }
+          return list;
+        }
       }
       if (type == typeof(string))
       {
@@ -184,6 +204,10 @@ namespace SplatTagUnitTests
       if (type == typeof(Guid))
       {
         return GetRandomGuid();
+      }
+      if (type == typeof(FriendCode))
+      {
+        return GetRandomFriendCode();
       }
       if (type == typeof(Uri))
       {
@@ -269,17 +293,49 @@ namespace SplatTagUnitTests
     public static T GetRandomValue<T>() where T : notnull => (T)GetRandomValue(typeof(T));
 
     // Honestly this is shit code and I'm sorry :')
-    public static void PopulateWithRandomValues<T>(this BaseHandler<T> handler) where T : notnull
+    public static BaseHandler PopulateWithRandomValues(this BaseHandler handler)
+    {
+      var assignableType = handler.GetType().GetTypeAssignableToGenericType(typeof(BaseHandler<>));
+      if (assignableType != null)
+      {
+        Type genericType = assignableType.GetGenericArguments()[0];
+        logger.Info($"{nameof(PopulateWithRandomValues)}: Resolved handler {handler.GetType()} with T {genericType.Name}. Populating...");
+        return PopulateWithRandomValuesT((dynamic)handler);
+      }
+      else
+      {
+        throw new ArgumentException($"{nameof(PopulateWithRandomValues)}: Handler {handler.GetType()} has no generic type. Cannot populate.");
+      }
+    }
+
+    public static BaseHandler<T> PopulateWithRandomValuesT<T>(this BaseHandler<T> handler) where T : notnull
     {
       if (handler is SingleValueHandler<T> singleValueHandler)
       {
         singleValueHandler.Value = GetRandomValue<T>();
       }
-      else if (handler is BaseSourcedItemHandler<T> itemHandler)
+      else if (handler is IBaseHandlerCollectionSourced itemHandler)
       {
+        foreach (var supported in itemHandler.SupportedHandlers)
+        {
+          var childHandler = itemHandler.GetOrAdd(supported.Key, supported.Value.Item2);
+          PopulateWithRandomValuesT((dynamic)childHandler);
+        }
+      }
+      else if (handler.GetType().GetTypeAssignableToGenericType(typeof(BaseSourcedItemHandler<>)) != null)
+      {
+        var assignableType = handler.GetType().GetTypeAssignableToGenericType(typeof(BaseSourcedItemHandler<>))!;
+        Type genericType = assignableType.GetGenericArguments()[0];
         for (var i = 0; i < rand.Next(1, 10); i++)
         {
-          itemHandler.items.Add(GetRandomValue<T>(), GetRandomIEnumerable<Source>().ToList());
+          if (genericType == typeof(Name))
+          {
+            ((dynamic)handler).Add((dynamic)GetRandomValue(genericType));  // Sources not needed.
+          }
+          else
+          {
+            ((dynamic)handler).Add((dynamic)GetRandomValue(genericType), GetRandomIEnumerable<Source>().ToList());
+          }
         }
       }
       else if (handler is DivisionsHandler dh)
@@ -317,14 +373,6 @@ namespace SplatTagUnitTests
           wh.items.Add(GetRandomIEnumerable<string>().ToList(), GetRandomIEnumerable<Source>().ToList());
         }
       }
-      else if (handler is IDictionary<string, BaseHandler> handlerCollection)
-      {
-        foreach (var pair in handlerCollection)
-        {
-          var child = (dynamic)pair.Value;
-          PopulateWithRandomValues(child);
-        }
-      }
       else if (handler is IEnumerable collection)
       {
         if (collection.GetType().GenericTypeArguments.Length != 1)
@@ -341,8 +389,16 @@ namespace SplatTagUnitTests
       }
       else
       {
-        throw new NotImplementedException("Handler type not implemented: " + handler.GetType());
+        Type type = handler.GetType();
+        throw new NotImplementedException("Handler type not implemented: " + type);
       }
+      return handler;
     }
+
+    public static Type? GetTypeAssignableToGenericType(this Type type, Type generic)
+      => new[] { type }
+      .Concat(type.GetTypeInfo().ImplementedInterfaces)
+      .FirstOrDefault(i => i.IsConstructedGenericType && i.GetGenericTypeDefinition() == generic) ??
+      (type.GetTypeInfo().BaseType?.GetTypeAssignableToGenericType(generic));
   }
 }

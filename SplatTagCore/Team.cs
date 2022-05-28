@@ -10,21 +10,14 @@ namespace SplatTagCore
   [Serializable]
   public class Team : BaseSplatTagCoreObject<Team>
   {
-    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     public static readonly Team NoTeam = new("(Free Agent)", Builtins.BuiltinSource);
     public static readonly Team UnlinkedTeam = new("(UNLINKED TEAM)", Builtins.BuiltinSource);
-
-    private const string BattlefyPersistentTeamIdsSerialization = "BattlefyPersistentTeamIds";
-    private const string ClanTagsSerialization = "ClanTags";
-    private const string DivisionsSerialization = "Divisions";
-    private const string NamesSerialization = "N";
-    private const string TwitterSerialization = "Twitter";
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     /// <summary>
     /// Default construct a Team
     /// </summary>
     public Team()
-      : base()
     {
     }
 
@@ -37,116 +30,180 @@ namespace SplatTagCore
       AddName(ign, source);
     }
 
-    protected override void InitialiseHandlers()
-    {
-      handlers.Clear();
-      handlers.Add(BattlefyPersistentTeamIdsSerialization, new NamesHandler<BattlefyTeamSocial>(FilterOptions.BattlefyPersistentIds, BattlefyPersistentTeamIdsSerialization));
-      handlers.Add(ClanTagsSerialization, new NamesHandler<ClanTag>(FilterOptions.ClanTag, ClanTagsSerialization));
-      handlers.Add(DivisionsSerialization, new DivisionsHandler());
-      handlers.Add(NamesSerialization, new NamesHandler<Name>(FilterOptions.TeamName, NamesSerialization));
-      handlers.Add(TwitterSerialization, new NamesHandler<Twitter>(FilterOptions.Twitter, TwitterSerialization));
-      handlers.Add(IdHandler.IdSerialization, IdHandler);
-    }
-
     /// <summary>
-    /// The last known Battlefy Persistent Ids of the team.
+    /// The last known Battlefy Persistent Id of the team.
     /// </summary>
-    public BattlefyTeamSocial? BattlefyPersistentTeamId => BattlefyPersistentTeamIdInformation.MostRecent;
+    public BattlefyTeamSocial? BattlefyPersistentTeamId => BattlefyTeamInformationNoCreate?.MostRecent;
 
     /// <summary>
     /// The known Battlefy Persistent Ids of the team.
     /// </summary>
-    public NamesHandler<BattlefyTeamSocial> BattlefyPersistentTeamIdInformation => (NamesHandler<BattlefyTeamSocial>)this[BattlefyPersistentTeamIdsSerialization];
+    public IReadOnlyCollection<BattlefyTeamSocial> BattlefyPersistentTeamIds => BattlefyTeamInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<BattlefyTeamSocial>();
 
     /// <summary>
     /// The known Battlefy Persistent Ids of the team.
     /// </summary>
-    public IReadOnlyCollection<BattlefyTeamSocial> BattlefyPersistentTeamIds => BattlefyPersistentTeamIdInformation.GetItemsUnordered();
+    public IReadOnlyList<BattlefyTeamSocial> BattlefyPersistentTeamIdsOrdered => BattlefyTeamInformationNoCreate?.GetItemsOrdered() ?? Array.Empty<BattlefyTeamSocial>();
+
+    /// <summary>
+    /// The known Battlefy Persistent Ids of the team.
+    /// </summary>
+    public BattlefyTeamIdsHandler? BattlefyTeamInformation => BattlefyTeamInformationNoCreate;
 
     /// <summary>
     /// The team tag(s) of the team
     /// </summary>
-    public NamesHandler<ClanTag> ClanTagInformation => (NamesHandler<ClanTag>)this[ClanTagsSerialization];
+    public ClanTagsHandler? ClanTagInformation => ClanTagInformationNoCreate;
 
     /// <summary>
     /// The team tag(s) of the team
     /// </summary>
-    public IReadOnlyCollection<ClanTag> ClanTags => ClanTagInformation.GetItemsUnordered();
+    public IReadOnlyCollection<ClanTag> ClanTags => ClanTagInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<ClanTag>();
 
     /// <summary>
-    /// The current division of the team
+    /// The team tag(s) of the team in most recent order
     /// </summary>
-    public Division CurrentDiv => DivisionInformation.CurrentDivision ?? Division.Unknown;
+    public IReadOnlyList<ClanTag> ClanTagsOrdered => ClanTagInformationNoCreate?.GetItemsOrdered() ?? Array.Empty<ClanTag>();
+
+    /// <summary>
+    /// The current division of the team, or Division.Unknown.
+    /// </summary>
+    public Division CurrentDiv => DivisionInformationNoCreate?.CurrentDivision ?? Division.Unknown;
 
     /// <summary>
     /// The division information of the team.
     /// </summary>
-    public DivisionsHandler DivisionInformation => (DivisionsHandler)this[DivisionsSerialization];
+    public DivisionsHandler? DivisionInformation => DivisionInformationNoCreate;
 
     /// <summary>
-    /// The last known used name for the team
+    /// The divisions of the team
     /// </summary>
-    public Name Name => NamesInformation.MostRecent ?? Builtins.UnknownPlayerName;
+    public IReadOnlyList<Division> DivsOrdered => DivisionInformationNoCreate?.GetItemsOrdered() ?? Array.Empty<Division>();
+
+    /// <summary>
+    /// The last known used name for the team or Builtins.UnknownTeamName.
+    /// </summary>
+    public Name Name => TeamNamesInformationNoCreate?.MostRecent ?? Builtins.UnknownTeamName;
 
     /// <summary>
     /// The registered names this team is known by.
     /// </summary>
-    public IReadOnlyCollection<Name> Names => NamesInformation.GetItemsUnordered();
-
-    /// <summary>
-    /// The in-game or registered names this team is known by.
-    /// </summary>
-    public NamesHandler<Name> NamesInformation => (NamesHandler<Name>)this[NamesSerialization];
+    public IReadOnlyCollection<Name> Names => TeamNamesInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<Name>();
 
     /// <summary>
     /// The most recent tag of the team
     /// </summary>
-    public ClanTag? Tag => ClanTagInformation.MostRecent;
+    public ClanTag? Tag => ClanTagInformationNoCreate?.MostRecent;
+
+    /// <summary>
+    /// The in-game or registered names this team is known by.
+    /// </summary>
+    public TeamNamesHandler? TeamNamesInformation => TeamNamesInformationNoCreate;
 
     /// <summary>
     /// The Twitter social information this team belongs to.
     /// </summary>
-    public NamesHandler<Twitter> TwitterInformation => (NamesHandler<Twitter>)this[TwitterSerialization];
+    public TwitterHandler? TwitterInformation => TwitterInformationNoCreate;
 
     /// <summary>
     /// The Twitter social information this team belongs to.
     /// </summary>
-    public IReadOnlyCollection<Twitter> TwitterProfiles => TwitterInformation.GetItemsUnordered();
+    public IReadOnlyCollection<Twitter> TwitterProfiles => TwitterInformationNoCreate?.GetItemsUnordered() ?? Array.Empty<Twitter>();
+
+    protected override IReadOnlyDictionary<string, (Type, Func<BaseHandler>)> SupportedHandlers => new Dictionary<string, (Type, Func<BaseHandler>)>
+    {
+      { BattlefyTeamIdsHandler.SerializationName, (typeof(BattlefyTeamIdsHandler), () => new BattlefyTeamIdsHandler()) },
+      { ClanTagsHandler.SerializationName, (typeof(ClanTagsHandler), () => new ClanTagsHandler()) },
+      { DivisionsHandler.SerializationName, (typeof(DivisionsHandler), () => new DivisionsHandler()) },
+      { TeamNamesHandler.SerializationName, (typeof(TeamNamesHandler), () => new TeamNamesHandler()) },
+      { TwitterHandler.SerializationName, (typeof(TwitterHandler), () => new TwitterHandler()) },
+      { IdHandler.SerializationName, (typeof(IdHandler), () => new IdHandler()) },
+    };
+
+    /// <summary>
+    /// Get the Battlefy Team Information for this team or null if it doesn't exist.
+    /// </summary>
+    private BattlefyTeamIdsHandler? BattlefyTeamInformationNoCreate => GetHandlerNoCreate<BattlefyTeamIdsHandler>(BattlefyTeamIdsHandler.SerializationName);
+
+    /// <summary>
+    /// Get the Battlefy Team Information for this team or create it if it doesn't exist.
+    /// </summary>
+    private BattlefyTeamIdsHandler BattlefyTeamInformationWithCreate => GetHandler<BattlefyTeamIdsHandler>(BattlefyTeamIdsHandler.SerializationName);
+
+    /// <summary>
+    /// Get the handler for the clan tag information for this team or null if it doesn't exist.
+    /// </summary>
+    private ClanTagsHandler? ClanTagInformationNoCreate => GetHandlerNoCreate<ClanTagsHandler>(ClanTagsHandler.SerializationName);
+
+    /// <summary>
+    /// Get the handler for the clan tag information for this team or create it if it doesn't exist.
+    /// </summary>
+    private ClanTagsHandler ClanTagInformationWithCreate => GetHandler<ClanTagsHandler>(ClanTagsHandler.SerializationName);
+
+    /// <summary>
+    /// Get the division handler for this team or null if it doesn't exist.
+    /// </summary>
+    private DivisionsHandler? DivisionInformationNoCreate => GetHandlerNoCreate<DivisionsHandler>(DivisionsHandler.SerializationName);
+
+    /// <summary>
+    /// Get the division handler for this team or create it if it doesn't exist.
+    /// </summary>
+    private DivisionsHandler DivisionInformationWithCreate => GetHandler<DivisionsHandler>(DivisionsHandler.SerializationName);
+
+    /// <summary>
+    /// Get the team names handler or null if it doesn't exist.
+    /// </summary>
+    private TeamNamesHandler? TeamNamesInformationNoCreate => GetHandlerNoCreate<TeamNamesHandler>(TeamNamesHandler.SerializationName);
+
+    /// <summary>
+    /// Get the team names handler or create it if it doesn't exist.
+    /// </summary>
+    private TeamNamesHandler TeamNamesInformationWithCreate => GetHandler<TeamNamesHandler>(TeamNamesHandler.SerializationName);
+
+    /// <summary>
+    /// Get the Twitter social information handler or null if it doesn't exist.
+    /// </summary>
+    private TwitterHandler? TwitterInformationNoCreate => GetHandlerNoCreate<TwitterHandler>(TwitterHandler.SerializationName);
+
+    /// <summary>
+    /// Get the Twitter social information handler or create it if it doesn't exist.
+    /// </summary>
+    private TwitterHandler TwitterInformationWithCreate => GetHandler<TwitterHandler>(TwitterHandler.SerializationName);
 
     public void AddBattlefyId(string id, Source source)
-      => BattlefyPersistentTeamIdInformation.Add(new BattlefyTeamSocial(id, source));
+      => BattlefyTeamInformationWithCreate.Add(new BattlefyTeamSocial(id, source));
 
     public void AddClanTag(string tag, Source source, TagOption option = TagOption.Unknown)
-      => ClanTagInformation.Add(new ClanTag(tag, source, option));
+      => ClanTagInformationWithCreate.Add(new ClanTag(tag, source, option));
 
     public void AddClanTag(ClanTag tag)
-      => ClanTagInformation.Add(tag);
+      => ClanTagInformationWithCreate.Add(tag);
 
     public void AddDivision(Division division, Source source)
-      => DivisionInformation.Add(division, source);
+      => DivisionInformationWithCreate.Add(division, source);
 
     public void AddDivisions(DivisionsHandler value)
-      => DivisionInformation.Merge(value);
+      => DivisionInformationWithCreate.Merge(value);
 
     public void AddName(string name, Source source)
-      => NamesInformation.Add(new Name(name, source));
+      => TeamNamesInformationWithCreate.Add(new Name(name, source));
 
     public void AddTwitter(string handle, Source source)
-      => TwitterInformation.Add(new Twitter(handle, source));
+      => TwitterInformationWithCreate.Add(new Twitter(handle, source));
 
     /// <summary>
     /// Get the team's best division, or null if not known.
     /// </summary>
     /// <param name="lastNDivisions">Limit the search to this many divisions in most-recent chronological order (-1 = no limit)</param>
     public Division? GetBestDiv(int lastNDivisions = -1)
-      => DivisionInformation.GetBestDiv(lastNDivisions);
+      => DivisionInformationNoCreate?.GetBestDiv(lastNDivisions);
 
     /// <summary>
     /// Filter all players to return only those in this team.
     /// </summary>
     public IEnumerable<Player> GetPlayers(IEnumerable<Player> allPlayers)
     {
-      return allPlayers.Where(p => p.TeamInformation.Contains(this.Id));
+      return allPlayers.Where(p => p.Teams.Contains(this.Id));
     }
 
     /// <summary>
@@ -161,7 +218,6 @@ namespace SplatTagCore
 
     // Deserialize
     protected Team(SerializationInfo info, StreamingContext context)
-      : base(info, context)
     {
       DeserializeHandlers(info, context);
     }

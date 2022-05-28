@@ -17,6 +17,7 @@ namespace SplatTagUnitTests
     public IReadOnlyList<Player> Players => expectedPlayers;
     public IReadOnlyDictionary<Guid, Team> Teams => expectedTeams.ToDictionary(t => t.Id, t => t);
     public IReadOnlyDictionary<string, Source> Sources => expectedSources;
+    public bool Loaded => loadCalled;
 
     public (Player[], Team[], Dictionary<string, Source>) Load()
     {

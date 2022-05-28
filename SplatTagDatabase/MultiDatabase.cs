@@ -1,4 +1,6 @@
-﻿using SplatTagCore;
+﻿using NLog;
+using SplatTagCore;
+using SplatTagDatabase.Merging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +11,7 @@ namespace SplatTagDatabase
 {
   public class MultiDatabase : ISplatTagDatabase
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     private HashSet<IImporter> importers = new();
     private SplatTagJsonSnapshotDatabase? jsonDatabase;
     private Player[] _players = Array.Empty<Player>();
@@ -18,6 +21,8 @@ namespace SplatTagDatabase
     public IReadOnlyList<Player> Players => _players.Length == 0 ? Array.Empty<Player>() : _players;
     public IReadOnlyDictionary<Guid, Team> Teams => _teams;
     public IReadOnlyDictionary<string, Source> Sources => _sources;
+
+    public bool Loaded => _sources.Count > 0;
 
     public MultiDatabase With(params IImporter[] importers)
     {
@@ -44,11 +49,11 @@ namespace SplatTagDatabase
 
       if (toLoad.Length == 0 && jsonDatabase == null)
       {
-        Console.WriteLine("Nothing to load.");
+        logger.Info("Nothing to load.");
         return false;
       }
 
-      Console.WriteLine($"{nameof(MultiDatabase)}.{nameof(Load)} toLoad.Length={toLoad.Length}");
+      logger.Debug($"{nameof(MultiDatabase)}.{nameof(Load)} toLoad.Length={toLoad.Length}");
 
       var databaseSources = new Dictionary<string, Source>();
       var players = new List<Player>();
@@ -63,7 +68,7 @@ namespace SplatTagDatabase
 
         if (toLoad.Length == 0)
         {
-          Console.WriteLine("MultiDatabase: Loaded JSON Database only.");
+          logger.Debug("MultiDatabase: Loaded JSON Database only.");
           return true;
         }
       }
@@ -75,7 +80,7 @@ namespace SplatTagDatabase
       int offset = importedSources.Length;
       Array.Resize(ref importedSources, offset + toLoad.Length);
 
-      Console.WriteLine($"Reading {toLoad.Length} additional sources, " +
+      logger.Debug($"Reading {toLoad.Length} additional sources, " +
         $"{importedSources.Length} total sources to merge from {players.Count} players, {teams.Count} teams, {databaseSources.Count} sources pre-known...");
       bool filterSourcesForNull = false;
       Parallel.For(0, toLoad.Length, i =>
@@ -86,7 +91,7 @@ namespace SplatTagDatabase
         }
         catch (Exception ex)
         {
-          Console.WriteLine($"ERROR: Importer {toLoad[offset + i]} failed. Discarding result and continuing. {ex}");
+          logger.Error($"Importer {toLoad[offset + i]} failed. Discarding result and continuing. {ex}");
           filterSourcesForNull = true;
         }
       });
@@ -98,36 +103,40 @@ namespace SplatTagDatabase
 
       // Merge each Source into our global Players and Teams list.
       // (But start from the sources not yet merged).
-      TextWriter? logger = SplatTagController.Verbose ? Console.Out : null;
+      logger.Debug($"Merging {importedSources.Length - offset} sources beginning with {importedSources[offset]} and ending with {importedSources[^1].Name}...");
 
-      Console.WriteLine($"Merging {importedSources.Length - offset} sources beginning with {importedSources[offset]} and ending with {importedSources[^1].Name}...");
-
+      CoreMergeHandler mergeHandler = new();
       int lastProgressBars = -1;
       for (int i = offset; i < importedSources.Length; i++)
       {
         try
         {
           Source source = importedSources[i];
-          Console.WriteLine($"Merging {source.Name}...");
-          Merger.MergeSource(players, teams, source.Players, source.Teams);
+          logger.Debug($"Merging {source.Name}...");
+          mergeHandler.MergeSource(source);
+          logger.Debug($"Source {source.Name} merged. Source had {source.Players.Length} players and {source.Teams.Length} teams incoming. " +
+            $"Database now {players.Count} players, {teams.Count} teams.");
         }
         catch (Exception ex)
         {
-          Console.WriteLine($"ERROR: Failed to merge during import of {importedSources[i]}. Discarding result and continuing. {ex}");
+          logger.Warn(ex, $"Failed to merge during import of {importedSources[i]}. Discarding result and continuing. {ex}");
         }
 
-        int progressBars = ProgressBar.CalculateProgressBars(i, importedSources.Length, 100);
-        if (progressBars != lastProgressBars)
+        if (logger.IsEnabled(LogLevel.Debug))
         {
-          string progressBar = ProgressBar.GetProgressBar(progressBars, 100, true) + " " + i + "/" + importedSources.Length;
-          Console.WriteLine(progressBar);
-          lastProgressBars = progressBars;
+          int progressBars = ProgressBar.CalculateProgressBars(i, importedSources.Length, 100);
+          if (progressBars != lastProgressBars)
+          {
+            string progressBar = ProgressBar.GetProgressBar(progressBars, 100, rightToLeft: true) + " " + (i + 1) + "/" + importedSources.Length;
+            logger.Debug(progressBar);
+            lastProgressBars = progressBars;
+          }
         }
       }
 
-      var (finalPlayers, finalTeams) = Merger.MergeAllInParallel(players, teams);
-      _players = finalPlayers;
-      _teams = finalTeams.ToDictionary(t => t.Id, t => t);
+      var mergeResults = mergeHandler.MergeKnown().Last();
+      _players = mergeResults.ResultingPlayers.ToArray();
+      _teams = mergeResults.ResultingTeams.ToDictionary(t => t.Id);
       _sources = importedSources.ToDictionary(s => s.Id, s => s);
       return true;
     }
@@ -153,6 +162,20 @@ namespace SplatTagDatabase
         importers.UnionWith(newList);
       }
       return (oldCount, newCount);
+    }
+
+    /// <summary>
+    /// Saves the database using its internal player, team, and source values.
+    /// </summary>
+    internal MultiDatabase SaveInternal(string saveDirectory)
+    {
+      if (!Loaded)
+      {
+        throw new InvalidOperationException("Cannot save an unloaded database.");
+      }
+
+      SplatTagJsonSnapshotDatabase.SaveSnapshots(saveDirectory, _players, _teams.Values, _sources.Values);
+      return this;
     }
   }
 }

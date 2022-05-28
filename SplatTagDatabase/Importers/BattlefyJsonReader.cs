@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using NLog;
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ namespace SplatTagDatabase.Importers
 {
   internal class BattlefyJsonReader : IImporter
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     private readonly string jsonFile;
 
     private readonly Source source;
@@ -57,7 +59,7 @@ namespace SplatTagDatabase.Importers
           // Report if the team name doesn't begin with "bye"
           if (!row.TeamName.StartsWith("bye", StringComparison.OrdinalIgnoreCase))
           {
-            Console.Error.WriteLine($"ERROR: JSON does not contain a player for team \"{row.TeamName}\". Ignoring this team entry. File: " + jsonFile);
+            logger.Error($"JSON does not contain a player for team \"{row.TeamName}\". Ignoring this team entry. File: " + jsonFile);
           }
           continue;
         }
@@ -70,13 +72,13 @@ namespace SplatTagDatabase.Importers
 
         if (row.Captain == null)
         {
-          Console.WriteLine($"Warning: JSON does not contain a Team Captain for team \"{row.TeamName}\". Assuming player 1 is captain. File: " + jsonFile);
+          logger.Warn($"JSON does not contain a Team Captain for team \"{row.TeamName}\". Assuming player 1 is captain. File: " + jsonFile);
           row.Captain = row.Players[0];
         }
 
         if (string.IsNullOrEmpty(row.Captain.Name))
         {
-          Console.Error.WriteLine($"ERROR: The captain for team \"{row.TeamName}\" does not have a name. Ignoring this team entry. File: " + jsonFile);
+          logger.Error($"The captain for team \"{row.TeamName}\" does not have a name. Ignoring this team entry. File: " + jsonFile);
           continue;
         }
 
@@ -100,6 +102,7 @@ namespace SplatTagDatabase.Importers
           var knownTeam = teams.Find(t => newTeam.BattlefyPersistentTeamId.Equals(t.BattlefyPersistentTeamId));
           if (knownTeam != null)
           {
+            logger.Info($"Team {newTeam.Name}'s BattlefyPersistentTeamId ({newTeam.BattlefyPersistentTeamId}) is already known so pre-merging into {knownTeam.Name}. File: " + jsonFile);
             knownTeam.Merge(newTeam);
           }
           else
@@ -116,13 +119,13 @@ namespace SplatTagDatabase.Importers
         {
           if (p.Name == null)
           {
-            Console.Error.WriteLine($"ERROR: Player's Name ({p.Name}) not populated. Ignoring this player entry. File: " + jsonFile);
+            logger.Error($"Player's Name ({p.Name}) not populated. Ignoring this player entry. File: " + jsonFile);
             continue;
           }
 
           if (p.PersistentPlayerId == null)
           {
-            Console.WriteLine($"Warning: Player ({p.Name}) does not have a PersistentPlayerId. Did they sub? Ignoring this player entry. File: " + jsonFile);
+            logger.Warn($"Player ({p.Name}) does not have a PersistentPlayerId. Did they sub? Ignoring this player entry. File: " + jsonFile);
             continue;
           }
 

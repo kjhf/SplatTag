@@ -66,6 +66,18 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Get the value at the name or the default value of T.
+    /// </summary>
+    /// <param name="serializationInfo">Serialization context</param>
+    /// <param name="name">Name of the object</param>
+    /// <param name="expectedType">The type of the object to deserialize</param>
+    /// <returns>The object or default(T)</returns>
+    public static object? GetValueOrDefault(this SerializationInfo serializationInfo, string name, Type expectedType)
+    {
+      return getValueNoThrow.Invoke(serializationInfo, new object[] { name, expectedType });
+    }
+
+    /// <summary>
     /// Get the value at the name or <paramref name="defaultValue"/>.
     /// </summary>
     /// <typeparam name="T">Return type of the deserialized object</typeparam>

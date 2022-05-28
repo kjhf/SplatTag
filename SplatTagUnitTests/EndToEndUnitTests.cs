@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NLog;
 using SplatTagConsole;
 using SplatTagCore;
 using SplatTagCore.Social;
@@ -17,14 +18,25 @@ namespace SplatTagUnitTests
   [TestClass]
   public class EndToEndUnitTests
   {
-    private readonly TextWriter consoleOut = Console.Out;
-    private readonly TextWriter consoleError = Console.Error;
-    private const string MESSAGE_REBUILT = "\"Message\":\"Database rebuilt from";
-    private const string MESSAGE_PATCHED = "\"Message\":\"Database patched from";
+    [TestInitialize]
+    public void TestInitialize()
+    {
+      LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration(PathUtils.FindFileUpToRoot("nlog.config"));
+      logger.Trace(nameof(TestInitialize));
+    }
 
+    private const string MESSAGE_PATCHED = "\"Message\":\"Database patched from";
+    private const string MESSAGE_REBUILT = "\"Message\":\"Database rebuilt from";
     private static readonly string current;
-    private static readonly string sourcesPath;
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     private static readonly string patchPath;
+
+    private static readonly string sourcesPath;
+
+    private readonly TextWriter consoleError = Console.Error;
+
+    private readonly TextWriter consoleOut = Console.Out;
 
     static EndToEndUnitTests()
     {
@@ -48,9 +60,10 @@ namespace SplatTagUnitTests
     /// Verify that the end to end runs.
     /// </summary>
     [Ignore("Ignoring this test as the Patch test uses this one.")]
+    [TestMethod]
     public void EndToEndBuild()
     {
-      using StringWriter sw = new StringWriter();
+      using StringWriter sw = new();
       Console.SetOut(sw);
       Console.SetError(sw);
 
@@ -75,7 +88,7 @@ namespace SplatTagUnitTests
       Assert.AreEqual(3, SplatTagJsonSnapshotDatabase.GetSnapshots(current).Count());
 
       // Load.
-      SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(current);
+      SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new(current);
       (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.LoadInline();
       Assert.IsNotNull(players, "Not expecting null return for players");
       Assert.IsNotNull(teams, "Not expecting null return for teams");
@@ -89,23 +102,23 @@ namespace SplatTagUnitTests
           .Where(p => p.Name.Value.Contains("Slate"))
           .Select(p => new StringBuilder()
                   .Append('[')
-                  .AppendJoin(", ", p.NamesInformation)
+                  .AppendJoin(", ", new object?[] { p.NamesInformation })
                   .Append(']')
                   .Append(" -- Sourced from [")
                   .AppendJoin(", ", p.Sources)
                   .Append("] and teams [")
-                  .AppendJoin(", ", p.TeamInformation.GetAllTeamsUnordered())
+                  .AppendJoin(", ", p.Teams)
                   .Append("] and Battlefy Slugs [")
-                  .AppendJoin(", ", p.BattlefyInformation.Slugs ?? Array.Empty<BattlefyUserSocial>())
+                  .AppendJoin(", ", p.BattlefySlugs ?? Array.Empty<BattlefyUserSocial>())
                   .Append("] top500=")
                   .Append(p.Top500)
                   .AppendLine(".")
           )
         ));
       var splatarians = teams.Where(p => p.Name.Value == "Splatarians");
-      Assert.AreEqual(1, splatarians.Count(), $"Incorrect number of Splatarians:\n - { string.Join("\n - ", splatarians)}");
+      Assert.AreEqual(1, splatarians.Count(), $"Incorrect number of Splatarians:\n - {string.Join("\n - ", splatarians)}");
       Assert.AreEqual("SX", splatarians.First().CurrentDiv.Season);
-      Assert.IsTrue(splatarians.First().DivisionInformation.GetDivisionsUnordered().Any(d => d.Season == "S9"));
+      Assert.IsTrue(splatarians.First().DivsOrdered.Any(d => d.Season == "S9"));
       Assert.AreEqual(4, sources.Count, "Unexpected number of sources loaded.");
       Assert.IsTrue(players.Where(p => p.Name.Value.Contains("Slate")).All(p => !p.Top500), "Expected Slate top 500 flag to be false.");
     }
@@ -120,7 +133,7 @@ namespace SplatTagUnitTests
       EndToEndBuild();
 
       // Now we can patch
-      using StringWriter sw = new StringWriter();
+      using StringWriter sw = new();
       Console.SetOut(sw);
       Console.SetError(sw);
 
@@ -141,13 +154,13 @@ namespace SplatTagUnitTests
 
       Assert.IsTrue(actual.Contains(MESSAGE_PATCHED), "Database patched message not found.");
 
-      SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(current);
+      SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new(current);
       (var players, var teams, var sources) = splatTagJsonSnapshotDatabase.LoadInline();
 
       var slates = players.Where(p => p.AllKnownNames.NamesMatch(new[] { new Name("Slate", Builtins.ManualSource) }));
 
       // Assertions.
-      StringBuilder slateFailMessage = new StringBuilder()
+      var slateFailMessage = new StringBuilder()
         .AppendJoin("\n - ",
           slates
           .Select(p => new StringBuilder()
@@ -157,9 +170,9 @@ namespace SplatTagUnitTests
                   .Append(" -- Sourced from [")
                   .AppendJoin(", ", p.Sources)
                   .Append("] and teams [")
-                  .AppendJoin(", ", p.TeamInformation.GetAllTeamsUnordered())
+                  .AppendJoin(", ", p.Teams)
                   .Append("] and Battlefy Slugs [")
-                  .AppendJoin(", ", p.BattlefyInformation.Slugs ?? Array.Empty<BattlefyUserSocial>())
+                  .AppendJoin(", ", p.BattlefySlugs ?? Array.Empty<BattlefyUserSocial>())
                   .Append("] top500=")
                   .Append(p.Top500)
                   .AppendLine(".")
@@ -170,14 +183,14 @@ namespace SplatTagUnitTests
       var splatarians = teams.Where(p => p.Name.Value == "Splatarians");
       if (splatarians.Count() != 1)
       {
-        StringBuilder failMessage = new StringBuilder();
+        StringBuilder failMessage = new();
         failMessage.Append("Incorrect number of Splatarians (").Append(splatarians.Count()).Append("):\n - ").AppendJoin("\n - ", splatarians).AppendLine();
         failMessage.Append("Sources (").Append(sources.Count).Append("):\n - ").AppendJoin("\n - ", sources).AppendLine();
         failMessage.Append("From:\n - ").AppendJoin("\n - ", splatarians.Select(t => string.Join(", ", t.Sources))).AppendLine();
         Assert.Fail(failMessage.ToString());
       }
       Assert.AreEqual("SX", splatarians.First().CurrentDiv.Season);
-      Assert.IsTrue(splatarians.First().DivisionInformation.GetDivisionsUnordered().Any(d => d.Season == "S9"));
+      Assert.IsTrue(splatarians.First().DivsOrdered.Any(d => d.Season == "S9"));
 
       // Check that the patching has happened
       Assert.AreEqual(5, sources.Count, "Unexpected number of sources loaded.");

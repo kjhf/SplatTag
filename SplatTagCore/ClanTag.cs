@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace SplatTagCore
   [Serializable]
   public class ClanTag : Name
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     private static readonly char[] tagDelimiters = new[] { ' ', '•', '_', '.', '⭐', '~', ']', '}', ')', '>' };
 
     /// <summary>
@@ -123,10 +125,7 @@ namespace SplatTagCore
       var bestCandidate = tagCandidates.OrderByDescending(x => x.Value).FirstOrDefault();
       if (bestCandidate.Value >= (playerNames.Count / 2))
       {
-        if (SplatTagController.Verbose)
-        {
-          Console.WriteLine($"Tag deduced! tag={bestCandidate.Key.Item1} option={bestCandidate.Key.Item2} counted {bestCandidate.Value} times!");
-        }
+        logger.Debug($"Tag deduced! tag={bestCandidate.Key.Item1} option={bestCandidate.Key.Item2} counted {bestCandidate.Value} times!");
         return new ClanTag(tag: bestCandidate.Key.Item1, sources: new[] { source }, tagOption: bestCandidate.Key.Item2);
       }
       else

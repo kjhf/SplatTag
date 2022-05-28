@@ -8,6 +8,9 @@ namespace SplatTagCore
   [Serializable]
   public class Name : ISerializable, ISourceable, IEquatable<Name?>
   {
+    public const string NameKeySerialization = "N";
+    public const string NameSourceSerialization = "S";
+
     /// <summary>
     /// List of sources that this name has been used under
     /// </summary>
@@ -117,20 +120,25 @@ namespace SplatTagCore
     // Deserialize as dict
     protected Name(SerializationInfo info, StreamingContext context)
     {
-      this.Value = info.GetString("N");
-      var sourceIds = info.GetValueOrDefault("S", Array.Empty<string>());
-      this.sources = (context.Context is Source.SourceStringConverter converter)
-        ? converter.Convert(sourceIds).Distinct().ToList()
-        : sourceIds.Select(s => new Source(s)).Distinct().ToList();
+      this.Value = info.GetString(NameKeySerialization);
+      var sourceIds = info.GetValueOrDefault(NameSourceSerialization, Array.Empty<string>());
+      if (context.Context is Source.SourceStringConverter converter)
+      {
+        this.sources = converter.Convert(sourceIds).Distinct().ToList();
+      }
+      else
+      {
+        this.sources = sourceIds.Select(s => new Source(s)).Distinct().ToList();
+      }
     }
 
     // Serialize as dict
     public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-      info.AddValue("N", this.Value);
+      info.AddValue(NameKeySerialization, this.Value);
       if (this.sources.Count > 0)
       {
-        info.AddValue("S", this.sources.Select(s => s.Id).ToArray());
+        info.AddValue(NameSourceSerialization, this.sources.Select(s => s.Id).ToArray());
       }
     }
 

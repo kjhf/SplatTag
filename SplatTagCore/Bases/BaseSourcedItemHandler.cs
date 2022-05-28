@@ -11,8 +11,7 @@ namespace SplatTagCore
   /// Base class for <see cref="BaseHandlerSourced{T}"/> classes that also have classes that are sourced against it.
   /// </summary>
   public abstract class BaseSourcedItemHandler<T> :
-    BaseHandlerSourced<BaseSourcedItemHandler<T>>,
-    ICollection<T>
+    BaseHandlerSourced<BaseSourcedItemHandler<T>>
     where T : notnull
   {
     /// <summary>
@@ -64,20 +63,6 @@ namespace SplatTagCore
     /// Get all the items and their sources as an ordered enumerable from most recent item to oldest.
     /// </summary>
     protected IOrderedEnumerable<KeyValuePair<T, List<Source>>> OrderedItems => items.OrderByDescending(pair => pair.Value.Max());
-
-    bool ICollection<T>.IsReadOnly => false;
-
-    void ICollection<T>.Add(T item) => Add(item, Builtins.ManualSource);
-
-    void ICollection<T>.Clear() => items.Clear();
-
-    void ICollection<T>.CopyTo(T[] array, int arrayIndex) => items.Keys.ToArray().CopyTo(array, arrayIndex);
-
-    bool ICollection<T>.Remove(T item) => items.Remove(item);
-
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => items.Keys.GetEnumerator();
-
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => items.Keys.GetEnumerator();
 
     /// <summary>
     /// Add an item and its one source to this handler.
@@ -187,7 +172,7 @@ namespace SplatTagCore
     /// <summary>
     /// Return if this handler matches another.
     /// </summary>
-    public virtual bool Match(BaseSourcedItemHandler<T> other)
+    public virtual bool ItemsMatch(BaseSourcedItemHandler<T> other)
       => GetItemsUnordered().GenericMatch(other.GetItemsUnordered());
 
     /// <summary>
@@ -202,7 +187,7 @@ namespace SplatTagCore
       }
 
       if (ReferenceEquals(other, this)) return (FilterOptions)(-1); // Literally same
-      return Match(other) ? GetMatchReason() : FilterOptions.None;
+      return ItemsMatch(other) ? GetMatchReason() : FilterOptions.None;
     }
 
     /// <summary>
@@ -260,18 +245,26 @@ namespace SplatTagCore
 
     protected virtual void DeserializeBaseSourcedItems(SerializationInfo info, StreamingContext context)
     {
-      Source.SourceStringConverter? converter = context.Context as Source.SourceStringConverter ?? new Source.SourceStringConverter();
+      Source.SourceStringConverter? converter = context.Context as Source.SourceStringConverter;
 
       var val = info.GetValueOrDefault(SerializedItemsName, Array.Empty<Dictionary<string, object>>());
       if (val.Length > 0)
       {
         foreach (var pair in val)
         {
-          var item = pair[SerializedItemName];
+          var item = pair.Get(SerializedItemName);
           if (item != null)
           {
             var sourceStrings = (string[])pair.Get(SerializedSourceName, Array.Empty<string>());
-            var sources = converter.Convert(sourceStrings.Where(s => !string.IsNullOrWhiteSpace(s)));
+            IEnumerable<Source> sources;
+            if (converter != null)
+            {
+              sources = converter.Convert(sourceStrings.Where(s => !string.IsNullOrWhiteSpace(s)));
+            }
+            else
+            {
+              sources = sourceStrings.Select(s => new Source(s)).Distinct().ToList();
+            }
             if (item is T t)
             {
               Add(t, sources);
@@ -296,6 +289,11 @@ namespace SplatTagCore
               throw new NotImplementedException(error);
             }
           }
+          else
+          {
+            string error = "V for this pair is not present: " + pair.GetType().Name + " from T type " + typeof(T).Name;
+            logger.Error(error);
+          }
         }
       }
     }
@@ -306,7 +304,7 @@ namespace SplatTagCore
     /// </summary>
     protected string ReadSerializedHandlerName(SerializationInfo info) => info.AsKeyValuePairs().FirstOrDefault(pair => pair.Key != SerializedSourceName).Key;
 
-    protected void SerializeBaseSourcedItems(SerializationInfo info, StreamingContext _)
+    protected void SerializeBaseSourcedItems(SerializationInfo info, StreamingContext context)
     {
       if (HasDataToSerialize)
       {

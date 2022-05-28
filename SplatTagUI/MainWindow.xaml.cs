@@ -1,6 +1,7 @@
 ﻿#nullable enable
 
 using Newtonsoft.Json;
+using NLog;
 using SplatTagCore;
 using SplatTagCore.Social;
 using SplatTagDatabase;
@@ -24,6 +25,8 @@ namespace SplatTagUI
   /// </summary>
   public partial class MainWindow : Window
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     /// <summary>
     /// Number of characters minimum before skipping the smooth searching timer delay
     /// </summary>
@@ -32,7 +35,7 @@ namespace SplatTagUI
     private readonly string titleLead;
 
     internal static readonly SplatTagController splatTagController;
-    private static readonly GenericFilesToIImporters? sourcesImporter;
+    private static readonly GenericFilesToIImporters? sourcesImporter = null;
     private readonly Timer? smoothSearchDelayTimer;
     private readonly SynchronizationContext? context;
 
@@ -62,7 +65,7 @@ namespace SplatTagUI
 
     static MainWindow()
     {
-      Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] MainWindow Constructor... ");
+      logger.Trace("MainWindow static constructor");
 
       // Invoked from command line
       if (JsonConvert.DefaultSettings == null)
@@ -77,12 +80,13 @@ namespace SplatTagUI
           }
         };
       }
-      (splatTagController, sourcesImporter) = SplatTagControllerFactory.CreateController();
+      splatTagController = SplatTagControllerFactory.CreateControllerNoLoad();
     }
 
     public MainWindow()
     {
       InitializeComponent();
+      SplatTagControllerFactory.EnsureInitialised(splatTagController);
       titleLead = $"Slapp - {splatTagController.MatchPlayer(null).Length} Players and {splatTagController.MatchTeam(null).Length} Teams loaded! - ";
       Title = titleLead;
 
@@ -253,7 +257,7 @@ namespace SplatTagUI
       }
       else if (b.DataContext is Player p)
       {
-        splatTagController.TryLaunchAddress(p.BattlefyInformation.Slugs.FirstOrDefault()?.Uri?.AbsoluteUri);
+        splatTagController.TryLaunchAddress(p.BattlefySlugs.FirstOrDefault()?.Uri?.AbsoluteUri);
       }
       else if (b.DataContext is Social s)
       {
@@ -325,7 +329,7 @@ namespace SplatTagUI
       IEnumerable<Team> oldTeams;
       if (value is Player p)
       {
-        oldTeams = p.TeamInformation.GetOldItemsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam);
+        oldTeams = p.TeamInformation?.GetOldItemsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam) ?? Array.Empty<Team>();
       }
       else if (value is IEnumerable<Team> t)
       {

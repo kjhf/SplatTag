@@ -268,7 +268,7 @@ namespace SplatTagCore
     public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
     {
       info.AddValue("P", (byte)this.value);
-      info.AddValue("S", this.source);
+      info.AddValue("S", this.source.Id);
     }
 
     #endregion Serialization

@@ -1,4 +1,5 @@
-﻿using SplatTagCore;
+﻿using NLog;
+using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,6 +12,8 @@ namespace SplatTagDatabase.Importers
 {
   internal class TSVReader : IImporter
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     private static readonly ReadOnlyDictionary<string, PropertyEnum> propertyValueStringMap = new ReadOnlyDictionary<string, PropertyEnum>(new Dictionary<string, PropertyEnum>()
     {
       { "team", PropertyEnum.TeamName },
@@ -158,7 +161,7 @@ namespace SplatTagDatabase.Importers
 
     public Source Load()
     {
-      Debug.WriteLine("Loading " + tsvFile);
+      logger.ConditionalDebug("Loading " + tsvFile);
       string[] text = File.ReadAllLines(tsvFile);
       if (text.Length < 1)
       {
@@ -185,7 +188,7 @@ namespace SplatTagDatabase.Importers
           ;
         if (string.IsNullOrWhiteSpace(header))
         {
-          Console.WriteLine($"Warning: Unable to resolve header, it is blank after processing: \"{header}\", (was \"{columns[i]}\")");
+          logger.Warn($"Unable to resolve header, it is blank after processing: \"{header}\", (was \"{columns[i]}\")");
           resolved[i] = PropertyEnum.UNKNOWN;
         }
         // Quick case
@@ -223,12 +226,12 @@ namespace SplatTagDatabase.Importers
           else if (playerNum == 0)
           {
             resolved[i] = PropertyEnum.UNKNOWN;
-            Console.WriteLine("Warning: Unable to resolve header: " + header);
+            logger.Warn("Unable to resolve header: " + header);
           }
           else
           {
             resolved[i] = PropertyEnum.UNKNOWN;
-            Console.WriteLine("Warning: Unable to resolve header for player " + playerNum + ": " + header);
+            logger.Warn("Unable to resolve header for player " + playerNum + ": " + header);
           }
         }
       }
@@ -250,8 +253,8 @@ namespace SplatTagDatabase.Importers
         // Warn if the values exceeds the number of defined headers (but don't bother if we're only one over and it's empty -- trailing tab)
         if (numberOfHeaders < cells.Length && (numberOfHeaders != cells.Length - 1 || !string.IsNullOrWhiteSpace(cells[cells.Length - 1])))
         {
-          Console.WriteLine($"Warning: Line {lineIndex} contains more cells in this row {cells.Length} than headers {numberOfHeaders}.");
-          Debug.WriteLine(line);
+          logger.Warn($"Line {lineIndex} contains more cells in this row {cells.Length} than headers {numberOfHeaders}.");
+          logger.ConditionalDebug(line);
         }
 
         SortedDictionary<int, Player> rowPlayers = new SortedDictionary<int, Player>();
@@ -305,14 +308,14 @@ namespace SplatTagDatabase.Importers
                 }
                 else
                 {
-                  Console.WriteLine($"Warning: DiscordId was specified ({lineIndex},{i}), but the value could not be parsed from a decimal or hex string. {value}.");
-                  Debug.WriteLine(line);
+                  logger.Warn($"DiscordId was specified ({lineIndex},{i}), but the value could not be parsed from a decimal or hex string. {value}.");
+                  logger.ConditionalDebug(line);
                 }
               }
               else
               {
-                Console.WriteLine($"Warning: DiscordId was specified ({lineIndex},{i}), but the value length does not fit into a discord id. {value}.");
-                Debug.WriteLine(line);
+                logger.Warn($"DiscordId was specified ({lineIndex},{i}), but the value length does not fit into a discord id. {value}.");
+                logger.ConditionalDebug(line);
               }
               break;
             }
@@ -327,12 +330,12 @@ namespace SplatTagDatabase.Importers
               else if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
                 p.AddFCs(friendCode, source);
-                Console.WriteLine($"Warning: This value was declared as a Discord name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
+                logger.Warn($"This value was declared as a Discord name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
               }
               else
               {
-                Console.WriteLine($"Warning: DiscordName was specified ({lineIndex},{i}), but the value was not in a Discord format of name#0000. {value}.");
-                Debug.WriteLine(line);
+                logger.Warn($"DiscordName was specified ({lineIndex},{i}), but the value was not in a Discord format of name#0000. {value}.");
+                logger.ConditionalDebug(line);
               }
               break;
             }
@@ -346,8 +349,8 @@ namespace SplatTagDatabase.Importers
               }
               else
               {
-                Console.WriteLine($"Warning: FC was specified ({lineIndex},{i}), but the value was not in an FC format of 0000-0000-0000 or 0000 0000 0000. {value}.");
-                Debug.WriteLine(line);
+                logger.Warn($"FC was specified ({lineIndex},{i}), but the value was not in an FC format of 0000-0000-0000 or 0000 0000 0000. {value}.");
+                logger.ConditionalDebug(line);
               }
               break;
             }
@@ -358,7 +361,7 @@ namespace SplatTagDatabase.Importers
 
               if (divType == DivType.Unknown)
               {
-                Console.WriteLine($"Warning: Div was specified ({lineIndex},{i}), but I don't know what type of division this file represents.");
+                logger.Warn($"Div was specified ({lineIndex},{i}), but I don't know what type of division this file represents.");
               }
               break;
             }
@@ -394,8 +397,8 @@ namespace SplatTagDatabase.Importers
               if (FriendCode.TryParse(value, out FriendCode friendCode))
               {
                 p.AddFCs(friendCode, source);
-                Console.WriteLine($"Warning: This value was declared as a name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
-                Debug.WriteLine(line);
+                logger.Warn($"This value was declared as a name but looks like a friend code. Bad data formatting? {value} on ({lineIndex},{i}).");
+                logger.ConditionalDebug(line);
               }
               break;
             }
@@ -410,7 +413,7 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.Pronouns:
             {
               var p = GetCurrentPlayer(ref rowPlayers, playerNum, tsvFile);
-              p.PronounInformation.SetPronoun(value, source);
+              p.AddPronoun(value, source);
               break;
             }
 
@@ -445,8 +448,8 @@ namespace SplatTagDatabase.Importers
             case PropertyEnum.PlayerN_Offset:
             default:
             {
-              Console.WriteLine($"Warning: Unhandled header {resolvedProperty}. {value}. Line {lineIndex}:");
-              Debug.WriteLine(line);
+              logger.Warn($"Unhandled header {resolvedProperty}. {value}. Line {lineIndex}:");
+              logger.ConditionalDebug(line);
               break;
             }
           }
@@ -464,7 +467,7 @@ namespace SplatTagDatabase.Importers
           // Don't add the team to the player if it's not complete (e.g. single player record)
           if (!t.Name.Equals(Builtins.UnknownTeamName))
           {
-            p.TeamInformation.Add(t.Id, source);
+            p.AddTeams(t.Id, source);
           }
           players.Add(p);
         }

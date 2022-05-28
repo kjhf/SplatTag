@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Runtime.InteropServices;
 using System.Security;
 
@@ -13,20 +14,22 @@ namespace SplatTagDatabase
   /// </summary>
   public static class WinApi
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     [SuppressUnmanagedCodeSecurity]
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod", SetLastError = true)]
     private static extern uint TimeBeginPeriod(uint uMilliseconds);
 
     public static void TryTimeBeginPeriod(uint uMilliseconds)
     {
-      Console.WriteLine("Engaging TURBO");
+      logger.Trace("Engaging TURBO");
       try
       {
         TimeBeginPeriod(uMilliseconds);
       }
       catch (DllNotFoundException ex)
       {
-        Console.Error.WriteLine("Cannot invoke TimeBeginPeriod. SystemException: " + ex.Message);
+        logger.Info("Cannot invoke TimeBeginPeriod. SystemException: " + ex.Message);
       }
     }
 
@@ -42,9 +45,9 @@ namespace SplatTagDatabase
       }
       catch (DllNotFoundException ex)
       {
-        Console.Error.WriteLine("Cannot invoke TimeEndPeriod. SystemException: " + ex.Message);
+        logger.Info("Cannot invoke TimeEndPeriod. SystemException: " + ex.Message);
       }
-      Console.WriteLine("TURBO disengaged");
+      logger.Trace("TURBO disengaged");
     }
   }
 }

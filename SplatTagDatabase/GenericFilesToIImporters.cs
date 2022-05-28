@@ -1,4 +1,5 @@
-﻿using SplatTagCore;
+﻿using NLog;
+using SplatTagCore;
 using SplatTagDatabase.Importers;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ namespace SplatTagDatabase
 {
   public class GenericFilesToIImporters
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     public const string DefaultSourcesFileName = "sources.yaml";
     private readonly List<string> paths = new List<string>();
     private readonly string? sourcesFile;
@@ -16,29 +18,32 @@ namespace SplatTagDatabase
 
     public IReadOnlyCollection<string> Sources => paths;
 
-    public GenericFilesToIImporters(string saveDirectory, string sourcesFile = DefaultSourcesFileName)
+    public GenericFilesToIImporters(string? saveDirectory = null, string? sourcesFile = DefaultSourcesFileName)
     {
-      this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
+      this.saveDirectory = saveDirectory ?? SplatTagControllerFactory.GetDefaultPath();
       Directory.CreateDirectory(saveDirectory);
 
       // If the sources file is an absolute path, take as-is.
       // Otherwise, combine with the save directory to find that file.
-      if (Path.IsPathRooted(sourcesFile))
+      if (sourcesFile != null)
       {
-        this.sourcesFile = sourcesFile;
-      }
-      else
-      {
-        this.sourcesFile = Path.Combine(saveDirectory, sourcesFile);
-      }
+        if (Path.IsPathRooted(sourcesFile))
+        {
+          this.sourcesFile = sourcesFile;
+        }
+        else
+        {
+          this.sourcesFile = Path.Combine(saveDirectory, sourcesFile);
+        }
 
-      if (File.Exists(this.sourcesFile))
-      {
-        paths = new List<string>(File.ReadAllLines(this.sourcesFile).Where(s => !string.IsNullOrWhiteSpace(s)));
-      }
-      else
-      {
-        Console.WriteLine($"Sources file doesn't exist `{this.sourcesFile}`.");
+        if (File.Exists(this.sourcesFile))
+        {
+          paths = new List<string>(File.ReadAllLines(this.sourcesFile).Where(s => !string.IsNullOrWhiteSpace(s)));
+        }
+        else
+        {
+          throw new ArgumentException($"Sources file doesn't exist `{this.sourcesFile}`.");
+        }
       }
     }
 
@@ -62,10 +67,11 @@ namespace SplatTagDatabase
       return importers;
     }
 
-    public void SetSingleSource(string source)
+    public GenericFilesToIImporters SetSingleSource(string source)
     {
       paths.Clear();
       paths.Add(source);
+      return this;
     }
 
     /// <summary>
@@ -111,7 +117,7 @@ namespace SplatTagDatabase
       }
       else if (!File.Exists(input))
       {
-        Console.WriteLine($"Input does not exist on disk. Remote is not currently supported ({input}).");
+        logger.Warn($"Input does not exist on disk. Remote is not currently supported ({input}).");
       }
       else if (TwitterReader.AcceptsInput(input))
       {
