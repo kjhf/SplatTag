@@ -5,7 +5,7 @@
     },
     "RebuildDatabase": {
       "commandName": "Project",
-      "commandLineArgs": "--exactCase --rebuild \".\""
+      "commandLineArgs": "--verbose --rebuild \"%appdata%\\SplatTag\\sources_new.yaml\""
     },
     "single query": {
       "commandName": "Project",

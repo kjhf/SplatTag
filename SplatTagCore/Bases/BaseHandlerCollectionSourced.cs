@@ -15,13 +15,17 @@ namespace SplatTagCore
     IBaseHandlerCollectionSourced
     where T : BaseHandlerCollectionSourced<T>
   {
+    private readonly object _handlerLock = new();
+
     /// <summary>
     /// Dictionary of handlers, keyed by its serialization name.
     /// </summary>
-    protected internal readonly Dictionary<string, BaseHandler> handlers = new();
+    private readonly Dictionary<string, BaseHandler> _handlers = new();
 
-    /// <inheritdoc/>
-    IDictionary<string, BaseHandler> IBaseHandlerCollectionSourced.Handlers => handlers;
+    /// <summary>
+    /// Get all initialised handlers as a read-only collection.
+    /// </summary>
+    private IReadOnlyList<BaseHandler> ReadOnlyHandlers => _handlers.Values.ToArray();
 
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -30,7 +34,7 @@ namespace SplatTagCore
     }
 
     /// <inheritdoc/>
-    public override bool HasDataToSerialize => handlers.Values.Any(h => h.HasDataToSerialize);
+    public override bool HasDataToSerialize => Values.Any(h => h.HasDataToSerialize);
 
     /// <summary>
     /// Get how this object matches another, or <see cref="FilterOptions.None"/> if they do not.
@@ -42,7 +46,7 @@ namespace SplatTagCore
         var sources = new HashSet<Source>();
         // A filter OfType<IReadonlySourceable> is needed here as BaseHandlerSourced implements this interface but BaseHandler does not.
         // Any handlers that are not properly sourced are therefore not counted here. Likely their information is contained in other handlers.
-        foreach (var handler in handlers.Values.OfType<IReadonlySourceable>())
+        foreach (var handler in ReadOnlyHandlers.OfType<IReadonlySourceable>())
         {
           sources.UnionWith(handler.Sources);
         }
@@ -66,13 +70,14 @@ namespace SplatTagCore
     public override FilterOptions MatchWithReason(T? other)
     {
       if (other is null) return FilterOptions.None;
+      // if (Count == 0 || other.Count == 0) return FilterOptions.None; // Waste of a check - handlers will always have Id and name
 
       FilterOptions options = FilterOptions.None;
-      foreach (var handlerPair in handlers)
+      foreach (var (name, thisChildHandler) in _handlers.ToArray())
       {
-        if (other.handlers.TryGetValue(handlerPair.Key, out var otherHandler))
+        if (other._handlers.TryGetValue(name, out var otherChildHandler))
         {
-          options |= handlerPair.Value.MatchWithReason(otherHandler);
+          options |= thisChildHandler.MatchWithReason(otherChildHandler);
         }
       }
       return options;
@@ -95,7 +100,7 @@ namespace SplatTagCore
       }
 
       // Merge existing
-      foreach (var handler in handlers)
+      foreach (var handler in _handlers)
       {
         if (other.ContainsKey(handler.Key))
         {
@@ -104,16 +109,16 @@ namespace SplatTagCore
       }
 
       // Add missing
-      foreach (var handler in other.handlers)
+      foreach (var handler in other._handlers)
       {
-        if (!handlers.ContainsKey(handler.Key))
+        if (!ContainsKey(handler.Key))
         {
-          handlers.Add(handler.Key, handler.Value);
+          Add(handler.Key, handler.Value);
         }
       }
     }
 
-    public override string ToString() => string.Join(", ", handlers.Values);
+    public override string ToString() => string.Join(", ", ReadOnlyHandlers);
 
     /// <summary>
     /// Get or create the handler with the specified name.
@@ -124,14 +129,17 @@ namespace SplatTagCore
       var entry = SupportedHandlers[serializationName];
       if (typeof(DerivedType) != entry.Item1) throw new InvalidCastException($"DerivedType ({typeof(DerivedType)}) != the handler's type of {entry.Item1} ");
 
-      return (DerivedType)handlers.GetOrAdd(serializationName, entry.Item2);
+      lock (_handlerLock)
+      {
+        return (DerivedType)_handlers.GetOrAdd(serializationName, entry.Item2);
+      }
     }
 
     /// <summary>
     /// Get the handler with the specified name if it exists, else null.
     /// </summary>
     protected internal DerivedType? GetHandlerNoCreate<DerivedType>(string serializationName) where DerivedType : BaseHandler
-      => handlers.TryGetValue(serializationName, out var value) ? (DerivedType)value : null;
+      => TryGetValue(serializationName, out var value) ? (DerivedType)value : null;
 
     protected internal bool MatchByHandlerName(string name, T? other)
     {
@@ -151,13 +159,13 @@ namespace SplatTagCore
         if (deserializedHandler != null)
         {
           // If found, merge. Else add as-is.
-          if (handlers.TryGetValue(handlerInfo.Key, out var value))
+          if (TryGetValue(handlerInfo.Key, out var value))
           {
             value.Merge(deserializedHandler);
           }
           else
           {
-            handlers.Add(handlerInfo.Key, deserializedHandler);
+            Add(handlerInfo.Key, deserializedHandler);
           }
         }
         // otherwise we can leave and it won't be needlessly added to the handlers list
@@ -168,57 +176,103 @@ namespace SplatTagCore
     protected void SerializeHandlers(SerializationInfo info, StreamingContext context)
     {
       logger.Debug(nameof(SerializeHandlers) + " called for " + ToString());
-      foreach (var handlerPair in handlers.Where(h => h.Value.HasDataToSerialize))
+      foreach (var handler in ReadOnlyHandlers.Where(h => h.HasDataToSerialize))
       {
-        handlerPair.Value.GetObjectData(info, context);
+        handler.GetObjectData(info, context);
       }
     }
 
     #region IDictionary overrides
 
-    public int Count => handlers.Count;
+    public int Count => _handlers.Count;
     public bool IsReadOnly => false;
 
     public ICollection<string> Keys
-      => handlers.Keys;
+      => _handlers.Keys;
 
     public ICollection<BaseHandler> Values
-      => handlers.Values;
+      => _handlers.Values;
 
-    public BaseHandler this[string key] { get => handlers[key]; set => handlers[key] = value; }
+    IEnumerable<string> IReadOnlyDictionary<string, BaseHandler>.Keys
+      => Keys;
+
+    IEnumerable<BaseHandler> IReadOnlyDictionary<string, BaseHandler>.Values
+      => Values;
+
+    public BaseHandler this[string key] { get => _handlers[key]; set => _handlers[key] = value; }
 
     public void Add(string key, BaseHandler value)
-      => handlers.Add(key, value);
+    {
+      lock (_handlerLock)
+      {
+        _handlers.Add(key, value);
+      }
+    }
 
     public void Add(KeyValuePair<string, BaseHandler> item)
-      => handlers.Add(item.Key, item.Value);
+    {
+      lock (_handlerLock)
+      {
+        _handlers.Add(item.Key, item.Value);
+      }
+    }
 
     public void Clear()
-      => handlers.Clear();
+    {
+      lock (_handlerLock)
+      {
+        _handlers.Clear();
+      }
+    }
 
     public bool Contains(KeyValuePair<string, BaseHandler> item)
-      => handlers.Contains(item);
+    {
+      lock (_handlerLock)
+      {
+        return _handlers.Contains(item);
+      }
+    }
 
     public bool ContainsKey(string key)
-      => handlers.ContainsKey(key);
+    {
+      lock (_handlerLock)
+      {
+        return _handlers.ContainsKey(key);
+      }
+    }
 
     public void CopyTo(KeyValuePair<string, BaseHandler>[] array, int arrayIndex)
-      => ((ICollection<KeyValuePair<string, BaseHandler>>)handlers).CopyTo(array, arrayIndex);
+      => ((ICollection<KeyValuePair<string, BaseHandler>>)_handlers).CopyTo(array, arrayIndex);
 
     public IEnumerator<KeyValuePair<string, BaseHandler>> GetEnumerator()
-      => handlers.GetEnumerator();
+      => _handlers.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
-      => handlers.GetEnumerator();
+      => _handlers.GetEnumerator();
 
     public bool Remove(string key)
-      => handlers.Remove(key);
+    {
+      lock (_handlerLock)
+      {
+        return _handlers.Remove(key);
+      }
+    }
 
     public bool Remove(KeyValuePair<string, BaseHandler> item)
-      => handlers.Remove(item.Key);
+    {
+      lock (_handlerLock)
+      {
+        return _handlers.Remove(item.Key);
+      }
+    }
 
     public bool TryGetValue(string key, out BaseHandler value)
-      => handlers.TryGetValue(key, out value);
+    {
+      lock (_handlerLock)
+      {
+        return _handlers.TryGetValue(key, out value);
+      }
+    }
 
     #endregion IDictionary overrides
   }

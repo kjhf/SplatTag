@@ -87,6 +87,12 @@ namespace SplatTagCore
     public string? Country { get => CountryInformationNoCreate?.CountryCode; set => CountryInformation.Merge(value); }
 
     /// <summary>
+    /// Get or Set the Country Flag.
+    /// Null by default.
+    /// </summary>
+    public string? CountryFlag { get => CountryInformationNoCreate?.CountryFlag; }
+
+    /// <summary>
     /// The current team id this player plays for, or <see cref="Team.NoTeam.Id"/> if not set.
     /// </summary>
     public Guid CurrentTeam => TeamInformationNoCreate?.CurrentTeam ?? Team.NoTeam.Id;

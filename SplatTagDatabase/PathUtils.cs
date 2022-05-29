@@ -8,6 +8,33 @@ namespace SplatTagDatabase
   {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
+    /// <summary>
+    /// Synchronously wait for a file to become ready. Does not check file's existence.
+    /// Returns true if file is now ready or false for timeout.
+    /// </summary>
+    public static bool WaitForFileCreatedAndReady(string filePath, int timeoutMillis = 30000, int checkIntervalMillis = 100)
+    {
+      var start = DateTime.Now;
+      while (true)
+      {
+        try
+        {
+          using var stream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+          Console.WriteLine($"{nameof(WaitForFileCreatedAndReady)}: {filePath} is ready with {stream.Length} bytes to read.");
+          return true;
+        }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)  // DirectoryNotFoundException and FileNotFoundException are IOException
+        {
+          var now = DateTime.Now;
+          if (now - start > TimeSpan.FromMilliseconds(timeoutMillis))
+          {
+            return false;
+          }
+          System.Threading.Thread.Sleep(checkIntervalMillis);
+        }
+      }
+    }
+
     public static string? FindFileUpToRoot(string fileName)
     {
       var dir = Directory.GetCurrentDirectory();

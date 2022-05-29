@@ -16,7 +16,7 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Overridden ToString. Returns the <see cref="Flags"/> and <see cref="Similarity"/>.
     /// </summary>
-    public override string ToString() => $"{Flags} with similarity score {Similarity}";
+    public override string ToString() => $"{Flags}\twith similarity score\t{Similarity}";
 
     /// <summary>
     /// Create a new <see cref="MergeReason"/> with the given <see cref="FilterOptions"/>.

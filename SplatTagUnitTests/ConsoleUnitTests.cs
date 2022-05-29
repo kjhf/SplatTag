@@ -32,7 +32,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleNoArguments()
     {
-      using StringWriter sw = new StringWriter();
+      using StringWriter sw = new();
       Console.SetOut(sw);
       Console.SetError(sw);
       string expected = CHOOSE_A_FUNCTION;
@@ -69,7 +69,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleSingleQuery()
     {
-      using StringWriter sw = new StringWriter();
+      using StringWriter sw = new();
       Console.SetOut(sw);
       Console.SetError(sw);
 
@@ -105,7 +105,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleSingleQueryB64()
     {
-      using StringWriter sw = new StringWriter();
+      using StringWriter sw = new();
       Console.SetOut(sw);
       Console.SetError(sw);
 
@@ -141,8 +141,8 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsoleCaseSensitiveQuery()
     {
-      Stopwatch stopwatch = new Stopwatch();
-      using StringWriter sw = new StringWriter();
+      Stopwatch stopwatch = new();
+      using StringWriter sw = new();
       Console.SetOut(sw);
       Console.SetError(sw);
 
@@ -181,14 +181,14 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void ConsolePerist()
     {
-      using (StringWriter sw = new StringWriter())
+      using (StringWriter sw = new())
       {
         Console.SetOut(sw);
         Console.SetError(sw);
         Console.SetIn(new StringReader(string.Empty));
 
-        using StringReader tr = new StringReader("--b64 " + "ig manny".Base64Encode() + "\r\n--b64 " + "Slate".Base64Encode() + "\r\n"); // a TextReader -- also tests spaces.
-        using StringReader tr2 = new StringReader("--b64 " + "thatsrb2dude".Base64Encode() + "\r\n");
+        using StringReader tr = new("--b64 " + "ig manny".Base64Encode() + "\r\n--b64 " + "Slate".Base64Encode() + "\r\n"); // a TextReader -- also tests spaces.
+        using StringReader tr2 = new("--b64 " + "thatsrb2dude".Base64Encode() + "\r\n");
         var timeoutTask = Task.Delay(MAX_WAIT_TIME);
         var mainTask = Task.Run(async () =>
         {

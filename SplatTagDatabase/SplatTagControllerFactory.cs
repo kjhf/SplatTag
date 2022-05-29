@@ -174,10 +174,17 @@ namespace SplatTagDatabase
         var splatTagDatabase = new MultiDatabase().With(sourcesImporter);
 
         logger.Info($"Full load of {sourcesImporter.Sources.Count} files from dir {Path.GetFullPath(saveFolder)}...");
-        splatTagDatabase.Load();
+        bool loaded = splatTagDatabase.Load();
 
         // Now that we've initialised, take a snapshot of everything.
-        splatTagDatabase.SaveInternal(saveFolder);
+        if (loaded)
+        {
+          splatTagDatabase.SaveInternal(saveFolder);
+        }
+        else
+        {
+          logger.Error($"Unable to load the database from {saveFolder}");
+        }
         return splatTagDatabase;
       }
       finally
@@ -199,22 +206,30 @@ namespace SplatTagDatabase
         saveFolder = GetDefaultPath();
       }
 
-      if (!database.Loaded)
+      bool loaded = database.Loaded;
+      if (!loaded)
       {
-        database.Load();
+        loaded = database.Load();
       }
 
-      if (database is SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase)
+      if (loaded)
       {
-        splatTagJsonSnapshotDatabase.SaveInternal();
-      }
-      else if (database is MultiDatabase multiDatabase)
-      {
-        multiDatabase.SaveInternal(saveFolder);
+        if (database is SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase)
+        {
+          splatTagJsonSnapshotDatabase.SaveInternal();
+        }
+        else if (database is MultiDatabase multiDatabase)
+        {
+          multiDatabase.SaveInternal(saveFolder);
+        }
+        else
+        {
+          throw new NotImplementedException($"Please implement save on {database.GetType()}");
+        }
       }
       else
       {
-        throw new NotImplementedException($"Please implement save on {database.GetType()}");
+        logger.Error("Nothing was loaded from the database so cannot save it. If a merge occurred, likely it has errored.");
       }
     }
 

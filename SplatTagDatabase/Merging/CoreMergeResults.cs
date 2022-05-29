@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Text;
 
 namespace SplatTagDatabase.Merging
 {
@@ -148,15 +149,34 @@ namespace SplatTagDatabase.Merging
       {
         if (record.IsMerge)
         {
-          logger.Log(level, $"Merged {record.MergedItemId} ({record.MergedItem}) into {record.ResultantItemId} ({record.ResultantItem}) because it matched: {record.mergeReason}");
+          logger.Log(level, $"Merged\t{record.MergedItemId}\t({record.MergedItem})\tinto\t{record.ResultantItemId}\t({record.ResultantItem})\tbecause it matched:\t{record.mergeReason}");
         }
         else
         {
-          logger.Log(level, $"{record.ChangeType} {record.ResultantItemId}");
+          logger.Log(level, $"{record.ChangeType}\t{record.ResultantItemId}");
         }
       }
     }
 
+    /// <summary>
+    /// Output the records to a StringBuilder.
+    /// </summary>
+    public StringBuilder ToStringBuilder()
+    {
+      StringBuilder sb = new();
+      foreach (var record in records)
+      {
+        if (record.IsMerge)
+        {
+          sb.Append("Merged\t").Append(record.MergedItemId).Append("\t(").Append(record.MergedItem).Append(")\tinto\t").Append(record.ResultantItemId).Append("\t(").Append(record.ResultantItem).Append(")\tbecause it matched:\t").Append(record.mergeReason).AppendLine();
+        }
+        else
+        {
+          sb.Append(record.ChangeType).Append('\t').Append(record.ResultantItemId).AppendLine();
+        }
+      }
+      return sb;
+    }
     /// <summary>
     /// Overridden ToString
     /// </summary>

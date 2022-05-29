@@ -318,7 +318,7 @@ namespace SplatTagUnitTests
       {
         foreach (var supported in itemHandler.SupportedHandlers)
         {
-          var childHandler = itemHandler.GetOrAdd(supported.Key, supported.Value.Item2);
+          var childHandler = itemHandler.Handlers.GetOrAdd(supported.Key, supported.Value.Item2);
           PopulateWithRandomValuesT((dynamic)childHandler);
         }
       }

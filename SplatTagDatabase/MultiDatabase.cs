@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SplatTagDatabase
@@ -106,6 +108,10 @@ namespace SplatTagDatabase
       logger.Debug($"Merging {importedSources.Length - offset} sources beginning with {importedSources[offset]} and ending with {importedSources[^1].Name}...");
 
       CoreMergeHandler mergeHandler = new();
+      mergeHandler.AddPlayers(players);
+      mergeHandler.AddTeams(teams);
+      logger.Debug($"Beginning merging with {players.Count} players, {teams.Count} teams pre-merged.");
+
       int lastProgressBars = -1;
       for (int i = offset; i < importedSources.Length; i++)
       {
@@ -114,8 +120,7 @@ namespace SplatTagDatabase
           Source source = importedSources[i];
           logger.Debug($"Merging {source.Name}...");
           mergeHandler.MergeSource(source);
-          logger.Debug($"Source {source.Name} merged. Source had {source.Players.Length} players and {source.Teams.Length} teams incoming. " +
-            $"Database now {players.Count} players, {teams.Count} teams.");
+          logger.Debug($"Source {source.Name} merged. Source had {source.Players.Length} players and {source.Teams.Length} teams incoming. ");
         }
         catch (Exception ex)
         {
@@ -134,9 +139,44 @@ namespace SplatTagDatabase
         }
       }
 
-      var mergeResults = mergeHandler.MergeKnown().Last();
-      _players = mergeResults.ResultingPlayers.ToArray();
-      _teams = mergeResults.ResultingTeams.ToDictionary(t => t.Id);
+      var mergeResults = mergeHandler.MergeKnown();
+      if (mergeResults.Length == 0)
+      {
+        logger.Warn("Nothing merged!");
+        return false;
+      }
+
+      try
+      {
+        string filePath = Path.Combine(SplatTagControllerFactory.GetDefaultPath(), "MergeLog-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".log");
+        logger.Trace("Saving to " + filePath);
+
+        var creationWaitTask = Task.Run(() =>
+        {
+          // Wait until the log is written before continuing so the program has finished writing before exiting.
+          PathUtils.WaitForFileCreatedAndReady(filePath);
+        });
+
+        var savingTask = Task.Run(() =>
+        {
+          // Write merge log
+          StringBuilder sb = new();
+          sb.AppendJoin('\n', mergeResults.Select(r => r.ToStringBuilder()));
+          File.WriteAllText(filePath, sb.ToString(), new UTF8Encoding(false)); // UTF-8 no BOM
+        });
+
+        Task.WaitAll(creationWaitTask, savingTask);
+        logger.Trace("creationWaitTask: " + creationWaitTask.Status + ", savingTask: " + savingTask.Status);
+      }
+      catch (Exception ex)
+      {
+        string error = $"Unable to save the {nameof(MultiDatabase)} merge log because of an exception: {ex}";
+        logger.Error(ex, error);
+      }
+
+      var last = mergeResults.Last();
+      _players = last.ResultingPlayers.ToArray();
+      _teams = last.ResultingTeams.ToDictionary(t => t.Id);
       _sources = importedSources.ToDictionary(s => s.Id, s => s);
       return true;
     }
