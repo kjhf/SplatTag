@@ -20,7 +20,7 @@ namespace SplatTagDatabase
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod", SetLastError = true)]
     private static extern uint TimeBeginPeriod(uint uMilliseconds);
 
-    public static void TryTimeBeginPeriod(uint uMilliseconds)
+    public static void TryTimeBeginPeriod(uint uMilliseconds = 1)
     {
       logger.Trace("Engaging TURBO");
       try
@@ -37,7 +37,7 @@ namespace SplatTagDatabase
     [DllImport("winmm.dll", EntryPoint = "timeEndPeriod", SetLastError = true)]
     private static extern uint TimeEndPeriod(uint uMilliseconds);
 
-    public static void TryTimeEndPeriod(uint uMilliseconds)
+    public static void TryTimeEndPeriod(uint uMilliseconds = 1)
     {
       try
       {

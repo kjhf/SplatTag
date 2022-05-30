@@ -9,38 +9,6 @@ namespace SplatTagCore
   public static class EnumerableExtensions
   {
     /// <summary>
-    /// Add an entry to the dictionary key's collection or begin the key's collection with the value like a setdefault dict.
-    /// </summary>
-    public static void AddOrAppend<TKey, TValueCollection, TValue>(this IDictionary<TKey, TValueCollection> dictionary, TKey key, TValue value) where TValueCollection : ICollection<TValue>, new()
-    {
-      if (dictionary.ContainsKey(key) && dictionary[key] != null)
-      {
-        dictionary[key].AddUnique(value);
-        return;
-      }
-
-      dictionary[key] = new TValueCollection { value };
-    }
-
-    /// <summary>
-    /// Add an entry to the dictionary key's collection or begin the key's collection with the value(s) like a setdefault dict.
-    /// </summary>
-    public static void AddOrAppend<TKey, TValueCollection, TValue>(this IDictionary<TKey, TValueCollection> dictionary, TKey key, ICollection<TValue> values) where TValueCollection : ICollection<TValue>, new()
-    {
-      if (dictionary.ContainsKey(key) && dictionary[key] != null)
-      {
-        dictionary[key].AddUnique(values);
-        return;
-      }
-
-      dictionary[key] = new TValueCollection();
-      foreach (TValue value in values)
-      {
-        dictionary[key].Add(value);
-      }
-    }
-
-    /// <summary>
     /// Add an element to the list if it does not already contain the element.
     /// </summary>
     public static void AddUnique<T>(this ICollection<T> list, T element)
@@ -148,33 +116,6 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Gets the value associated with the specified key.
-    /// </summary>
-    [return: NotNullIfNotNull("defaultValue")]
-    public static TValue? Get<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue? defaultValue = default)
-      => key == null || !dictionary.TryGetValue(key, out var value) ? defaultValue : value;
-
-    /// <summary>
-    /// Gets the value associated with the specified key, or returns a default after adding it.
-    /// </summary>
-    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TValue> valueAdder)
-    {
-      if (key == null || !dictionary.TryGetValue(key, out var value))
-      {
-        return dictionary[key] = valueAdder();
-      }
-      // else
-      return value;
-    }
-
-    /// <summary>
-    /// Gets the value associated with the specified key and box/un-box correctly.
-    /// </summary>
-    [return: NotNullIfNotNull("defaultValue")]
-    public static TTarget? GetWithConversion<TTarget, TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TTarget? defaultValue = default) where TTarget : TValue
-      => (TTarget?)Convert.ChangeType(Get(dictionary, key, defaultValue), typeof(TTarget?), CultureInfo.InvariantCulture);
-
-    /// <summary>
     /// Inserts a new value into a sorted collection.
     /// </summary>
     /// <typeparam name="T">The type of collection values, where the type implements IComparable of itself</typeparam>
@@ -262,7 +203,7 @@ namespace SplatTagCore
     /// Remove multiple indices
     /// With thanks to https://stackoverflow.com/questions/63495264/how-can-i-efficiently-remove-elements-by-index-from-a-very-large-list
     /// </summary>
-    internal static void RemoveAtRange<T>(this List<T> values, List<int> indices)
+    public static void RemoveAtRange<T>(this List<T> values, List<int> indices)
     {
       if (indices.Count == 0)
       {

@@ -3,6 +3,10 @@
     "SplatTagConsole": {
       "commandName": "Project"
     },
+    "MergeOnly": {
+      "commandName": "Project",
+      "commandLineArgs": "--verbose --patch \"merge\""
+    },
     "RebuildDatabase": {
       "commandName": "Project",
       "commandLineArgs": "--verbose --rebuild \"%appdata%\\SplatTag\\sources_new.yaml\""

@@ -30,22 +30,22 @@ namespace SplatTagCore
     /// <summary>
     /// The built-in source, for use in objects that are pre-defined by the program code.
     /// </summary>
-    public static readonly Source BuiltinSource = new Source("0001-01-02-Built-in-Source");
+    public static readonly Source BuiltinSource = new("0001-01-02-Built-in-Source");
 
     /// <summary>
     /// The manual entry source, for use in objects that are defined by manual user entry.
     /// </summary>
-    public static readonly Source ManualSource = new Source("0001-01-03-Manual-Entry-Source");
+    public static readonly Source ManualSource = new("0001-01-03-Manual-Entry-Source");
 
     /// <summary>
     /// The <see cref="Name"/> object for an <see cref="UNKNOWN_PLAYER"/>.
     /// </summary>
-    public static readonly Name UnknownPlayerName = new Name(UNKNOWN_PLAYER, BuiltinSource);
+    public static readonly Name UnknownPlayerName = new(UNKNOWN_PLAYER, BuiltinSource);
 
     /// <summary>
     /// The <see cref="Name"/> object for an <see cref="UNKNOWN_TEAM"/>.
     /// </summary>
-    public static readonly Name UnknownTeamName = new Name(UNKNOWN_TEAM, BuiltinSource);
+    public static readonly Name UnknownTeamName = new(UNKNOWN_TEAM, BuiltinSource);
 
     /// <summary>
     /// Unknown or not set datetime ticks.
@@ -55,6 +55,11 @@ namespace SplatTagCore
     /// <summary>
     /// Unknown or not set datetime.
     /// </summary>
-    public static readonly DateTime UnknownDateTime = new DateTime(UNKNOWN_DATE_TIME_TICKS);
+    public static readonly DateTime UnknownDateTime = new(UNKNOWN_DATE_TIME_TICKS);
+
+    /// <summary>
+    /// The count before a parallel operation is done instead of in-line.
+    /// </summary>
+    public const int PARALLEL_THRESHOLD = 15;
   }
 }

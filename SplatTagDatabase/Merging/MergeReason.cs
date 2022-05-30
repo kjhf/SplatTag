@@ -4,6 +4,8 @@ namespace SplatTagDatabase.Merging
 {
   public record MergeReason
   {
+    internal const string SIMILARITY_CONSTANT = "with similarity score";
+
     /// <summary> The reason for the merge. </summary>
     public FilterOptions Flags { get; }
 
@@ -16,7 +18,7 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Overridden ToString. Returns the <see cref="Flags"/> and <see cref="Similarity"/>.
     /// </summary>
-    public override string ToString() => $"{Flags}\twith similarity score\t{Similarity}";
+    public override string ToString() => $"{Flags}\t{SIMILARITY_CONSTANT}\t{Similarity}";
 
     /// <summary>
     /// Create a new <see cref="MergeReason"/> with the given <see cref="FilterOptions"/>.

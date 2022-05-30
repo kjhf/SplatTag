@@ -127,19 +127,18 @@ namespace SplatTagDatabase.Merging
       mergeReason = new MergeReason(info.GetValueOrDefault("R", FilterOptions.None));
     }
 
-    internal void Migrate(ISplatTagCoreObject? newMergeResult)
+    internal void Migrate(ISplatTagCoreObject newMergeResult)
     {
       if (!IsMerge) throw new InvalidOperationException("This is not a merge.");
       if (newMergeResult == null) throw new ArgumentNullException(nameof(newMergeResult));
       if (ReferenceEquals(newMergeResult, referenceItemKept))
       {
         logger.Warn("Tried to migrate a merge record to the same item.");
+        return;
       }
-      else
-      {
-        logger.ConditionalDebug($"Migrating kept merge record: was {referenceItemKept?.Id} now {newMergeResult.Id}");
-        referenceItemKept = newMergeResult;
-      }
+
+      logger.ConditionalDebug($"Migrating kept merge record: was {referenceItemKept?.Id} now {newMergeResult.Id}");
+      referenceItemKept = newMergeResult;
     }
 
     // Serialize

@@ -25,7 +25,7 @@ namespace SplatTagUnitTests
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     /// <summary>
-    /// Test the <see cref="Merger.FinalisePlayers(IDictionary{uint, Player})"/> function.
+    /// Test the <see cref="CoreMergeHandler.MergeKnown()"/> function.
     /// </summary>
     [TestMethod]
     public void FinalisePlayersTest()
@@ -110,10 +110,11 @@ namespace SplatTagUnitTests
         "Expected names to be merged.");
       Assert.AreEqual(team1, actualP3.CurrentTeam, "Expected current team (p4 -> p3). p3 Teams: [" + string.Join(", ", actualP3.Teams) + "]");
       Assert.AreEqual(1, actualP3.Teams.Count, "Expected current team to be merged. p3 Teams: [" + string.Join(", ", actualP3.Teams) + "]");
+      Assert.IsFalse(result.Length > 2, "Expected no more than 2 iterations, but got " + result.Length);
     }
 
     /// <summary>
-    /// Test the Merger.FinaliseTeams(...) function.
+    /// Test the <see cref="CoreMergeHandler.MergeKnown()"/> function.
     /// </summary>
     [TestMethod]
     public void FinaliseTeamsTest()
@@ -167,17 +168,17 @@ namespace SplatTagUnitTests
       CoreMergeHandler mergeHandler = new();
       mergeHandler.AddPlayers(playersIncoming);
       mergeHandler.AddTeams(teamsIncoming);
-      var results = mergeHandler.MergeKnown();
+      var result = mergeHandler.MergeKnown();
 
-      List<Player> players = results.Last().ResultingPlayers.ToList();
-      List<Team> teams = results.Last().ResultingTeams.ToList();
+      List<Player> players = result.Last().ResultingPlayers.ToList();
+      List<Team> teams = result.Last().ResultingTeams.ToList();
 
       // Dump the merge log
       logger.Info("Merge Log:");
-      for (int i = 0; i < results.Length; i++)
+      for (int i = 0; i < result.Length; i++)
       {
         logger.Info("Iteration #" + (i + 1));
-        results[i].ToLog();
+        result[i].ToLog();
       }
 
       DumpCoreObj("Players after merge:", players);
@@ -213,6 +214,82 @@ namespace SplatTagUnitTests
       Assert.AreEqual(p4.CurrentTeam, mergedT5Team.Id, "Expected p4's current team to now be t5");
       Assert.AreEqual(1, p5.Teams.Count, $"Expected p5's number of teams to now be 1, actually: {IdsToString(p5.Teams)}");
       Assert.AreEqual(p5.CurrentTeam, mergedT5Team.Id, "Expected p5's current team to now be t5");
+      Assert.IsFalse(result.Length > 2, "Expected no more than 2 iterations, but got " + result.Length);
+    }
+
+    /// <summary>
+    /// Test the <see cref="CoreMergeHandler.MergeKnown()"/> function with arbitrary values.
+    /// </summary>
+    [TestMethod]
+    public void FinaliseCoreObjectsRandomlyTest()
+    {
+      const int TO_GENERATE = 20;
+      Random rand = new();
+
+      // Create some random players
+      var playersIncoming = new List<Player>();
+      for (int i = 0; i < TO_GENERATE; i++)
+      {
+        playersIncoming.Add(ArbitraryDataExtensions.GetRandomCoreObject<Player>());
+      }
+
+      // Create some random teams
+      var teamsIncoming = new List<Team>();
+      for (int i = 0; i < TO_GENERATE; i++)
+      {
+        teamsIncoming.Add(ArbitraryDataExtensions.GetRandomCoreObject<Team>());
+      }
+
+      // Set the player's teams to the incoming teams
+      foreach (var player in playersIncoming)
+      {
+        player.AddTeams(teamsIncoming[rand.Next(teamsIncoming.Count)].Id, Builtins.BuiltinSource);
+      }
+
+      // Ensure at least one merge
+      for (int i = 0; i < playersIncoming.Count; i++)
+      {
+        if (i == 0 || rand.Next() % 4 == 0)
+        {
+          Player? player = playersIncoming[i];
+          int index = rand.Next(playersIncoming.Count);
+          while (index == i)
+          {
+            index = rand.Next(playersIncoming.Count);
+          }
+          player.AddName(playersIncoming[index].Name.Value, playersIncoming[index].Name.Sources[0]);
+          player.AddBattlefyInformation(
+            playersIncoming[index].BattlefySlugs.First().Value,
+            playersIncoming[index].BattlefyNames.First().Value,
+            playersIncoming[index].BattlefyIds.First().Value,
+            playersIncoming[index].BattlefySlugs.First().Sources[0]);
+        }
+      }
+
+      // Perform the merge
+      DumpCoreObj("playersIncoming:", playersIncoming);
+      DumpCoreObj("teamsIncoming:", teamsIncoming);
+      CoreMergeHandler mergeHandler = new();
+      mergeHandler.AddPlayers(playersIncoming);
+      mergeHandler.AddTeams(teamsIncoming);
+      var result = mergeHandler.MergeKnown();
+
+      // Dump the merge log
+      logger.Info("Merge Log:");
+      for (int i = 0; i < result.Length; i++)
+      {
+        logger.Info("Iteration #" + (i + 1));
+        result[i].ToLog();
+      }
+
+      Assert.IsTrue(result.Length > 0, "Nothing merged or MergeKnown failed.");
+      List<Player> players = result.Last().ResultingPlayers.ToList();
+      List<Team> teams = result.Last().ResultingTeams.ToList();
+
+      DumpCoreObj("Players after merge:", players);
+      DumpCoreObj("Teams after merge:", teams);
+
+      Assert.IsTrue(result.Length <= CoreMergeHandler.MAX_FINALISE_LOOPS, "Too many iterations: " + result.Length);
     }
 
     private static void DumpCoreObj(string label, IEnumerable<ISplatTagCoreObject> sourceable)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SplatTagCore.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;

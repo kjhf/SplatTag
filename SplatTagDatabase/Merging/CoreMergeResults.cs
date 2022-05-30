@@ -11,6 +11,9 @@ namespace SplatTagDatabase.Merging
   [Serializable]
   public record CoreMergeResults : ISerializable
   {
+    internal const string INTO_CONSTANT = "Into";
+    internal const string BECAUSE_IT_MATCHED_CONSTANT = "because it matched:";
+    internal const string SIMILARITY_CONSTANT = MergeReason.SIMILARITY_CONSTANT;
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     /// <summary>
@@ -29,9 +32,14 @@ namespace SplatTagDatabase.Merging
     public IEnumerable<MergeRecord> AddedRecords => records.Where(r => r.ChangeType == MergeChangeEnum.Added);
 
     /// <summary>
+    /// Get an array that contains all of the resulting items including discarded.
+    /// </summary>
+    public IEnumerable<ISplatTagCoreObject> AllKnownItems => records.Select(r => r.ResultantItem).Concat(DiscardedItems);
+
+    /// <summary>
     /// Get an array that contains all of the resulting items.
     /// </summary>
-    public IEnumerable<ISplatTagCoreObject> AllItems => records.Select(r => r.ResultantItem).Distinct();
+    public IEnumerable<ISplatTagCoreObject> AllResultingItems => records.Select(r => r.ResultantItem).Distinct();
 
     /// <summary>
     /// Get if any of the records are merges.
@@ -51,12 +59,12 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Get the final players.
     /// </summary>
-    public IEnumerable<Player> ResultingPlayers => AllItems.OfType<Player>();
+    public IEnumerable<Player> ResultingPlayers => AllResultingItems.OfType<Player>();
 
     /// <summary>
     /// Get the final teams.
     /// </summary>
-    public IEnumerable<Team> ResultingTeams => AllItems.OfType<Team>();
+    public IEnumerable<Team> ResultingTeams => AllResultingItems.OfType<Team>();
 
     /// <summary>
     /// Items that have been updated by a merge.
@@ -145,17 +153,7 @@ namespace SplatTagDatabase.Merging
     public void ToLog(LogLevel? logLevel = null)
     {
       var level = logLevel ?? LogLevel.Info;
-      foreach (var record in records)
-      {
-        if (record.IsMerge)
-        {
-          logger.Log(level, $"Merged\t{record.MergedItemId}\t({record.MergedItem})\tinto\t{record.ResultantItemId}\t({record.ResultantItem})\tbecause it matched:\t{record.mergeReason}");
-        }
-        else
-        {
-          logger.Log(level, $"{record.ChangeType}\t{record.ResultantItemId}");
-        }
-      }
+      logger.Log(level, ToStringBuilder());
     }
 
     /// <summary>
@@ -168,11 +166,29 @@ namespace SplatTagDatabase.Merging
       {
         if (record.IsMerge)
         {
-          sb.Append("Merged\t").Append(record.MergedItemId).Append("\t(").Append(record.MergedItem).Append(")\tinto\t").Append(record.ResultantItemId).Append("\t(").Append(record.ResultantItem).Append(")\tbecause it matched:\t").Append(record.mergeReason).AppendLine();
+          sb.Append(record.ChangeType)
+            .Append('\t')
+            .Append(record.MergedItemId)
+            .Append("\t(")
+            .Append(record.MergedItem)
+            .Append(")\t")
+            .Append(INTO_CONSTANT)
+            .Append('\t')
+            .Append(record.ResultantItemId)
+            .Append("\t(")
+            .Append(record.ResultantItem)
+            .Append(")\t")
+            .Append(BECAUSE_IT_MATCHED_CONSTANT)
+            .Append('\t')
+            .Append(record.mergeReason)
+            .AppendLine();
         }
         else
         {
-          sb.Append(record.ChangeType).Append('\t').Append(record.ResultantItemId).AppendLine();
+          sb.Append(record.ChangeType)
+            .Append('\t')
+            .Append(record.ResultantItemId)
+            .AppendLine();
         }
       }
       return sb;

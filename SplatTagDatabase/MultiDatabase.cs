@@ -139,6 +139,9 @@ namespace SplatTagDatabase
         }
       }
 
+      logger.Trace("Dumping state before final merge...");
+      mergeHandler.DumpState(importedSources);
+
       var mergeResults = mergeHandler.MergeKnown();
       if (mergeResults.Length == 0)
       {
@@ -146,34 +149,7 @@ namespace SplatTagDatabase
         return false;
       }
 
-      try
-      {
-        string filePath = Path.Combine(SplatTagControllerFactory.GetDefaultPath(), "MergeLog-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".log");
-        logger.Trace("Saving to " + filePath);
-
-        var creationWaitTask = Task.Run(() =>
-        {
-          // Wait until the log is written before continuing so the program has finished writing before exiting.
-          PathUtils.WaitForFileCreatedAndReady(filePath);
-        });
-
-        var savingTask = Task.Run(() =>
-        {
-          // Write merge log
-          StringBuilder sb = new();
-          sb.AppendJoin('\n', mergeResults.Select(r => r.ToStringBuilder()));
-          File.WriteAllText(filePath, sb.ToString(), new UTF8Encoding(false)); // UTF-8 no BOM
-        });
-
-        Task.WaitAll(creationWaitTask, savingTask);
-        logger.Trace("creationWaitTask: " + creationWaitTask.Status + ", savingTask: " + savingTask.Status);
-      }
-      catch (Exception ex)
-      {
-        string error = $"Unable to save the {nameof(MultiDatabase)} merge log because of an exception: {ex}";
-        logger.Error(ex, error);
-      }
-
+      PathUtils.DumpLogSafely("MergeLog", () => CoreMergeHandler.GetMergeLogContents(mergeResults));
       var last = mergeResults.Last();
       _players = last.ResultingPlayers.ToArray();
       _teams = last.ResultingTeams.ToDictionary(t => t.Id);

@@ -36,7 +36,21 @@ namespace SplatTagConsole
 
     public static async Task Main(string[] args)
     {
-      if (!args.Contains("--rebuild"))
+      AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+      {
+        if (e.ExceptionObject is Exception exception)
+        {
+          logger.Error(exception, "Unhandled exception: " + exception);
+          PathUtils.DumpLogSafely("crash", () => new[] { exception.ToString() });
+        }
+        else
+        {
+          logger.Error("Unhandled exception: " + e.ExceptionObject);
+          PathUtils.DumpLogSafely("crash", () => new[] { e.ExceptionObject?.ToString() ?? "null" });
+        }
+      };
+
+      if (!args.Contains("--rebuild") && !args.Contains("--patch"))
       {
         SplatTagControllerFactory.EnsureInitialised(splatTagController);
       }
@@ -183,7 +197,7 @@ namespace SplatTagConsole
           options.FilterOptions = FilterOptions.Default;
         }
 
-        CommandLineResult result = new CommandLineResult
+        var result = new CommandLineResult
         {
           Message = "OK",
           Options = options
@@ -215,6 +229,12 @@ namespace SplatTagConsole
           if (patch.Equals(string.Empty))
           {
             result.Message = "Patch specified but no patch sources file specified. Aborting.";
+          }
+          else if (patch == "merge")
+          {
+            // Merge only
+            var dir = SplatTagControllerFactory.GetDefaultPath();
+            SplatTagControllerFactory.MergeJSONDatabase(dir);
           }
           else if (File.Exists(patch))
           {

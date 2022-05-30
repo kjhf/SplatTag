@@ -14,8 +14,21 @@ namespace SplatTagDatabase
 {
   public class SplatTagJsonSnapshotDatabase : ISplatTagDatabase
   {
-    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+    private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
     private static readonly HashSet<string> errorMessagesReported = new();
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+    private readonly string saveDirectory;
+    private List<Player> _players = new();
+    private Dictionary<string, Source> _sources = new();
+    private Dictionary<Guid, Team> _teams = new();
+    private string? playersSnapshotFile = null;
+    private string? sourcesSnapshotFile = null;
+    private string? teamsSnapshotFile = null;
+
+    public bool Loaded => _sources.Count > 0;
+    public IReadOnlyList<Player> Players => _players.Count == 0 ? Array.Empty<Player>() : _players;
+    public IReadOnlyDictionary<string, Source> Sources => _sources;
+    public IReadOnlyDictionary<Guid, Team> Teams => _teams;
 
     public static readonly Func<JsonSerializerSettings> JsonConvertDefaultSettings =
       () =>
@@ -36,22 +49,6 @@ namespace SplatTagDatabase
           TypeNameHandling = TypeNameHandling.Auto
         };
 
-    private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
-
-    private readonly string saveDirectory;
-    private string? playersSnapshotFile = null;
-    private string? teamsSnapshotFile = null;
-    private string? sourcesSnapshotFile = null;
-
-    private List<Player> _players = new();
-    private Dictionary<Guid, Team> _teams = new();
-    private Dictionary<string, Source> _sources = new();
-
-    public IReadOnlyList<Player> Players => _players.Count == 0 ? Array.Empty<Player>() : _players;
-    public IReadOnlyDictionary<Guid, Team> Teams => _teams;
-    public IReadOnlyDictionary<string, Source> Sources => _sources;
-    public bool Loaded => _sources.Count > 0;
-
     public SplatTagJsonSnapshotDatabase(string saveDirectory)
     {
       this.saveDirectory = saveDirectory ?? throw new ArgumentNullException(nameof(saveDirectory));
@@ -71,6 +68,17 @@ namespace SplatTagDatabase
     {
       // Check in the save directory for the latest snapshot.
       return new DirectoryInfo(dir).GetFiles(SNAPSHOT_FORMAT).OrderByDescending(f => f.LastWriteTime);
+    }
+
+    /// <summary>
+    /// Save snapshot files of Players, Teams, and Sources to the given directory.
+    /// </summary>
+    public static void SaveSnapshots(string saveDirectory, IEnumerable<Player>? players, IEnumerable<Team>? teams, IEnumerable<Source>? sources)
+    {
+      Task savePlayersTask = Task.Run(async () => await SaveSnapshotAsync("Players", saveDirectory, players));
+      Task saveTeamsTask = Task.Run(async () => await SaveSnapshotAsync("Teams", saveDirectory, teams));
+      Task saveSourcesTask = Task.Run(async () => await SaveSnapshotAsync("Sources", saveDirectory, sources));
+      Task.WaitAll(savePlayersTask, saveTeamsTask, saveSourcesTask);
     }
 
     /// <summary>
@@ -123,6 +131,27 @@ namespace SplatTagDatabase
       return Load(playersSnapshotFile, teamsSnapshotFile, sourcesSnapshotFile);
     }
 
+    /// <summary>
+    /// Save the current state of the database to its save directory.
+    /// </summary>
+    public SplatTagJsonSnapshotDatabase Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams, IEnumerable<Source> saveSources)
+    {
+      SaveSnapshots(saveDirectory, savePlayers, saveTeams, saveSources);
+      return this;
+    }
+
+    /// <summary>
+    /// Saves the database using its internal player, team, and source values.
+    /// </summary>
+    internal SplatTagJsonSnapshotDatabase SaveInternal()
+    {
+      if (!Loaded)
+      {
+        throw new InvalidOperationException("Cannot save an unloaded database.");
+      }
+      return Save(_players, _teams.Values, _sources.Values);
+    }
+
     private static (Player[], Team[], Dictionary<string, Source>) Load(string? playersSnapshotFile, string? teamsSnapshotFile, string? sourcesSnapshotFile)
     {
       if (playersSnapshotFile == null || teamsSnapshotFile == null || sourcesSnapshotFile == null)
@@ -130,7 +159,7 @@ namespace SplatTagDatabase
 
       try
       {
-        WinApi.TryTimeBeginPeriod(1);
+        WinApi.TryTimeBeginPeriod();
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -166,16 +195,16 @@ namespace SplatTagDatabase
       finally
       {
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.Default;
-        WinApi.TryTimeEndPeriod(1);
+        WinApi.TryTimeEndPeriod();
       }
     }
 
     private static T[] LoadSnapshot<T>(string filePath, JsonSerializerSettings settings, int capacityHint) where T : class
     {
-      List<T> result = new List<T>(capacityHint);
+      var result = new List<T>(capacityHint);
       var serializer = JsonSerializer.Create(settings);
       using (StreamReader file = File.OpenText(filePath))
-      using (JsonTextReader reader = new JsonTextReader(file))
+      using (var reader = new JsonTextReader(file))
       {
         if (file.BaseStream.Length <= 2) // Empty file or [] or {}
         {
@@ -209,87 +238,26 @@ namespace SplatTagDatabase
       return result.ToArray();
     }
 
-    /// <summary>
-    /// Saves the database using its internal player, team, and source values.
-    /// </summary>
-    internal SplatTagJsonSnapshotDatabase SaveInternal()
+    private static async Task SaveSnapshotAsync(string title, string saveDirectory, IEnumerable<object>? contents)
     {
-      if (!Loaded)
+      if (contents == null)
       {
-        throw new InvalidOperationException("Cannot save an unloaded database.");
+        return;
       }
-      return Save(_players, _teams.Values, _sources.Values);
-    }
 
-    /// <summary>
-    /// Save the current state of the database to its save directory.
-    /// </summary>
-    public SplatTagJsonSnapshotDatabase Save(IEnumerable<Player> savePlayers, IEnumerable<Team> saveTeams, IEnumerable<Source> saveSources)
-    {
-      SaveSnapshots(saveDirectory, savePlayers, saveTeams, saveSources);
-      return this;
-    }
-
-    /// <summary>
-    /// Save snapshot files of Players, Teams, and Sources to the given directory.
-    /// </summary>
-    public static void SaveSnapshots(string saveDirectory, IEnumerable<Player> players, IEnumerable<Team> teams, IEnumerable<Source> sources)
-    {
-      Task savePlayersTask = Task.Run(async () =>
+      try
       {
-        try
-        {
-          // Write players
-          string filePath = Path.Combine(saveDirectory, "Snapshot-Players-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json");
-          Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
+        string filePath = Path.Combine(saveDirectory, "Snapshot-" + title + "-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json");
+        Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
-          using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(players, Formatting.None)).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-          string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} players because of an exception: {ex}";
-          logger.Error(ex, error);
-        }
-      });
-
-      Task saveTeamsTask = Task.Run(async () =>
+        using TextWriter file = new StreamWriter(filePath, false, outputEnc);
+        await file.WriteLineAsync(JsonConvert.SerializeObject(contents, Formatting.None)).ConfigureAwait(false);
+      }
+      catch (Exception ex)
       {
-        try
-        {
-          // Write teams
-          string filePath = Path.Combine(saveDirectory, "Snapshot-Teams-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json");
-          Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
-
-          using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(teams, Formatting.None)).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-          string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} teams because of an exception: {ex}";
-          logger.Error(ex, error);
-        }
-      });
-
-      Task saveSourcesTask = Task.Run(async () =>
-      {
-        try
-        {
-          // Write sources
-          string filePath = Path.Combine(saveDirectory, "Snapshot-Sources-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".json");
-          Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
-
-          using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(sources, Formatting.None)).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-          string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} sources because of an exception: {ex}";
-          logger.Error(ex, error);
-        }
-      });
-
-      Task.WaitAll(savePlayersTask, saveTeamsTask, saveSourcesTask);
+        string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} {title} because of an exception: {ex}";
+        logger.Error(ex, error);
+      }
     }
   }
 }

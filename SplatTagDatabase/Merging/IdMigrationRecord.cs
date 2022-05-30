@@ -1,5 +1,6 @@
 ﻿using NLog;
 using SplatTagCore;
+using SplatTagCore.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,7 +102,7 @@ namespace SplatTagDatabase.Merging
       // For each team, correct the id as specified.
       // If we have a lot of work, fire up a parallel for-each, otherwise just do a regular one.
       void CorrectTeamIdsAction(Player importPlayer) => importPlayer.CorrectTeamIds(teamsMergeResult);
-      if (referencePlayers.Count > CoreMergeHandler.PARALLEL_THRESHOLD)
+      if (referencePlayers.Count > Builtins.PARALLEL_THRESHOLD)
       {
         Parallel.ForEach(referencePlayers, CorrectTeamIdsAction);
       }
@@ -132,8 +133,11 @@ namespace SplatTagDatabase.Merging
       {
         if (FinalMergedIds.TryGetValue(record.ResultantItemId, out var newResultId))
         {
-          var newResult = prep.AllItems.FirstOrDefault(item => item.Id == newResultId);
-          record.Migrate(newResult);
+          var newResult = prep.AllKnownItems.FirstOrDefault(item => item.Id == newResultId);
+          if (newResult != null)
+          {
+            record.Migrate(newResult);
+          }
         }
       }
     }

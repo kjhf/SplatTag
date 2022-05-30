@@ -1,6 +1,9 @@
 ﻿using NLog;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SplatTagDatabase
 {
@@ -79,6 +82,41 @@ namespace SplatTagDatabase
 
           logger.Trace("Setting env key " + parts[0]);
           Environment.SetEnvironmentVariable(parts[0], parts[1]);
+        }
+      }
+    }
+
+    /// <summary>
+    /// Write a log to file with the current date, and with the given contents, and synchronously wait for the file to be written.
+    /// Also catches errors.
+    /// </summary>
+    public static void DumpLogSafely(string logTitle, Func<IEnumerable<string>> contentsFn)
+    {
+      try
+      {
+        string filePath = Path.Combine(SplatTagControllerFactory.GetDumpPath(), logTitle + DateTime.Now.ToString("-yyyy-MM-dd-HH-mm-ss") + ".log");
+        logger.Trace("Saving log to " + filePath);
+
+        // Wait until the log is written before continuing so the program has finished writing before exiting.
+        var creationWaitTask = Task.Run(() => WaitForFileCreatedAndReady(filePath));
+        var savingTask = Task.Run(() => StreamLog(filePath));
+
+        Task.WaitAll(creationWaitTask, savingTask);
+        logger.Trace($"{logTitle}: creationWaitTask: {creationWaitTask.Status}, savingTask: {savingTask.Status}");
+      }
+      catch (Exception ex)
+      {
+        string error = $"Unable to save the {logTitle} log because of an exception: {ex}";
+        logger.Error(ex, error);
+      }
+
+      void StreamLog(string filePath)
+      {
+        // Stream the merge logs' StringBuilders to file
+        using StreamWriter writer = new(filePath, false, new UTF8Encoding(false)); // UTF-8 no BOM
+        foreach (var line in contentsFn())
+        {
+          writer.WriteLine(line);
         }
       }
     }

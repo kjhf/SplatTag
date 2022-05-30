@@ -1,5 +1,6 @@
 ﻿using NLog;
 using SplatTagCore;
+using SplatTagCore.Extensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,49 +11,97 @@ namespace SplatTagDatabase.Merging
 {
   public class CoreMergeHandler : ICoreMergeHandler
   {
-    internal const int PARALLEL_THRESHOLD = 15;
-    private const int MAX_FINALISE_LOOPS = 10;
+    internal const int MAX_FINALISE_LOOPS = 10;
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    private readonly List<Player> _players = new();
-    private readonly List<Team> _teams = new();
+    private readonly Dictionary<Guid, Player> _players = new();
+    private readonly Dictionary<Guid, Team> _teams = new();
     private readonly IdMigrationHandler _migrationHandler = new();
 
+    /// <summary>
+    /// Merge a source into the merge handler.
+    /// </summary>
     public CoreMergeResults MergeSource(Source source) => MergeOnce(source.Players, source.Teams);
 
+    /// <summary>
+    /// Final merge to merge all known players and teams, including migrations.
+    /// </summary>
     public CoreMergeResults[] MergeKnown()
     {
-      List<CoreMergeResults> finalResults = new(capacity: MAX_FINALISE_LOOPS);
-      logger.ConditionalTrace($"{nameof(MergeKnown)} called with {_players.Count} players and {_teams.Count} teams.");
       try
       {
-        bool loop = true;
-        for (int iteration = 1; loop; iteration++)
+        WinApi.TryTimeBeginPeriod();
+
+        List<CoreMergeResults> finalResults = new(capacity: MAX_FINALISE_LOOPS);
+        logger.ConditionalTrace($"{nameof(MergeKnown)} called with {_players.Count} players and {_teams.Count} teams.");
+        try
         {
-          if (iteration >= MAX_FINALISE_LOOPS)
+          bool loop = true;
+          for (int iteration = 1; loop; iteration++)
           {
-            string error = $"{nameof(MergeKnown)}: Too many iterations. Aborting.";
-            logger.Error(error);
-            throw new NotImplementedException(error);
+            if (iteration >= MAX_FINALISE_LOOPS)
+            {
+              string error = $"{nameof(MergeKnown)}: Too many iterations. Aborting.";
+              logger.Error(error);
+              throw new NotImplementedException(error);
+            }
+
+            logger.Info($"Performing final merge (iteration #{iteration})...");
+            var results = MergeOnce(_players.Values, _teams.Values);
+            finalResults.Add(results);
+            loop = results.AnyMerged;
+            logger.Trace($"{nameof(MergeKnown)}: AnyMerged={results.AnyMerged}, Count={results.Count}, Added={results.AddedRecords.Count()}, Merged={results.MergedRecords.Count()}.");
           }
-
-          logger.Info($"Performing final merge (iteration #{iteration})...");
-          var results = MergeOnce(_players.ToArray(), _teams.ToArray());
-          finalResults.Add(results);
-          loop = results.AnyMerged;
-          logger.Trace($"{nameof(MergeKnown)}: AnyMerged={results.AnyMerged}, Count={results.Count}, Added={results.AddedRecords.Count()}, Merged={results.MergedRecords.Count()}.");
         }
+        catch (Exception ex)
+        {
+          logger.Warn(ex, $"Failed {nameof(MergeKnown)}. Continuing anyway. {ex}");
+        }
+        return finalResults.ToArray();
       }
-      catch (Exception ex)
+      finally
       {
-        logger.Warn(ex, $"Failed {nameof(MergeKnown)}. Continuing anyway. {ex}");
+        WinApi.TryTimeEndPeriod(1);
       }
-
-      return finalResults.ToArray();
     }
 
+    /// <summary>
+    /// Merge a player list into the handler.
+    /// </summary>
     internal CoreMergeResults AddPlayers(ICollection<Player> players) => MergeOnce(players.ToArray(), null);
 
+    /// <summary>
+    /// Merge a team list into the handler.
+    /// </summary>
     internal CoreMergeResults AddTeams(ICollection<Team> teams) => MergeOnce(null, teams.ToArray());
+
+    /// <summary>
+    /// Clears current state and sets the internal state to the given players and teams without merge.
+    /// </summary>
+    internal void SetInternalNoMerge(IEnumerable<Player>? players, IEnumerable<Team>? teams)
+    {
+      if (players != null)
+      {
+        _players.Clear();
+        _players.AddRangeFromValues(players, (player) => player.Id);
+      }
+
+      if (teams != null)
+      {
+        _teams.Clear();
+        _teams.AddRangeFromValues(teams, (team) => team.Id);
+      }
+    }
+
+    /// <summary>
+    /// Yield return ToStringBuilder strings for the given merge results.
+    /// </summary>
+    internal static IEnumerable<string> GetMergeLogContents(CoreMergeResults[] mergeResults)
+    {
+      foreach (var mergeLogIteration in mergeResults)
+      {
+        yield return mergeLogIteration.ToStringBuilder().ToString();
+      }
+    }
 
     private CoreMergeResults MergeOnce(ICollection<Player>? players, ICollection<Team>? teams)
     {
@@ -61,13 +110,19 @@ namespace SplatTagDatabase.Merging
 
       if (players != null)
       {
+        logger.Trace($"Prepping merge of {players.Count} players...");
         playerResults = PrepMergePlayers(players);
+
+        logger.Trace($"Performing merge of {playerResults.Count} prepped players...");
         PerformPreppedMerge(playerResults);
       }
 
       if (teams != null)
       {
+        logger.Trace($"Prepping merge of {teams.Count} teams...");
         teamResults = PrepMergeTeams(teams);
+
+        logger.Trace($"Performing merge of {teamResults.Count} prepped teams...");
         PerformPreppedMerge(teamResults);
       }
 
@@ -81,7 +136,7 @@ namespace SplatTagDatabase.Merging
         return new CoreMergeResults(Array.Empty<MergeRecord>());
       }
 
-      return players.Count > PARALLEL_THRESHOLD ?
+      return players.Count > Builtins.PARALLEL_THRESHOLD ?
         PrepMergePlayersParallel(players) :
         PrepMergePlayersSerial(players);
     }
@@ -92,7 +147,7 @@ namespace SplatTagDatabase.Merging
 
       foreach (var player in players)
       {
-        records.Add(TryFindPlayer(player, _players));
+        records.Add(TryFindPlayer(player, _players.Values));
       }
 
       return new CoreMergeResults(records);
@@ -104,7 +159,7 @@ namespace SplatTagDatabase.Merging
 
       Parallel.ForEach(players, player =>
       {
-        records.Add(TryFindPlayer(player, _players));
+        records.Add(TryFindPlayer(player, _players.Values));
       });
 
       return new CoreMergeResults(records);
@@ -117,7 +172,7 @@ namespace SplatTagDatabase.Merging
         return new CoreMergeResults(Array.Empty<MergeRecord>());
       }
 
-      return teams.Count > PARALLEL_THRESHOLD ?
+      return teams.Count > Builtins.PARALLEL_THRESHOLD ?
         PrepMergeTeamsParallel(teams) :
         PrepMergeTeamsSerial(teams);
     }
@@ -128,7 +183,7 @@ namespace SplatTagDatabase.Merging
 
       foreach (var team in teams)
       {
-        records.Add(TryFindTeam(team, _teams, _players));
+        records.Add(TryFindTeam(team, _teams.Values, _players.Values));
       }
 
       return new CoreMergeResults(records);
@@ -140,7 +195,7 @@ namespace SplatTagDatabase.Merging
 
       Parallel.ForEach(teams, team =>
       {
-        records.Add(TryFindTeam(team, _teams, _players));
+        records.Add(TryFindTeam(team, _teams.Values, _players.Values));
       });
 
       return new CoreMergeResults(records);
@@ -149,8 +204,12 @@ namespace SplatTagDatabase.Merging
     private bool PerformPreppedMerge(CoreMergeResults prep)
     {
       // First, prep the migrations (and the final ids for the results)
+      logger.Trace("Prepping migrations...");
       _migrationHandler.PrepMigrations(prep);
 
+      List<Guid> playersToDiscard = new();
+      List<Guid> teamsToDiscard = new();
+      logger.Trace("Performing merges...");
       foreach (var record in prep.MergedRecords)
       {
         record.PerformMerge();
@@ -158,11 +217,17 @@ namespace SplatTagDatabase.Merging
         var discardedItem = record.MergedItem;
         if (discardedItem is Player player)
         {
-          _players.Remove(player);
+          if (_players.ContainsKey(player.Id))
+          {
+            playersToDiscard.Add(player.Id);
+          }
         }
         else if (discardedItem is Team team)
         {
-          _teams.Remove(team);
+          if (_teams.ContainsKey(team.Id))
+          {
+            teamsToDiscard.Add(team.Id);
+          }
         }
         else
         {
@@ -170,35 +235,46 @@ namespace SplatTagDatabase.Merging
         }
       }
 
+      logger.Trace($"Discarding {playersToDiscard.Count} players and {teamsToDiscard.Count} teams.");
+      playersToDiscard.ForEach(p => _players.Remove(p));
+      teamsToDiscard.ForEach(t => _teams.Remove(t));
+
+      logger.Trace("Adding new items...");
       foreach (var item in prep.AddedItems)
       {
         AddItem(item);
       }
 
-      bool hasTeamMigration = _migrationHandler.PerformMigration(_players);
-      logger.ConditionalDebug($"{nameof(PerformPreppedMerge)}: Finished prepped merge -- " +
+      logger.Trace("Performing migration...");
+      bool hasTeamMigration = _migrationHandler.PerformMigration(_players.Values);
+      logger.Debug($"{nameof(PerformPreppedMerge)}: Finished prepped merge -- " +
         $"{prep.DiscardedItems.Count()} discarded items, " +
         $"{prep.MergedRecords.Count()} merged items, " +
-        $"{prep.AddedItems.Count()} added items. " +
-        $"hasTeamMigration={hasTeamMigration}. " +
-        $"Now {_players.Count} players, {_teams.Count} teams.");
+        $"{prep.AddedItems.Count()} added items, " +
+        $"hasTeamMigration={hasTeamMigration}, " +
+        $"now {_players.Count} players, {_teams.Count} teams.");
       return hasTeamMigration;
 
       void AddItem(ISplatTagCoreObject item)
       {
         if (item is Player player)
         {
-          _players.Add(player);
+          _players[player.Id] = player;
         }
         else if (item is Team team)
         {
-          _teams.Add(team);
+          _teams[team.Id] = team;
         }
         else
         {
           throw new InvalidOperationException("Unknown item type: " + item.GetType().Name);
         }
       }
+    }
+
+    internal void DumpState(IEnumerable<Source>? sources)
+    {
+      SplatTagJsonSnapshotDatabase.SaveSnapshots(SplatTagControllerFactory.GetDumpPath(), _players.Values, _teams.Values, sources);
     }
 
     /// <summary>
@@ -223,8 +299,8 @@ namespace SplatTagDatabase.Merging
         return MergeRecord.CreateMergeRecordForAddedItem(incomingItem);
       }
 
-      var orderedResults = reference.Where(i => incomingItem.Id != i.Id).GroupBy(i => i.MatchWithReason(incomingItem).ToSummedWeight()).OrderByDescending(group => group.Key);
-      var bestResultGroup = orderedResults.First();
+      var orderedResults = reference.GroupBy(i => i.MatchWithReason(incomingItem).ToSummedWeight()).OrderByDescending(group => group.Key);
+      var bestResultGroup = orderedResults.SkipWhile(i => incomingItem.Id == i.FirstOrDefault()?.Id).First();  // Do the id filtering here so we aren't checking every record (of which there's only one matching the id)
       var weighting = bestResultGroup.Key;
       foreach (var bestResult in bestResultGroup)
       {

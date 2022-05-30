@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NLog;
 using SplatTagCore;
+using SplatTagCore.Extensions;
 using SplatTagCore.Social;
 using System;
 using System.Collections;

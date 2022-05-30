@@ -1,4 +1,5 @@
 ﻿using NLog;
+using SplatTagCore.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -50,7 +51,7 @@ namespace SplatTagCore
         {
           sources.UnionWith(handler.Sources);
         }
-        return sources.ToList();
+        return sources.Distinct().ToList();
       }
     }
 

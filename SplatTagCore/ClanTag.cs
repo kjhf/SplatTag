@@ -1,4 +1,5 @@
 ﻿using NLog;
+using SplatTagCore.Extensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ namespace SplatTagCore
   [Serializable]
   public class ClanTag : Name
   {
+    private const string LAYOUT_OPTION = "LO";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     private static readonly char[] tagDelimiters = new[] { ' ', '•', '_', '.', '⭐', '~', ']', '}', ')', '>' };
 
@@ -88,8 +90,29 @@ namespace SplatTagCore
     {
       if (playerNames.Count <= 1) return null;
 
-      var tagCandidates = new ConcurrentDictionary<(string, TagOption), int>();
-      Parallel.ForEach(playerNames, (name) =>
+      IDictionary<(string, TagOption), int> candidates;
+      if (playerNames.Count > Builtins.PARALLEL_THRESHOLD)
+      {
+        candidates = new ConcurrentDictionary<(string, TagOption), int>();
+        Parallel.ForEach(playerNames, name => PrepCandidates(name, candidates));
+      }
+      else
+      {
+        candidates = new Dictionary<(string, TagOption), int>();
+        playerNames.ForEach(name => PrepCandidates(name, candidates));
+      }
+      var bestCandidate = candidates.OrderByDescending(x => x.Value).FirstOrDefault();
+      if (bestCandidate.Value >= (playerNames.Count / 2))
+      {
+        logger.Debug($"Tag deduced! tag={bestCandidate.Key.Item1} option={bestCandidate.Key.Item2} counted {bestCandidate.Value} times!");
+        return new ClanTag(tag: bestCandidate.Key.Item1, sources: new[] { source }, tagOption: bestCandidate.Key.Item2);
+      }
+      else
+      {
+        return null;
+      }
+
+      static void PrepCandidates(string name, IDictionary<(string, TagOption), int> candidates)
       {
         // Starts with symbol(s)
         var frontMatch = Regex.Match(name, @"^[^\w\s]+");
@@ -100,37 +123,27 @@ namespace SplatTagCore
         // Check if the tag is surrounding
         if (frontMatch.Success && backMatch.Success && frontMatch.Value == backMatch.Value)
         {
-          tagCandidates.AddOrUpdate((frontMatch.Value, TagOption.Surrounding), 1, (_, count) => count + 1);
+          candidates.AddOrUpdate((frontMatch.Value, TagOption.Surrounding), 1, (_, count) => count + 1);
         }
         else
         {
           // Otherwise, check front symbols, then front & back with delimiters
           if (frontMatch.Success)
           {
-            tagCandidates.AddOrUpdate((frontMatch.Value, TagOption.Front), 1, (_, count) => count + 1);
+            candidates.AddOrUpdate((frontMatch.Value, TagOption.Front), 1, (_, count) => count + 1);
           }
 
           // Has tag then a delimiter
           foreach (char delimiter in tagDelimiters)
           {
-            string[] split = name.Split(delimiter);
+            var split = name.Split(delimiter).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();  // Is null or whitespace needed for catching players who so something like "name (fc: xx)"
             if (split.Length > 1)
             {
-              tagCandidates.AddOrUpdate((split[0] + delimiter, TagOption.Front), 1, (_, count) => count + 1);
-              tagCandidates.AddOrUpdate((delimiter + split[split.Length - 1], TagOption.Back), 1, (_, count) => count + 1);
+              candidates.AddOrUpdate((split[0] + delimiter, TagOption.Front), 1, (_, count) => count + 1);
+              candidates.AddOrUpdate((delimiter + split[^1], TagOption.Back), 1, (_, count) => count + 1);
             }
           }
         }
-      });
-      var bestCandidate = tagCandidates.OrderByDescending(x => x.Value).FirstOrDefault();
-      if (bestCandidate.Value >= (playerNames.Count / 2))
-      {
-        logger.Debug($"Tag deduced! tag={bestCandidate.Key.Item1} option={bestCandidate.Key.Item2} counted {bestCandidate.Value} times!");
-        return new ClanTag(tag: bestCandidate.Key.Item1, sources: new[] { source }, tagOption: bestCandidate.Key.Item2);
-      }
-      else
-      {
-        return null;
       }
     }
 
@@ -165,29 +178,29 @@ namespace SplatTagCore
         default:
           if (playerName.StartsWith(Value, StringComparison.OrdinalIgnoreCase))
           {
-            playerName = playerName.Substring(Value.Length).Trim();
+            playerName = playerName[Value.Length..].Trim();
           }
           else if (playerName.StartsWith(Transformed, StringComparison.OrdinalIgnoreCase))
           {
-            playerName = playerName.Substring(Transformed.Length).Trim();
+            playerName = playerName[Transformed.Length..].Trim();
           }
           break;
 
         case TagOption.Back:
           if (playerName.EndsWith(Value, StringComparison.OrdinalIgnoreCase))
           {
-            playerName = playerName.Substring(0, playerName.Length - Value.Length).Trim();
+            playerName = playerName[..^Value.Length].Trim();
           }
           else if (playerName.EndsWith(Transformed, StringComparison.OrdinalIgnoreCase))
           {
-            playerName = playerName.Substring(0, playerName.Length - Transformed.Length).Trim();
+            playerName = playerName[..^Transformed.Length].Trim();
           }
           break;
 
         case TagOption.Surrounding:
           if (playerName.StartsWith(Value, StringComparison.OrdinalIgnoreCase) && playerName.EndsWith(Value, StringComparison.OrdinalIgnoreCase))
           {
-            playerName = playerName.Substring(1, playerName.Length - 2).Trim();
+            playerName = playerName[1..^1].Trim();
           }
           break;
       }
@@ -208,14 +221,14 @@ namespace SplatTagCore
     protected ClanTag(SerializationInfo info, StreamingContext context)
       : base(info, context)
     {
-      this.LayoutOption = info.GetEnumOrDefault("LayoutOption", TagOption.Unknown);
+      this.LayoutOption = info.GetEnumOrDefault(LAYOUT_OPTION, TagOption.Unknown);
     }
 
     // Serialize
     public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
       base.GetObjectData(info, context);
-      info.AddValue("LayoutOption", this.LayoutOption.ToString());
+      info.AddValue(LAYOUT_OPTION, this.LayoutOption.ToString());
     }
 
     #endregion Serialization

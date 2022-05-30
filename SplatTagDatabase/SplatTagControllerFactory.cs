@@ -1,7 +1,10 @@
 ﻿using NLog;
 using SplatTagCore;
+using SplatTagDatabase.Merging;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace SplatTagDatabase
 {
@@ -17,7 +20,19 @@ namespace SplatTagDatabase
     /// <summary>
     /// Get the SplatTag application data folder
     /// </summary>
-    public static string GetDefaultPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
+    public static string GetDefaultPath()
+    {
+      string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag");
+      Directory.CreateDirectory(dir);
+      return dir;
+    }
+
+    public static string GetDumpPath()
+    {
+      string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SplatTag", "Dumps");
+      Directory.CreateDirectory(dir);
+      return dir;
+    }
 
     /// <summary>
     /// Create the <see cref="SplatTagController"/> and an optional <see cref="GenericFilesToIImporters"/>.
@@ -76,11 +91,36 @@ namespace SplatTagDatabase
     }
 
     /// <summary>
+    /// Load the current database and re-perform a merge on it.
+    /// </summary>
+    public static bool MergeJSONDatabase(string saveFolder)
+    {
+      logger.Info($"{nameof(MergeJSONDatabase)} called with saveFolder={saveFolder}...");
+      var database = new SplatTagJsonSnapshotDatabase(saveFolder);
+      database.Load();
+
+      CoreMergeHandler mergeHandler = new();
+      mergeHandler.SetInternalNoMerge(database.Players, database.Teams.Values);
+
+      var mergeResults = mergeHandler.MergeKnown();
+      if (mergeResults.Length == 0)
+      {
+        logger.Warn("Nothing merged!");
+        return false;
+      }
+
+      PathUtils.DumpLogSafely("MergeLog", () => CoreMergeHandler.GetMergeLogContents(mergeResults));
+      var last = mergeResults.Last();
+      SplatTagJsonSnapshotDatabase.SaveSnapshots(saveFolder, last.ResultingPlayers, last.ResultingTeams, null);
+      return true;
+    }
+
+    /// <summary>
     /// Patch the current Database with a new sources file.
     /// </summary>
     public static void GeneratePatchedDatabaseFromFile(
-      string patchFile,
-      string? saveFolder = null)
+    string patchFile,
+    string? saveFolder = null)
     {
       logger.Info($"{nameof(GeneratePatchedDatabaseFromFile)} called with patchFile={patchFile}, saveFolder={saveFolder}...");
 
@@ -117,17 +157,17 @@ namespace SplatTagDatabase
 
       try
       {
-        WinApi.TryTimeBeginPeriod(1);
+        WinApi.TryTimeBeginPeriod();
         Directory.CreateDirectory(saveFolder);
 
         // Create the things.
-        SplatTagJsonSnapshotDatabase splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(saveFolder);
+        var splatTagJsonSnapshotDatabase = new SplatTagJsonSnapshotDatabase(saveFolder);
         MultiDatabase database = new MultiDatabase()
           .With(splatTagJsonSnapshotDatabase)
           .With(importer);
 
         // Load the database (and generate)
-        SplatTagController splatTagController = new SplatTagController(database);
+        var splatTagController = new SplatTagController(database);
         splatTagController.Initialise();
 
         // Now that we've initialised, take a snapshot of everything.
@@ -135,7 +175,7 @@ namespace SplatTagDatabase
       }
       finally
       {
-        WinApi.TryTimeEndPeriod(1);
+        WinApi.TryTimeEndPeriod();
       }
     }
 
@@ -167,7 +207,7 @@ namespace SplatTagDatabase
 
       try
       {
-        WinApi.TryTimeBeginPeriod(1);
+        WinApi.TryTimeBeginPeriod();
 
         // Directories created in GenericFilesToIImporters
         var sourcesImporter = new GenericFilesToIImporters(saveFolder, sourcesFile);
@@ -189,7 +229,7 @@ namespace SplatTagDatabase
       }
       finally
       {
-        WinApi.TryTimeEndPeriod(1);
+        WinApi.TryTimeEndPeriod();
       }
     }
 
