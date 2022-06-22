@@ -23,6 +23,10 @@
     "rebuild with one test source": {
       "commandName": "Project",
       "commandLineArgs": "--verbose --rebuild \"%appdata%\\SplatTag\\test.yaml\""
+    },
+    "patch with sources_patch": {
+      "commandName": "Project",
+      "commandLineArgs": "--exactCase --patch \"%appdata%\\SplatTag\\sources_patch.yaml\""
     }
   }
 }
