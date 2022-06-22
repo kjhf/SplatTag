@@ -178,111 +178,36 @@ namespace SplatTagUnitTests
           return list;
         }
       }
-      if (type == typeof(string))
+
+      return type switch
       {
-        return GetRandomString();
-      }
-      if (type == typeof(short))
-      {
-        return GetRandomPositiveShort();
-      }
-      if (type == typeof(int))
-      {
-        return GetRandomIntSigned();
-      }
-      if (type == typeof(double))
-      {
-        return GetRandomDouble();
-      }
-      if (type == typeof(bool))
-      {
-        return GetRandomBool();
-      }
-      if (type == typeof(DateTime))
-      {
-        return GetRandomDateTime();
-      }
-      if (type == typeof(Guid))
-      {
-        return GetRandomGuid();
-      }
-      if (type == typeof(FriendCode))
-      {
-        return GetRandomFriendCode();
-      }
-      if (type == typeof(Uri))
-      {
-        return GetRandomUri();
-      }
-      if (type == typeof(Bracket))
-      {
-        return GetRandomBracket();
-      }
-      if (type == typeof(Division))
-      {
-        return GetRandomDivision();
-      }
-      if (type == typeof(Game))
-      {
-        return GetRandomGame();
-      }
-      if (type == typeof(Player))
-      {
-        return GetRandomCoreObject<Player>();
-      }
-      if (type == typeof(Team))
-      {
-        return GetRandomCoreObject<Team>();
-      }
-      if (type == typeof(Source))
-      {
-        return GetRandomSource();
-      }
-      if (type == typeof(Placement))
-      {
-        return GetRandomPlacement();
-      }
-      if (type == typeof(Pronoun))
-      {
-        return GetRandomPronoun();
-      }
-      if (type == typeof(Skill))
-      {
-        return new Skill();
-      }
-      if (type == typeof(Name))
-      {
-        return GetRandomName();
-      }
-      if (type == typeof(BattlefyTeamSocial))
-      {
-        return new BattlefyTeamSocial(GetRandomString(), GetRandomSource());
-      }
-      if (type == typeof(BattlefyUserSocial))
-      {
-        return new BattlefyUserSocial(GetRandomString(), GetRandomSource());
-      }
-      if (type == typeof(PlusMembership))
-      {
-        return new PlusMembership(GetRandomString(), GetRandomSource());
-      }
-      if (type == typeof(Sendou))
-      {
-        return new Sendou(GetRandomString(), GetRandomSource());
-      }
-      if (type == typeof(Twitch))
-      {
-        return new Twitch(GetRandomString(), GetRandomSource());
-      }
-      if (type == typeof(Twitter))
-      {
-        return new Twitter(GetRandomString(), GetRandomSource());
-      }
-      if (type == typeof(ClanTag))
-      {
-        return new ClanTag(GetRandomString(), GetRandomSource(), GetRandomEnum<TagOption>());
-      }
-      throw new NotImplementedException("GetRandomValue for type " + type);
+        Type t when t == typeof(bool) => GetRandomBool(),
+        Type t when t == typeof(Bracket) => GetRandomBracket(),
+        Type t when t == typeof(Division) => GetRandomDivision(),
+        Type t when t == typeof(DateTime) => GetRandomDateTime(),
+        Type t when t == typeof(double) => GetRandomDouble(),
+        Type t when t == typeof(Game) => GetRandomGame(),
+        Type t when t == typeof(Guid) => GetRandomGuid(),
+        Type t when t == typeof(int) => GetRandomPositiveInt(),
+        Type t when t == typeof(short) => GetRandomPositiveShort(),
+        Type t when t == typeof(FriendCode) => GetRandomFriendCode(),
+        Type t when t == typeof(Name) => GetRandomName(),
+        Type t when t == typeof(Placement) => GetRandomPlacement(),
+        Type t when t == typeof(Player) => GetRandomCoreObject<Player>(),
+        Type t when t == typeof(Team) => GetRandomCoreObject<Team>(),
+        Type t when t == typeof(Pronoun) => GetRandomPronoun(),
+        Type t when t == typeof(Source) => GetRandomSource(),
+        Type t when t == typeof(string) => GetRandomString(),
+        Type t when t == typeof(Uri) => GetRandomUri(),
+        Type t when t == typeof(BattlefyTeamSocial) => new BattlefyTeamSocial(GetRandomString(), GetRandomSource()),
+        Type t when t == typeof(BattlefyUserSocial) => new BattlefyUserSocial(GetRandomString(), GetRandomSource()),
+        Type t when t == typeof(PlusMembership) => new PlusMembership(GetRandomString(), GetRandomSource()),
+        Type t when t == typeof(Sendou) => new Sendou(GetRandomString(), GetRandomSource()),
+        Type t when t == typeof(Twitch) => new Twitch(GetRandomString(), GetRandomSource()),
+        Type t when t == typeof(Twitter) => new Twitter(GetRandomString(), GetRandomSource()),
+        Type t when t == typeof(ClanTag) => new ClanTag(GetRandomString(), GetRandomSource(), GetRandomEnum<TagOption>()),
+        _ => throw new NotImplementedException("GetRandomValue for type " + type)
+      };
     }
 
     private static T GetRandomEnum<T>() where T : struct, Enum

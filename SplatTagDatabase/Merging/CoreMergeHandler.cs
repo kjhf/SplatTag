@@ -11,7 +11,7 @@ namespace SplatTagDatabase.Merging
 {
   public class CoreMergeHandler : ICoreMergeHandler
   {
-    internal const int MAX_FINALISE_LOOPS = 10;
+    internal const int MAX_FINALISE_LOOPS = 16;
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     private readonly Dictionary<Guid, Player> _players = new();
     private readonly Dictionary<Guid, Team> _teams = new();
@@ -97,9 +97,15 @@ namespace SplatTagDatabase.Merging
     /// </summary>
     internal static IEnumerable<string> GetMergeLogContents(CoreMergeResults[] mergeResults)
     {
+      HashSet<string> lines = new();
       foreach (var mergeLogIteration in mergeResults)
       {
-        yield return mergeLogIteration.ToStringBuilder().ToString();
+        string toWrite = mergeLogIteration.ToStringBuilder().ToString();
+        if (lines.Contains(toWrite))
+        {
+          continue;
+        }
+        yield return toWrite;
       }
     }
 
