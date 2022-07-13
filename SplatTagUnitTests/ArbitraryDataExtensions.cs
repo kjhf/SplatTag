@@ -138,6 +138,11 @@ namespace SplatTagUnitTests
       return new Source(GetRandomString(), GetRandomDateTime());
     }
 
+    public static Skill GetRandomSkill()
+    {
+      return new(GetRandomDivision());
+    }
+
     public static string GetRandomString()
     {
       const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -196,6 +201,7 @@ namespace SplatTagUnitTests
         Type t when t == typeof(Player) => GetRandomCoreObject<Player>(),
         Type t when t == typeof(Team) => GetRandomCoreObject<Team>(),
         Type t when t == typeof(Pronoun) => GetRandomPronoun(),
+        Type t when t == typeof(Skill) => GetRandomSkill(),
         Type t when t == typeof(Source) => GetRandomSource(),
         Type t when t == typeof(string) => GetRandomString(),
         Type t when t == typeof(Uri) => GetRandomUri(),
