@@ -77,12 +77,12 @@ namespace SplatTagDatabase.Merging
 
     public bool PerformMigration(IReadOnlyCollection<Player> players)
     {
-      bool workDone = CorrectTeamIdsForPlayers(players, FinalMergedIds);
+      bool workDone = CorrectTeamIdsForPlayers(players, FinalMergedIds.ToDictionary(pair => (TeamId)pair.Key, pair => (TeamId)pair.Value));
       mergedIdsLookup.Clear();
       return workDone;
     }
 
-    private static bool CorrectTeamIdsForPlayers(IReadOnlyCollection<Player> referencePlayers, IReadOnlyDictionary<Guid, Guid> teamsMergeResult)
+    private static bool CorrectTeamIdsForPlayers(IReadOnlyCollection<Player> referencePlayers, IReadOnlyDictionary<TeamId, TeamId> teamsMergeResult)
     {
       if (referencePlayers == null || teamsMergeResult == null || referencePlayers.Count == 0 || teamsMergeResult.Count == 0)
       {

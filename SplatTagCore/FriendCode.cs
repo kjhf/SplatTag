@@ -4,12 +4,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public struct FriendCode : IEquatable<FriendCode>, IReadOnlyCollection<short>, ICollection<short>
+  public record FriendCode : ICoreObject, IEquatable<FriendCode>
   {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     public static readonly FriendCode NO_FRIEND_CODE = new();
@@ -23,6 +24,10 @@ namespace SplatTagCore
     private readonly short FCShort1;
     private readonly short FCShort2;
     private readonly short FCShort3;
+
+    private FriendCode()
+    {
+    }
 
     internal FriendCode(ulong fc)
     {
@@ -41,7 +46,6 @@ namespace SplatTagCore
       FCShort1 = short.Parse(str.Substring(0, str.Length - 8));
     }
 
-    [JsonConstructor]
     internal FriendCode(ICollection<short> fc)
     {
       if (fc == null || fc.Count == 0)
@@ -63,9 +67,9 @@ namespace SplatTagCore
         _ => fc.ToArray(),
       };
 
-      FCShort1 = x[0];
-      FCShort2 = x[1];
-      FCShort3 = x[2];
+      FCShort1 = x[0] <= 9999 ? x[0] : throw new ArgumentOutOfRangeException(nameof(fc), $"The first code short is out of range ({x[0]} > 9999).");
+      FCShort2 = x[1] <= 9999 ? x[1] : throw new ArgumentOutOfRangeException(nameof(fc), $"The second code short is out of range ({x[1]} > 9999).");
+      FCShort3 = x[2] <= 9999 ? x[2] : throw new ArgumentOutOfRangeException(nameof(fc), $"The third code short is out of range ({x[2]} > 9999).");
     }
 
     /// <summary>
@@ -87,22 +91,12 @@ namespace SplatTagCore
 
     public int Count => 3;
     public bool IsReadOnly => true;
-    public readonly bool NoCode => FCShort1 == 0 && FCShort2 == 0 && FCShort3 == 0;
+    public bool NoCode => FCShort1 == 0 && FCShort2 == 0 && FCShort3 == 0;
 
     /// <summary>
     /// Get the underlying friend code as an array of 3 shorts.
     /// </summary>
-    private short[] FCShorts => new short[3] { FCShort1, FCShort2, FCShort3 };
-
-    public static bool operator !=(FriendCode left, FriendCode right)
-    {
-      return !(left == right);
-    }
-
-    public static bool operator ==(FriendCode left, FriendCode right)
-    {
-      return left.Equals(right);
-    }
+    private short[] Code => new short[3] { FCShort1, FCShort2, FCShort3 };
 
     /// <summary>
     /// Take a string and parse a friend code from it, returning it or NO_FRIEND_CODE, and the input string with the friend code stripped.
@@ -187,63 +181,12 @@ namespace SplatTagCore
       return result.NoCode ? null : result;
     }
 
-    public void Add(short item)
-    {
-      throw new InvalidOperationException();
-    }
-
-    public void Clear()
-    {
-      throw new InvalidOperationException();
-    }
-
     public bool Contains(short item)
     {
       return
         FCShort1 == item
         || FCShort2 == item
         || FCShort3 == item;
-    }
-
-    public void CopyTo(short[] array, int arrayIndex)
-    {
-      ((ICollection<short>)FCShorts).CopyTo(array, arrayIndex);
-    }
-
-    public override readonly bool Equals(object? obj)
-    {
-      return obj is FriendCode friendCode && Equals(friendCode);
-    }
-
-    public readonly bool Equals(FriendCode other)
-    {
-      return
-        FCShort1 == other.FCShort1
-        && FCShort2 == other.FCShort2
-        && FCShort3 == other.FCShort3;
-    }
-
-    public IEnumerator<short> GetEnumerator()
-    {
-      return ((IEnumerable<short>)FCShorts).GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-      return FCShorts.GetEnumerator();
-    }
-
-    public override readonly int GetHashCode()
-    {
-      return NoCode ? NO_FRIEND_CODE.GetHashCode()
-          : FCShort1.GetHashCode()
-          + FCShort2.GetHashCode()
-          + FCShort3.GetHashCode();
-    }
-
-    public bool Remove(short item)
-    {
-      throw new InvalidOperationException();
     }
 
     /// <summary>
@@ -267,5 +210,45 @@ namespace SplatTagCore
     /// Returns the <see cref="FriendCode"/> as an unseparated int.
     /// </summary>
     public ulong ToULong() => ulong.Parse(ToString(string.Empty));
+
+    public string GetDisplayValue() => ToString();
+
+    public bool Equals(ICoreObject other) => Equals(other as FriendCode);
+
+    #region Serialization
+
+    // Deserialize
+    protected FriendCode(SerializationInfo info, StreamingContext context)
+      : base()
+    {
+      var x = info.GetValueOrDefault(nameof(Code), Array.Empty<short>());
+
+      if (x == null || x.Length == 0)
+      {
+        FCShort1 = FCShort2 = FCShort3 = 0;
+        return;
+      }
+
+      if (x.Length != 3)
+      {
+        throw new ArgumentException($"Deserialized FC is not length 3 (actually {x} == {x.Length})", nameof(Code));
+      }
+
+      // else
+      FCShort1 = x[0] <= 9999 ? x[0] : throw new ArgumentOutOfRangeException(nameof(Code), $"The first code short is out of range ({x[0]} > 9999).");
+      FCShort2 = x[1] <= 9999 ? x[1] : throw new ArgumentOutOfRangeException(nameof(Code), $"The second code short is out of range ({x[1]} > 9999).");
+      FCShort3 = x[2] <= 9999 ? x[2] : throw new ArgumentOutOfRangeException(nameof(Code), $"The third code short is out of range ({x[2]} > 9999).");
+    }
+
+    // Serialize
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      if (!NoCode)
+      {
+        info.AddValue(nameof(Code), Code);
+      }
+    }
+
+    #endregion Serialization
   }
 }

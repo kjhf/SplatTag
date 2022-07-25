@@ -1,9 +1,9 @@
 ﻿using Newtonsoft.Json;
+using NLog;
 using SplatTagCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +12,8 @@ namespace SplatTagDatabase.Importers
 {
   internal class LUTIJsonReader : IImporter
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     [Serializable]
     internal class LUTIJsonRow
     {
@@ -110,7 +112,7 @@ namespace SplatTagDatabase.Importers
 
     public Source Load()
     {
-      Debug.WriteLine("Loading " + jsonFile);
+      logger.Info("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile); // N.B. by default this reads UTF-8.
       LUTIJsonRow[] rows = JsonConvert.DeserializeObject<LUTIJsonRow[]>(json) ?? Array.Empty<LUTIJsonRow>();
 
@@ -150,7 +152,7 @@ namespace SplatTagDatabase.Importers
           var playerName = player.Trim();
           playerName = newTeam.Tag?.StripFromPlayer(playerName) ?? playerName;
 
-          var p = new Player(playerName, new[] { newTeam.Id }, source);
+          var p = new Player(playerName, new[] { newTeam.TeamId }, source);
           players.Add(p);
         }
       });

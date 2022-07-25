@@ -2,16 +2,19 @@
 using SplatTagCore.Social;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Player : BaseSplatTagCoreObject<Player>
+  public class Player :
+    IdentifiableObjectHandler<Player>,
+    IIdentifiableCoreObject
   {
+    public const string SerializationName = "P";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+    public override string SerializedHandlerName => SerializationName;
 
     /// <summary>
     /// Default construct a player
@@ -26,7 +29,6 @@ namespace SplatTagCore
     /// <param name="ign"></param>
     /// <param name="source"></param>
     public Player(string ign, Source source)
-      : base()
     {
       this.NamesInformationWithCreate.Add(new Name(ign, source));
     }
@@ -36,7 +38,7 @@ namespace SplatTagCore
     /// </summary>
     /// <param name="ign"></param>
     /// <param name="source"></param>
-    public Player(string ign, IList<Guid> teams, Source source)
+    public Player(string ign, IList<TeamId> teams, Source source)
       : base()
     {
       this.NamesInformationWithCreate.Add(new Name(ign, source));
@@ -146,7 +148,7 @@ namespace SplatTagCore
     /// <summary>
     /// All team ids this player has player for, unordered.
     /// </summary>
-    public IReadOnlyCollection<Guid> Teams => TeamInformationNoCreate?.GetAllTeamsUnordered() ?? Array.Empty<Guid>();
+    public IReadOnlyCollection<TeamId> Teams => TeamInformationNoCreate?.GetAllTeamsUnordered() ?? Array.Empty<TeamId>();
 
     /// <summary>
     /// Get if this player is a Top 500.
@@ -167,7 +169,7 @@ namespace SplatTagCore
     /// <summary>
     /// The weapons this player uses.
     /// </summary>
-    public IReadOnlyCollection<string> Weapons => WeaponsInformationNoCreate?.MostRecent ?? (IReadOnlyCollection<string>)Array.Empty<string>();
+    public IList<string> Weapons => WeaponsInformationNoCreate?.MostRecent?.Weapons ?? Array.Empty<string>();
 
     /// <inheritdoc/>
     protected override IReadOnlyDictionary<string, (Type, Func<BaseHandler>)> SupportedHandlers => new Dictionary<string, (Type, Func<BaseHandler>)>
@@ -371,7 +373,11 @@ namespace SplatTagCore
 
     public void AddDiscordUsername(string discordNameIncludingDiscrim, Source source)
     {
-      Debug.WriteLineIf(!discordNameIncludingDiscrim.Contains("#"), $"Added Discord name to player {this.Name} but it does not have a #!");
+      if (logger.IsTraceEnabled && !discordNameIncludingDiscrim.Contains("#"))
+      {
+        logger.Trace($"Added Discord name to player {this.Name} but it does not have a #!");
+      }
+
       DiscordInformation.AddUsername(discordNameIncludingDiscrim, source);
     }
 
@@ -393,7 +399,7 @@ namespace SplatTagCore
     public void AddSendou(string handle, Source source)
       => SendouInformation.Add(new Sendou(handle, source));
 
-    public void AddTeams(Guid value, Source source)
+    public void AddTeams(TeamId value, Source source)
       => TeamInformationWithCreate.Add(value, source);
 
     public void AddTwitch(string handle, Source source)
@@ -403,13 +409,13 @@ namespace SplatTagCore
       => TwitterInformation.Add(new Twitter(handle, source));
 
     public void AddWeapons(IEnumerable<string> incoming, Source source)
-      => WeaponsInformation.Add(incoming.Distinct().ToList(), source);
+      => WeaponsInformation.Add(new WeaponsContainer(incoming.Distinct().ToList()), source);
 
     /// <summary>
     /// Correct the item ids for this player given a merge result (containing old id --> the replacement id)
     /// Returns if any work was done.
     /// </summary>
-    public bool CorrectTeamIds(IReadOnlyDictionary<Guid, Guid> teamsMergeResult) => TeamInformationNoCreate?.CorrectTeamIds(teamsMergeResult) ?? false;
+    public bool CorrectTeamIds(IReadOnlyDictionary<TeamId, TeamId> teamsMergeResult) => TeamInformationNoCreate?.CorrectTeamIds(teamsMergeResult) ?? false;
 
     /// <summary>
     /// Overridden ToString, returns the player's name.
@@ -421,14 +427,11 @@ namespace SplatTagCore
     // Deserialize
     protected Player(SerializationInfo info, StreamingContext context)
     {
-      DeserializeHandlers(info, context);
+      base.DeserializeHandlers(info, context);
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeHandlers(info, context);
-    }
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="BaseHandlerCollectionSourced.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }

@@ -3,7 +3,6 @@ using NLog;
 using SplatTagCore;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -13,7 +12,6 @@ namespace SplatTagDatabase.Importers
   {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     private readonly string jsonFile;
-
     private readonly Source source;
 
     public BattlefyJsonReader(string jsonFile)
@@ -40,7 +38,7 @@ namespace SplatTagDatabase.Importers
 
     public Source Load()
     {
-      Debug.WriteLine("Loading " + jsonFile);
+      logger.Info("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
       BattlefyJsonTeam[] rows = JsonConvert.DeserializeObject<BattlefyJsonTeam[]>(json) ?? Array.Empty<BattlefyJsonTeam>();
 
@@ -143,7 +141,7 @@ namespace SplatTagDatabase.Importers
           }
 
           // Add Discord information, if we have it
-          var newPlayer = new Player(p.Name, new[] { newTeam.Id }, source);
+          var newPlayer = new Player(p.Name, new[] { newTeam.TeamId }, source);
 
           if (p.BattlefyName != null && p.BattlefyName == row.Captain.BattlefyName)
           {

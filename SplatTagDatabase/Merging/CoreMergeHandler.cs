@@ -261,7 +261,7 @@ namespace SplatTagDatabase.Merging
         $"now {_players.Count} players, {_teams.Count} teams.");
       return hasTeamMigration;
 
-      void AddItem(ISplatTagCoreObject item)
+      void AddItem(IIdentifiableCoreObject item)
       {
         if (item is Player player)
         {
@@ -296,7 +296,7 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Get the merge record for the incoming item. The MergeRecord has IsMerge set if successful.
     /// </summary>
-    private static MergeRecord TryFindMergable(ISplatTagCoreObject incomingItem, IReadOnlyCollection<ISplatTagCoreObject> reference, IReadOnlyCollection<Player>? knownPlayers)
+    private static MergeRecord TryFindMergable(IIdentifiableCoreObject incomingItem, IReadOnlyCollection<IIdentifiableCoreObject> reference, IReadOnlyCollection<Player>? knownPlayers)
     {
       // Shortcut if nothing to reference.
       if (reference.Count <= 1)

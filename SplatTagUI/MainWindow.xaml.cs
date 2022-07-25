@@ -329,7 +329,7 @@ namespace SplatTagUI
       IEnumerable<Team> oldTeams;
       if (value is Player p)
       {
-        oldTeams = p.TeamInformation?.GetOldItemsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnlinkedTeam) ?? Array.Empty<Team>();
+        oldTeams = p.TeamInformation?.GetOldItemsUnordered().Select(id => MainWindow.splatTagController?.GetTeamById(id) ?? Team.UnknownTeam) ?? Array.Empty<Team>();
       }
       else if (value is IEnumerable<Team> t)
       {

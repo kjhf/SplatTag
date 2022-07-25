@@ -24,7 +24,7 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Incoming items that were added without merge
     /// </summary>
-    public IEnumerable<ISplatTagCoreObject> AddedItems => AddedRecords.Select(r => r.ResultantItem).Distinct();
+    public IEnumerable<IIdentifiableCoreObject> AddedItems => AddedRecords.Select(r => r.ResultantItem).Distinct();
 
     /// <summary>
     /// Incoming item records that were added without merge
@@ -34,12 +34,12 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Get an array that contains all of the resulting items including discarded.
     /// </summary>
-    public IEnumerable<ISplatTagCoreObject> AllKnownItems => records.Select(r => r.ResultantItem).Concat(DiscardedItems);
+    public IEnumerable<IIdentifiableCoreObject> AllKnownItems => records.Select(r => r.ResultantItem).Concat(DiscardedItems);
 
     /// <summary>
     /// Get an array that contains all of the resulting items.
     /// </summary>
-    public IEnumerable<ISplatTagCoreObject> AllResultingItems => records.Select(r => r.ResultantItem).Distinct();
+    public IEnumerable<IIdentifiableCoreObject> AllResultingItems => records.Select(r => r.ResultantItem).Distinct();
 
     /// <summary>
     /// Get if any of the records are merges.
@@ -54,7 +54,7 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Items that have been merged into another and therefore are to be discarded.
     /// </summary>
-    public IEnumerable<ISplatTagCoreObject> DiscardedItems => MergedRecords.Select(r => r.MergedItem!).Distinct();
+    public IEnumerable<IIdentifiableCoreObject> DiscardedItems => MergedRecords.Select(r => r.MergedItem!).Distinct();
 
     /// <summary>
     /// Get the final players.
@@ -74,7 +74,7 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Existing items that have been kept
     /// </summary>
-    public IEnumerable<ISplatTagCoreObject> UnchangedItems => UnchangedRecords.Select(r => r.ResultantItem).Distinct();
+    public IEnumerable<IIdentifiableCoreObject> UnchangedItems => UnchangedRecords.Select(r => r.ResultantItem).Distinct();
 
     /// <summary>
     /// Existing object records that have been kept
@@ -84,7 +84,7 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// Existing objects that have had incoming items merged in
     /// </summary>
-    public IEnumerable<ISplatTagCoreObject> UpdatedItems => MergedRecords.Select(x => x.ResultantItem).Distinct();
+    public IEnumerable<IIdentifiableCoreObject> UpdatedItems => MergedRecords.Select(x => x.ResultantItem).Distinct();
 
     /// <summary>
     /// Construct a new instance of the <see cref="CoreMergeResults"/> class with its records.

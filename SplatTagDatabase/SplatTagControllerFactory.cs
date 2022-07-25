@@ -2,7 +2,6 @@
 using SplatTagCore;
 using SplatTagDatabase.Merging;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 

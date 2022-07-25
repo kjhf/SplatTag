@@ -12,7 +12,7 @@ namespace SplatTagCore
   {
     public const string SerializationName = "Ctry";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    public override string SerializedName => SerializationName;
+    public override string SerializedHandlerName => SerializationName;
 
     public CountryHandler()
       : base(FilterOptions.None)
@@ -73,11 +73,9 @@ namespace SplatTagCore
       DeserializeSingleValue(info, context);
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeSingleValue(info, context);
-    }
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="SingleValueHandler{T}.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
+    ///
 
     #endregion Serialization
   }

@@ -24,7 +24,7 @@ namespace SplatTagCore
   }
 
   [Serializable]
-  public class Pronoun : ISerializable, IReadonlySourceable
+  public record Pronoun : ISourcedCoreObject, ISerializable
   {
     public const string NEO_PLACEHOLDER = "(neo)";
     private static readonly Regex heRegex = new(@"(^|\W)(he)(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
@@ -253,6 +253,10 @@ namespace SplatTagCore
         }
       }
     }
+
+    public string GetDisplayValue() => ToString();
+
+    public bool Equals(ICoreObject other) => Equals(other as Pronoun);
 
     #region Serialization
 

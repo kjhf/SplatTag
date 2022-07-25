@@ -32,7 +32,7 @@ namespace SplatTagCore
     public override bool HasDataToSerialize => Id != Guid.Empty;
 
     public Guid Id => base.Value;
-    public override string SerializedName => SerializationName;
+    public override string SerializedHandlerName => SerializationName;
 
     public override void Merge(Guid other)
     {
@@ -47,14 +47,9 @@ namespace SplatTagCore
       DeserializeSingleValue(info, context);
     }
 
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeSingleValue(info, context);
-    }
-
     protected override void DeserializeSingleValue(SerializationInfo info, StreamingContext context)
     {
-      base.DeserializeSingleValue(info, context);
+      Value = Guid.Parse(info.GetValueOrDefault(SerializedHandlerName, string.Empty));
       if (Value == Guid.Empty)
       {
         const string error = "GUID cannot be empty.";
@@ -62,6 +57,9 @@ namespace SplatTagCore
         throw new SerializationException(error);
       }
     }
+
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="SingleValueHandler{T}.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }

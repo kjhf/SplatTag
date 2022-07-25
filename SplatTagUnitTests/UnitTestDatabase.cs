@@ -1,4 +1,5 @@
 ﻿using SplatTagCore;
+using SplatTagCore.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,30 @@ namespace SplatTagUnitTests
     {
       loadCalled = true;
       return expectedPlayers.Count > 0 || expectedTeams.Count > 0 || expectedSources.Count > 0;
+    }
+
+    public bool GetTeamById(Guid id, out Team team)
+    {
+      var result = Teams.TryGetValue(id, out Team? tResult);
+      if (result)
+      {
+        team = tResult!;
+      }
+      else
+      {
+        team = Team.UnknownTeam;
+      }
+      return result;
+    }
+
+    public Team GetTeamById(Guid id) => Teams.Get(id, Team.UnknownTeam);
+
+    public IReadOnlyList<(Player player, bool mostRecent)> GetPlayersForTeam(Team t)
+    {
+      return t.GetPlayers(Players)
+          .AsParallel()
+          .Select(p => (p, p.CurrentTeam == t.Id))
+          .ToArray();
     }
   }
 }

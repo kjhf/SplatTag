@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
-  public interface ISplatTagCoreObject : IMatchable, IMergable, IReadonlySourceable, ISerializable
+  public interface IIdentifiableCoreObject : ISelfMatchable, ISelfMergable, ISourcedCoreObject, ISerializable
   {
     public Guid Id { get; }
   }

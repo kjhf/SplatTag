@@ -7,11 +7,14 @@ using System.Text.RegularExpressions;
 namespace SplatTagCore
 {
   [Serializable]
-  public class DiscordHandler : BaseHandlerCollectionSourced<DiscordHandler>, ISerializable
+  public class DiscordHandler :
+    BaseHandlerCollectionSourced,
+    ISerializable
   {
     public const string SerializationName = "Dis";
     public static readonly Regex DISCORD_NAME_REGEX = new(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+    public override string SerializedHandlerName => SerializationName;
 
     /// <summary>Parameterless constructor</summary>
     /// <remarks>Required for serialization - do not delete.</remarks>
@@ -107,16 +110,12 @@ namespace SplatTagCore
 
     // Deserialize
     protected DiscordHandler(SerializationInfo info, StreamingContext context)
-      : base()
     {
-      DeserializeHandlers(info, context);
+      base.DeserializeHandlers(info, context);
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeHandlers(info, context);
-    }
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="BaseHandlerCollectionSourced.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }

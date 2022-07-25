@@ -62,11 +62,8 @@ namespace SplatTagCore
       DeserializeBaseSourcedItems(info, context);
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeBaseSourcedItems(info, context);
-    }
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="BaseSourcedItemHandler{T}.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }

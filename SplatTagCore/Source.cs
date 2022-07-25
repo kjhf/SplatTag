@@ -8,7 +8,10 @@ using System.Text.RegularExpressions;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Source : ISerializable, IComparable<Source>, IEquatable<Source?>
+  public record Source :
+    ICoreObject,
+    IComparable<Source>,
+    IEquatable<Source?>
   {
     private const string SOURCE_DATE_FORMAT = "yyyy-mm-dd-";
     private static readonly int SOURCE_DATE_FORMAT_LEN = SOURCE_DATE_FORMAT.Length;
@@ -129,17 +132,6 @@ namespace SplatTagCore
     /// </summary>
     public int CompareTo(Source other) => Start.CompareTo(other.Start);
 
-    public override bool Equals(object? obj)
-    {
-      return Equals(obj as Source);
-    }
-
-    public bool Equals(Source? other)
-    {
-      return other != null &&
-             Id == other.Id;
-    }
-
     public override int GetHashCode()
     {
       return HashCode.Combine(Id);
@@ -179,6 +171,10 @@ namespace SplatTagCore
         battlefyId = "";
       }
     }
+
+    public string GetDisplayValue() => Name;
+
+    public bool Equals(ICoreObject other) => Equals(other as Source);
 
     #region Serialization
 
@@ -240,7 +236,13 @@ namespace SplatTagCore
       public IEnumerable<Source> Convert(IEnumerable<string> names, Func<string, Source>? sourceResolverFunction = null)
       {
         if (sourceResolverFunction == null)
+        {
+#if DEBUG
+          sourceResolverFunction = Throw;
+#else
           sourceResolverFunction = ConstructSource;
+#endif
+        }
 
         foreach (var id in names)
           yield return Convert(id, sourceResolverFunction);

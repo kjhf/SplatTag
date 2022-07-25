@@ -6,7 +6,7 @@ using System.Transactions;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Skill : ISerializable
+  public record Skill : ICoreObject, ISerializable
   {
     private const double MU_DEFAULT = 25;
     private const double SIGMA_DEFAULT = MU_DEFAULT / 3;
@@ -62,6 +62,9 @@ namespace SplatTagCore
     {
       return $"Skill: μ={mu}, σ={sigma}.";
     }
+    public string GetDisplayValue() => ToString(); // TODO - transfer Python messages over
+
+    public bool Equals(ICoreObject other) => Equals(other as Skill);
 
     #region Serialization
 

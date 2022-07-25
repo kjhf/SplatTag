@@ -467,7 +467,7 @@ namespace SplatTagDatabase.Importers
           // Don't add the team to the player if it's not complete (e.g. single player record)
           if (!t.Name.Equals(Builtins.UnknownTeamName))
           {
-            p.AddTeams(t.Id, source);
+            p.AddTeams(t.TeamId, source);
           }
           players.Add(p);
         }

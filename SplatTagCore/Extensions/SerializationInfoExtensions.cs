@@ -54,6 +54,15 @@ namespace SplatTagCore
     }
 
     /// <summary>
+    /// Get if the key exists.
+    /// </summary>
+    /// <param name="serializationInfo">Serialization context</param>
+    /// <param name="name">Name of the object</param>
+    /// <returns>If the key exists.</returns>
+    public static bool Contains(this SerializationInfo serializationInfo, string name)
+      => GetValueOrDefault(serializationInfo, name, typeof(object)) != null;
+
+    /// <summary>
     /// Get the value at the name or the default value of T.
     /// </summary>
     /// <typeparam name="T">Return type of the deserialized object</typeparam>

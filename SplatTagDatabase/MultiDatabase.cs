@@ -1,5 +1,6 @@
 ﻿using NLog;
 using SplatTagCore;
+using SplatTagCore.Extensions;
 using SplatTagDatabase.Merging;
 using System;
 using System.Collections.Generic;
@@ -192,6 +193,22 @@ namespace SplatTagDatabase
 
       SplatTagJsonSnapshotDatabase.SaveSnapshots(saveDirectory, _players, _teams.Values, _sources.Values);
       return this;
+    }
+
+    public bool GetTeamById(Guid id, out Team team)
+    {
+      team = GetTeamById(id);
+      return !team.Equals(Team.UnknownTeam);
+    }
+
+    public Team GetTeamById(Guid id) => _teams.Get(id, Team.UnknownTeam);
+
+    public IReadOnlyList<(Player player, bool mostRecent)> GetPlayersForTeam(Team t)
+    {
+      return t.GetPlayers(Players)
+          .AsParallel()
+          .Select(p => (p, p.CurrentTeam == t.Id))
+          .ToArray();
     }
   }
 }

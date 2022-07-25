@@ -39,7 +39,7 @@ namespace SplatTagUnitTests
       Team exampleTeam = new Team("Example Team", Builtins.ManualSource);
       exampleTeam.AddClanTag("e.g", Builtins.ManualSource, TagOption.Front);
       exampleTeam.AddDivision(new Division(1, DivType.DSB), Builtins.ManualSource);
-      var TEAM_ID = exampleTeam.Id;
+      var TEAM_ID = exampleTeam.TeamId;
 
       database.expectedTeams = new List<Team> { exampleTeam };
       var PLAYER_NAME = "Example Name";

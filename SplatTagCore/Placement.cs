@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public record Placement
+  public record Placement : ICoreObject
   {
     public Placement(Dictionary<int, Guid[]>? players = null, Dictionary<int, Guid[]>? teams = null)
     {
@@ -28,6 +28,15 @@ namespace SplatTagCore
     /// Get if this Placements object has placements.
     /// </summary>
     public bool HasPlacements => PlayersByPlacement.Count > 0 && TeamsByPlacement.Count > 0;
+
+    /// <summary>
+    /// Overridden ToString in form "Placement: playerCount players and teamCount teams"
+    /// </summary>
+    public override string ToString() => $"Placement: {PlayersByPlacement.Count} players and {TeamsByPlacement} teams";
+
+    public string GetDisplayValue() => ToString();
+
+    public bool Equals(ICoreObject other) => Equals(other as Placement);
 
     #region Serialization
 

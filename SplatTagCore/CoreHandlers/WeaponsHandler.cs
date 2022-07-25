@@ -1,21 +1,24 @@
 ﻿using NLog;
 using System;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class WeaponsHandler : BaseSourcedItemHandler<List<string>>, ISerializable
+  public class WeaponsHandler :
+    BaseSourcedItemHandler<WeaponsContainer>,
+    ISerializable
   {
     public const string SerializationName = "Weps";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    public override string SerializedHandlerName => SerializationName;
 
     public WeaponsHandler()
-      : base()
     {
     }
+
+    public override string SerializedHandlerName => SerializationName;
+
+    public override FilterOptions GetMatchReason() => FilterOptions.Weapon;
 
     #region Serialization
 
@@ -25,12 +28,8 @@ namespace SplatTagCore
       DeserializeBaseSourcedItems(info, context);
     }
 
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeBaseSourcedItems(info, context);
-    }
-
-    public override FilterOptions GetMatchReason() => FilterOptions.Weapon;
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="BaseSourcedItemHandler{T}.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }

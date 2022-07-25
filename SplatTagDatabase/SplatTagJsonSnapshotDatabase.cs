@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using NLog;
 using SplatTagCore;
+using SplatTagCore.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -46,7 +47,7 @@ namespace SplatTagDatabase
             }
             args.ErrorContext.Handled = true;
           },
-          TypeNameHandling = TypeNameHandling.Auto
+          // TypeNameHandling = TypeNameHandling.Auto
         };
 
     public SplatTagJsonSnapshotDatabase(string saveDirectory)
@@ -258,6 +259,22 @@ namespace SplatTagDatabase
         string error = $"Unable to save the {nameof(SplatTagJsonSnapshotDatabase)} {title} because of an exception: {ex}";
         logger.Error(ex, error);
       }
+    }
+
+    public bool GetTeamById(Guid id, out Team team)
+    {
+      team = GetTeamById(id);
+      return !team.Equals(Team.UnknownTeam);
+    }
+
+    public Team GetTeamById(Guid id) => _teams.Get(id, Team.UnknownTeam);
+
+    public IReadOnlyList<(Player player, bool mostRecent)> GetPlayersForTeam(Team t)
+    {
+      return t.GetPlayers(Players)
+          .AsParallel()
+          .Select(p => (p, p.CurrentTeam == t.Id))
+          .ToArray();
     }
   }
 }

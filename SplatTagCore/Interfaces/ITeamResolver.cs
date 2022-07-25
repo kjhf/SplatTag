@@ -9,7 +9,7 @@ namespace SplatTagCore
     /// Match a Team by its id.
     /// </summary>
     /// <returns>
-    /// True if resolved, else false and team is set to <see cref="Team.UnlinkedTeam"/>
+    /// True if resolved, else false and team is set to <see cref="Team.UnknownTeam"/>
     /// </returns>
     public bool GetTeamById(Guid id, out Team team);
 
@@ -17,7 +17,7 @@ namespace SplatTagCore
     /// Match a Team by its id.
     /// </summary>
     /// <returns>
-    /// Non-null team, which defaults to <see cref="Team.UnlinkedTeam"/> if not found.
+    /// Non-null team, which defaults to <see cref="Team.UnknownTeam"/> if not found.
     /// </returns>
     public Team GetTeamById(Guid id);
 

@@ -28,38 +28,35 @@ namespace SplatTagUnitTests
       logger.Trace("TestInitialize");
     }
 
-    private static string Serialize(object obj)
+    private static string Serialize<T>(T obj) where T : notnull
     {
-      JsonConvert.DefaultSettings ??= SplatTagJsonSnapshotDatabase.JsonConvertDefaultSettings;
-      var serializer = JsonSerializer.Create(JsonConvert.DefaultSettings());
+      logger.Trace($"{nameof(Serialize)} {obj.GetType()} called.");
+      var settings = SetSerializerSettings();
+      var serializer = JsonSerializer.Create(settings);
       StringWriter sw = new();
-      serializer.Serialize(sw, obj);
+      serializer.Serialize(sw, obj, typeof(T));
       return sw.ToString();
     }
 
-    private static JsonSerializerSettings DeserializeGetSettings(Dictionary<string, Source>? lookup)
+    private static JsonSerializerSettings SetSerializerSettings(Dictionary<string, Source>? lookup = null)
     {
-      if (JsonConvert.DefaultSettings == null)
-      {
-        JsonConvert.DefaultSettings = SplatTagJsonSnapshotDatabase.JsonConvertDefaultSettings;
-      }
-      var settings = JsonConvert.DefaultSettings();
-      if (lookup != null)
-      {
-        settings.Context = new StreamingContext(StreamingContextStates.All, new Source.SourceStringConverter(lookup));
-      }
+      var settings = SplatTagJsonSnapshotDatabase.JsonConvertDefaultSettings();
+      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.SourceStringConverter(lookup));
+      JsonConvert.DefaultSettings = () => settings;  // Note that changing the default here is also needed/used when JToken.ToObject is called.
       return settings;
     }
 
     private static object Deserialize(string json, Dictionary<string, Source>? lookup)
     {
-      var settings = DeserializeGetSettings(lookup);
+      logger.Trace($"{nameof(Deserialize)} object json called.");
+      var settings = SetSerializerSettings(lookup);
       return JsonConvert.DeserializeObject(json, settings) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object (json.Length={json.Length})");
     }
 
     private static T Deserialize<T>(string json, Dictionary<string, Source>? lookup)
     {
-      var settings = DeserializeGetSettings(lookup);
+      logger.Trace($"{nameof(Deserialize)} {typeof(T)} json called.");
+      var settings = SetSerializerSettings(lookup);
       return JsonConvert.DeserializeObject<T>(json, settings) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object of type {typeof(T).Name} (json.Length={json.Length})");
     }
 
@@ -191,9 +188,9 @@ namespace SplatTagUnitTests
       player.AddBattlefyPersistentId("0000-1111-2222-3333", h1);
 
       player.AddDiscordId("123456789", source2);
-      player.AddDiscordUsername("username2", u2);
+      player.AddDiscordUsername("username2#1234", u2);
       player.AddDiscordId("4444", source1);
-      player.AddDiscordUsername("username1", u1);
+      player.AddDiscordUsername("username1#4321", u1);
 
       player.AddSendou("slate", s1);
 
@@ -229,9 +226,9 @@ namespace SplatTagUnitTests
       Assert.AreEqual("source1", orderedDiscordIds[0].Sources[0].Name, "Id [0] unexpected source");
       Assert.AreEqual("123456789", orderedDiscordIds[1].Value, "Id [1] unexpected handle");
       Assert.AreEqual("source2", orderedDiscordIds[1].Sources[0].Name, "Id [1] unexpected source");
-      Assert.AreEqual("username1", orderedDiscordUsernames[0].Value, "Usernames [0] unexpected handle");
+      Assert.AreEqual("username1#4321", orderedDiscordUsernames[0].Value, "Usernames [0] unexpected handle");
       Assert.AreEqual("u1", orderedDiscordUsernames[0].Sources[0].Name, "Usernames [0] unexpected source");
-      Assert.AreEqual("username2", orderedDiscordUsernames[1].Value, "Usernames [1] unexpected handle");
+      Assert.AreEqual("username2#1234", orderedDiscordUsernames[1].Value, "Usernames [1] unexpected handle");
       Assert.AreEqual("u2", orderedDiscordUsernames[1].Sources[0].Name, "Usernames [1] unexpected source");
 
       var sendou = deserialized.SendouProfiles.FirstOrDefault();
@@ -315,6 +312,11 @@ namespace SplatTagUnitTests
       string json = Serialize(t);
       Console.WriteLine(nameof(SerializeTeamRandomly) + ": ");
       Console.WriteLine(json);
+
+      // Serialize the json again to verify Serialize integrity
+      string json2 = Serialize(t);
+      Assert.AreEqual(json, json2, "Serialize jsons do not match - Serialize changed the object?");
+
       Team deserialized = Deserialize<Team>(json, t.Sources.ToDictionary(s => s.Id));
       Assert.AreEqual(t.Name, deserialized.Name, "Name not equal");
       var reasons = t.MatchWithReason(deserialized);
@@ -397,15 +399,15 @@ namespace SplatTagUnitTests
       Player player2 = new();
       player2.AddSendou("wug", source1);
       Team team1 = new("Team One", source1);
-      player1.AddTeams(team1.Id, source1);
+      player1.AddTeams(team1.TeamId, source1);
       Team team2 = new("Team Two", source1);
-      player2.AddTeams(team2.Id, source1);
+      player2.AddTeams(team2.TeamId, source1);
       source1.Players = new[] { player1, player2 };
       source1.Teams = new[] { team1, team2 };
       sources.Add(source1.Id, source1);
 
       Score s1 = new(new[] { 1, 3 });
-      Game g1 = new(s1, new[] { player1.Id, player2.Id }, new[] { team1.Id, team2.Id });
+      Game g1 = new(s1, new[] { player1.Id, player2.Id }, new[] { team1.TeamId, team2.TeamId });
       Dictionary<int, Guid[]> placementByPlayers = new()
       {
         [1] = new[] { player2.Id },
@@ -447,16 +449,17 @@ namespace SplatTagUnitTests
     }
 
     [TestMethod]
-    public void DeserializeFriendCodes()
+    public void SerializeFriendCodesRandomly()
     {
-      const string json = @"[[6653,9220,3527],[6653,9220,3527],[6653,9220,3527],[6653,9220,3527]]";
-      FriendCode[] fcs = Deserialize<FriendCode[]>(json, new Dictionary<string, Source>());
-      Assert.IsNotNull(fcs);
-      Assert.AreEqual(4, fcs.Length, "Expected 4 friend codes parsed.");
+      var fcs = ArbitraryDataExtensions.GetRandomIEnumerable<FriendCode>().ToList();
+      Assert.IsTrue(fcs.All(code => !code.NoCode), "Code not set.");
 
-      Player player = new();
-      player.AddFCs(fcs, Builtins.ManualSource);
-      Assert.AreEqual(1, player.FCs.Count, "Expected only 1 FC as the values are equal.");
+      string json = Serialize(fcs);
+      Console.WriteLine(nameof(SerializeFriendCodesRandomly) + ": ");
+      Console.WriteLine(json);
+      List<FriendCode> deserialized = Deserialize<List<FriendCode>>(json, null);
+      Assert.IsTrue(fcs.SequenceEqual(deserialized), $"Codes not equal ({string.Join(",", fcs)} != {string.Join(", ", deserialized)})");
+      AssertSerializeAndDeserialize(json);
     }
 
     [TestMethod]

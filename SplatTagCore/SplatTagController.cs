@@ -740,24 +740,24 @@ namespace SplatTagCore
     /// Match a Team by its id.
     /// </summary>
     /// <returns>
-    /// Non-null team, which defaults to <see cref="Team.UnlinkedTeam"/> if not found.
+    /// Non-null team, which defaults to <see cref="Team.UnknownTeam"/> if not found.
     /// </returns>
     public Team GetTeamById(Guid id)
     {
       return (id == Team.NoTeam.Id) ? Team.NoTeam :
         (Teams.TryGetValue(id, out Team team) ? team :
-        Team.UnlinkedTeam);
+        Team.UnknownTeam);
     }
 
     /// <summary>
     /// Match a <see cref="Team"/> by its id.
-    /// Sets <paramref name="team"/> to <see cref="Team.UnlinkedTeam"/> if not found.
+    /// Sets <paramref name="team"/> to <see cref="Team.UnknownTeam"/> if not found.
     /// Returns if team returns is not the unlinked team (was found).
     /// </summary>
     public bool GetTeamById(Guid id, out Team team)
     {
       team = GetTeamById(id);
-      return !team.Equals(Team.UnlinkedTeam);
+      return !team.Equals(Team.UnknownTeam);
     }
 
     /// <summary>

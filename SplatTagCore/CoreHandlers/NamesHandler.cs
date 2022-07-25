@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -9,32 +10,21 @@ namespace SplatTagCore
     BaseSourcedItemHandler<T>
     where T : Name
   {
-    protected virtual FilterOptions NameOption { get; } = FilterOptions.None;
-
     public IEnumerable<string> TransformedNames => GetItemsUnordered().Select(n => n.Transformed);
-
-    /// <summary>
-    /// Default constructor for deserialization
-    /// </summary>
-    protected NamesHandler()
-    {
-    }
 
     public void Add(T item)
       => Add(item, item.Sources);
 
     public void Add(IEnumerable<T> items)
-    {
-      foreach (var item in items)
-      {
-        Add(item);
-      }
-    }
+      => items.ForEach(item => Add(item));
 
     public bool Contains(string nameValue, StringComparison stringComparison = StringComparison.OrdinalIgnoreCase)
-    {
-      return GetItemsUnordered().Any(n => n.Value.Equals(nameValue, stringComparison));
-    }
+      => GetItemsUnordered().Any(n => n.Value.Equals(nameValue, stringComparison));
+
+    /// <summary>
+    /// If the Sourced Item Handler generic matches in the <see cref="BaseSourcedItemHandler{T}.MatchWithReason(object)"/> function, get the reason why.
+    /// </summary>
+    public override FilterOptions GetMatchReason() => NameOption;
 
     /// <summary>
     /// Return if this names handler matches another by any of its names.
@@ -54,32 +44,43 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// If the Sourced Item Handler generic matches in the <see cref="BaseSourcedItemHandler{T}.MatchWithReason(object)"/> function, get the reason why.
+    /// ToString on <see cref="NamesHandler{T}"/> returns the serialized name and its items
     /// </summary>
-    public override FilterOptions GetMatchReason() => NameOption;
+    public override string ToString() => $"{nameof(NamesHandler<T>)} - {SerializedHandlerName}: [{string.Join(", ", GetItemsUnordered())}]";
 
     public bool TransformedNamesMatch(BaseSourcedItemHandler<T> other)
+      => GetItemsUnordered().TransformedNamesMatch(other.GetItemsUnordered());
+
+    /// <summary>
+    /// Default constructor for deserialization
+    /// </summary>
+    protected NamesHandler()
     {
-      return GetItemsUnordered().TransformedNamesMatch(other.GetItemsUnordered());
+      logger.Trace($"{nameof(NamesHandler<T>)} constructor in {this.GetType()} called.");
     }
+
+    protected virtual FilterOptions NameOption { get; } = FilterOptions.None;
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     #region Serialization
 
     protected virtual void DeserializeNameItems(SerializationInfo info, StreamingContext context)
     {
+      logger.Trace($"{nameof(DeserializeNameItems)} in {this.GetType()} called.");
       base.DeserializeBaseSourcedItems(info, context);
     }
 
-    protected virtual void SerializeNameItems(SerializationInfo info, StreamingContext context)
+    protected virtual object SerializeNameItems()
     {
-      base.SerializeBaseSourcedItems(info, context);
+      logger.Trace($"{nameof(SerializeNameItems)} in {this.GetType()} called.");
+      return base.SerializeBaseSourcedItems();
+    }
+
+    public override object ToSerializedObject()
+    {
+      return SerializeNameItems();
     }
 
     #endregion Serialization
-
-    /// <summary>
-    /// ToString on <see cref="NamesHandler{T}"/> returns the serialized name and its items
-    /// </summary>
-    public override string ToString() => $"{SerializedHandlerName}: [{string.Join(", ", GetItemsUnordered())}]";
   }
 }

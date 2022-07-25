@@ -8,13 +8,17 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class BattlefyHandler : BaseHandlerCollectionSourced<BattlefyHandler>, ISerializable
+  public class BattlefyHandler :
+    BaseHandlerCollectionSourced,
+    ISerializable
   {
     public const string SerializationName = "Bfy";
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+    public override string SerializedHandlerName => SerializationName;
 
     public BattlefyHandler()
     {
+      logger.Trace($"{nameof(BattlefyHandler)} constructor called.");
     }
 
     /// <summary>
@@ -146,17 +150,13 @@ namespace SplatTagCore
     #region Serialization
 
     // Deserialize
-    protected BattlefyHandler(SerializationInfo info, StreamingContext context)
-      : base()
+    public BattlefyHandler(SerializationInfo info, StreamingContext context)
     {
-      DeserializeHandlers(info, context);
+      base.DeserializeHandlers(info, context);
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeHandlers(info, context);
-    }
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="BaseHandlerCollectionSourced.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }

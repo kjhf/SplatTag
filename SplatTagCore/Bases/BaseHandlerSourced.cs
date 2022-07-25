@@ -1,17 +1,21 @@
-﻿using System;
+﻿using NLog;
 using System.Collections.Generic;
 
 namespace SplatTagCore
 {
   /// <summary>
-  /// Base class for <see cref="BaseHandler{T}"/> classes that are also sourced.
+  /// Base class for <see cref="BaseHandler"/> classes that are also sourced.
   /// </summary>
-  public abstract class BaseHandlerSourced<T> :
-    BaseHandler<T>,
+  public abstract class BaseHandlerSourced :
+    BaseHandler,
     IReadonlySourceable
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
     protected BaseHandlerSourced()
-    { }
+    {
+      logger.Trace($"{nameof(BaseHandlerSourced)} constructor in {this.GetType()} called.");
+    }
 
     /// <summary>
     /// Back-store for quick access to the most recent source.
@@ -25,8 +29,7 @@ namespace SplatTagCore
 
     public abstract IReadOnlyList<Source> Sources { get; }
 
-    public override FilterOptions MatchWithReason(IMatchable other) => MatchWithReason((T)other);
-
-    public override void Merge(IMergable other) => Merge((T)other);
+    /// <inheritdoc/>
+    public override FilterOptions MatchWithReason(BaseHandler other) => MatchWithReason((BaseHandlerSourced)other);
   }
 }

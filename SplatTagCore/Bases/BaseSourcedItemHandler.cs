@@ -1,5 +1,5 @@
 ﻿using NLog;
-using SplatTagCore.Extensions;
+using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,8 +12,8 @@ namespace SplatTagCore
   /// Base class for <see cref="BaseHandlerSourced{T}"/> classes that also have classes that are sourced against it.
   /// </summary>
   public abstract class BaseSourcedItemHandler<T> :
-    BaseHandlerSourced<BaseSourcedItemHandler<T>>
-    where T : notnull
+    BaseHandlerSourced
+    where T : ICoreObject
   {
     /// <summary>
     /// Back-store for the items this Handler handles.
@@ -30,14 +30,13 @@ namespace SplatTagCore
     /// </summary>
     protected T? mostRecentItem = default;
 
-    private const string SerializedItemsName = "Items";
-    private const string SerializedSourceName = "S";
-    private const string SerializedItemName = "V";
+    private const string SerializedItemsName = "SIGHtems";
 
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     protected BaseSourcedItemHandler()
     {
+      logger.Trace($"{nameof(BaseSourcedItemHandler<T>)} constructor in {this.GetType()} called.");
     }
 
     /// <summary>
@@ -53,12 +52,20 @@ namespace SplatTagCore
     /// </summary>
     public T? MostRecent => mostRecentItem;
 
-    /// <summary>
-    /// Get the name to serialize the items under.
-    /// </summary>
-    public abstract string SerializedHandlerName { get; }
-
-    public override IReadOnlyList<Source> Sources => items.Values.SelectMany(x => x).Distinct().ToList();
+    public override IReadOnlyList<Source> Sources
+    {
+      get
+      {
+        if (typeof(IReadonlySourceable).IsAssignableFrom(typeof(T)))
+        {
+          return items.Keys.SelectMany(x => ((IReadonlySourceable)x).Sources).Concat(items.Values.SelectMany(x => x)).Distinct().ToList();
+        }
+        else
+        {
+          return items.Values.SelectMany(x => x).Distinct().ToList();
+        }
+      }
+    }
 
     /// <summary>
     /// Get all the items and their sources as an ordered enumerable from most recent item to oldest.
@@ -143,7 +150,7 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// If the Sourced Item Handler generic matches in the <see cref="MatchWithReason(object)"/> function, get the reason why.
+    /// If the Sourced Item Handler generic matches in the <see cref="MatchWithReason(BaseSourcedItemHandler{T})"/> function, get the reason why.
     /// </summary>
     public abstract FilterOptions GetMatchReason();
 
@@ -179,7 +186,7 @@ namespace SplatTagCore
     /// <summary>
     /// Get if this handler matches another with a Filter Reason specified by <see cref="GetMatchReason"/> or <see cref="FilterOptions.None"/>
     /// </summary>
-    public override FilterOptions MatchWithReason(BaseSourcedItemHandler<T> other)
+    public FilterOptions MatchWithReason(BaseSourcedItemHandler<T> other)
     {
       if (other == null)
       {
@@ -192,21 +199,29 @@ namespace SplatTagCore
     }
 
     /// <summary>
-    /// Merge this team handler with another.
-    /// Handles sources and timing.
+    /// Get if this handler contains an item with a Filter Reason specified by <see cref="GetMatchReason"/> or <see cref="FilterOptions.None"/>
     /// </summary>
-    public override void Merge(BaseSourcedItemHandler<T> other) => Merge(other.items);
+    public FilterOptions MatchWithReason(T other) => Contains(other) ? GetMatchReason() : FilterOptions.None;
 
-    public override string ToString()
-    {
-      return $"{Count} items{(MostRecent != null ? $", current: {MostRecent}" : "")}";
-    }
+    /// <inheritdoc/>
+    public override FilterOptions MatchWithReason(BaseHandler other) => MatchWithReason((BaseSourcedItemHandler<T>)other);
 
     /// <summary>
     /// Merge this team handler with another.
     /// Handles sources and timing.
     /// </summary>
-    protected void Merge(Dictionary<T, List<Source>> incoming)
+    public override void Merge(ISelfMergable other) => Merge(((BaseSourcedItemHandler<T>)other).items);
+
+    /// <summary>
+    /// Overridden ToString, returns $"{Count} items, current: {MostRecent}";
+    /// </summary>
+    public override string ToString() => $"{Count} items{(MostRecent != null ? $", current: {MostRecent}" : "")}";
+
+    /// <summary>
+    /// Merge this team handler with another.
+    /// Handles sources and timing.
+    /// </summary>
+    protected void Merge(IReadOnlyDictionary<T, List<Source>> incoming)
     {
       foreach (var pair in incoming)
       {
@@ -246,17 +261,19 @@ namespace SplatTagCore
 
     protected virtual void DeserializeBaseSourcedItems(SerializationInfo info, StreamingContext context)
     {
+      logger.Trace($"{nameof(DeserializeBaseSourcedItems)} called for {this.GetType()}.");
+
       Source.SourceStringConverter? converter = context.Context as Source.SourceStringConverter;
 
-      var val = info.GetValueOrDefault(SerializedItemsName, Array.Empty<Dictionary<string, object>>());
+      var val = info.GetValueOrDefault(SerializedItemsName, Array.Empty<SourcedItemContainer<T>>());
       if (val.Length > 0)
       {
         foreach (var pair in val)
         {
-          var item = pair.Get(SerializedItemName);
+          var item = pair.item;
           if (item != null)
           {
-            var sourceStrings = (string[])pair.Get(SerializedSourceName, Array.Empty<string>());
+            var sourceStrings = pair.SourceIds;
             IEnumerable<Source> sources;
             if (converter != null)
             {
@@ -299,14 +316,11 @@ namespace SplatTagCore
       }
     }
 
-    /// <summary>
-    /// Reads the handler name that's been serialized. For most cases, this won't be needed as the name is constant.
-    /// But for handlers that are not-abstract but multi-instance, this may be required to deserialize the handler.
-    /// </summary>
-    protected string ReadSerializedHandlerName(SerializationInfo info) => info.AsKeyValuePairs().FirstOrDefault(pair => pair.Key != SerializedSourceName).Key;
-
-    protected void SerializeBaseSourcedItems(SerializationInfo info, StreamingContext context)
+    protected object SerializeBaseSourcedItems()
     {
+      Dictionary<string, object> result = new();
+      logger.Trace($"{nameof(SerializeBaseSourcedItems)} called for {this.GetType()}. HasDataToSerialize={HasDataToSerialize}");
+
       if (HasDataToSerialize)
       {
         // e.g.
@@ -320,19 +334,31 @@ namespace SplatTagCore
         //        ]
         //    }
         // ]}
-        var serializable = GetItemsSourcedUnordered().Select(pair => new Dictionary<string, object> {
-            { SerializedItemName, pair.Key },
-            { SerializedSourceName, pair.Value.Select(s => s.Id).ToArray() }
-          }
-        ).ToArray();
+        var serializable = GetItemsSourcedUnordered().Select(pair => new SourcedItemContainer<T>(pair.Key, pair.Value.Select(s => s.Id).Distinct())).ToArray();
+
         if (logger.IsErrorEnabled && serializable.Length == 0)
         {
           logger.Error("Unexpected empty return from GetItemsSourcedUnordered. " + ToString());
         }
-        info.AddValue(SerializedItemsName, serializable);
+        result.Add(SerializedItemsName, serializable);
       }
+      return result;
     }
 
-    #endregion Serialization
+    public override object ToSerializedObject()
+    {
+      return SerializeBaseSourcedItems();
+    }
+
+    // public so derived classes can implement ISerializable
+    public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+      if (HasDataToSerialize)
+      {
+        info.AddValue(SerializedHandlerName, ToSerializedObject());
+      }
+    }
   }
+
+  #endregion Serialization
 }

@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public record Bracket
+  public record Bracket : ICoreObject, IEquatable<Bracket>
   {
     public Bracket(string? name = null, IList<Game>? matches = null, IList<Guid>? players = null, IList<Guid>? teams = null, Placement? placements = null)
     {
@@ -43,6 +43,10 @@ namespace SplatTagCore
     /// Final placements for teams and players
     /// </summary>
     public Placement Placements { get; }
+
+    public string GetDisplayValue() => Name;
+
+    public bool Equals(ICoreObject other) => Equals(other as Bracket);
 
     #region Serialization
 

@@ -1,13 +1,12 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class Division : ISerializable, IComparable<Division>, IEquatable<Division?>
+  public record Division : ICoreObject, ISerializable, IComparable<Division>, IEquatable<Division?>
   {
     public const string UNKNOWN_STR = "Div Unknown";
     public const int UNKNOWN = int.MaxValue;
@@ -207,39 +206,6 @@ namespace SplatTagCore
       return left.CompareTo(right) >= 0;
     }
 
-    public static bool operator ==(Division? left, Division? right)
-    {
-      if (left is null || right is null) return false;
-      return EqualityComparer<Division>.Default.Equals(left, right);
-    }
-
-    public static bool operator !=(Division? left, Division? right)
-    {
-      return !(left == right);
-    }
-
-    public override bool Equals(object? obj)
-    {
-      return Equals(obj as Division);
-    }
-
-    public bool Equals(Division? other)
-    {
-      return other != null &&
-             DivType == other.DivType &&
-             Season == other.Season &&
-             Value == other.Value;
-    }
-
-    public override int GetHashCode()
-    {
-      int hashCode = 854497090;
-      hashCode = (hashCode * -1521134295) + DivType.GetHashCode();
-      hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(Season);
-      hashCode = (hashCode * -1521134295) + Value.GetHashCode();
-      return hashCode;
-    }
-
     /// <summary>
     /// Compare one Div to another. Remember, lower is better!
     /// </summary>
@@ -247,6 +213,10 @@ namespace SplatTagCore
     {
       return NormalisedValue.CompareTo(other.NormalisedValue);
     }
+
+    public string GetDisplayValue() => ToString();
+
+    public bool Equals(ICoreObject other) => Equals(other as Division);
 
     public override string ToString()
     {

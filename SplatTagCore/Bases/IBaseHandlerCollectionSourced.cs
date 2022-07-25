@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace SplatTagCore
 {
-  internal interface IBaseHandlerCollectionSourced :
-    IReadonlySourceable,
-    IDictionary<string, BaseHandler>,
-    IReadOnlyDictionary<string, BaseHandler>
+  /// <summary>
+  /// Interface for <see cref="BaseHandlerCollectionSourced"/>
+  /// </summary>
+  /// <remarks>Do NOT implement/inherit Dictionary, it will seriously screw up serialization. Use the property only.</remarks>
+  public interface IBaseHandlerCollectionSourced :
+    ISelfMatchable,
+    ISelfMergable,
+    IReadonlySourceable
   {
     /// <summary>
     /// Dictionary of handlers, keyed by its serialization name.
     /// </summary>
-    internal IDictionary<string, BaseHandler> Handlers => this;
-
-    protected internal IReadOnlyDictionary<string, BaseHandler> ReadOnlyPairs => new ReadOnlyDictionary<string, BaseHandler>(this);
+    internal protected IReadOnlyDictionary<string, BaseHandler> Handlers { get; }
 
     /// <summary>
     /// Get if the handler has data that needs serializing (true), or if it can be skipped (false).
@@ -28,5 +29,10 @@ namespace SplatTagCore
     /// { HandlerSerialization, (typeof(NamesHandler{Name}), () => new NamesHandler{Name}(FilterOptions.Filter, HandlerSerialization)) },
     /// </example>
     public IReadOnlyDictionary<string, (Type, Func<BaseHandler>)> SupportedHandlers { get; }
+
+    /// <summary>
+    /// Get if the handler collection contains the specified handler key.
+    /// </summary>
+    public bool ContainsKey(string key);
   }
 }

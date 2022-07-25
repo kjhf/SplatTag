@@ -30,8 +30,8 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void FinalisePlayersTest()
     {
-      var team1 = Guid.NewGuid();
-      var team2 = Guid.NewGuid();
+      var team1 = (TeamId)Guid.NewGuid();
+      var team2 = (TeamId)Guid.NewGuid();
 
       // p1
       var p1Source = new Source("p1", DateTime.Now.AddDays(1)); // Latest
@@ -148,15 +148,15 @@ namespace SplatTagUnitTests
       Team t6 = new("Shared Name", t6Source);
       t6.AddDivision(new Division(4, DivType.LUTI, "LaterSeason"), t6Source);
 
-      Player p1 = new("username", new[] { t1.Id, t2.Id, t4.Id }, new Source("p1_source"));
+      Player p1 = new("username", new[] { t1.TeamId, t2.TeamId, t4.TeamId }, new Source("p1_source"));
       p1.AddBattlefyInformation("user", "user", "p1id", Builtins.ManualSource);
       Assert.IsNotNull(t1.BattlefyPersistentTeamId);
       p1.AddBattlefyInformation("slug", "user", "p1id2", Builtins.ManualSource);
 
-      Player p2 = new("player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p2_source"));
-      Player p3 = new("another player", new[] { t1.Id, t2.Id, t4.Id }, new Source("p3_source"));
-      Player p4 = new("player 4", new[] { t6.Id, t5.Id }, new Source("p4_source"));
-      Player p5 = new("player 5", new[] { t6.Id, t5.Id }, new Source("p5_source"));
+      Player p2 = new("player", new[] { t1.TeamId, t2.TeamId, t4.TeamId }, new Source("p2_source"));
+      Player p3 = new("another player", new[] { t1.TeamId, t2.TeamId, t4.TeamId }, new Source("p3_source"));
+      Player p4 = new("player 4", new[] { t6.TeamId, t5.TeamId }, new Source("p4_source"));
+      Player p5 = new("player 5", new[] { t6.TeamId, t5.TeamId }, new Source("p5_source"));
 
       // Perform the merge
       var playersIncoming = new List<Player>() { p1, p2, p3, p4, p5 };
@@ -243,7 +243,7 @@ namespace SplatTagUnitTests
       // Set the player's teams to the incoming teams
       foreach (var player in playersIncoming)
       {
-        player.AddTeams(teamsIncoming[rand.Next(teamsIncoming.Count)].Id, Builtins.BuiltinSource);
+        player.AddTeams(teamsIncoming[rand.Next(teamsIncoming.Count)].TeamId, Builtins.BuiltinSource);
       }
 
       // Ensure at least one merge
@@ -292,13 +292,13 @@ namespace SplatTagUnitTests
       Assert.IsTrue(result.Length <= CoreMergeHandler.MAX_FINALISE_LOOPS, "Too many iterations: " + result.Length);
     }
 
-    private static void DumpCoreObj(string label, IEnumerable<ISplatTagCoreObject> sourceable)
+    private static void DumpCoreObj(string label, IEnumerable<IIdentifiableCoreObject> sourceable)
     {
       logger.Info(label);
       logger.Info(CoreObjToString(sourceable));
     }
 
-    private static string CoreObjToString(IEnumerable<ISplatTagCoreObject> sourceable)
+    private static string CoreObjToString(IEnumerable<IIdentifiableCoreObject> sourceable)
     {
       StringBuilder sb = new();
       foreach (var s in sourceable)
@@ -315,7 +315,7 @@ namespace SplatTagUnitTests
       return sb.ToString();
     }
 
-    private static string IdsToString(IEnumerable<Guid> ids)
+    private static string IdsToString(IEnumerable<TeamId> ids)
     {
       return new StringBuilder()
         .AppendJoin("\n", ids)

@@ -1,10 +1,14 @@
 ﻿using NLog;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
-  public abstract class SingleValueHandler<T> : BaseHandler<T?>
+  public abstract class SingleValueHandler<T> :
+    BaseHandler,
+    IMatchable<T>,
+    IMergable<T>
   {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -23,19 +27,13 @@ namespace SplatTagCore
     /// <inheritdoc/>
     public override bool HasDataToSerialize => Value != null && !Value.Equals(default(T));
 
-    public abstract string SerializedName { get; }
     protected internal T? Value { get; set; }
 
-    public override FilterOptions MatchWithReason(IMatchable other)
-    {
-      if (other is SingleValueHandler<T> handler && Value?.Equals(handler.Value) == true)
-      {
-        return nameOption;
-      }
-      return FilterOptions.None;
-    }
+    public FilterOptions MatchWithReason(SingleValueHandler<T> other) => Value?.Equals(other.Value) == true ? nameOption : FilterOptions.None;
 
-    public override FilterOptions MatchWithReason(T? other)
+    public override FilterOptions MatchWithReason(BaseHandler other) => MatchWithReason((SingleValueHandler<T>)other);
+
+    public FilterOptions MatchWithReason(T? other)
     {
       if (Value?.Equals(other) == true)
       {
@@ -44,7 +42,7 @@ namespace SplatTagCore
       return FilterOptions.None;
     }
 
-    public override void Merge(IMergable other)
+    public override void Merge(ISelfMergable other)
     {
       if (other is SingleValueHandler<T> handler)
       {
@@ -52,21 +50,38 @@ namespace SplatTagCore
       }
     }
 
-    public override void Merge(T? other)
+    public virtual void Merge(T? other)
     {
       this.Value = other;
     }
 
     protected virtual void DeserializeSingleValue(SerializationInfo info, StreamingContext context)
     {
-      Value = info.GetValueOrDefault(SerializedName, default(T));
+      Value = info.GetValueOrDefault(SerializedHandlerName, default(T));
     }
 
-    protected virtual void SerializeSingleValue(SerializationInfo info, StreamingContext context)
+    protected virtual object SerializeSingleValue()
+    {
+      Dictionary<string, object> result = new();
+
+      if (HasDataToSerialize)
+      {
+        result.Add(SerializedHandlerName, Value!);
+      }
+      return result;
+    }
+
+    public override object ToSerializedObject()
+    {
+      return SerializeSingleValue();
+    }
+
+    // public so derived classes can implement ISerializable
+    public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
     {
       if (HasDataToSerialize)
       {
-        info.AddValue(SerializedName, Value);
+        info.AddValue(SerializedHandlerName, Value!);
       }
     }
   }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SplatTagCore
 {
-  public interface ISplatTagDatabase
+  public interface ISplatTagDatabase : ITeamResolver
   {
     /// <summary>
     /// Load the database. Returns if anything was loaded.

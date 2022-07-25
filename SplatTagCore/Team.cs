@@ -8,11 +8,15 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Team : BaseSplatTagCoreObject<Team>
+  public class Team :
+    IdentifiableObjectHandler<Team>,
+    IIdentifiableCoreObject
   {
+    public const string SerializationName = "T";
     public static readonly Team NoTeam = new("(Free Agent)", Builtins.BuiltinSource);
-    public static readonly Team UnlinkedTeam = new("(UNLINKED TEAM)", Builtins.BuiltinSource);
+    public static readonly Team UnknownTeam = new(Builtins.UNKNOWN_TEAM, Builtins.BuiltinSource);
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+    public override string SerializedHandlerName => SerializationName;
 
     /// <summary>
     /// Default construct a Team
@@ -79,6 +83,11 @@ namespace SplatTagCore
     /// The divisions of the team
     /// </summary>
     public IReadOnlyList<Division> DivsOrdered => DivisionInformationNoCreate?.GetItemsOrdered() ?? Array.Empty<Division>();
+
+    /// <summary>
+    /// Get the team's id as a <see cref="TeamId"/> record.
+    /// </summary>
+    public TeamId TeamId => (TeamId)Id;
 
     /// <summary>
     /// The last known used name for the team or Builtins.UnknownTeamName.
@@ -203,7 +212,8 @@ namespace SplatTagCore
     /// </summary>
     public IEnumerable<Player> GetPlayers(IEnumerable<Player> allPlayers)
     {
-      return allPlayers.Where(p => p.Teams.Contains(this.Id));
+      var thisId = TeamId;
+      return allPlayers.Where(p => p.Teams.Contains(thisId));
     }
 
     /// <summary>
@@ -219,14 +229,11 @@ namespace SplatTagCore
     // Deserialize
     protected Team(SerializationInfo info, StreamingContext context)
     {
-      DeserializeHandlers(info, context);
+      base.DeserializeHandlers(info, context);
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeHandlers(info, context);
-    }
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="BaseHandlerCollectionSourced.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }

@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class Name : ISerializable, ISourceable, IEquatable<Name?>
+  public class Name : ISourcedCoreObject, ISourceable, IEquatable<Name?>
   {
     public const string NameKeySerialization = "N";
     public const string NameSourceSerialization = "S";
@@ -114,6 +114,10 @@ namespace SplatTagCore
     {
       return Value ?? base.ToString();
     }
+
+    public string GetDisplayValue() => ToString();
+
+    public bool Equals(ICoreObject other) => Equals(other as Name);
 
     #region Serialization
 

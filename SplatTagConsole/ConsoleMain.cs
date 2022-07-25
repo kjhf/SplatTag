@@ -295,7 +295,7 @@ namespace SplatTagConsole
                 .Distinct()
                 .ToDictionary(t => t.Id, t => t);
               result.AdditionalTeams[Team.NoTeam.Id] = Team.NoTeam;
-              result.AdditionalTeams[Team.UnlinkedTeam.Id] = Team.UnlinkedTeam;
+              result.AdditionalTeams[Team.UnknownTeam.Id] = Team.UnknownTeam;
 
               result.PlayersForTeams =
                 result.Teams

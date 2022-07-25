@@ -6,7 +6,9 @@ using System.Runtime.Serialization;
 namespace SplatTagCore
 {
   [Serializable]
-  public class FriendCodesHandler : BaseSourcedItemHandler<FriendCode>, ISerializable
+  public class FriendCodesHandler :
+    BaseSourcedItemHandler<FriendCode>,
+    ISerializable
   {
     public const string SerializationName = "FCs";
     public override string SerializedHandlerName => SerializationName;
@@ -50,11 +52,8 @@ namespace SplatTagCore
       DeserializeBaseSourcedItems(info, context);
     }
 
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      SerializeBaseSourcedItems(info, context);
-    }
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="BaseSourcedItemHandler{T}.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }

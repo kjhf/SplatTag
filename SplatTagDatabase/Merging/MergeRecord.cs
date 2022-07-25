@@ -13,12 +13,12 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// The kept item, i.e. the destination of the merged item.
     /// </summary>
-    private ISplatTagCoreObject? referenceItemKept;
+    private IIdentifiableCoreObject? referenceItemKept;
 
     /// <summary>
     /// The merged item, i.e. the source of the merge.
     /// </summary>
-    private readonly ISplatTagCoreObject? incomingItemMergedOrAdded;
+    private readonly IIdentifiableCoreObject? incomingItemMergedOrAdded;
 
     /// <summary>
     /// Get if the record indicates a merge took place.
@@ -29,7 +29,7 @@ namespace SplatTagDatabase.Merging
     /// The item that was unchanged/kept or added.
     /// Note that the discarded item won't be gotten through this property because in a merge then referenceItemKept will be returned first.
     /// </summary>
-    public ISplatTagCoreObject ResultantItem => referenceItemKept ?? incomingItemMergedOrAdded ?? throw new InvalidOperationException("No item was kept or added.");
+    public IIdentifiableCoreObject ResultantItem => referenceItemKept ?? incomingItemMergedOrAdded ?? throw new InvalidOperationException("No item was kept or added.");
 
     /// <summary>
     /// The item that was unchanged/kept or added's id.
@@ -39,7 +39,7 @@ namespace SplatTagDatabase.Merging
     /// <summary>
     /// The item that was merged; null if this isn't a merge.
     /// </summary>
-    public ISplatTagCoreObject? MergedItem => incomingItemMergedOrAdded;
+    public IIdentifiableCoreObject? MergedItem => incomingItemMergedOrAdded;
 
     /// <summary>
     /// The item that was merged's id; null if this isn't a merge.
@@ -89,7 +89,7 @@ namespace SplatTagDatabase.Merging
     /// </summary>
     public MergeReason? mergeReason;
 
-    private MergeRecord(ISplatTagCoreObject? itemKept = null, ISplatTagCoreObject? itemMerged = null, MergeReason? reason = null)
+    private MergeRecord(IIdentifiableCoreObject? itemKept = null, IIdentifiableCoreObject? itemMerged = null, MergeReason? reason = null)
     {
       if (itemKept == null && itemMerged == null) throw new ArgumentNullException("itemKept and itemMerged cannot both be null.");
 
@@ -105,9 +105,9 @@ namespace SplatTagDatabase.Merging
       }
     }
 
-    public static MergeRecord CreateMergeRecordForAddedItem(ISplatTagCoreObject itemAdded) => new(null, itemAdded);
-    public static MergeRecord CreateMergeRecordForKeptItem(ISplatTagCoreObject itemKept) => new(itemKept, null);
-    public static MergeRecord CreateMergeRecordForMergedItems(ISplatTagCoreObject referenceItemKept, ISplatTagCoreObject incomingMergedItem, FilterOptions reason)
+    public static MergeRecord CreateMergeRecordForAddedItem(IIdentifiableCoreObject itemAdded) => new(null, itemAdded);
+    public static MergeRecord CreateMergeRecordForKeptItem(IIdentifiableCoreObject itemKept) => new(itemKept, null);
+    public static MergeRecord CreateMergeRecordForMergedItems(IIdentifiableCoreObject referenceItemKept, IIdentifiableCoreObject incomingMergedItem, FilterOptions reason)
       => new(referenceItemKept, incomingMergedItem, new MergeReason(reason));
 
     protected MergeRecord() { }
@@ -115,19 +115,19 @@ namespace SplatTagDatabase.Merging
     // Deserialize
     protected MergeRecord(SerializationInfo info, StreamingContext context)
     {
-      referenceItemKept = ((ISplatTagCoreObject?)
+      referenceItemKept = ((IIdentifiableCoreObject?)
         info.GetValueOrDefault("K", (Player?)null)
         ?? info.GetValueOrDefault("K", (Team?)null)
         ?? throw new ArgumentNullException("Kept", "itemKept cannot be null."))!;
 
-      incomingItemMergedOrAdded = (ISplatTagCoreObject?)
+      incomingItemMergedOrAdded = (IIdentifiableCoreObject?)
         info.GetValueOrDefault("M", (Player?)null)
         ?? info.GetValueOrDefault("M", (Team?)null);
 
       mergeReason = new MergeReason(info.GetValueOrDefault("R", FilterOptions.None));
     }
 
-    internal void Migrate(ISplatTagCoreObject newMergeResult)
+    internal void Migrate(IIdentifiableCoreObject newMergeResult)
     {
       if (!IsMerge) throw new InvalidOperationException("This is not a merge.");
       if (newMergeResult == null) throw new ArgumentNullException(nameof(newMergeResult));

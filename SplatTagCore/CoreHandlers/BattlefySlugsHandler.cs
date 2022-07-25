@@ -1,4 +1,5 @@
-﻿using SplatTagCore.Social;
+﻿using NLog;
+using SplatTagCore.Social;
 using System;
 using System.Runtime.Serialization;
 
@@ -9,12 +10,14 @@ namespace SplatTagCore
     NamesHandler<BattlefyUserSocial>,
     ISerializable
   {
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
     public const string SerializationName = "Slugs";
     public override string SerializedHandlerName => SerializationName;
     protected override FilterOptions NameOption => FilterOptions.BattlefySlugs;
 
     public BattlefySlugsHandler()
     {
+      logger.Trace($"{nameof(BattlefySlugsHandler)} constructor called.");
     }
 
     #region Serialization
@@ -24,10 +27,8 @@ namespace SplatTagCore
       base.DeserializeNameItems(info, context);
     }
 
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      base.SerializeNameItems(info, context);
-    }
+    /// <summary>Serialize</summary>
+    /// <remarks>Handled in <see cref="BaseSourcedItemHandler{T}.GetObjectData(SerializationInfo, StreamingContext)"/>.</remarks>
 
     #endregion Serialization
   }
