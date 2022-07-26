@@ -165,7 +165,7 @@ namespace SplatTagConsole
       {
         if (verbose)
         {
-          SplatTagControllerFactory.SetNLogLevel();
+          SplatTagControllerFactory.SetNLogLevel(LogLevel.Debug);
         }
         else
         {
@@ -348,7 +348,8 @@ namespace SplatTagConsole
               catch (OutOfMemoryException oom)
               {
                 const string message = "ERROR: OutOfMemoryException on PlacementsForPlayers. Will continue anyway.";
-                logger.Warn(message, oom);
+                logger.Warn(message);
+                logger.Warn(oom, oom.ToString());
                 result.PlacementsForPlayers = new Dictionary<Guid, Dictionary<string, Bracket[]>>();
               }
             }
@@ -357,6 +358,7 @@ namespace SplatTagConsole
           {
             string message = $"ERROR: {ex.GetType().Name} while compiling data for serialization...";
             logger.Error(ex, message);
+            logger.Error(ex, ex.ToString());
 
             string q = result.Query;
             result = new CommandLineResult
@@ -372,7 +374,7 @@ namespace SplatTagConsole
 
         try
         {
-          StringWriter sw = new StringWriter();
+          StringWriter sw = new();
           serializer.Serialize(sw, result);
           messageToSend = sw.ToString();
         }
@@ -391,7 +393,7 @@ namespace SplatTagConsole
           };
 
           // Attempt to send the message as a different serialized error
-          StringWriter sw = new StringWriter();
+          StringWriter sw = new();
           serializer.Serialize(sw, result);
           messageToSend = sw.ToString();
         }
@@ -412,7 +414,7 @@ namespace SplatTagConsole
 
     private static string GetCommandsString()
     {
-      StringBuilder sb = new StringBuilder();
+      StringBuilder sb = new();
       sb.AppendLine("F: Fetch data from site or file");
       sb.AppendLine("L: (Re)load local database");
       sb.AppendLine("P: Match a player");
@@ -461,7 +463,7 @@ namespace SplatTagConsole
 
     private static Option[] GetOptions()
     {
-      List<Option> options = new List<Option>();
+      List<Option> options = new();
       foreach (var (optionType, flagName, description, getDefaultValue) in ConsoleOptions.GetOptionsAsTuple())
       {
         var arg = new Argument { ArgumentType = optionType };

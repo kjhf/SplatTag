@@ -58,7 +58,7 @@ namespace SplatTagUnitTests
       var player = players[0];
       Assert.IsTrue(player.Name.Value == PLAYER_NAME);
 
-      var teams = controller.MatchTeam(TEAM_ID.ToString(), new MatchOptions { FilterOptions = FilterOptions.SlappId });
+      var teams = controller.MatchTeam(TEAM_ID.Id.ToString(), new MatchOptions { FilterOptions = FilterOptions.SlappId });
       Assert.IsNotNull(teams.FirstOrDefault());
       var team = teams[0];
       Assert.IsTrue(team.CurrentDiv.Value == 1);
