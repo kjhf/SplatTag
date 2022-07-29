@@ -17,7 +17,7 @@ namespace SplatTagUnitTests
   public class ConsoleUnitTests
   {
     private const string EMPTY_PLAYERS = "\"Players\":[]";
-    private const int MAX_WAIT_TIME_MILLIS = 120000;
+    private const int MAX_WAIT_TIME_MILLIS = 300000;
     private const string MESSAGE_OK = "\"Message\":\"OK\"";
     private const string POPULATED_PLAYERS = "\"Players\":[{";
     private const string SLATE = "Slate";
@@ -25,6 +25,18 @@ namespace SplatTagUnitTests
     private static readonly TimeSpan MAX_WAIT_TIME_TS = TimeSpan.FromMilliseconds(MAX_WAIT_TIME_MILLIS);
     private readonly TextWriter consoleError = Console.Error;
     private readonly TextWriter consoleOut = Console.Out;
+    private static ConsoleController? consoleController;
+
+    [ClassInitialize]
+    public static void CreateAndLoadSnapshot(TestContext context)
+    {
+      Stopwatch stopwatch = new();
+      stopwatch.Start();
+      consoleController = new();
+      consoleController.EnsureInitialised();
+      stopwatch.Stop();
+      Console.WriteLine("It took " + stopwatch.Elapsed + " to initialise and load the controller.");
+    }
 
     /// <summary>
     /// Verify that the console handles case sensitive.
@@ -44,7 +56,7 @@ namespace SplatTagUnitTests
       {
         await Task.Run(async () =>
         {
-          await ConsoleMain.Main("--query slAte --exactCase".Split(" ")).ConfigureAwait(false);
+          await consoleController!.Handle("--query slAte --exactCase".Split(" ")).ConfigureAwait(false);
           await Task.Delay(500).ConfigureAwait(false); // Let any logging finish.
         }).WaitAsync(MAX_WAIT_TIME_TS);
       }
@@ -93,7 +105,7 @@ namespace SplatTagUnitTests
       bool timedOut = false;
       try
       {
-        var mainTask = Task.Run(() => ConsoleMain.Main(Array.Empty<string>())).WaitAsync(MAX_WAIT_TIME_TS);
+        var mainTask = Task.Run(() => consoleController!.Handle(Array.Empty<string>())).WaitAsync(MAX_WAIT_TIME_TS);
         var successfulCheck = Task.Run(() =>
         {
           for (; ; )
@@ -153,7 +165,7 @@ namespace SplatTagUnitTests
           mainTask = Task.Run(async () =>
           {
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss.ff}] mainTask: Beginning.");
-            await ConsoleMain.Main("--keepOpen".Split(" ")).ConfigureAwait(false);
+            await consoleController!.Handle("--keepOpen".Split(" ")).ConfigureAwait(false);
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss.ff}] mainTask: Finishing.");
             await Task.Delay(500).ConfigureAwait(false); // Let any logging finish.
           }).WaitAsync(MAX_WAIT_TIME_TS, persistToken);
@@ -256,7 +268,7 @@ namespace SplatTagUnitTests
         // This task will end once Slapp completes as --keepOpen is not specified
         await Task.Run(async () =>
         {
-          await ConsoleMain.Main("--query Slate".Split(" ")).ConfigureAwait(false);
+          await consoleController!.Handle("--query Slate".Split(" ")).ConfigureAwait(false);
           await Task.Delay(1000).ConfigureAwait(false); // Let any logging finish.
         }).WaitAsync(MAX_WAIT_TIME_TS);
       }
@@ -305,7 +317,7 @@ namespace SplatTagUnitTests
         // This task will end once Slapp completes as --keepOpen is not specified
         await Task.Run(async () =>
         {
-          await ConsoleMain.Main($"--b64 {SLATE.Base64Encode()}".Split(" ")).ConfigureAwait(false);
+          await consoleController!.Handle($"--b64 {SLATE.Base64Encode()}".Split(" ")).ConfigureAwait(false);
           await Task.Delay(1000).ConfigureAwait(false); // Let any logging finish.
         }).WaitAsync(MAX_WAIT_TIME_TS);
       }

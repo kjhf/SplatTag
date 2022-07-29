@@ -23,7 +23,7 @@ namespace SplatTagCore
     /// a small number of elements (under 20), List is actually better
     /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
     /// </remarks>
-    protected internal readonly Dictionary<T, List<Source>> items = new();
+    protected internal readonly Dictionary<T, List<Source>> items = new();  // TODO - we can save a lot of JSON space if T is already an IReadonlySourcable. Base class this and remove Source items for a T list.
 
     /// <summary>
     /// Back-store for quick access to the most recent item (current).
