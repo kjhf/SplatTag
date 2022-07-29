@@ -4,7 +4,7 @@ namespace SplatTagDatabase.Merging
 {
   public record MergeReason
   {
-    internal const string SIMILARITY_CONSTANT = "with similarity score";
+    internal const string SIMILARITY_CONSTANT = "score:";
 
     /// <summary> The reason for the merge. </summary>
     public FilterOptions Flags { get; }

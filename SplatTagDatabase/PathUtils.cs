@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -94,12 +95,12 @@ namespace SplatTagDatabase
     {
       try
       {
-        string filePath = Path.Combine(SplatTagControllerFactory.GetDumpPath(), logTitle + DateTime.Now.ToString("-yyyy-MM-dd-HH-mm-ss") + ".log");
+        string filePath = Path.Combine(SplatTagControllerFactory.GetDumpPath(), logTitle + DateTime.Now.ToString("-yyyy-MM-dd-HH-mm-ss") + ".log.br");
         logger.Trace("Saving log to " + filePath);
 
         // Wait until the log is written before continuing so the program has finished writing before exiting.
         var creationWaitTask = Task.Run(() => WaitForFileCreatedAndReady(filePath));
-        var savingTask = Task.Run(() => StreamLog(filePath));
+        var savingTask = Task.Run(() => StreamLogWithCompress(filePath));
 
         Task.WaitAll(creationWaitTask, savingTask);
         logger.Trace($"{logTitle}: creationWaitTask: {creationWaitTask.Status}, savingTask: {savingTask.Status}");
@@ -110,13 +111,16 @@ namespace SplatTagDatabase
         logger.Error(ex, error);
       }
 
-      void StreamLog(string filePath)
+      void StreamLogWithCompress(string filePath)
       {
         // Stream the merge logs' StringBuilders to file
-        using StreamWriter writer = new(filePath, false, new UTF8Encoding(false)); // UTF-8 no BOM
+        using FileStream writer = new(filePath, FileMode.Create);
+        using var compressor = new BrotliStream(writer, CompressionLevel.Optimal);
         foreach (var line in contentsFn())
         {
-          writer.WriteLine(line);
+          var bytes = Encoding.UTF8.GetBytes(line);
+          compressor.Write(bytes);
+          compressor.CopyTo(writer);
         }
       }
     }

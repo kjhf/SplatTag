@@ -12,7 +12,7 @@ namespace SplatTagDatabase.Merging
   public record CoreMergeResults : ISerializable
   {
     internal const string INTO_CONSTANT = "Into";
-    internal const string BECAUSE_IT_MATCHED_CONSTANT = "because it matched:";
+    internal const string BECAUSE_IT_MATCHED_CONSTANT = "matched:";
     internal const string SIMILARITY_CONSTANT = MergeReason.SIMILARITY_CONSTANT;
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
