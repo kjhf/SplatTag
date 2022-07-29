@@ -120,7 +120,6 @@ namespace SplatTagDatabase
         {
           var bytes = Encoding.UTF8.GetBytes(line);
           compressor.Write(bytes);
-          compressor.CopyTo(writer);
         }
       }
     }
