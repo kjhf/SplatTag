@@ -103,11 +103,14 @@ namespace SplatTagUnitTests
           )
         ));
       var splatarians = teams.Where(p => p.Name.Value == "Splatarians");
-      Assert.AreEqual(1, splatarians.Count(), $"Incorrect number of Splatarians:\n - { string.Join("\n - ", splatarians)}");
+      Assert.AreEqual(1, splatarians.Count(), $"Incorrect number of Splatarians:\n - {string.Join("\n - ", splatarians)}");
       Assert.AreEqual("SX", splatarians.First().CurrentDiv.Season);
       Assert.IsTrue(splatarians.First().DivisionInformation.GetDivisionsUnordered().Any(d => d.Season == "S9"));
       Assert.AreEqual(4, sources.Count, "Unexpected number of sources loaded.");
       Assert.IsTrue(players.Where(p => p.Name.Value.Contains("Slate")).All(p => !p.Top500), "Expected Slate top 500 flag to be false.");
+
+      // And check saving of the resolved data
+      splatTagJsonSnapshotDatabase.Save(players, teams, sources.Values);
     }
 
     /// <summary>
