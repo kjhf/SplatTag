@@ -2,17 +2,36 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
+using static SplatTagCore.JSONConverters;
 
 namespace SplatTagCore
 {
   [Serializable]
-  public class TeamsHandler : SourcedItemHandler<Guid>, ISerializable
+  public class TeamsHandler : SourcedItemHandler<Guid>
   {
     public TeamsHandler()
     {
     }
 
+    [JsonPropertyName("T")]
+    protected Dictionary<string, string[]> Model
+    {
+      get => OrderedItems.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value.Select(s => s.Id).ToArray());
+      set
+      {
+        if (GuidToSourceConverter.Instance != null)
+        {
+          Merge(value.ToDictionary(pair => Guid.Parse(pair.Key), pair => GuidToSourceConverter.Instance.Convert(pair.Value).ToList()));
+        }
+        else
+        {
+          Merge(value.ToDictionary(pair => Guid.Parse(pair.Key), pair => pair.Value.Select(s => new Source(s)).ToList()));
+        }
+      }
+    }
+
+    [JsonIgnore]
     public Guid? CurrentTeam => mostRecentItem == default ? null : mostRecentItem;
 
     /// <summary>
@@ -67,26 +86,5 @@ namespace SplatTagCore
 
       return workDone;
     }
-
-    // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext _)
-    {
-      if (Count > 0)
-      {
-        info.AddValue("T", this.GetItemsSourcedUnordered().ToDictionary(pair => pair.Key, pair => pair.Value.Select(s => s.Id)));
-      }
-    }
-
-    #region Serialization
-
-    // Deserialize
-    protected TeamsHandler(SerializationInfo info, StreamingContext context)
-    {
-      Source.GuidToSourceConverter? converter = context.Context as Source.GuidToSourceConverter;
-      var val = info.GetValueOrDefault("T", new Dictionary<Guid, List<string>>());
-      Merge(val.ToDictionary(pair => pair.Key, pair => (converter?.Convert(pair.Value) ?? pair.Value.Select(s => new Source(s))).ToList()));
-    }
-
-    #endregion Serialization
   }
 }

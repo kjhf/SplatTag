@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace SplatTagCore.Social
 {
@@ -56,15 +55,5 @@ namespace SplatTagCore.Social
       : base($"{plusLevel}/{source.Start.Year}/{source.Start.Month}", source, baseAddress)
     {
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected PlusMembership(SerializationInfo info, StreamingContext context)
-      : base(info, context, baseAddress)
-    {
-    }
-
-    #endregion Serialization
   }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace SplatTagCore.Social
 {
@@ -18,15 +17,5 @@ namespace SplatTagCore.Social
       : base(battlefySlug, sources, baseAddress)
     {
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected BattlefyUserSocial(SerializationInfo info, StreamingContext context)
-      : base(info, context, baseAddress)
-    {
-    }
-
-    #endregion Serialization
   }
 }

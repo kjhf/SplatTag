@@ -1,12 +1,11 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class Score
+  public record Score
   {
     public Score(IList<int>? points = null)
     {
@@ -25,7 +24,7 @@ namespace SplatTagCore
     /// </summary>
     public int GamesPlayed => Points.Sum();
 
-    [JsonProperty]
+    [JsonPropertyName("Points")]
     /// <summary>
     /// Score points, indexed by team.
     /// </summary>

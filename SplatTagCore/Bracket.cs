@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore
 {
-  [Serializable]
   public record Bracket
   {
     public Bracket(string? name = null, IList<Game>? matches = null, IList<Guid>? players = null, IList<Guid>? teams = null, Placement? placements = null)
@@ -19,7 +18,8 @@ namespace SplatTagCore
     /// <summary>
     /// The matches that make up the bracket
     /// </summary>
-    public IList<Game> Matches { get; }
+    [JsonPropertyName("Matches")]
+    public IList<Game> Matches { get; } = Array.Empty<Game>();
 
     /// <summary>
     /// Name of the bracket if specified
@@ -27,53 +27,25 @@ namespace SplatTagCore
     /// <example>Top Cut</example>
     /// <example>Alpha</example>
     /// <example>Swiss</example>
-    public string Name { get; }
+    [JsonPropertyName("Name")]
+    public string Name { get; } = Builtins.UNKNOWN_BRACKET;
 
     /// <summary>
     /// The players that have played in the bracket
     /// </summary>
-    public IList<Guid> Players { get; }
+    [JsonPropertyName("Players")]
+    public IList<Guid> Players { get; } = Array.Empty<Guid>();
 
     /// <summary>
     /// The teams that have played in the bracket
     /// </summary>
-    public IList<Guid> Teams { get; }
+    [JsonPropertyName("Teams")]
+    public IList<Guid> Teams { get; } = Array.Empty<Guid>();
 
     /// <summary>
     /// Final placements for teams and players
     /// </summary>
-    public Placement Placements { get; }
-
-    #region Serialization
-
-    // Deserialize
-    protected Bracket(SerializationInfo info, StreamingContext _)
-    {
-      this.Name = info.GetValueOrDefault("Name", Builtins.UNKNOWN_BRACKET);
-      this.Matches = info.GetValueOrDefault("Matches", Array.Empty<Game>());
-      this.Players = info.GetValueOrDefault("Players", Array.Empty<Guid>());
-      this.Teams = info.GetValueOrDefault("Teams", Array.Empty<Guid>());
-      this.Placements = info.GetValueOrDefault("Placements", new Placement());
-    }
-
-    // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext _)
-    {
-      info.AddValue("Name", this.Name);
-
-      if (this.Matches.Count > 0)
-        info.AddValue("Matches", this.Matches);
-
-      if (this.Players.Count > 0)
-        info.AddValue("Players", this.Players);
-
-      if (this.Teams.Count > 0)
-        info.AddValue("Teams", this.Teams);
-
-      if (this.Placements.HasPlacements)
-        info.AddValue("Placements", this.Placements);
-    }
-
-    #endregion Serialization
+    [JsonPropertyName("Placements")]
+    public Placement Placements { get; } = new Placement();
   }
 }

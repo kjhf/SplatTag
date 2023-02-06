@@ -1,20 +1,31 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore;
+﻿using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime;
-using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using static SplatTagCore.JSONConverters;
 
 namespace SplatTagDatabase
 {
   public class SplatTagJsonSnapshotDatabase : ISplatTagDatabase
   {
     private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
-    private static readonly HashSet<string> errorMessagesReported = new HashSet<string>();
+    private static readonly JsonSerializerOptions jsonSerializerOptions = CreateJsonSerializerOptions();
+
+    private static JsonSerializerOptions CreateJsonSerializerOptions()
+    {
+      return new JsonSerializerOptions
+      {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault,
+        PropertyNameCaseInsensitive = true
+      };
+    }
+
+    private static readonly HashSet<string> errorMessagesReported = new();
 
     private readonly string saveDirectory;
     private string? playersSnapshotFile = null;
@@ -113,39 +124,20 @@ namespace SplatTagDatabase
         GC.WaitForPendingFinalizers();
 
         // Invoked from command line
-        if (JsonConvert.DefaultSettings == null)
-        {
-          JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-          {
-            DefaultValueHandling = DefaultValueHandling.Ignore,
-            Error = (sender, args) =>
-            {
-              string m = args.ErrorContext.Error.Message;
-              if (!errorMessagesReported.Contains(m))
-              {
-                Console.Error.WriteLine(m);
-                errorMessagesReported.Add(m);
-              }
-              args.ErrorContext.Handled = true;
-            }
-          };
-        }
-        var settings = JsonConvert.DefaultSettings();
-
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading sourcesSnapshotFile from {sourcesSnapshotFile}... ");
-        Source[] sources = LoadSnapshot<Source>(sourcesSnapshotFile, settings, capacityHint: 1024);
+        Source[] sources = LoadSnapshot<Source>(sourcesSnapshotFile, capacityHint: 1024);
         var lookup = sources.ToDictionary(s => s.Id, s => s);
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {lookup.Count} sources transformed.");
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading playersSnapshotFile from {playersSnapshotFile}... ");
-        settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
-        Player[] players = LoadSnapshot<Player>(playersSnapshotFile, settings, capacityHint: 65536);
+        _ = new GuidToSourceConverter(lookup);  // Sets the instance.
+        Player[] players = LoadSnapshot<Player>(playersSnapshotFile, capacityHint: 65536);
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {players.Length} players loaded.");
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading teamsSnapshotFile from {teamsSnapshotFile}... ");
-        Team[] teams = LoadSnapshot<Team>(teamsSnapshotFile, settings, capacityHint: 16384);
+        Team[] teams = LoadSnapshot<Team>(teamsSnapshotFile, capacityHint: 16384);
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {teams.Length} teams loaded.");
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
@@ -164,40 +156,41 @@ namespace SplatTagDatabase
       }
     }
 
-    private static T[] LoadSnapshot<T>(string filePath, JsonSerializerSettings settings, int capacityHint) where T : class
+    /// <summary>
+    /// Reads a file from path as ReadOnlyMemory UTF-8 bytes.
+    /// </summary>
+    public static ReadOnlyMemory<byte> ReadFileAsUtf8Bytes(string filePath)
     {
-      List<T> result = new List<T>(capacityHint);
-      var serializer = JsonSerializer.Create(settings);
-      using (StreamReader file = File.OpenText(filePath))
-      using (JsonTextReader reader = new JsonTextReader(file))
+      byte[] utf8Bytes = File.ReadAllBytes(filePath);
+      return new ReadOnlyMemory<byte>(utf8Bytes);
+    }
+
+    private static T[] LoadSnapshot<T>(string filePath, int capacityHint) where T : class
+    {
+      List<T> result = new(capacityHint);
+      using (JsonDocument document = JsonDocument.Parse(ReadFileAsUtf8Bytes(filePath)))
       {
-        // reader.SupportMultipleContent = true;
-        while (reader.Read())
+        foreach (JsonElement root in document.RootElement.EnumerateArray())
         {
-          if (reader.TokenType == JsonToken.StartObject)
+          try
           {
-            try
+            var toAdd = DeserializeWithErrorHandling<T>(root.ToString());
+            if (toAdd != default)
             {
-              var toAdd = serializer.Deserialize<T>(reader);
-              if (toAdd == null)
-              {
-                throw new ArgumentNullException("Should not have deserialized null.");
-              }
               result.Add(toAdd);
             }
-            catch (Exception ex)
-            {
-              var restore = Console.BackgroundColor;
-              Console.BackgroundColor = ConsoleColor.Red;
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + reader.LineNumber + ".");
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
-              Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + reader);
-              Console.BackgroundColor = restore;
-            }
+          }
+          catch (Exception ex)
+          {
+            ConsoleColor restore = Console.BackgroundColor;
+            Console.BackgroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + root.GetRawText() + ".");
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + root.GetRawText());
+            Console.BackgroundColor = restore;
           }
         }
       }
-
       return result.ToArray();
     }
 
@@ -212,7 +205,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(savePlayers, Formatting.None)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonSerializer.Serialize(savePlayers)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -231,7 +224,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(saveTeams, Formatting.None)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonSerializer.Serialize(saveTeams)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -250,7 +243,7 @@ namespace SplatTagDatabase
           Encoding outputEnc = new UTF8Encoding(false); // UTF-8 no BOM
 
           using TextWriter file = new StreamWriter(filePath, false, outputEnc);
-          await file.WriteLineAsync(JsonConvert.SerializeObject(saveSources, Formatting.None)).ConfigureAwait(false);
+          await file.WriteLineAsync(JsonSerializer.Serialize(saveSources)).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -262,6 +255,24 @@ namespace SplatTagDatabase
 
       Task.WaitAll(savePlayersTask, saveTeamsTask, saveSourcesTask);
       return this;
+    }
+
+    private static T? DeserializeWithErrorHandling<T>(string json)
+    {
+      try
+      {
+        return JsonSerializer.Deserialize<T>(json, jsonSerializerOptions);
+      }
+      catch (JsonException ex)
+      {
+        string m = ex.Message;
+        if (!errorMessagesReported.Contains(m))
+        {
+          Console.Error.WriteLine(m);
+          errorMessagesReported.Add(m);
+        }
+        return default;
+      }
     }
   }
 }

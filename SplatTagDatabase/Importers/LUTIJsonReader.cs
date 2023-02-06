@@ -1,32 +1,32 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore;
+﻿using SplatTagCore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace SplatTagDatabase.Importers
 {
   internal class LUTIJsonReader : IImporter
   {
-    [Serializable]
     internal class LUTIJsonRow
     {
-      [JsonProperty("Team Name")]
+      [JsonPropertyName("Team Name")]
       public string TeamName { get; set; } = Builtins.UNKNOWN_TEAM;
 
-      [JsonProperty("Div", Required = Required.Default)]
+      [JsonPropertyName("Div")]
       public string Div { get => Division; set => Division = value; }
 
-      [JsonProperty("Division", Required = Required.Default)]
+      [JsonPropertyName("Division")]
       public string Division { get; set; } = "Unknown";
 
       private string? tag = Team.NoTeam.Tag?.Value;
 
-      [JsonProperty("Tag")]
+      [JsonPropertyName("Tag")]
       public string? Tag
       {
         get => tag;
@@ -39,37 +39,37 @@ namespace SplatTagDatabase.Importers
         }
       }
 
-      [JsonProperty("Team Captain", Required = Required.Default)]
+      [JsonPropertyName("Team Captain")]
       public string TeamCaptain { get; set; } = "";
 
-      [JsonProperty("Player 1", Required = Required.Default)]
+      [JsonPropertyName("Player 1")]
       public string Player1 { get => TeamCaptain; set => TeamCaptain = value; }
 
-      [JsonProperty("Player 2")]
+      [JsonPropertyName("Player 2")]
       public string Player2 { get; set; } = "";
 
-      [JsonProperty("Player 3")]
+      [JsonPropertyName("Player 3")]
       public string Player3 { get; set; } = "";
 
-      [JsonProperty("Player 4")]
+      [JsonPropertyName("Player 4")]
       public string Player4 { get; set; } = "";
 
-      [JsonProperty("Player 5")]
+      [JsonPropertyName("Player 5")]
       public string Player5 { get; set; } = "";
 
-      [JsonProperty("Player 6")]
+      [JsonPropertyName("Player 6")]
       public string Player6 { get; set; } = "";
 
-      [JsonProperty("Player 7")]
+      [JsonPropertyName("Player 7")]
       public string Player7 { get; set; } = "";
 
-      [JsonProperty("Player 8")]
+      [JsonPropertyName("Player 8")]
       public string Player8 { get; set; } = "";
 
-      [JsonProperty("Player 9")]
+      [JsonPropertyName("Player 9")]
       public string Player9 { get; set; } = "";
 
-      [JsonProperty("Player 10")]
+      [JsonPropertyName("Player 10")]
       public string Player10 { get; set; } = "";
 
       /// <summary>
@@ -112,7 +112,7 @@ namespace SplatTagDatabase.Importers
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile); // N.B. by default this reads UTF-8.
-      LUTIJsonRow[] rows = JsonConvert.DeserializeObject<LUTIJsonRow[]>(json) ?? Array.Empty<LUTIJsonRow>();
+      LUTIJsonRow[] rows = JsonSerializer.Deserialize<LUTIJsonRow[]>(json) ?? Array.Empty<LUTIJsonRow>();
 
       var teams = new ConcurrentBag<Team>();
       var players = new ConcurrentBag<Player>();

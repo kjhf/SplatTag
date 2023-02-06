@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore;
+﻿using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 
 namespace SplatTagDatabase.Importers
 {
@@ -35,7 +35,7 @@ namespace SplatTagDatabase.Importers
       string json = File.ReadAllText(jsonFile);
 
       var teams = new List<Team>();
-      var teamTwitters = JsonConvert.DeserializeObject<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+      var teamTwitters = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
       foreach (var pair in teamTwitters)
       {
         var newTeam = new Team(pair.Key, source);

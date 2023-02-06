@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
 
 namespace SplatTagCore.Social
 {
-  [Serializable]
   public class BattlefyTeamSocial : Social
   {
     private const string baseAddress = "battlefy.com/teams";
@@ -18,15 +15,5 @@ namespace SplatTagCore.Social
       : base(teamPersistentId, sources, baseAddress)
     {
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected BattlefyTeamSocial(SerializationInfo info, StreamingContext context)
-      : base(info, context, baseAddress)
-    {
-    }
-
-    #endregion Serialization
   }
 }

@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace SplatTagCore
@@ -96,18 +96,38 @@ namespace SplatTagCore
       yield return obj;
     }
 
-    public static T? GetValue<T>(this JToken jToken, string key, T? defaultValue = default)
+    /// <summary>
+    /// Extracts the value of the specified key from the JSON element, returns the default value if not found.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to be extracted</typeparam>
+    /// <param name="jsonElement">The JSON element to extract the value from</param>
+    /// <param name="key">The child key of the value to be extracted</param>
+    /// <param name="defaultValue">The default value to return if the key is not found</param>
+    /// <returns>The value of the specified key or the default value</returns>
+    public static T? GetValue<T>(this JsonElement jsonElement, string key, T? defaultValue = default)
     {
-      var ret = jToken[key];
-      if (ret == null) return defaultValue;
-      if (ret is JObject)
+      if (jsonElement.TryGetProperty(key, out JsonElement ret))
       {
-        return JsonConvert.DeserializeObject<T>(ret.ToString());
+        return (ret.ValueKind == JsonValueKind.Object) ? JsonSerializer.Deserialize<T>(ret.ToString()) : ret.GetValue(key, defaultValue);
       }
-      else
+      return defaultValue;
+    }
+
+    /// <summary>
+    /// Extracts the value of the specified key from the JSON element, returns the default value if not found.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to be extracted</typeparam>
+    /// <param name="jsonElement">The JSON element to extract the value from</param>
+    /// <param name="key">The child key of the value to be extracted</param>
+    /// <param name="defaultValue">The default value to return if the key is not found</param>
+    /// <returns>The value of the specified key or the default value</returns>
+    public static T? GetValue<T>(this JsonNode jsonElement, string key, T? defaultValue = default)
+    {
+      if (jsonElement is JsonObject objNode && objNode.TryGetPropertyValue(key, out var ret))
       {
-        return ret.Value<T>();
+        return ret.Deserialize<T>();
       }
+      return defaultValue;
     }
 
     /// <summary>
@@ -117,7 +137,7 @@ namespace SplatTagCore
     /// <param name="collection">The source collection</param>
     /// <param name="item">The item being inserted</param>
     public static void InsertSorted<T>(this IList<T> collection, T item)
-        where T : IComparable<T>
+      where T : IComparable<T>
     {
       InsertSorted(collection, item, Comparer<T>.Create((x, y) => x.CompareTo(y)));
     }

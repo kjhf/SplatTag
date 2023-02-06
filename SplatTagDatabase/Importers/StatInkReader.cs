@@ -1,28 +1,27 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore;
+﻿using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SplatTagDatabase.Importers
 {
   internal class StatInkReader : IImporter
   {
-    [Serializable]
     public class StatInkRoot
     {
-      [JsonProperty("id")]
+      [JsonPropertyName("id")]
       public long Id { get; set; }
 
-      [JsonProperty("splatnet_number")]
+      [JsonPropertyName("splatnet_number")]
       public long SplatnetNumber { get; set; }
 
-      [JsonProperty("url")]
+      [JsonPropertyName("url")]
       public Uri? Url { get; set; }
 
-      [JsonProperty("user")]
+      [JsonPropertyName("user")]
       public User? User { get; set; }
 
       //[JsonProperty("lobby")]
@@ -226,7 +225,7 @@ namespace SplatTagDatabase.Importers
       //[JsonProperty("period_range")]
       //public string PeriodRange { get; set; }
 
-      [JsonProperty("players")]
+      [JsonPropertyName("players")]
       public PlayerElement[]? Players { get; set; }
 
       //[JsonProperty("events")]
@@ -238,7 +237,7 @@ namespace SplatTagDatabase.Importers
       //[JsonProperty("agent")]
       //public Agent Agent { get; set; }
 
-      [JsonProperty("automated")]
+      [JsonPropertyName("automated")]
       public bool Automated { get; set; }
 
       //[JsonProperty("environment")]
@@ -259,7 +258,7 @@ namespace SplatTagDatabase.Importers
       //[JsonProperty("start_at")]
       //public TimeNode StartAt { get; set; }
 
-      [JsonProperty("end_at")]
+      [JsonPropertyName("end_at")]
       public TimeNode? EndAt { get; set; }
 
       //[JsonProperty("register_at")]
@@ -268,10 +267,10 @@ namespace SplatTagDatabase.Importers
 
     public class TimeNode
     {
-      [JsonProperty("time")]
+      [JsonPropertyName("time")]
       public long Time { get; set; }
 
-      [JsonProperty("iso8601")]
+      [JsonPropertyName("iso8601")]
       public DateTimeOffset? Iso8601 { get; set; }
     }
 
@@ -280,7 +279,7 @@ namespace SplatTagDatabase.Importers
       //[JsonProperty("de_DE")]
       //public string DeDe { get; set; }
 
-      [JsonProperty("en_GB")]
+      [JsonPropertyName("en_GB")]
       public string? EnGb { get; set; }
 
       //[JsonProperty("en_US")]
@@ -319,31 +318,31 @@ namespace SplatTagDatabase.Importers
 
     public class KeyNamePair
     {
-      [JsonProperty("key")]
+      [JsonPropertyName("key")]
       public string? Key { get; set; }
 
-      [JsonProperty("name")]
+      [JsonPropertyName("name")]
       public TranslatableName? Name { get; set; }
     }
 
     public class PlayerElement
     {
-      [JsonProperty("team")]
+      [JsonPropertyName("team")]
       public string? Team { get; set; }
 
-      [JsonProperty("is_me")]
+      [JsonPropertyName("is_me")]
       public bool IsMe { get; set; }
 
-      [JsonProperty("weapon")]
+      [JsonPropertyName("weapon")]
       public StatInkReaderWeapon? Weapon { get; set; }
 
-      [JsonProperty("level")]
+      [JsonPropertyName("level")]
       public long Level { get; set; }
 
       //[JsonProperty("rank")]
       //public Rank Rank { get; set; }
 
-      [JsonProperty("star_rank")]
+      [JsonPropertyName("star_rank")]
       public long StarRank { get; set; }
 
       //[JsonProperty("rank_in_team")]
@@ -367,7 +366,7 @@ namespace SplatTagDatabase.Importers
       //[JsonProperty("point")]
       //public long Point { get; set; }
 
-      [JsonProperty("name")]
+      [JsonPropertyName("name")]
       public string? Name { get; set; }
 
       //[JsonProperty("species")]
@@ -379,13 +378,13 @@ namespace SplatTagDatabase.Importers
       //[JsonProperty("fest_title")]
       //public object FestTitle { get; set; }
 
-      [JsonProperty("splatnet_id")]
+      [JsonPropertyName("splatnet_id")]
       public string? SplatnetId { get; set; }
 
-      [JsonProperty("top_500")]
+      [JsonPropertyName("top_500")]
       public bool? Top500 { get; set; }
 
-      [JsonProperty("icon")]
+      [JsonPropertyName("icon")]
       public string? Icon { get; set; }
     }
 
@@ -412,7 +411,7 @@ namespace SplatTagDatabase.Importers
       //[JsonProperty("reskin_of")]
       //public string ReskinOf { get; set; }
 
-      [JsonProperty("main_ref")]
+      [JsonPropertyName("main_ref")]
       public string? MainRef { get; set; }
 
       //[JsonProperty("main_power_up")]
@@ -567,22 +566,22 @@ namespace SplatTagDatabase.Importers
 
     public class User
     {
-      [JsonProperty("id")]
+      [JsonPropertyName("id")]
       public long? Id { get; set; }
 
-      [JsonProperty("name")]
+      [JsonPropertyName("name")]
       public string? Name { get; set; }
 
-      [JsonProperty("screen_name")]
+      [JsonPropertyName("screen_name")]
       public string? ScreenName { get; set; }
 
-      [JsonProperty("url")]
+      [JsonPropertyName("url")]
       public Uri? Url { get; set; }
 
       //[JsonProperty("join_at")]
       //public TimeNode JoinAt { get; set; }
 
-      [JsonProperty("profile")]
+      [JsonPropertyName("profile")]
       public Profile? Profile { get; set; }
 
       //[JsonProperty("stat")]
@@ -594,10 +593,10 @@ namespace SplatTagDatabase.Importers
       //[JsonProperty("nnid")]
       //public string Nnid { get; set; }
 
-      [JsonProperty("friend_code")]
+      [JsonPropertyName("friend_code")]
       public string? FriendCode { get; set; }
 
-      [JsonProperty("twitter")]
+      [JsonPropertyName("twitter")]
       public string? Twitter { get; set; }
 
       //[JsonProperty("ikanakama")]
@@ -608,31 +607,6 @@ namespace SplatTagDatabase.Importers
 
       //[JsonProperty("environment")]
       //public string Environment { get; set; }
-    }
-
-    internal class ParseStringConverter : JsonConverter
-    {
-      public override bool CanConvert(Type t) => t == typeof(long) || t == typeof(long?);
-
-      public override object? ReadJson(JsonReader reader, Type t, object? existingValue, JsonSerializer serializer)
-      {
-        if (reader.TokenType == JsonToken.Null) return null;
-        var value = serializer.Deserialize<string>(reader);
-        return long.Parse(value);
-      }
-
-      public override void WriteJson(JsonWriter writer, object? untypedValue, JsonSerializer serializer)
-      {
-        if (untypedValue == null)
-        {
-          serializer.Serialize(writer, null);
-          return;
-        }
-        var value = (long)untypedValue;
-        serializer.Serialize(writer, value.ToString());
-      }
-
-      public static readonly ParseStringConverter Singleton = new ParseStringConverter();
     }
 
     private readonly string jsonFile;
@@ -659,7 +633,7 @@ namespace SplatTagDatabase.Importers
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
-      StatInkRoot root = JsonConvert.DeserializeObject<StatInkRoot>(json) ?? new StatInkRoot();
+      StatInkRoot root = JsonSerializer.Deserialize<StatInkRoot>(json) ?? new StatInkRoot();
       source.Start = new DateTime(root.EndAt?.Time ?? Builtins.UNKNOWN_DATE_TIME_TICKS);
 
       List<Player> players = new();

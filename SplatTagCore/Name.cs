@@ -1,21 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
+using static SplatTagCore.JSONConverters;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class Name : ISerializable, ISourceable, IEquatable<Name?>
+  public class Name : ISourceable, IEquatable<Name?>
   {
     /// <summary>
     /// List of sources that this name has been used under
     /// </summary>
+    [JsonIgnore]
     private readonly List<Source> sources = new List<Source>();
 
     /// <summary>
     /// Cached transformed name
     /// </summary>
+    [JsonIgnore]
     private string? transformedName;
 
     /// <summary>
@@ -60,21 +62,26 @@ namespace SplatTagCore
     /// <summary>
     /// List of sources that this name has been used under
     /// </summary>
+    [JsonPropertyName("S")]
+    [JsonConverter(typeof(SourceIdsConverter))]
     public IList<Source> Sources => sources;
 
     /// <summary>
     /// List of sources that this name has been used under
     /// </summary>
+    [JsonIgnore]
     IReadOnlyList<Source> IReadonlySourceable.Sources => sources;
 
     /// <summary>
     /// The name as a transformed string
     /// </summary>
+    [JsonIgnore]
     public string Transformed => transformedName ??= Value.TransformString();
 
     /// <summary>
     /// The name.
     /// </summary>
+    [JsonPropertyName("N")]
     public string Value { get; protected set; }
 
     /// <summary>
@@ -88,16 +95,9 @@ namespace SplatTagCore
               select new Name(s, source)).ToList();
     }
 
-    public override bool Equals(object? obj)
-    {
-      return Equals(obj as Name);
-    }
+    public override bool Equals(object? obj) => Equals(obj as Name);
 
-    public bool Equals(Name? other)
-    {
-      return other != null &&
-             Value == other.Value;
-    }
+    public bool Equals(Name? other) => other != null && Value == other.Value;
 
     public override int GetHashCode()
     {
@@ -111,29 +111,5 @@ namespace SplatTagCore
     {
       return Value ?? base.ToString();
     }
-
-    #region Serialization
-
-    // Deserialize as dict
-    protected Name(SerializationInfo info, StreamingContext context)
-    {
-      this.Value = info.GetString("N");
-      var sourceIds = info.GetValueOrDefault("S", Array.Empty<string>());
-      this.sources = (context.Context is Source.GuidToSourceConverter converter)
-        ? converter.Convert(sourceIds).Distinct().ToList()
-        : sourceIds.Select(s => new Source(s)).Distinct().ToList();
-    }
-
-    // Serialize as dict
-    public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      info.AddValue("N", this.Value);
-      if (this.sources.Count > 0)
-      {
-        info.AddValue("S", this.sources.Select(s => s.Id));
-      }
-    }
-
-    #endregion Serialization
   }
 }
