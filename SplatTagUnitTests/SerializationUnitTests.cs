@@ -1,12 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using SplatTagCore;
 using SplatTagCore.Social;
+using SplatTagDatabase;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json;
+using static SplatTagCore.JSONConverters;
 
 namespace SplatTagUnitTests
 {
@@ -18,27 +18,13 @@ namespace SplatTagUnitTests
   {
     private static string Serialize(object obj)
     {
-      if (JsonConvert.DefaultSettings == null)
-      {
-        JsonConvert.DefaultSettings = () => new JsonSerializerSettings();
-      }
-      var settings = JsonConvert.DefaultSettings();
-      settings.DefaultValueHandling = DefaultValueHandling.Ignore;
-      var serializer = JsonSerializer.Create(settings);
-      StringWriter sw = new StringWriter();
-      serializer.Serialize(sw, obj);
-      return sw.ToString();
+      return JsonSerializer.Serialize(obj, SplatTagJsonSnapshotDatabase.jsonSerializerOptions);
     }
 
     private static T Deserialize<T>(string json, Dictionary<string, Source> lookup)
     {
-      var settings = new JsonSerializerSettings
-      {
-        DefaultValueHandling = DefaultValueHandling.Ignore
-      };
-      settings.Context = new StreamingContext(StreamingContextStates.All, new Source.GuidToSourceConverter(lookup));
-
-      return JsonConvert.DeserializeObject<T>(json, settings) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object of type {typeof(T).Name} (json.Length={json.Length})");
+      _ = new GuidToSourceConverter(lookup); // Set instance
+      return JsonSerializer.Deserialize<T>(json, SplatTagJsonSnapshotDatabase.jsonSerializerOptions) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object of type {typeof(T).Name} (json.Length={json.Length})");
     }
 
     [TestMethod]
@@ -325,7 +311,7 @@ namespace SplatTagUnitTests
     [TestMethod]
     public void DeserializeFriendCodes()
     {
-      const string json = @"[[6653,9220,3527],[6653,9220,3527],[6653,9220,3527],[6653,9220,3527]]";
+      const string json = "[[6653,9220,3527],[6653,9220,3527],[6653,9220,3527],[6653,9220,3527]]";
       FriendCode[] fcs = Deserialize<FriendCode[]>(json, new Dictionary<string, Source>());
       Assert.IsNotNull(fcs);
       Assert.AreEqual(4, fcs.Length, "Expected 4 friend codes parsed.");

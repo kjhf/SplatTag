@@ -93,21 +93,21 @@ namespace SplatTagCore
       }
     }
 
-    public class SourceIdsConverter : JsonConverter<IEnumerable<Source>>
+    public class SourceIdsConverter : JsonConverter<IList<Source>>
     {
-      public override IEnumerable<Source> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+      public override IList<Source> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
       {
-        var sourceIds = JsonSerializer.Deserialize<IEnumerable<string>>(ref reader, options);
+        var sourceIds = JsonSerializer.Deserialize<IList<string>>(ref reader, options);
 
         if (sourceIds != null)
         {
           if (GuidToSourceConverter.Instance != null)
           {
-            return GuidToSourceConverter.Instance.Convert(sourceIds).Distinct();
+            return GuidToSourceConverter.Instance.Convert(sourceIds).Distinct().ToList();
           }
           else
           {
-            return sourceIds.Select(s => new Source(s)).Distinct();
+            return sourceIds.Select(s => new Source(s)).Distinct().ToList();
           }
         }
         else
@@ -116,7 +116,7 @@ namespace SplatTagCore
         }
       }
 
-      public override void Write(Utf8JsonWriter writer, IEnumerable<Source> value, JsonSerializerOptions options)
+      public override void Write(Utf8JsonWriter writer, IList<Source> value, JsonSerializerOptions options)
       {
         JsonSerializer.Serialize(writer, new List<string>(value.Select(s => s.Id)), options);
       }

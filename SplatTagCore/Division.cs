@@ -13,14 +13,14 @@ namespace SplatTagCore
     public const int X_PLUS = -1;
     private const string VALUE_SEPARATOR_STR = " Div ";
 
+    [JsonPropertyName("Value")]
+    public int Value { get; } = UNKNOWN;
+
     [JsonPropertyName("DivType")]
     public DivType DivType { get; } = DivType.Unknown;
 
     [JsonPropertyName("Season")]
     public string Season { get; } = "";
-
-    [JsonPropertyName("Value")]
-    public int Value { get; } = UNKNOWN;
 
     [JsonIgnore]
     public bool IsUnknown => this.Value == UNKNOWN || this.DivType == DivType.Unknown;
@@ -32,15 +32,15 @@ namespace SplatTagCore
     public string Name => ToString();
 
     [JsonConstructor]
-    public Division(DivType divType = DivType.Unknown, string season = "", int value = UNKNOWN)
+    public Division(int value = UNKNOWN, DivType divType = DivType.Unknown, string season = "")
     {
+      this.Value = value;
       this.DivType = divType;
       this.Season = season.Trim();
-      this.Value = value;
     }
 
     public Division(string valueStr, DivType divType, string season)
-      : this(divType, season, ParseValueString(valueStr))
+      : this(ParseValueString(valueStr), divType, season)
     {
     }
 

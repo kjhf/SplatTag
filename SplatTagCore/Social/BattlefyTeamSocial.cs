@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore.Social
 {
@@ -11,6 +12,7 @@ namespace SplatTagCore.Social
     {
     }
 
+    [JsonConstructor]
     public BattlefyTeamSocial(string teamPersistentId, IEnumerable<Source> sources)
       : base(teamPersistentId, sources, baseAddress)
     {

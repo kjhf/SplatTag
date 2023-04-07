@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SplatTagCore.Social;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -6,6 +7,12 @@ using static SplatTagCore.JSONConverters;
 
 namespace SplatTagCore
 {
+  [JsonDerivedType(typeof(BattlefyTeamSocial), nameof(BattlefyTeamSocial))]
+  [JsonDerivedType(typeof(BattlefyUserSocial), nameof(BattlefyUserSocial))]
+  [JsonDerivedType(typeof(PlusMembership), nameof(PlusMembership))]
+  [JsonDerivedType(typeof(Sendou), nameof(Sendou))]
+  [JsonDerivedType(typeof(Twitch), nameof(Twitch))]
+  [JsonDerivedType(typeof(Twitter), nameof(Twitter))]
   public class Name : ISourceable, IEquatable<Name?>
   {
     /// <summary>
@@ -32,9 +39,7 @@ namespace SplatTagCore
     /// <summary>
     /// Constructor for Name
     /// </summary>
-    /// <remarks>
-    /// This constructor is used by <see cref="Activator"/>.
-    /// </remarks>
+    [JsonConstructor]
     public Name(string name, IEnumerable<Source> sources)
     {
       this.Value = name;

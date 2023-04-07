@@ -14,7 +14,7 @@ namespace SplatTagDatabase
   public class SplatTagJsonSnapshotDatabase : ISplatTagDatabase
   {
     private const string SNAPSHOT_FORMAT = "Snapshot-*.json";
-    private static readonly JsonSerializerOptions jsonSerializerOptions = CreateJsonSerializerOptions();
+    public static readonly JsonSerializerOptions jsonSerializerOptions = CreateJsonSerializerOptions();
 
     private static JsonSerializerOptions CreateJsonSerializerOptions()
     {

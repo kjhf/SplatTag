@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore.Social
 {
@@ -13,6 +14,7 @@ namespace SplatTagCore.Social
     {
     }
 
+    [JsonConstructor]
     public Twitch(string handle, IEnumerable<Source> sources)
       : base(handle, sources, baseAddress)
     {

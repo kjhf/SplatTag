@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore.Social
 {
-  [Serializable]
   public class PlusMembership : Social
   {
     private const string baseAddress = "sendou.ink/plus/history/";
@@ -46,6 +46,7 @@ namespace SplatTagCore.Social
     {
     }
 
+    [JsonConstructor]
     public PlusMembership(string handle, IEnumerable<Source> sources)
       : base(handle, sources, baseAddress)
     {
