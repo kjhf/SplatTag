@@ -126,16 +126,12 @@ namespace SplatTagCore
     {
       public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
       {
-        var ticks = JsonSerializer.Deserialize<string>(ref reader, options);
-
-        if (ticks != null)
+        return reader.TokenType switch
         {
-          return new DateTime(long.Parse(ticks));
-        }
-        else
-        {
-          return Builtins.UnknownDateTime;
-        }
+          JsonTokenType.String => new DateTime(long.Parse(reader.GetString())),
+          JsonTokenType.Number => new DateTime(reader.GetInt64()),
+          _ => Builtins.UnknownDateTime,
+        };
       }
 
       public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)

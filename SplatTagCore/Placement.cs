@@ -7,10 +7,12 @@ namespace SplatTagCore
 {
   public record Placement
   {
-    public Placement(Dictionary<int, Guid[]>? players = null, Dictionary<int, Guid[]>? teams = null)
+    public Placement(
+      Dictionary<int, Guid[]>? playersByPlacement = null,
+      Dictionary<int, Guid[]>? teamsByPlacement = null)
     {
-      this.PlayersByPlacement = players ?? new Dictionary<int, Guid[]>();
-      this.TeamsByPlacement = teams ?? new Dictionary<int, Guid[]>();
+      this.PlayersByPlacement = playersByPlacement ?? new Dictionary<int, Guid[]>();
+      this.TeamsByPlacement = teamsByPlacement ?? new Dictionary<int, Guid[]>();
     }
 
     /// <summary>

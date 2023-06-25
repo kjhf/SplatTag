@@ -27,22 +27,27 @@ namespace SplatTagCore
     [JsonIgnore]
     private string? transformedName;
 
+    [JsonConstructor]
+    public Name()
+    {
+      this.Value = "(Unnamed)";
+    }
+
     /// <summary>
     /// Constructor for Name that contains a piece of data that is some sort of name or tag, and the source this information comes from.
     /// </summary>
     public Name(string name, Source source)
     {
       this.Value = name;
-      sources.Add(source);
+      this.sources.Add(source);
     }
 
     /// <summary>
     /// Constructor for Name
     /// </summary>
-    [JsonConstructor]
-    public Name(string name, IEnumerable<Source> sources)
+    public Name(string ign, IEnumerable<Source> sources)
     {
-      this.Value = name;
+      this.Value = ign;
       this.sources.AddRange(sources.Distinct());
     }
 
@@ -69,7 +74,9 @@ namespace SplatTagCore
     /// </summary>
     [JsonPropertyName("S")]
     [JsonConverter(typeof(SourceIdsConverter))]
-    public IList<Source> Sources => sources;
+    [JsonRequired]
+    public IList<Source> Sources
+    { get => sources; set { sources.Clear(); sources.AddRange(value); } }
 
     /// <summary>
     /// List of sources that this name has been used under
@@ -87,7 +94,8 @@ namespace SplatTagCore
     /// The name.
     /// </summary>
     [JsonPropertyName("N")]
-    public string Value { get; protected set; }
+    [JsonRequired]
+    public string Value { get; set; }
 
     /// <summary>
     /// Generate Names list from a collection of strings

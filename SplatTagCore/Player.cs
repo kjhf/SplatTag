@@ -14,6 +14,7 @@ namespace SplatTagCore
     /// The database Id of the player.
     /// </summary>
     [JsonPropertyName("Id")]
+    [JsonRequired]
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
@@ -151,10 +152,11 @@ namespace SplatTagCore
     /// The in-game or registered names this player is known by.
     /// </summary>
     [JsonPropertyName("N")]
+    [JsonRequired]
     public IReadOnlyCollection<Name> Names
     {
       get => NamesInformation.GetItemsUnordered();
-      protected set => NamesInformation.Add(value);
+      set => NamesInformation.Add(value);
     }
 
     /// <summary>
@@ -267,7 +269,7 @@ namespace SplatTagCore
     /// Get the information regarding teams for this player.
     /// </summary>
     [JsonPropertyName("Teams")]
-    public TeamsHandler TeamInformation { get; } = new TeamsHandler();
+    public TeamsHandler TeamInformation { get; set; } = new TeamsHandler();
 
     /// <summary>
     /// Get or Set Top 500 flag.

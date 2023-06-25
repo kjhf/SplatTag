@@ -125,23 +125,35 @@ namespace SplatTagDatabase
 
         // Invoked from command line
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading sourcesSnapshotFile from {sourcesSnapshotFile}... ");
-        Source[] sources = LoadSnapshot<Source>(sourcesSnapshotFile, capacityHint: 1024);
-        var lookup = sources.ToDictionary(s => s.Id, s => s);
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {lookup.Count} sources transformed.");
+        var sources = LoadSnapshot<Source>(sourcesSnapshotFile, capacityHint: 1024).ToDictionary(s => s.Id, s => s);
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {sources.Count} sources transformed.");
+        if (sources.Count > 0)
+        {
+          Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Starting from {sources.First()} to {sources.Last()}.");
+        }
+
         GC.Collect();
         GC.WaitForPendingFinalizers();
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading playersSnapshotFile from {playersSnapshotFile}... ");
-        _ = new GuidToSourceConverter(lookup);  // Sets the instance.
+        _ = new GuidToSourceConverter(sources);  // Sets the instance.
         Player[] players = LoadSnapshot<Player>(playersSnapshotFile, capacityHint: 65536);
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {players.Length} players loaded.");
+        if (players.Length > 0)
+        {
+          Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Starting from {players[0]} to {players[^1]}.");
+        }
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Loading teamsSnapshotFile from {teamsSnapshotFile}... ");
         Team[] teams = LoadSnapshot<Team>(teamsSnapshotFile, capacityHint: 16384);
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] {teams.Length} teams loaded.");
+        if (teams.Length > 0)
+        {
+          Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Starting from {teams[0]} to {teams[^1]}.");
+        }
 
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Load done... ");
-        return (players, teams, lookup);
+        return (players, teams, sources);
       }
       catch (Exception ex)
       {
@@ -182,12 +194,14 @@ namespace SplatTagDatabase
           }
           catch (Exception ex)
           {
-            ConsoleColor restore = Console.BackgroundColor;
-            Console.BackgroundColor = ConsoleColor.Red;
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} from line " + root.GetRawText() + ".");
+            ConsoleColor restore = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            var raw = root.GetRawText();
+            var trim = raw.Length > 80 ? raw[0..80] + "…" : raw;
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)} ({root.ValueKind}).");
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] with text: " + trim);
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + root.GetRawText());
-            Console.BackgroundColor = restore;
+            Console.ForegroundColor = restore;
           }
         }
       }
@@ -268,7 +282,13 @@ namespace SplatTagDatabase
         string m = ex.Message;
         if (!errorMessagesReported.Contains(m))
         {
-          Console.Error.WriteLine(m);
+          ConsoleColor restore = Console.ForegroundColor;
+          Console.ForegroundColor = ConsoleColor.Red;
+          var trim = json.Length > 80 ? json[0..80] + "…" : json;
+          Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] Could not parse {typeof(T)}");
+          Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] with text: " + trim);
+          Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fffffff}] " + ex);
+          Console.ForegroundColor = restore;
           errorMessagesReported.Add(m);
         }
         return default;

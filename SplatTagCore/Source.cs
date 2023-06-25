@@ -16,27 +16,34 @@ namespace SplatTagCore
     [JsonIgnore]
     private string? strippedTournamentName;
 
+    [JsonConstructor]
+    public Source()
+    {
+    }
+
     /// <summary>
     /// Construct a source with a name and optional date.
     /// Date will be inferred if not specified, or set to Builtins.UnknownDateTime.
     /// </summary>
-    public Source(string name = Builtins.UNKNOWN_SOURCE, DateTime? start = null)
+    public Source(string name, DateTime? start = null)
     {
       Name = name;
+      Start = start ?? GetDateFromNameOrUnknown();
+    }
 
+    private DateTime GetDateFromNameOrUnknown()
+    {
       int dataStrLength = "yyyy-mm-dd-".Length;
       if (Name.Length > dataStrLength && Name.Count('-') > 2)
       {
         var dateStr = Name.Substring(0, dataStrLength).Trim('-');
-
-        // If start wasn't specified, set from the name.
-        if (start == null && DateTime.TryParse(dateStr, out var temp))
+        if (DateTime.TryParse(dateStr, out var temp))
         {
-          start = temp;
+          return temp;
         }
       }
 
-      Start = start ?? Builtins.UnknownDateTime;
+      return Builtins.UnknownDateTime;
     }
 
     /// <summary>
@@ -87,7 +94,7 @@ namespace SplatTagCore
     /// The filename for the source
     /// </summary>
     [JsonPropertyName("Name")]
-    public string Name { get; }
+    public string Name { get; set; } = Builtins.UNKNOWN_SOURCE;
 
     /// <summary>
     /// The players that this source represents
@@ -126,7 +133,7 @@ namespace SplatTagCore
     /// e.g. all teams that have signed up to this tournament
     /// </summary>
     [JsonPropertyName("Teams")]
-    public Team[] Teams { get; set; } = Array.Empty<Team>();
+    public Team[] Teams { get; set; } = Array.Empty<Team>(); // TODO: This needs to be a TeamsHandler??
 
     /// <summary>
     /// Relevant URI(s) for the source

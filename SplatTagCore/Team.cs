@@ -18,6 +18,7 @@ namespace SplatTagCore
     /// The GUID of the team.
     /// </summary>
     [JsonPropertyName("Id")]
+    [JsonRequired]
     public readonly Guid Id = Guid.NewGuid();
 
     /// <summary>
@@ -89,16 +90,17 @@ namespace SplatTagCore
     /// The last known used name for the team
     /// </summary>
     [JsonIgnore]
-    public Name Name => NamesInformation.MostRecent ?? Builtins.UnknownPlayerName;
+    public Name Name => NamesInformation.MostRecent ?? Builtins.UnknownTeamName;
 
     /// <summary>
     /// The registered names this team is known by.
     /// </summary>
     [JsonPropertyName("N")]
+    [JsonRequired]
     public IReadOnlyCollection<Name> Names
     {
       get => NamesInformation.GetItemsUnordered();
-      protected set => NamesInformation.Add(value);
+      set => NamesInformation.Add(value);
     }
 
     /// <summary>
