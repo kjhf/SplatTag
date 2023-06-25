@@ -1,13 +1,11 @@
 ﻿using SplatTagCore.Social;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class Battlefy : IMergable<Battlefy>, IReadonlySourceable, ISerializable
+  public class Battlefy : IMergable<Battlefy>, IReadonlySourceable
   {
     /// <summary>Parameterless constructor</summary>
     /// <remarks>Required for serialization - do not delete.</remarks>
@@ -18,38 +16,58 @@ namespace SplatTagCore
     /// <summary>
     /// The persistent Battlefy slugs
     /// </summary>
-    public IReadOnlyCollection<BattlefyUserSocial> Slugs => SlugsHandler.GetItemsUnordered();
+    [JsonPropertyName("Slugs")]
+    public IReadOnlyCollection<BattlefyUserSocial> Slugs
+    {
+      get => SlugsHandler.GetItemsUnordered();
+      protected set => AddSlugs(value);
+    }
 
     /// <summary>
     /// The persistent Battlefy slugs
     /// </summary>
+    [JsonIgnore]
     public NamesHandler<BattlefyUserSocial> SlugsHandler { get; } = new();
 
     /// <summary>
     /// The Battlefy usernames
     /// </summary>
-    public IReadOnlyCollection<Name> Usernames => UsernamesHandler.GetItemsUnordered();
+    [JsonPropertyName("Usernames")]
+    public IReadOnlyCollection<Name> Usernames
+    {
+      get => UsernamesHandler.GetItemsUnordered();
+      protected set => AddUsernames(value);
+    }
 
     /// <summary>
     /// The Battlefy usernames
     /// </summary>
+    [JsonIgnore]
     public NamesHandler<Name> UsernamesHandler { get; } = new();
 
     /// <summary>
     /// The persistent Battlefy ids
     /// </summary>
-    public IReadOnlyCollection<Name> PersistentIds => PersistentIdsHandler.GetItemsUnordered();
+    [JsonPropertyName("PersistentIds")]
+    public IReadOnlyCollection<Name> PersistentIds
+    {
+      get => PersistentIdsHandler.GetItemsUnordered();
+      protected set => AddPersistentIds(value);
+    }
 
     /// <summary>
     /// The Battlefy persistent ids
     /// </summary>
+    [JsonIgnore]
     public NamesHandler<Name> PersistentIdsHandler { get; } = new();
 
     /// <summary>
     /// Combination of Battlefy slugs and ids
     /// </summary>
+    [JsonIgnore]
     public IReadOnlyCollection<Name> AllNames => new List<Name>(Usernames.Concat(Slugs).Concat(PersistentIds).Distinct());
 
+    [JsonIgnore]
     public IReadOnlyList<Source> Sources
     {
       get
@@ -130,30 +148,5 @@ namespace SplatTagCore
       this.SlugsHandler.Merge(other.SlugsHandler);
       this.UsernamesHandler.Merge(other.UsernamesHandler);
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected Battlefy(SerializationInfo info, StreamingContext context)
-    {
-      AddSlugs(info.GetValueOrDefault("Slugs", Array.Empty<BattlefyUserSocial>()));
-      AddUsernames(info.GetValueOrDefault("Usernames", Array.Empty<Name>()));
-      AddPersistentIds(info.GetValueOrDefault("PersistentIds", Array.Empty<Name>()));
-    }
-
-    // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      if (SlugsHandler.Count > 0)
-        info.AddValue("Slugs", Slugs);
-
-      if (UsernamesHandler.Count > 0)
-        info.AddValue("Usernames", Usernames);
-
-      if (PersistentIdsHandler.Count > 0)
-        info.AddValue("PersistentIds", PersistentIds);
-    }
-
-    #endregion Serialization
   }
 }

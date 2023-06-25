@@ -1,44 +1,55 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using static SplatTagCore.JSONConverters;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class Source : ISerializable, IComparable<Source>, IEquatable<Source?>
+  public class Source : IComparable<Source>, IEquatable<Source?>
   {
+    [JsonIgnore]
     private static readonly Regex TOURNAMENT_ID_REGEX = new("-+([0-9a-fA-F]{18,})$");
 
+    [JsonIgnore]
     private string? battlefyId;
+
+    [JsonIgnore]
     private string? strippedTournamentName;
+
+    [JsonConstructor]
+    public Source()
+    {
+    }
 
     /// <summary>
     /// Construct a source with a name and optional date.
     /// Date will be inferred if not specified, or set to Builtins.UnknownDateTime.
     /// </summary>
-    public Source(string name = Builtins.UNKNOWN_SOURCE, DateTime? start = null)
+    public Source(string name, DateTime? start = null)
     {
       Name = name;
+      Start = start ?? GetDateFromNameOrUnknown();
+    }
 
+    private DateTime GetDateFromNameOrUnknown()
+    {
       int dataStrLength = "yyyy-mm-dd-".Length;
       if (Name.Length > dataStrLength && Name.Count('-') > 2)
       {
         var dateStr = Name.Substring(0, dataStrLength).Trim('-');
-
-        // If start wasn't specified, set from the name.
-        if (start == null && DateTime.TryParse(dateStr, out var temp))
+        if (DateTime.TryParse(dateStr, out var temp))
         {
-          start = temp;
+          return temp;
         }
       }
 
-      Start = start ?? Builtins.UnknownDateTime;
+      return Builtins.UnknownDateTime;
     }
 
     /// <summary>
     /// The Battlefy Id, if applicable.
     /// </summary>
+    [JsonIgnore]
     public string? BattlefyId
     {
       get
@@ -54,6 +65,7 @@ namespace SplatTagCore
     /// <summary>
     /// Get the Battlefy URL for this tournament, if it has a battlefy id associated with it.
     /// </summary>
+    [JsonIgnore]
     public string? BattlefyUri
     {
       get
@@ -69,22 +81,26 @@ namespace SplatTagCore
     /// <summary>
     /// The brackets that make up the source.
     /// </summary>
+    [JsonPropertyName("Brackets")]
     public Bracket[] Brackets { get; set; } = Array.Empty<Bracket>();
 
     /// <summary>
     /// The source identifier, which is its name.
     /// </summary>
+    [JsonIgnore]
     public string Id => Name;
 
     /// <summary>
     /// The filename for the source
     /// </summary>
-    public string Name { get; }
+    [JsonPropertyName("Name")]
+    public string Name { get; set; } = Builtins.UNKNOWN_SOURCE;
 
     /// <summary>
     /// The players that this source represents
     /// e.g. all players that have signed up to this tournament
     /// </summary>
+    [JsonPropertyName("Players")]
     public Player[] Players { get; set; } = Array.Empty<Player>();
 
     /// <summary>
@@ -92,11 +108,14 @@ namespace SplatTagCore
     /// Used in figuring out 'current' order.
     /// Defaults to <see cref="Builtins.UnknownDateTime"/>
     /// </summary>
-    public DateTime Start { get; set; }
+    [JsonPropertyName("Start")]
+    [JsonConverter(typeof(DateTimeTicksConverter))]
+    public DateTime Start { get; set; } = Builtins.UnknownDateTime;
 
     /// <summary>
     /// Get the stripped tournament name, which excludes the id and date.
     /// </summary>
+    [JsonIgnore]
     public string StrippedTournamentName
     {
       get
@@ -113,11 +132,13 @@ namespace SplatTagCore
     /// The teams that this source represents
     /// e.g. all teams that have signed up to this tournament
     /// </summary>
-    public Team[] Teams { get; set; } = Array.Empty<Team>();
+    [JsonPropertyName("Teams")]
+    public Team[] Teams { get; set; } = Array.Empty<Team>(); // TODO: This needs to be a TeamsHandler??
 
     /// <summary>
     /// Relevant URI(s) for the source
     /// </summary>
+    [JsonPropertyName("Uris")]
     public Uri[] Uris { get; set; } = Array.Empty<Uri>();
 
     /// <summary>
@@ -177,64 +198,5 @@ namespace SplatTagCore
     {
       return HashCode.Combine(Id);
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected Source(SerializationInfo info, StreamingContext context)
-    {
-      this.Brackets = info.GetValueOrDefault("Brackets", Array.Empty<Bracket>());
-      this.Name = info.GetString("Name");
-      this.Players = info.GetValueOrDefault("Players", Array.Empty<Player>());
-      this.Start = new DateTime(info.GetValueOrDefault("Start", Builtins.UNKNOWN_DATE_TIME_TICKS));
-      this.Teams = info.GetValueOrDefault("Teams", Array.Empty<Team>());
-      this.Uris = info.GetValueOrDefault("Uris", Array.Empty<Uri>());
-    }
-
-    // Serialize
-
-    public void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      if (this.Brackets.Length > 0)
-        info.AddValue("Brackets", this.Brackets);
-
-      if (this.Name != null)
-        info.AddValue("Name", this.Name);
-
-      if (this.Players.Length > 0)
-        info.AddValue("Players", this.Players);
-
-      if (this.Start != Builtins.UnknownDateTime)
-        info.AddValue("Start", this.Start.Ticks);
-
-      if (this.Teams.Length > 0)
-        info.AddValue("Teams", this.Teams);
-
-      if (this.Uris.Length > 0)
-        info.AddValue("Uris", this.Uris);
-    }
-
-    public class GuidToSourceConverter
-    {
-      private readonly Dictionary<string, Source> lookup;
-
-      public GuidToSourceConverter(Dictionary<string, Source> lookup)
-      {
-        this.lookup = lookup;
-      }
-
-      public IEnumerable<Source> Convert(IEnumerable<string> names)
-      {
-        foreach (var id in names)
-          yield return Convert(id);
-      }
-
-      public Source Convert(string name)
-      {
-        return lookup.ContainsKey(name) ? lookup[name] : Builtins.BuiltinSource;
-      }
-    }
-
-    #endregion Serialization
   }
 }

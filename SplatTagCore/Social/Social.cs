@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore.Social
 {
@@ -9,6 +9,7 @@ namespace SplatTagCore.Social
     /// <summary>
     /// URL of the website as a base to prepend the handle of the social.
     /// </summary>
+    [JsonIgnore]
     protected readonly string socialBaseAddress;
 
     /// <summary>
@@ -37,11 +38,13 @@ namespace SplatTagCore.Social
     /// <summary>
     /// Get the name or id (Handle) of the Social account
     /// </summary>
+    [JsonIgnore]
     public virtual string Handle => Value;
 
     /// <summary>
     /// Get the Uri to the Social account
     /// </summary>
+    [JsonIgnore]
     public virtual Uri? Uri
     {
       get
@@ -79,16 +82,5 @@ namespace SplatTagCore.Social
     {
       return Uri?.AbsoluteUri ?? Value ?? base.ToString();
     }
-
-    #region Serialization
-
-    // Deserialized constructor
-    protected Social(SerializationInfo info, StreamingContext context, string socialBaseAddress)
-      : base(info, context)
-    {
-      this.socialBaseAddress = socialBaseAddress;
-    }
-
-    #endregion Serialization
   }
 }

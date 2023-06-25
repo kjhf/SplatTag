@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore.Social
 {
-  [Serializable]
   public class PlusMembership : Social
   {
     private const string baseAddress = "sendou.ink/plus/history/";
@@ -47,6 +46,7 @@ namespace SplatTagCore.Social
     {
     }
 
+    [JsonConstructor]
     public PlusMembership(string handle, IEnumerable<Source> sources)
       : base(handle, sources, baseAddress)
     {
@@ -56,15 +56,5 @@ namespace SplatTagCore.Social
       : base($"{plusLevel}/{source.Start.Year}/{source.Start.Month}", source, baseAddress)
     {
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected PlusMembership(SerializationInfo info, StreamingContext context)
-      : base(info, context, baseAddress)
-    {
-    }
-
-    #endregion Serialization
   }
 }

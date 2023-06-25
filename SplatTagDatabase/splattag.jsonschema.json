@@ -1,0 +1,499 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Battlefy": {
+      "type": "object",
+      "properties": {
+        "slugs": {
+          "$ref": "#/definitions/BattlefyUserSocial"
+        },
+        "usernames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Name"
+          }
+        },
+        "persistentIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Name"
+          }
+        }
+      }
+    },
+    "BattlefyTeamSocial": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Name"
+        },
+        {
+          "type": "object",
+          "properties": {}
+        }
+      ]
+    },
+    "BattlefyUserSocial": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Name"
+        },
+        {
+          "type": "object",
+          "properties": {}
+        }
+      ]
+    },
+    "Bracket": {
+      "type": "object",
+      "properties": {
+        "matches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Game"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "placements": {
+          "$ref": "#/definitions/PlacementInformation"
+        }
+      }
+    },
+    "ClanTag": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Name"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "layoutOption": {
+              "type": "string",
+              "enum": [
+                "Unknown",
+                "Front",
+                "Back",
+                "Surrounding",
+                "Variable"
+              ]
+            }
+          }
+        }
+      ],
+      "required": [
+        "value"
+      ]
+    },
+    "Discord": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Name"
+          }
+        },
+        "usernames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Name"
+          }
+        }
+      }
+    },
+    "Division": {
+      "type": "object",
+      "properties": {
+        "divType": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "LUTI",
+            "EBTV",
+            "DSB"
+          ]
+        },
+        "season": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "divType",
+        "season",
+        "value"
+      ]
+    },
+    "DivisionInformation": {
+      "type": "object",
+      "properties": {
+        "division": {
+          "$ref": "#/definitions/Division"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "FriendCode": {
+      "type": "object",
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}$"
+        }
+      }
+    },
+    "Game": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          "required": [
+            "points"
+          ]
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "required": [
+        "score",
+        "players",
+        "teams"
+      ]
+    },
+    "Name": {
+      "type": "object",
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "PlacementInformation": {
+      "type": "object",
+      "properties": {
+        "playersByPlacement": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "teamsByPlacement": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "required": [
+        "playersByPlacement",
+        "teamsByPlacement"
+      ]
+    },
+    "PlusMembership": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Name"
+        },
+        {
+          "type": "object",
+          "properties": {}
+        }
+      ]
+    },
+    "Pronouns": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Name"
+        },
+        {
+          "type": "object",
+          "properties": {}
+        }
+      ]
+    },
+    "Sendou": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Name"
+        },
+        {
+          "type": "object",
+          "properties": {}
+        }
+      ]
+    },
+    "Skill": {
+      "type": "object",
+      "properties": {
+        "μ": {
+          "type": "number"
+        },
+        "σ": {
+          "type": "number"
+        }
+      }
+    },
+    "Source": {
+      "type": "object",
+      "properties": {
+        "brackets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Bracket"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Player"
+          }
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Team"
+          }
+        },
+        "uris": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "TeamInformation": {
+      "type": "object",
+      "properties": {
+        "teamId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Twitch": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Name"
+        },
+        {
+          "type": "object",
+          "properties": {}
+        }
+      ]
+    },
+    "Twitter": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Name"
+        },
+        {
+          "type": "object",
+          "properties": {}
+        }
+      ]
+    },
+    "Player": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "weapons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "battlefy": {
+          "$ref": "#/definitions/Battlefy"
+        },
+        "country": {
+          "type": "string"
+        },
+        "discord": {
+          "$ref": "#/definitions/Discord"
+        },
+        "fcs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FriendCode"
+          }
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Name"
+          }
+        },
+        "plus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PlusMembership"
+          }
+        },
+        "pronouns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Pronouns"
+          }
+        },
+        "sendou": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Sendou"
+          }
+        },
+        "twitch": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Twitch"
+          }
+        },
+        "twitter": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Twitter"
+          }
+        },
+        "skill": {
+          "$ref": "#/definitions/Skill"
+        },
+        "splatnetId": {
+          "type": "string"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TeamInformation"
+          }
+        },
+        "top500": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "Team": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "battlefyPersistentTeamIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BattlefyTeamSocial"
+          }
+        },
+        "clanTags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClanTag"
+          }
+        },
+        "divisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DivisionInformation"
+          }
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Name"
+          }
+        },
+        "twitter": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Twitter"
+          }
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  }
+}

@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -29,7 +30,9 @@ namespace SplatTagCore
 
     public SplatTagController(ISplatTagDatabase? database = null)
     {
-      Console.WriteLine("Creating SplatTagController. Debugger.IsAttached=" + Debugger.IsAttached);
+      var version = FileVersionInfo.GetVersionInfo(Assembly.GetEntryAssembly().Location);
+      Console.WriteLine(version.LegalCopyright);
+      Console.WriteLine($"Creating SplatTagController. Debugger.IsAttached={Debugger.IsAttached}.");
 #if DEBUG
       Console.WriteLine("Running in DEBUG.");
 #else

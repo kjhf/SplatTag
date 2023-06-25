@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class Discord : IMergable<Discord>, IReadonlySourceable, ISerializable
+  public class Discord : IMergable<Discord>, IReadonlySourceable
   {
     /// <summary>Parameterless constructor</summary>
     /// <remarks>Required for serialization - do not delete.</remarks>
@@ -15,28 +13,42 @@ namespace SplatTagCore
     {
     }
 
+    [JsonIgnore]
     public static readonly Regex DISCORD_NAME_REGEX = new(@"\(?.*#[0-9]{4}\)?", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
     /// <summary>
     /// The Discord ids
     /// </summary>
-    public IReadOnlyCollection<Name> Ids => IdsHandler.GetItemsUnordered();
+    [JsonPropertyName("Ids")]
+    public IReadOnlyCollection<Name> Ids
+    {
+      get => IdsHandler.GetItemsUnordered();
+      protected set => AddIds(value);
+    }
 
     /// <summary>
     /// The Discord ids
     /// </summary>
+    [JsonIgnore]
     public NamesHandler<Name> IdsHandler { get; } = new();
 
     /// <summary>
     /// The Discord usernames
     /// </summary>
-    public IReadOnlyCollection<Name> Usernames => UsernamesHandler.GetItemsUnordered();
+    [JsonPropertyName("Usernames")]
+    public IReadOnlyCollection<Name> Usernames
+    {
+      get => UsernamesHandler.GetItemsUnordered();
+      protected set => AddUsernames(value);
+    }
 
     /// <summary>
     /// The Discord usernames
     /// </summary>
+    [JsonIgnore]
     public NamesHandler<Name> UsernamesHandler { get; } = new();
 
+    [JsonIgnore]
     public IReadOnlyList<Source> Sources
     {
       get
@@ -99,26 +111,5 @@ namespace SplatTagCore
     {
       return $"Ids: [{string.Join(", ", Ids)}], Usernames: [{string.Join(", ", Usernames)}]";
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected Discord(SerializationInfo info, StreamingContext context)
-    {
-      IdsHandler.Add(info.GetValueOrDefault("Ids", Array.Empty<Name>()));
-      UsernamesHandler.Add(info.GetValueOrDefault("Usernames", Array.Empty<Name>()));
-    }
-
-    // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      if (IdsHandler.Count > 0)
-        info.AddValue("Ids", Ids);
-
-      if (UsernamesHandler.Count > 0)
-        info.AddValue("Usernames", Usernames);
-    }
-
-    #endregion Serialization
   }
 }

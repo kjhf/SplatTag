@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore;
+﻿using SplatTagCore;
 using SplatTagDatabase;
 using System;
 using System.Collections.Generic;
@@ -9,6 +8,7 @@ using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SplatTagConsole
@@ -17,7 +17,6 @@ namespace SplatTagConsole
   {
     private static readonly SplatTagController splatTagController;
     private static readonly GenericFilesToIImporters? importer;
-    private static readonly JsonSerializer serializer;
     private static readonly HashSet<string> errorMessagesReported;
 
     static ConsoleMain()
@@ -27,25 +26,6 @@ namespace SplatTagConsole
       errorMessagesReported = new HashSet<string>();
 
       // Invoked from command line
-      if (JsonConvert.DefaultSettings == null)
-      {
-        JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-        {
-          DefaultValueHandling = DefaultValueHandling.Ignore,
-          Error = (sender, args) =>
-          {
-            string m = args.ErrorContext.Error.Message;
-            if (!errorMessagesReported.Contains(m))
-            {
-              Console.Error.WriteLine(m);
-              errorMessagesReported.Add(m);
-            }
-            args.ErrorContext.Handled = true;
-          }
-        };
-      }
-      serializer = JsonSerializer.Create(JsonConvert.DefaultSettings());
-
       if (Environment.GetCommandLineArgs().Length > 0)
       {
         // Check for a rebuild argument
@@ -371,9 +351,7 @@ namespace SplatTagConsole
 
         try
         {
-          StringWriter sw = new StringWriter();
-          serializer.Serialize(sw, result);
-          messageToSend = sw.ToString();
+          messageToSend = JsonSerializer.Serialize(result, SplatTagJsonSnapshotDatabase.jsonSerializerOptions);
         }
         catch (Exception ex)
         {
@@ -390,9 +368,7 @@ namespace SplatTagConsole
           };
 
           // Attempt to send the message as a different serialized error
-          StringWriter sw = new StringWriter();
-          serializer.Serialize(sw, result);
-          messageToSend = sw.ToString();
+          messageToSend = JsonSerializer.Serialize(result, SplatTagJsonSnapshotDatabase.jsonSerializerOptions);
         }
 
         // Send back as a b64 string
@@ -445,7 +421,7 @@ namespace SplatTagConsole
           foreach (var t in splatTagController.MatchTeam(input))
           {
             Console.WriteLine(t);
-            Console.WriteLine("Players: " + string.Join(", ", splatTagController.GetPlayersForTeam(t).Select(tuple => tuple.Item1.Name + " " + (tuple.Item2 ? "(Most recent)" : "(Ex)"))));
+            Console.WriteLine("Players: " + string.Join(", ", splatTagController.GetPlayersForTeam(t).Select(tuple => tuple.player.Name + " " + (tuple.mostRecent ? "(Most recent)" : "(Ex)"))));
             Console.WriteLine("-----");
           }
           break;

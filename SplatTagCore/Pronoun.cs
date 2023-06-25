@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using static SplatTagCore.JSONConverters;
 
 namespace SplatTagCore
 {
@@ -23,7 +24,6 @@ namespace SplatTagCore
     ORDER_RTL = 1 << 7
   }
 
-  [Serializable]
   public class Pronoun : IReadonlySourceable
   {
     public const string NEO_PLACEHOLDER = "(neo)";
@@ -35,7 +35,11 @@ namespace SplatTagCore
     private static readonly Regex allRegex = new(@"^all$|(^|\W)((pronouns? ?([ :]) ?(all|any))|((all|any) pronouns?))(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
     private static readonly Regex askRegex = new(@"^ask$|(^|\W)((pronouns? ?([ :]) ?(ask))|(ask (for )?pronouns?))(\W|$)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
 
-    public readonly PronounFlags value;
+    [JsonPropertyName("P")]
+    public readonly PronounFlags value = PronounFlags.NONE;
+
+    [JsonPropertyName("S")]
+    [JsonConverter(typeof(SourceIdConverter))]
     public readonly Source source;
 
     /// <summary>
@@ -253,30 +257,5 @@ namespace SplatTagCore
         }
       }
     }
-
-    #region Serialization
-
-    protected Pronoun(SerializationInfo info, StreamingContext context)
-    {
-      this.value = (PronounFlags)info.GetByte("P");
-      var source = (string)info.GetValue("S", typeof(string));
-      if (context.Context is Source.GuidToSourceConverter converter)
-      {
-        this.source = converter.Convert(source);
-      }
-      else
-      {
-        this.source = new Source(source);
-      }
-    }
-
-    // Serialize as dict
-    public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      info.AddValue("P", (byte)this.value);
-      info.AddValue("S", this.source);
-    }
-
-    #endregion Serialization
   }
 }

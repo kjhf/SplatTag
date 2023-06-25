@@ -1,13 +1,11 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class Division : ISerializable, IComparable<Division>, IEquatable<Division?>
+  public class Division : IComparable<Division>, IEquatable<Division?>
   {
     public const string UNKNOWN_STR = "Div Unknown";
     public const int UNKNOWN = int.MaxValue;
@@ -15,18 +13,37 @@ namespace SplatTagCore
     public const int X_PLUS = -1;
     private const string VALUE_SEPARATOR_STR = " Div ";
 
-    public static readonly Division Unknown = new();
+    [JsonPropertyName("Value")]
+    public int Value { get; } = UNKNOWN;
 
-    public readonly DivType DivType = DivType.Unknown;
-    public readonly string Season = "";
-    public readonly int Value = UNKNOWN;
+    [JsonPropertyName("DivType")]
+    public DivType DivType { get; } = DivType.Unknown;
 
-    /// <summary>
-    /// Get if a division is unknown.
-    /// </summary>
+    [JsonPropertyName("Season")]
+    public string Season { get; } = "";
+
+    [JsonIgnore]
     public bool IsUnknown => this.Value == UNKNOWN || this.DivType == DivType.Unknown;
 
+    [JsonIgnore]
+    public static readonly Division Unknown = new();
+
+    [JsonIgnore]
+    public string Name => ToString();
+
     [JsonConstructor]
+    public Division(int value = UNKNOWN, DivType divType = DivType.Unknown, string season = "")
+    {
+      this.Value = value;
+      this.DivType = divType;
+      this.Season = season.Trim();
+    }
+
+    public Division(string valueStr, DivType divType, string season)
+      : this(ParseValueString(valueStr), divType, season)
+    {
+    }
+
     internal Division(string serialized)
     {
       if (serialized.Equals(UNKNOWN_STR))
@@ -47,7 +64,7 @@ namespace SplatTagCore
         else
         {
           var divTypeStr = serialized.Substring(0, index);
-          bool parsed = Enum.TryParse(divTypeStr, out this.DivType);
+          bool parsed = Enum.TryParse<DivType>(divTypeStr, out var divType);
           if (!parsed)
           {
             this.Value = Unknown.Value;
@@ -56,6 +73,7 @@ namespace SplatTagCore
           }
           else
           {
+            this.DivType = divType;
             serialized = serialized.Substring(index + 1);
             index = serialized.IndexOf(VALUE_SEPARATOR_STR);
             if (index < 0)
@@ -73,20 +91,6 @@ namespace SplatTagCore
           }
         }
       }
-    }
-
-    public Division(int value = UNKNOWN, DivType divType = DivType.Unknown, string season = "")
-    {
-      this.Value = value;
-      this.DivType = divType;
-      this.Season = season.Trim();
-    }
-
-    public Division(string valueStr, DivType divType, string season)
-    {
-      this.DivType = divType;
-      this.Season = season.Trim();
-      this.Value = ParseValueString(valueStr);
     }
 
     private static int ParseValueString(string valueStr)
@@ -140,8 +144,6 @@ namespace SplatTagCore
         }
       }
     }
-
-    public string Name => ToString();
 
     /// <summary>
     /// Get a LUTI-equivalent value representing <see cref="Value"/>.
@@ -233,11 +235,7 @@ namespace SplatTagCore
 
     public override int GetHashCode()
     {
-      int hashCode = 854497090;
-      hashCode = (hashCode * -1521134295) + DivType.GetHashCode();
-      hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(Season);
-      hashCode = (hashCode * -1521134295) + Value.GetHashCode();
-      return hashCode;
+      return HashCode.Combine(DivType, Season, Value);
     }
 
     /// <summary>
@@ -271,25 +269,5 @@ namespace SplatTagCore
 
       return sb.ToString();
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected Division(SerializationInfo info, StreamingContext context)
-    {
-      this.Value = info.GetValueOrDefault("Value", UNKNOWN);
-      this.DivType = info.GetEnumOrDefault("DivType", DivType.Unknown);
-      this.Season = info.GetValueOrDefault("Season", "");
-    }
-
-    // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      info.AddValue("Value", this.Value);
-      info.AddValue("DivType", this.DivType.ToString());
-      info.AddValue("Season", this.Season);
-    }
-
-    #endregion Serialization
   }
 }

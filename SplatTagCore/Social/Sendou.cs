@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
 
 namespace SplatTagCore.Social
 {
-  [Serializable]
   public class Sendou : Social
   {
     private const string baseAddress = "sendou.ink/u";
 
+    protected Sendou()
+        : base("", Builtins.ManualSource, baseAddress)
+    { }
+
     public Sendou(string handle, Source source)
-      : base(handle, source, baseAddress)
+        : base(handle, source, baseAddress)
     {
     }
 
@@ -18,15 +19,5 @@ namespace SplatTagCore.Social
       : base(handle, sources, baseAddress)
     {
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected Sendou(SerializationInfo info, StreamingContext context)
-      : base(info, context, baseAddress)
-    {
-    }
-
-    #endregion Serialization
   }
 }

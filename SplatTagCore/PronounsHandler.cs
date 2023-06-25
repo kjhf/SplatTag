@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class PronounsHandler : SourcedItemHandler<Pronoun>, ISerializable
+  public class PronounsHandler : SourcedItemHandler<Pronoun>
   {
     public PronounsHandler()
     {
@@ -43,32 +40,5 @@ namespace SplatTagCore
       if (incoming.Count == 0) return;
       base.Add(incoming.Where(x => x.value != PronounFlags.NONE).ToArray(), source);
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected PronounsHandler(SerializationInfo info, StreamingContext context)
-    {
-      Source.GuidToSourceConverter? converter = context.Context as Source.GuidToSourceConverter;
-      var val = info.GetValueOrDefault("P", PronounFlags.NONE);
-      var sourceString = info.GetValueOrDefault("S", "");
-      var source = converter?.Convert(sourceString) ?? (string.IsNullOrWhiteSpace(sourceString) ? Builtins.ManualSource : new Source(sourceString));
-      Pronoun pronoun = new(val, source);
-      Add(pronoun, source);
-    }
-
-    // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext _)
-    {
-      if (Count > 0)
-      {
-        // Only save the most recent.
-        var item = OrderedItems.FirstOrDefault();
-        info.AddValue("P", item.Key.value);
-        info.AddValue("S", item.Value.Max(s => s).Id);
-      }
-    }
-
-    #endregion Serialization
   }
 }

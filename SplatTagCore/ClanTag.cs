@@ -2,15 +2,15 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SplatTagCore
 {
-  [Serializable]
   public class ClanTag : Name
   {
+    [JsonIgnore]
     private static readonly char[] tagDelimiters = new[] { ' ', '•', '_', '.', '⭐', '~', ']', '}', ')', '>' };
 
     /// <summary>
@@ -39,11 +39,13 @@ namespace SplatTagCore
     /// <summary>
     /// Tag layout option
     /// </summary>
-    public TagOption LayoutOption { get; set; }
+    [JsonPropertyName("LayoutOption")]
+    public TagOption LayoutOption { get; set; } = TagOption.Unknown;
 
     /// <summary>
     /// Get the Tag
     /// </summary>
+    [JsonIgnore]
     public virtual string Tag => Value;
 
     /// <summary>
@@ -202,23 +204,5 @@ namespace SplatTagCore
     {
       return Value ?? base.ToString();
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected ClanTag(SerializationInfo info, StreamingContext context)
-      : base(info, context)
-    {
-      this.LayoutOption = info.GetEnumOrDefault("LayoutOption", TagOption.Unknown);
-    }
-
-    // Serialize
-    public override void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-      base.GetObjectData(info, context);
-      info.AddValue("LayoutOption", this.LayoutOption.ToString());
-    }
-
-    #endregion Serialization
   }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore
 {
@@ -22,28 +23,34 @@ namespace SplatTagCore
     /// a small number of elements (under 20), List is actually better
     /// https://stackoverflow.com/questions/150750/hashset-vs-list-performance
     /// </remarks>
+    [JsonIgnore]
     protected readonly Dictionary<T, List<Source>> items = new();
 
     /// <summary>
     /// Back-store for quick access to the most recent item (current).
     /// </summary>
+    [JsonIgnore]
     protected T? mostRecentItem = default;
 
     /// <summary>
     /// Get the number of this sourced entity.
     /// </summary>
+    [JsonIgnore]
     public int Count => items.Count;
 
     /// <summary>
     /// Get the most recent item.
     /// </summary>
+    [JsonIgnore]
     public T? MostRecent => mostRecentItem;
 
+    [JsonIgnore]
     public override IReadOnlyList<Source> Sources => items.Values.SelectMany(x => x).Distinct().ToList();
 
     /// <summary>
     /// Get all the items and their sources as an ordered enumerable from most recent item to oldest.
     /// </summary>
+    [JsonIgnore]
     protected IOrderedEnumerable<KeyValuePair<T, List<Source>>> OrderedItems => items.OrderByDescending(pair => pair.Value.Max());
 
     /// <summary>

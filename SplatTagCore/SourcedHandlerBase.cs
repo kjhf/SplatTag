@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore
 {
@@ -10,13 +11,16 @@ namespace SplatTagCore
     /// <summary>
     /// Back-store for quick access to the most recent source.
     /// </summary>
+    [JsonIgnore]
     protected Source? mostRecentSource = default;
 
     /// <summary>
     /// Get the most recent source.
     /// </summary>
+    [JsonIgnore]
     public Source? MostRecentSource => mostRecentSource;
 
+    [JsonIgnore]
     public abstract IReadOnlyList<Source> Sources { get; }
   }
 }

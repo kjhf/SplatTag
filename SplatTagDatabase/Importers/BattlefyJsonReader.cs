@@ -1,10 +1,11 @@
-﻿using Newtonsoft.Json;
-using SplatTagCore;
+﻿using SplatTagCore;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SplatTagDatabase.Importers
 {
@@ -40,7 +41,7 @@ namespace SplatTagDatabase.Importers
     {
       Debug.WriteLine("Loading " + jsonFile);
       string json = File.ReadAllText(jsonFile);
-      BattlefyJsonTeam[] rows = JsonConvert.DeserializeObject<BattlefyJsonTeam[]>(json) ?? Array.Empty<BattlefyJsonTeam>();
+      BattlefyJsonTeam[] rows = JsonSerializer.Deserialize<BattlefyJsonTeam[]>(json) ?? Array.Empty<BattlefyJsonTeam>();
 
       List<Team> teams = new();
       List<Player> players = new();
@@ -170,10 +171,9 @@ namespace SplatTagDatabase.Importers
       return source;
     }
 
-    [Serializable]
     internal class BattlefyJsonPlayer
     {
-      [JsonProperty("_id", Required = Required.Default)]
+      [JsonPropertyName("_id")]
       public string? BattlefyId { get; set; }
 
       // [JsonProperty("onTeam", Required = Required.Default)]
@@ -185,32 +185,31 @@ namespace SplatTagDatabase.Importers
       // [JsonProperty("beCaptain", Required = Required.Default)]
       // public bool BeCaptain { get; set; }
 
-      [JsonProperty("username")]
+      [JsonPropertyName("username")]
       public string? BattlefyName { get; set; }
 
-      [JsonProperty("userSlug")]
+      [JsonPropertyName("userSlug")]
       public string? BattlefyUserSlug { get; set; }
 
-      [JsonProperty("inGameName")]
+      [JsonPropertyName("inGameName")]
       public string? Name { get; set; }
 
-      [JsonProperty("persistentPlayerID")]
+      [JsonPropertyName("persistentPlayerID")]
       public string? PersistentPlayerId { get; set; }
     }
 
-    [Serializable]
     internal class BattlefyJsonTeam
     {
-      [JsonProperty("_id", Required = Required.Default)]
+      [JsonPropertyName("_id")]
       public string? BattlefyId { get; set; }
 
-      [JsonProperty("persistentTeamID", Required = Required.Default)]
+      [JsonPropertyName("persistentTeamID")]
       public string? BattlefyPersistentTeamId { get; set; }
 
-      [JsonProperty("captain")]
+      [JsonPropertyName("captain")]
       public BattlefyJsonPlayer? Captain { get; set; }
 
-      [JsonProperty("checkedInAt", Required = Required.Default)]
+      [JsonPropertyName("checkedInAt")]
       public DateTime? CheckInTime { get; set; }
 
       public string? CaptainDiscordName
@@ -257,15 +256,15 @@ namespace SplatTagDatabase.Importers
         }
       }
 
-      [JsonProperty("customFields")]
+      [JsonPropertyName("customFields")]
       public Dictionary<string, string>[]? CustomFields { get; set; }
 
       // [JsonProperty("checkedInAt", Required = Required.Default)]
       // public string CheckedInAt { get; set; }
-      [JsonProperty("players")]
+      [JsonPropertyName("players")]
       public BattlefyJsonPlayer[]? Players { get; set; }
 
-      [JsonProperty("name")]
+      [JsonPropertyName("name")]
       public string? TeamName { get; set; }
 
       // [JsonProperty("pendingTeamID", Required = Required.Default)]

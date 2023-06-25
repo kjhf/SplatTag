@@ -1,20 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
+using static SplatTagCore.JSONConverters;
 
 namespace SplatTagCore
 {
-  [Serializable]
-  public class DivisionsHandler : SourcedItemHandler<Division>, ISerializable
+  public class DivisionsHandler : SourcedItemHandler<Division>
   {
-    public DivisionsHandler()
+    [JsonPropertyName("D")]
+    protected Dictionary<string, string[]> Model
     {
+      get => OrderedItems.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value.Select(s => s.Id).ToArray());
+      set
+      {
+        if (GuidToSourceConverter.Instance != null)
+        {
+          Merge(value.ToDictionary(pair => new Division(pair.Key), pair => GuidToSourceConverter.Instance.Convert(pair.Value).ToList()));
+        }
+        else
+        {
+          Merge(value.ToDictionary(pair => new Division(pair.Key), pair => pair.Value.Select(s => new Source(s)).ToList()));
+        }
+      }
     }
 
     /// <summary>
     /// Get the most recent division.
     /// </summary>
+    [JsonIgnore]
     public Division? CurrentDivision => mostRecentItem;
 
     /// <summary>
@@ -51,26 +64,5 @@ namespace SplatTagCore
       var bestDiv = divs.Min();
       return bestDiv.IsUnknown ? null : bestDiv;
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected DivisionsHandler(SerializationInfo info, StreamingContext context)
-    {
-      Source.GuidToSourceConverter? converter = context.Context as Source.GuidToSourceConverter;
-      var val = info.GetValueOrDefault("D", new Dictionary<string, List<string>>());
-      Merge(val.ToDictionary(pair => new Division(pair.Key), pair => (converter?.Convert(pair.Value) ?? pair.Value.Select(s => new Source(s))).ToList()));
-    }
-
-    // Serialize
-    public void GetObjectData(SerializationInfo info, StreamingContext _)
-    {
-      if (Count > 0)
-      {
-        info.AddValue("D", OrderedItems.ToDictionary(pair => pair.Key.ToString(), pair => pair.Value.Select(s => s.Id)));
-      }
-    }
-
-    #endregion Serialization
   }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace SplatTagCore.Social
 {
@@ -14,19 +14,10 @@ namespace SplatTagCore.Social
     {
     }
 
+    [JsonConstructor]
     public BattlefyUserSocial(string battlefySlug, IEnumerable<Source> sources)
       : base(battlefySlug, sources, baseAddress)
     {
     }
-
-    #region Serialization
-
-    // Deserialize
-    protected BattlefyUserSocial(SerializationInfo info, StreamingContext context)
-      : base(info, context, baseAddress)
-    {
-    }
-
-    #endregion Serialization
   }
 }
