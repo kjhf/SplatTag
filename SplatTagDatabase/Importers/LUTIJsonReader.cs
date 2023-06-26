@@ -18,9 +18,11 @@ namespace SplatTagDatabase.Importers
       [JsonPropertyName("Team Name")]
       public string TeamName { get; set; } = Builtins.UNKNOWN_TEAM;
 
+      [JsonNumberHandling(JsonNumberHandling.WriteAsString)]
       [JsonPropertyName("Div")]
       public string Div { get => Division; set => Division = value; }
 
+      [JsonNumberHandling(JsonNumberHandling.WriteAsString)]
       [JsonPropertyName("Division")]
       public string Division { get; set; } = "Unknown";
 

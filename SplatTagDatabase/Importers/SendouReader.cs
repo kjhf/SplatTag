@@ -67,11 +67,28 @@ namespace SplatTagDatabase.Importers
         {
           player.AddTwitter(name, source);
         }
-        var sendouId = userToken.GetValue<string>("id");
-        if (sendouId != null)
+        var sendouId = userToken["id"]?.AsValue();
+        if (sendouId is not null)
         {
-          player.AddSendou(sendouId, source);
+          if (sendouId.TryGetValue(out int? sendouIdInt) && sendouIdInt is not null)
+          {
+            player.AddSendou(sendouIdInt.ToString(), source);
+          }
+          else if (sendouId.TryGetValue(out string? sendouIdStr) && sendouIdStr is not null)
+          {
+            player.AddSendou(sendouIdStr, source);
+          }
+          else
+          {
+            throw new InvalidDataException("Sendou id is in an incorrect format: " + sendouId);
+          }
         }
+        else
+        {
+          Debug.WriteLine("Sendou id not present/null for player: " + name);
+          continue;
+        }
+
         var country = userToken.GetValue<string>("country");
         if (name != null)
         {

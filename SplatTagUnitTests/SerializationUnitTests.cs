@@ -24,7 +24,14 @@ namespace SplatTagUnitTests
     private static T Deserialize<T>(string json, Dictionary<string, Source> lookup)
     {
       _ = new GuidToSourceConverter(lookup); // Set instance
-      return JsonSerializer.Deserialize<T>(json, SplatTagJsonSnapshotDatabase.jsonSerializerOptions) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize Object of type {typeof(T).Name} (json.Length={json.Length})");
+      try
+      {
+        return JsonSerializer.Deserialize<T>(json, SplatTagJsonSnapshotDatabase.jsonSerializerOptions) ?? throw new InvalidOperationException($"JsonConvert failed to Deserialize object of type {typeof(T).Name} (json.Length={json.Length})");
+      }
+      catch (JsonException ex)
+      {
+        throw new InvalidOperationException($"JsonConvert failed to Deserialize object of type {typeof(T).Name} (json.Length={json.Length}), json=\n{json}\n", ex);
+      }
     }
 
     [TestMethod]
@@ -309,15 +316,30 @@ namespace SplatTagUnitTests
     }
 
     [TestMethod]
+    public void DeserializeFriendCode()
+    {
+      const string json = "[6653,9220,3527]";
+
+      FriendCode fc = FriendCode.FromArray(Deserialize<List<short>>(json, new Dictionary<string, Source>()));
+      Assert.IsNotNull(fc);
+      Assert.IsFalse(fc.NoCode);
+
+      Player player = new Player();
+      player.AddFCs(fc, Builtins.ManualSource);
+      Assert.AreEqual(1, player.FCInformation.Count, "Expected 1 FC.");
+    }
+
+    [TestMethod]
     public void DeserializeFriendCodes()
     {
       const string json = "[[6653,9220,3527],[6653,9220,3527],[6653,9220,3527],[6653,9220,3527]]";
-      FriendCode[] fcs = Deserialize<FriendCode[]>(json, new Dictionary<string, Source>());
+
+      IEnumerable<FriendCode> fcs = Deserialize<List<List<short>>>(json, new Dictionary<string, Source>()).Select(x => new FriendCode(x));
       Assert.IsNotNull(fcs);
-      Assert.AreEqual(4, fcs.Length, "Expected 4 friend codes parsed.");
+      Assert.AreEqual(4, fcs.Count(), "Expected 4 friend codes parsed.");
 
       Player player = new Player();
-      player.AddFCs(fcs, Builtins.ManualSource);
+      player.AddFCs(fcs.ToList(), Builtins.ManualSource);
       Assert.AreEqual(1, player.FCInformation.Count, "Expected only 1 FC as the values are equal.");
     }
   }

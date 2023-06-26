@@ -9,6 +9,14 @@ namespace SplatTagCore
 {
   public record FriendCode : IEquatable<FriendCode>
   {
+    /// <summary>
+    /// Representation of a no code part.
+    /// </summary>
+    /// <remarks>
+    /// This code cannot happen (-1 = 65535 > 9999)
+    /// </remarks>
+    private const short NO_CODE_DIGIT = -1;
+
     [JsonIgnore]
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -33,68 +41,122 @@ namespace SplatTagCore
     [JsonIgnore]
     private readonly short FCShort3;
 
-    private FriendCode()
+    public FriendCode()
     {
+      FCShort1 = FCShort2 = FCShort3 = NO_CODE_DIGIT;
     }
 
-    internal FriendCode(ulong fc)
+    /// <summary>
+    /// Constructor for individual parts.
+    /// </summary>
+    internal FriendCode(short fcShort1, short fcShort2, short fcShort3)
     {
-      var str = fc.ToString();
-      if (str.Length < 9 || str.Length > 12)
-      {
-        string error = $"The stored FC value should be 9-12 characters [it's a friend code of 12 chars as an int without zero pad], actually {str.Length}.";
-        logger.Error(error);
-        throw new ArgumentException(nameof(fc), error);
-      }
-
-      // Count back 4 chars
-      FCShort3 = short.Parse(str.Substring(str.Length - 4, 4));
-      FCShort2 = short.Parse(str.Substring(str.Length - 8, 4));
-      // The first group may have had zeros at the start, in which case, the start is index 0, until the second group.
-      FCShort1 = short.Parse(str.Substring(0, str.Length - 8));
+      this.FCShort1 = (fcShort1 is > 0 and <= 9999) ? fcShort1 : throw new ArgumentOutOfRangeException(nameof(fcShort1), $"The first code short is out of range (0 > {fcShort1} > 9999).");
+      this.FCShort2 = (fcShort2 is > 0 and <= 9999) ? fcShort2 : throw new ArgumentOutOfRangeException(nameof(fcShort2), $"The second code short is out of range (0 > {fcShort2} > 9999).");
+      this.FCShort3 = (fcShort3 is > 0 and <= 9999) ? fcShort3 : throw new ArgumentOutOfRangeException(nameof(fcShort3), $"The third code short is out of range (0 > {fcShort3} > 9999).");
     }
 
-    internal FriendCode(ICollection<short> fc)
+    /// <summary>
+    /// Friend code object that needs to be read
+    /// </summary>
+    public FriendCode(params object[] args)
     {
-      if (fc == null || fc.Count == 0)
+      FriendCode temp;
+      switch (args.Length)
       {
-        FCShort1 = FCShort2 = FCShort3 = 0;
-        return;
+        case 0:
+          temp = NO_FRIEND_CODE;
+          break;
+
+        case 1:
+        {
+          var fc = args[0];
+          temp = fc switch
+          {
+            string str => FromString(str),
+            ulong num => FromNumber(num),
+            long num => FromNumber((ulong)num),
+            int num => FromNumber((ulong)num),
+            IEnumerable<short> collection => FromArray(collection as ICollection<short> ?? collection.ToArray()),
+            IEnumerable<int> collection => FromArray((collection as ICollection<int> ?? collection.ToArray()).Cast<short>().ToArray()),
+            _ => throw new ArgumentException(
+              "fc is in an invalid format. Expected a string, ulong, or array of 3 shorts. " +
+              "Actually: " + fc.GetType().Name, nameof(fc)),
+          };
+          break;
+        }
+
+        case 3:
+          temp = new FriendCode((short)args[0], (short)args[1], (short)args[2]);
+          break;
+
+        default:
+          throw new ArgumentException(
+                "args is in an invalid format. Expected a single string, ulong, or array of 3 shorts, or 3 shorts. " +
+                "Actually: " + args.GetType().Name, nameof(args));
       }
-
-      if (fc.Count != 3)
-      {
-        throw new ArgumentException($"FC is not length 3 (actually {fc} == {fc.Count})", nameof(fc));
-      }
-
-      // else
-
-      short[] x = fc switch
-      {
-        short[] => (short[])fc,
-        _ => fc.ToArray(),
-      };
-
-      FCShort1 = x[0] <= 9999 ? x[0] : throw new ArgumentOutOfRangeException(nameof(fc), $"The first code short is out of range ({x[0]} > 9999).");
-      FCShort2 = x[1] <= 9999 ? x[1] : throw new ArgumentOutOfRangeException(nameof(fc), $"The second code short is out of range ({x[1]} > 9999).");
-      FCShort3 = x[2] <= 9999 ? x[2] : throw new ArgumentOutOfRangeException(nameof(fc), $"The third code short is out of range ({x[2]} > 9999).");
+      FCShort1 = temp.FCShort1;
+      FCShort2 = temp.FCShort2;
+      FCShort3 = temp.FCShort3;
     }
 
     /// <summary>
     /// String to FriendCode. Will be parsed: does not have to be in standard format.
     /// </summary>
-    internal FriendCode(string fc)
+    public static FriendCode FromString(string str)
     {
-      if (TryParse(fc, out FriendCode friendCode) && !friendCode.NoCode)
+      if (TryParse(str, out FriendCode friendCode) && !friendCode.NoCode)
       {
-        this.FCShort1 = friendCode.FCShort1;
-        this.FCShort2 = friendCode.FCShort2;
-        this.FCShort3 = friendCode.FCShort3;
+        return new FriendCode(friendCode.FCShort1, friendCode.FCShort2, friendCode.FCShort3);
       }
-      else
+      // else
+      throw new ArgumentException("String was not in a valid format. Failed to parse.", nameof(str));
+    }
+
+    /// <summary>
+    /// Unpadded number to FriendCode. Must be 9-12 characters.
+    /// </summary>
+    /// <param name="fc">The friend code of 12 chars as an int (zero padding not needed).</param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static FriendCode FromNumber(ulong fc)
+    {
+      var str = fc.ToString();
+      if (str.Length is < 9 or > 12)
       {
-        throw new ArgumentException("String was not in a valid format. Failed to parse.", nameof(fc));
+        string error = $"The FC value should be 9-12 characters [it's a friend code of 12 chars as an int without zero pad], actually {str.Length}.";
+        logger.Error(error);
+        throw new ArgumentOutOfRangeException(nameof(fc), error);
       }
+
+      return new FriendCode(
+        // Count backwards as
+        // the first group may have had zeros at the start, in which case, the start is index 0, until the second group.
+        short.Parse(str[..^8]),
+        short.Parse(str.Substring(str.Length - 8, 4)),
+        short.Parse(str.Substring(str.Length - 4, 4))
+      );
+    }
+
+    /// <summary>
+    /// Array of 3 shorts to FriendCode.
+    /// </summary>
+    /// <param name="fc">The friend code of 3 shorts, each [1-9999].</param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public static FriendCode FromArray(ICollection<short> fc)
+    {
+      if (fc is null || fc.Count == 0)
+      {
+        return NO_FRIEND_CODE;
+      }
+
+      if (fc.Count != 3)
+      {
+        throw new ArgumentOutOfRangeException($"FC is not length 3 (actually {fc.Count})", nameof(fc));
+      }
+
+      // else
+      IList<short> x = fc as IList<short> ?? fc.ToArray();
+      return new FriendCode(x[0], x[1], x[2]);
     }
 
     [JsonIgnore]
@@ -104,7 +166,7 @@ namespace SplatTagCore
     public bool IsReadOnly => true;
 
     [JsonIgnore]
-    public bool NoCode => FCShort1 == 0 && FCShort2 == 0 && FCShort3 == 0;
+    public bool NoCode => FCShort1 == NO_CODE_DIGIT && FCShort2 == NO_CODE_DIGIT && FCShort3 == NO_CODE_DIGIT;
 
     [JsonPropertyName("FC")]
     /// <summary>
@@ -113,32 +175,60 @@ namespace SplatTagCore
     public short[] Code => new short[3] { FCShort1, FCShort2, FCShort3 };
 
     /// <summary>
-    /// Take a string and parse a friend code from it, returning it or NO_FRIEND_CODE, and the input string with the friend code stripped.
-    /// Returns NO_FRIEND_CODE if a FC is not parsed.
+    /// Parse a friend code from given input.
+    /// Returns the friend code and the string value stripped (i.e. the string that is not part of the friend code).
+    /// If no friend code was found, returns NO_FRIEND_CODE and the input value.
     /// </summary>
     /// <param name="value">The string to search</param>
-    /// <returns>A tuple containing the friend code and the stripped value result.</returns>
     public static (FriendCode, string) ParseAndStripFriendCode(string value)
     {
-      if (string.IsNullOrWhiteSpace(value)) return (NO_FRIEND_CODE, value);
-      if (ulong.TryParse(value, out var numericCode)) return (new FriendCode(numericCode), value);
+      (FriendCode, string) reject = (NO_FRIEND_CODE, value);
+
+      // If no data, reject
+      if (string.IsNullOrWhiteSpace(value))
+      {
+        return reject;
+      }
+
+      // Attempt to parse as number
+      if (ulong.TryParse(value, out var numericCode))
+      {
+        try
+        {
+          return (new FriendCode(numericCode), value);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+          // The friend code was read successfully, but is invalid
+          return reject;
+        }
+      }
 
       // Extract the FC from the regex and return the stripped
       Match fcMatch = FRIEND_CODE_REGEX.Match(value);
       if (fcMatch.Success)
       {
-        value = FRIEND_CODE_REGEX.Replace(value, "").Trim();
-
-        short[] outFriendCode = new short[3]
+        // Create the FC from the matched groups
+        short[] matched = new short[3]
         {
           short.Parse(fcMatch.Groups[3].Value),
           short.Parse(fcMatch.Groups[5].Value),
           short.Parse(fcMatch.Groups[7].Value)
         };
-        return (new FriendCode(outFriendCode), value);
+
+        try
+        {
+          value = FRIEND_CODE_REGEX.Replace(value, "").Trim();
+          return (new FriendCode(matched), value);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+          // The friend code was read successfully, but is invalid
+          return reject;
+        }
       }
 
-      // If the regex didn't match, we'll try to match through digits instead.
+      // If the regex didn't match, we'll try to strip away more input and match based on digits
       string trimmed = value.TrimStart('S', 'W', 's', 'w', 'F', 'C', 'f', 'c', '-', ':', '-', '(', ' ').TrimEnd(' ', ')', '\n');
       if (trimmed.Length < 12)
       {
@@ -154,25 +244,24 @@ namespace SplatTagCore
       fcMatch = TWELVE_DIGITS_REGEX.Match(trimmed);
       if (fcMatch.Captures.Count != 1)
       {
-        return (NO_FRIEND_CODE, value);
+        return reject;
       }
-      else
-      {
-        short[] outFriendCode = new short[3];
-        for (int outer = 0; outer < 3; ++outer)
-        {
-          outFriendCode[outer] = short.Parse(fcMatch.Groups[2].Value.Substring(outer * 4, 4));
 
-          if (outFriendCode[outer] == 0)
-          {
-            // Not expecting the friend code to contain 0000-
-            string error = $"Not accepting FC containing a group with all zeros, value={value}, trimmed={trimmed}";
-            logger.Warn(error);
-            return (NO_FRIEND_CODE, value);
-          }
+      // else
+      short[] outFriendCode = new short[3];
+      for (int outer = 0; outer < 3; ++outer)
+      {
+        outFriendCode[outer] = short.Parse(fcMatch.Groups[2].Value.Substring(outer * 4, 4));
+
+        if (outFriendCode[outer] == 0)
+        {
+          // Not expecting the friend code to contain 0000-
+          string error = $"Not accepting FC containing a group with all zeros, value={value}, trimmed={trimmed}";
+          logger.Warn(error);
+          return reject;
         }
-        return (new FriendCode(outFriendCode), value);
       }
+      return (new FriendCode(outFriendCode), value);
     }
 
     /// <summary>
@@ -227,10 +316,5 @@ namespace SplatTagCore
     public ulong ToULong() => ulong.Parse(ToString(string.Empty));
 
     public string GetDisplayValue() => ToString();
-
-    public static FriendCode MakeFriendCodeFromArray(short[] code)
-    {
-      return new FriendCode(code);
-    }
   }
 }

@@ -43,6 +43,22 @@ namespace SplatTagUnitTests
     }
 
     [TestMethod]
+    public void NoMatchZeros()
+    {
+      bool result = FriendCode.TryParse("0000-0000-0000", out FriendCode friendCode);
+      Assert.AreEqual(FriendCode.NO_FRIEND_CODE, friendCode);
+      Assert.IsFalse(result);
+    }
+
+    [TestMethod]
+    public void NoMatchBadFC()
+    {
+      bool result = FriendCode.TryParse("0000-0001-0002", out FriendCode friendCode);
+      Assert.AreEqual(FriendCode.NO_FRIEND_CODE, friendCode);
+      Assert.IsFalse(result);
+    }
+
+    [TestMethod]
     public void NoMatchJunkDigitsString()
     {
       bool result = FriendCode.TryParse("0123456789101112", out FriendCode friendCode);

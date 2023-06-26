@@ -18,11 +18,12 @@ namespace SplatTagDatabase
 
     private static JsonSerializerOptions CreateJsonSerializerOptions()
     {
-      return new JsonSerializerOptions
+      var options = new JsonSerializerOptions
       {
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault,
         PropertyNameCaseInsensitive = true
       };
+      return options;
     }
 
     private static readonly HashSet<string> errorMessagesReported = new();
